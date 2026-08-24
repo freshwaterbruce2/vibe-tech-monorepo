@@ -9,6 +9,7 @@ import type {
   AgentContext,
   AgentMemory,
   AgentResponse,
+  CodebaseMetrics,
   LearningPattern,
 } from '../../services/specialized-agents/BaseSpecializedAgent';
 
@@ -65,6 +66,7 @@ interface AgentInternals {
   learningPatterns: Map<string, LearningPattern>;
   contextCache: Map<string, AgentResponse & { _cacheTime?: number }>;
   findRelatedFiles(currentFile: string, allFiles: string[]): string[];
+  analyzeCodebase(context: AgentContext): Promise<CodebaseMetrics>;
 }
 
 function internals(agent: ProbeAgent): AgentInternals {
@@ -183,24 +185,65 @@ describe('BaseSpecializedAgent', () => {
     expect(cached.performance?.apiCalls).toBe(0);
   });
 
-  it('returns a capability-aware fallback response when the AI call fails', async () => {
+  it('returns an honest empty result (no fabricated findings) when the AI call fails', async () => {
     const agent = new ProbeAgent();
     sendContextualMessage.mockRejectedValue(new Error('AI down'));
 
     const response = await agent.process('broken request', { currentFile: 'src/x.ts' });
 
-    expect(response.confidence).toBe(0.3);
+    // No fabricated 0.3 placeholder: an AI failure yields confidence 0 and no suggestions.
+    expect(response.confidence).toBe(0);
     expect(response.reasoning).toContain('AI down');
-    expect(response.suggestions).toEqual([
-      'Consider running a code review to identify potential issues',
-      'Add comprehensive tests to verify the implementation',
-      'Document the solution for future reference',
-      'Review the current file: src/x.ts',
-    ]);
+    expect(response.content).toContain('AI down');
+    expect(response.content).toContain('ProbeAgent');
+    expect(response.suggestions).toBeUndefined();
 
     const memory = internals(agent).memory;
     expect(memory[0]!.success).toBe(false);
     expect(memory[0]!.response).toContain('AI down');
+  });
+
+  it('derives real codebase metrics from the context file list', async () => {
+    const agent = new ProbeAgent();
+
+    const metrics = await internals(agent).analyzeCodebase({
+      files: [
+        'src/App.tsx',
+        'src/util.ts',
+        'src/legacy.js',
+        'src/widget.jsx',
+        'vite.config.ts',
+        'src-tauri/main.rs',
+        'scripts/build.py',
+        'styles/app.css',
+        'README.md',
+        'Makefile',
+      ],
+    });
+
+    expect(metrics.totalFiles).toBe(10);
+    expect(metrics.totalLines).toBe(0);
+    expect(metrics.complexity).toBe(0);
+    expect(metrics.patterns).toEqual([]);
+    expect(metrics.techStack).toEqual(
+      expect.arrayContaining(['React', 'TypeScript', 'JavaScript', 'Vite', 'Tauri/Rust', 'Python'])
+    );
+    expect(metrics.languages['typescript']).toBeGreaterThan(0);
+    expect(metrics.languages['javascript']).toBeGreaterThan(0);
+    expect(metrics.languages['python']).toBeGreaterThan(0);
+    expect(metrics.languages['css']).toBeGreaterThan(0);
+    // Extension-less files contribute no language.
+    expect(Object.values(metrics.languages).reduce((sum, n) => sum + n, 0)).toBeCloseTo(1, 1);
+  });
+
+  it('reports empty metrics when no files are present (no fabrication)', async () => {
+    const agent = new ProbeAgent();
+
+    const metrics = await internals(agent).analyzeCodebase({});
+
+    expect(metrics.totalFiles).toBe(0);
+    expect(metrics.languages).toEqual({});
+    expect(metrics.techStack).toEqual([]);
   });
 
   it('feeds relevant memories and learned patterns into later requests', async () => {

@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { unifiedAI } from '../../../services/ai/UnifiedAIService';
 import { useAIStore } from '../../../stores/useAIStore';
+import { useEditorStore } from '../../../stores/useEditorStore';
 import { logger } from '../../../services/Logger';
 import { FileSystemService } from '../../../services/FileSystemService';
 import { WorkspaceService } from '../../../services/WorkspaceService';
 import { GitService } from '../../../services/GitService';
 import { TaskPlanner } from '../../../services/ai/TaskPlanner';
+import { TaskPersistence } from '../../../services/ai/TaskPersistence';
 import { ExecutionEngine } from '../../../services/ai/ExecutionEngine';
+import { AgentRuntime } from '../../../services/agent-runtime/AgentRuntime';
 import { liveEditorStream } from '../../../services/LiveEditorStream';
 import { BackgroundAgentSystem } from '../../../services/BackgroundAgentSystem';
 import { AgentOrchestrator } from '../../../services/specialized-agents/AgentOrchestrator';
@@ -28,9 +31,24 @@ export function useAppServices() {
     () => new TaskPlanner(unifiedAI, fileSystemService),
     [fileSystemService]
   );
+  const taskPersistence = useMemo(
+    () => new TaskPersistence(fileSystemService),
+    [fileSystemService]
+  );
   const executionEngine = useMemo(
-    () => new ExecutionEngine(fileSystemService, unifiedAI, workspaceService, gitService),
-    [fileSystemService, workspaceService, gitService]
+    () =>
+      new ExecutionEngine(
+        fileSystemService,
+        unifiedAI,
+        workspaceService,
+        gitService,
+        taskPersistence
+      ),
+    [fileSystemService, workspaceService, gitService, taskPersistence]
+  );
+  const agentRuntime = useMemo(
+    () => new AgentRuntime(taskPlanner, executionEngine, taskPersistence),
+    [taskPlanner, executionEngine, taskPersistence]
   );
 
   // Background agent system — runs real agent tasks off the UI thread via the
@@ -73,12 +91,22 @@ export function useAppServices() {
   // changes (model picker, settings) reach every AI request.
   useEffect(() => {
     unifiedAI.setModel(useAIStore.getState().currentModel);
+    unifiedAI.setReasoningEffort(useEditorStore.getState().settings.reasoningEffort ?? 'medium');
 
-    return useAIStore.subscribe((state, prevState) => {
+    const unsubscribeModel = useAIStore.subscribe((state, prevState) => {
       if (state.currentModel !== prevState.currentModel) {
         unifiedAI.setModel(state.currentModel);
       }
     });
+    const unsubscribeEffort = useEditorStore.subscribe((state, prevState) => {
+      if (state.settings.reasoningEffort !== prevState.settings.reasoningEffort) {
+        unifiedAI.setReasoningEffort(state.settings.reasoningEffort ?? 'medium');
+      }
+    });
+    return () => {
+      unsubscribeModel();
+      unsubscribeEffort();
+    };
   }, []);
 
   return {
@@ -90,6 +118,7 @@ export function useAppServices() {
     gitService,
     taskPlanner,
     executionEngine,
+    agentRuntime,
     liveStream: liveEditorStream,
     orchestrator,
     performanceOptimizer,

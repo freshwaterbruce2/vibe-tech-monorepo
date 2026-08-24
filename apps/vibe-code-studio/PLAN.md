@@ -45,7 +45,7 @@ Review Vibe Code Studio beyond the previous baseline, package a fresh Windows de
 
 - MSI: `D:\cargo-targets\release\bundle\msi\Vibe Code Studio_1.2.0_x64_en-US.msi`
 - NSIS: `D:\cargo-targets\release\bundle\nsis\Vibe Code Studio_1.2.0_x64-setup.exe`
-- Installed executable: `C:\Users\fresh_zxae3v6\AppData\Local\Vibe Code Studio\vibe-code-studio.exe`
+- Installed executable: `V:\Apps\Vibe_Code_Studio\vibe-code-studio.exe`
 - MSI install log: `C:\tmp\vcs-install.log`
 - Temp MSI copy used to avoid path quoting issues: `C:\tmp\vcs.msi`
 

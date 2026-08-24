@@ -5,15 +5,8 @@
  */
 
 import { logger } from '../../services/Logger';
-import type {
-    AIModel,
-    AIProviderConfig,
-    IAIProvider
-} from './AIProviderInterface';
-import {
-    AIProvider,
-    MODEL_REGISTRY,
-} from './AIProviderInterface';
+import type { AIModel, AIProviderConfig, IAIProvider } from './AIProviderInterface';
+import { AIProvider, MODEL_REGISTRY } from './AIProviderInterface';
 import { ServiceAdapter } from './ProviderAdapter';
 import { BackendProxyService } from './providers/BackendProxyService';
 import { DeepSeekService } from './providers/DeepSeekService';
@@ -170,7 +163,47 @@ export class AIProviderFactory {
       return this.initializeProvider(config);
     }
 
+    // Proxy mode: recover after boot race (backend was down at first init).
+    // Server injects keys — empty apiKey is intentional.
+    if (USE_AI_PROXY) {
+      logger.info(
+        `[AIProviderFactory] Auto-initializing ${provider} via backend proxy (stale/missing status)`
+      );
+      return this.initializeProvider({
+        provider,
+        apiKey: '',
+        model: 'deepseek/deepseek-v4-pro',
+      });
+    }
+
     throw new Error(`Provider ${provider} is not initialized. Please provide configuration.`);
+  }
+
+  /**
+   * Ensure proxy-backed providers are initialized and available.
+   * Safe to call when factory was empty after a failed boot against a down sidecar.
+   */
+  async ensureProxyProvidersInitialized(): Promise<void> {
+    if (!USE_AI_PROXY) return;
+    const proxyProviders = [AIProvider.OPENROUTER, AIProvider.MOONSHOT, AIProvider.GOOGLE];
+    await Promise.all(
+      proxyProviders.map(async provider => {
+        const status = this.providerStatus.get(provider);
+        if (status?.initialized && status.available) return;
+        try {
+          await this.initializeProvider({
+            provider,
+            apiKey: '',
+            model: 'deepseek/deepseek-v4-pro',
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          logger.warn(
+            `[AIProviderFactory] ensureProxyProvidersInitialized ${provider}: ${message}`
+          );
+        }
+      })
+    );
   }
 
   /**

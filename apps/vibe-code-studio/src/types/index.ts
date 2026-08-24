@@ -28,7 +28,7 @@ export interface AIMessage {
     task: AgentTask;
     currentStep?: AgentStep;
     pendingApproval?: ApprovalRequest;
-    phase?: 'planning' | 'executing' | 'awaiting_approval' | 'completed' | 'failed';
+    phase?: 'planning' | 'executing' | 'awaiting_approval' | 'completed' | 'failed' | 'cancelled';
     statusMessage?: string;
     warnings?: string[];
     lastError?: string;
@@ -106,6 +106,7 @@ export interface EditorSettings {
   // stale on every registry update and gets bypassed by casts anyway.
   aiModel?: string;
   showReasoningProcess?: boolean;
+  reasoningEffort?: 'low' | 'medium' | 'high';
   lineNumbers?: boolean;
   folding?: boolean;
   bracketMatching?: boolean;

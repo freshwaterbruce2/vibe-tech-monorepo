@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ModernErrorBoundary, useErrorHandler, withErrorBoundary } from './ModernErrorBoundary';
+import { ModernErrorBoundary } from './ModernErrorBoundary';
+import { useErrorHandler, withErrorBoundary } from './withErrorBoundary';
 import { useEffect } from 'react';
 import type { FallbackProps } from 'react-error-boundary';
 

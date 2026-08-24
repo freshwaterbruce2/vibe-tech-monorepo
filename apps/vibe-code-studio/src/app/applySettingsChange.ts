@@ -10,17 +10,25 @@ import { useAIStore } from '../stores/useAIStore';
  * took" bug). Service failures surface as a Model Error toast; the store keeps
  * the new model and re-syncs the service later.
  */
-export async function applySettingsChange<S extends { aiModel?: string }>(
+export async function applySettingsChange<
+  S extends { aiModel?: string; reasoningEffort?: 'low' | 'medium' | 'high' },
+>(
   deps: {
     updateEditorSettings: (settings: S) => void;
     prevAiModel: string | undefined;
-    aiService: { setModel: (model: string) => void | Promise<void> };
+    aiService: {
+      setModel: (model: string) => void | Promise<void>;
+      setReasoningEffort?: (effort: 'low' | 'medium' | 'high') => void;
+    };
     showSuccess: (title: string, message?: string) => void;
     showError: (title: string, message?: string) => void;
   },
   newSettings: S
 ): Promise<void> {
   deps.updateEditorSettings(newSettings);
+  if (newSettings.reasoningEffort) {
+    deps.aiService.setReasoningEffort?.(newSettings.reasoningEffort);
+  }
   if (newSettings.aiModel && newSettings.aiModel !== deps.prevAiModel) {
     try {
       useAIStore.getState().actions.setModel(newSettings.aiModel);

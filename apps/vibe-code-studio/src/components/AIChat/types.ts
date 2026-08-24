@@ -3,17 +3,18 @@
  * Type definitions for the AI Chat component
  */
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type {
   AIMessage,
   AIResponseState,
   AgentStep,
   AgentTask,
   ApprovalRequest,
-  StepStatus,
 } from '../../types';
 import type { TaskPlanner } from '../../services/ai/TaskPlanner';
 import type { ExecutionEngine } from '../../services/ai/ExecutionEngine';
+import type { AgentRuntime } from '../../services/agent-runtime/AgentRuntime';
+import type { ApprovalResolverIdentity } from './approvalResolvers';
 
 export type ChatMode = 'chat' | 'agent';
 
@@ -40,6 +41,7 @@ export interface AIChatProps {
   // Agent mode integration
   taskPlanner?: TaskPlanner;
   executionEngine?: ExecutionEngine;
+  agentRuntime?: AgentRuntime;
   workspaceContext?: WorkspaceContext;
   // Message management for Agent Mode
   onAddMessage?: (message: AIMessage) => void;
@@ -48,16 +50,21 @@ export interface AIChatProps {
   onFileChanged?: (filePath: string, action: 'created' | 'modified' | 'deleted') => void;
   onTaskComplete?: (task: AgentTask) => void;
   onTaskError?: (task: AgentTask, error: Error) => void;
-  onApprovalRequired?: (step: AgentStep, request: ApprovalRequest) => Promise<boolean>;
+  onTaskCancelled?: (task: AgentTask, reason: string) => void;
+  onApprovalRequired?: (
+    step: AgentStep,
+    request: ApprovalRequest,
+    signal?: AbortSignal
+  ) => Promise<boolean>;
   // Multi-file edit detection
   onMultiFileEditDetected?: (plan: MultiFileEditPlan, changes: FileChange[]) => void;
 }
 
 export interface MemoizedStepCardProps {
+  messageId: string;
   step: AgentStep;
   pendingApproval: ApprovalRequest | null;
-  getStepIcon: (status: StepStatus) => ReactElement;
-  handleApproval?: (stepId: string, approved: boolean) => void;
+  handleApproval?: (identity: ApprovalResolverIdentity, approved: boolean) => void;
 }
 
 export interface MessageItemProps {

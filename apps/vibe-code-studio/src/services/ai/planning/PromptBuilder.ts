@@ -36,7 +36,7 @@ export function buildPlanningPrompt(context: PlanningContext): string {
 
   return `You are an AUTONOMOUS software engineering agent (like Cursor, Windsurf, Copilot) planning a task for an AI-powered code editor.
 
-🤖 AGENT MODE: You have FULL file system access. You can read ANY file, search the codebase, run commands, and make changes autonomously.
+🤖 AGENT MODE: You may inspect files inside the open workspace. Every mutation is previewed and requires explicit user approval before it is applied.
 
 USER REQUEST: ${userRequest}
 
@@ -94,7 +94,11 @@ function getAutonomousBehaviorRules(): string {
 2. **Be proactive** - If user says "review 3 files", search/identify the files and read them automatically
 3. **Use search_codebase** - To find files matching patterns or recently modified files
 4. **Chain actions** - Multiple steps can accomplish complex tasks autonomously
-5. **Infer context** - Use workspace analysis and file locations to make intelligent decisions`;
+5. **Infer context** - Use workspace analysis and file locations to make intelligent decisions
+6. **Inspect before mutation** - Before any write/edit/generate-with-filePath step, first inspect the nearest AGENTS.md, project configuration, target file (or parent directory when creating), relevant exports, and entry-point conventions
+7. **Bind named mutation targets** - If the user explicitly asks to create, restore, repair, fix, update, edit, replace, or rewrite a named file, the mutation action MUST include that exact path in action.params.filePath
+8. **Stay contained** - Use paths inside the workspace root only; never propose another drive, UNC path, parent traversal, or a path that merely shares the workspace prefix
+9. **Verify inspection targets** - Only plan read_file or analyze_code for exact files confirmed by workspace context or prior search. Do not assume optional build artifacts such as declaration files or source maps exist; inspect only verified outputs.`;
 }
 
 /**
@@ -118,6 +122,10 @@ Step 4-6: analyze files
 (NO FINAL SYNTHESIS - USER SEES NOTHING!)
 
 The final generate_code step is what displays results to the user. Without it, all work is invisible!
+
+For a request that explicitly mutates a named file, the final targeted write/edit/generate_code
+step performs the synthesis AND the requested mutation. It MUST include the exact filePath.
+Do not substitute a filePath-less synthesis step for the requested mutation.
 
 Example synthesis descriptions:
 - "Comprehensive review summary of the 3 React components analyzed above"
@@ -152,30 +160,28 @@ function getAvailableActions(): string {
    Required params: { path: string }
    Example: { "type": "create_directory", "params": { "path": "C:\\\\new\\\\folder" } }
 
-6. run_command - Run terminal command
-   Required params: { command: string }
-   Optional params: { workingDirectory: string }
-   Example: { "type": "run_command", "params": { "command": "npm install", "workingDirectory": "C:\\\\project" } }
-
-7. search_codebase - Search for code patterns
+6. search_codebase - Search for code patterns
    Required params: { searchQuery: string | string[] }
    Examples:
    - Single term: { "type": "search_codebase", "params": { "searchQuery": "TODO" } }
    - Multiple terms: { "type": "search_codebase", "params": { "searchQuery": ["asset", "image", "file"] } }
 
-8. analyze_code - Analyze a specific file (NOT directories)
+7. analyze_code - Analyze a specific file (NOT directories)
    Required params: { filePath: string }
    Example: { "type": "analyze_code", "params": { "filePath": "src/main.ts" } }
 
-9. refactor_code - Refactor code with AI assistance
+8. refactor_code - Refactor code with AI assistance
    Required params: { codeSnippet: string }
    Optional params: { requirements: string }
    Example: { "type": "refactor_code", "params": { "codeSnippet": "function foo() {...}", "requirements": "Use async/await" } }
 
-10. generate_code - Generate new code from description
+9. generate_code - Generate new code from a description.
+    ⚠️ If filePath is provided, the generated code is WRITTEN to that file — use this to CREATE a new file.
+    Without filePath, the generated text is only shown in chat — use that for the FINAL synthesis/review step.
     Required params: { description: string }
-    Optional params: { targetLanguage: string }
-    Example: { "type": "generate_code", "params": { "description": "Create a user authentication class", "targetLanguage": "TypeScript" } }
+    Optional params: { filePath: string, targetLanguage: string }
+    Create a file: { "type": "generate_code", "params": { "description": "User auth service", "filePath": "src/auth/AuthService.ts", "targetLanguage": "TypeScript" } }
+    Synthesis only: { "type": "generate_code", "params": { "description": "Synthesize a review of the files analyzed above" } }
 
 ${getSystemAndBrowserActionDocs()}
 
@@ -186,21 +192,20 @@ IMPORTANT: Use ONLY the parameter names specified above. Do NOT invent new param
  * Returns docs for the system-level actions plus browser_action (spec 11)
  */
 function getSystemAndBrowserActionDocs(): string {
-  return `11. run_tests - Execute tests
-    Optional params: { testPattern: string, rootPath: string }
-    Example: { "type": "run_tests", "params": { "testPattern": "*.test.ts", "rootPath": "C:\\\\project" } }
+  return `10. run_tests - Run one or more existing Nx validation targets and fail on nonzero exit
+    Required params: { projectName: string }
+    Optional params: { targets: string[] } // typecheck, lint, test, or build; defaults to ["test"]
+    Example: { "type": "run_tests", "params": { "projectName": "my-app", "targets": ["typecheck", "lint", "test"] } }
+    Use the exact Nx project name from workspace configuration. Generic shell commands, package installation,
+    source-formatting targets, clean targets, deployment, publishing, and Git mutations are not agent actions.
 
-12. git_commit - Create git commit
-    Required params: { message: string }
-    Example: { "type": "git_commit", "params": { "message": "feat: add new feature" } }
-
-13. review_project - Analyze entire workspace/project for code quality
+11. review_project - Analyze entire workspace/project for code quality
     Required params: { workspaceRoot: string }
     Example: { "type": "review_project", "params": { "workspaceRoot": "C:\\\\workspace" } }
     Returns: Complete quality report with metrics, issues, and file-by-file analysis
     Use this for: "review my code", "check code quality", "analyze the project"
 
-14. browser_action - Drive a real browser (user-permissioned session) to verify UI work
+12. browser_action - Drive a real browser (user-permissioned session) to verify UI work
     Required params: { browserAction: "navigate" | "click" | "type" | "snapshot" | "read_console" | "screenshot", ...action params }
     Variants:
     - navigate: { "browserAction": "navigate", "url": "http://localhost:5173/" }
@@ -230,15 +235,18 @@ Break down the user request into a sequence of executable steps. Each step shoul
 🎯 SYNTHESIS REQUIREMENT:
 If your plan includes reading/analyzing multiple files (2+), you MUST add a FINAL step using generate_code to synthesize results.
 This is not optional - plans without synthesis will fail validation!
+If the user explicitly requests mutation of a named file, that FINAL generate_code step MUST include the exact filePath;
+the targeted mutation is the synthesis step, so do not emit a separate synthesis-only step instead.
 
-OUTPUT FORMAT (JSON):
+OUTPUT CONTRACT:
+The provider enforces the agent_plan_v1 JSON Schema. Return the object only: no Markdown, comments, or extra properties.
 {
+  "schemaVersion": 1,
   "title": "Short task title",
   "description": "Detailed task description",
   "reasoning": "Why these steps accomplish the goal",
   "steps": [
     {
-      "order": 1,
       "title": "Step title",
       "description": "What this step does",
       "action": {
@@ -253,6 +261,6 @@ OUTPUT FORMAT (JSON):
       "maxRetries": 3
     }
   ],
-  "warnings": ["warning1", "warning2"] // Optional warnings about risks
+  "warnings": ["Optional warnings about risks"]
 }`;
 }

@@ -6,7 +6,7 @@ Vibe Code Studio is the Tauri-based desktop editor in this monorepo. The Windows
 
 - Desktop runtime: Tauri 2 on Windows 11
 - Canonical installer output: Cargo `target_directory` + `release/bundle` (default `apps/vibe-code-studio/src-tauri/target/release/bundle`, commonly `D:\cargo-targets\release\bundle` on local machines with global Cargo config)
-- Canonical installed executable: `%LOCALAPPDATA%\Vibe Code Studio\vibe-code-studio.exe`
+- Canonical local installation: `V:\Apps\Vibe_Code_Studio\vibe-code-studio.exe`
 - AI setup: OpenRouter-only for Bruce's local workflow
 - Validation rule: do not treat archived logs or old delivery notes as release evidence
 

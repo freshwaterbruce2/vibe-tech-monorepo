@@ -9,8 +9,8 @@
  * - Copy to clipboard
  * - Insert into editor
  */
-import React, { useCallback, useEffect, useRef,useState } from 'react';
-import { AnimatePresence,motion } from 'framer-motion';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { shouldForwardMotionProp } from '../utils/motionProps';
 import {
   Check,
@@ -25,8 +25,8 @@ import {
 } from 'lucide-react';
 import styled from 'styled-components';
 
-import type { ImageToCodeOptions, ImageToCodeResult} from '../services/ImageToCodeService';
-import {ImageToCodeService } from '../services/ImageToCodeService';
+import type { ImageToCodeOptions, ImageToCodeResult } from '../services/ImageToCodeService';
+import { ImageToCodeService } from '../services/ImageToCodeService';
 import { logger } from '../services/Logger';
 import { vibeTheme } from '../styles/theme';
 
@@ -68,11 +68,13 @@ const Content = styled.div`
 `;
 
 const UploadZone = styled.div<{ isDragging: boolean }>`
-  border: 2px dashed ${props => props.isDragging ? vibeTheme.colors.cyan : vibeTheme.colors.border};
+  border: 2px dashed
+    ${props => (props.isDragging ? vibeTheme.colors.cyan : vibeTheme.colors.border)};
   border-radius: 12px;
   padding: 40px;
   text-align: center;
-  background: ${props => props.isDragging ? `${vibeTheme.colors.cyan}10` : vibeTheme.colors.primary};
+  background: ${props =>
+    props.isDragging ? `${vibeTheme.colors.cyan}10` : vibeTheme.colors.primary};
   cursor: pointer;
   transition: all 0.2s;
 
@@ -267,16 +269,22 @@ const StatusMessage = styled.div<{ type: 'info' | 'success' | 'error' }>`
   border-radius: 8px;
   background: ${props => {
     switch (props.type) {
-      case 'success': return `${vibeTheme.colors.success}20`;
-      case 'error': return `${vibeTheme.colors.danger}20`;
-      default: return `${vibeTheme.colors.info}20`;
+      case 'success':
+        return `${vibeTheme.colors.success}20`;
+      case 'error':
+        return `${vibeTheme.colors.danger}20`;
+      default:
+        return `${vibeTheme.colors.info}20`;
     }
   }};
   color: ${props => {
     switch (props.type) {
-      case 'success': return vibeTheme.colors.success;
-      case 'error': return vibeTheme.colors.danger;
-      default: return vibeTheme.colors.info;
+      case 'success':
+        return vibeTheme.colors.success;
+      case 'error':
+        return vibeTheme.colors.danger;
+      default:
+        return vibeTheme.colors.info;
     }
   }};
   font-size: 14px;
@@ -287,10 +295,7 @@ interface ScreenshotToCodePanelProps {
   onInsertCode?: (code: string) => void;
 }
 
-export const ScreenshotToCodePanel = ({
-  apiKey,
-  onInsertCode,
-}: ScreenshotToCodePanelProps) => {
+export const ScreenshotToCodePanel = ({ apiKey, onInsertCode }: ScreenshotToCodePanelProps) => {
   const [imageData, setImageData] = useState<string | null>(null);
   const [options, setOptions] = useState<ImageToCodeOptions>({
     framework: 'react',
@@ -316,7 +321,7 @@ export const ScreenshotToCodePanel = ({
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       setImageData(e.target?.result as string);
       setError(null);
       setResult(null);
@@ -324,30 +329,38 @@ export const ScreenshotToCodePanel = ({
     reader.readAsDataURL(file);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
 
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  }, [handleFileSelect]);
-
-  const handlePaste = useCallback((e: ClipboardEvent) => {
-    const items = e.clipboardData?.items;
-    if (!items) {return;}
-
-    for (const item of Array.from(items)) {
-      if (item.type.startsWith('image/')) {
-        const file = item.getAsFile();
-        if (file) {
-          handleFileSelect(file);
-        }
-        break;
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        handleFileSelect(file);
       }
-    }
-  }, [handleFileSelect]);
+    },
+    [handleFileSelect]
+  );
+
+  const handlePaste = useCallback(
+    (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) {
+        return;
+      }
+
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            handleFileSelect(file);
+          }
+          break;
+        }
+      }
+    },
+    [handleFileSelect]
+  );
 
   React.useEffect(() => {
     document.addEventListener('paste', handlePaste);
@@ -355,16 +368,15 @@ export const ScreenshotToCodePanel = ({
   }, [handlePaste]);
 
   const handleGenerate = async () => {
-    if (!imageData) {return;}
+    if (!imageData) {
+      return;
+    }
 
     setIsGenerating(true);
     setError(null);
 
     try {
-      const generatedResult = await serviceRef.current.convertScreenshotToCode(
-        imageData,
-        options
-      );
+      const generatedResult = await serviceRef.current.convertScreenshotToCode(imageData, options);
       setResult(generatedResult);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to generate code');
@@ -374,7 +386,9 @@ export const ScreenshotToCodePanel = ({
   };
 
   const handleCopy = async () => {
-    if (!result) {return;}
+    if (!result) {
+      return;
+    }
 
     try {
       await navigator.clipboard.writeText(result.code);
@@ -401,12 +415,15 @@ export const ScreenshotToCodePanel = ({
   }, []);
 
   const handleInsert = () => {
-    if (!result) {return;}
+    if (!result) {
+      return;
+    }
     onInsertCode?.(result.code);
   };
 
   return (
     <PanelContainer
+      data-testid="screenshot-to-code-panel"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
@@ -421,9 +438,10 @@ export const ScreenshotToCodePanel = ({
       <Content>
         {!imageData ? (
           <UploadZone
+            data-testid="screenshot-upload-zone"
             isDragging={isDragging}
             onClick={() => fileInputRef.current?.click()}
-            onDragOver={(e) => {
+            onDragOver={e => {
               e.preventDefault();
               setIsDragging(true);
             }}
@@ -434,17 +452,17 @@ export const ScreenshotToCodePanel = ({
               <Upload size={48} />
             </UploadIcon>
             <UploadText>Drop an image here or click to browse</UploadText>
-            <UploadHint>
-              Supports PNG, JPG, WebP • Paste from clipboard (Ctrl+V)
-            </UploadHint>
+            <UploadHint>Supports PNG, JPG, WebP • Paste from clipboard (Ctrl+V)</UploadHint>
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
               style={{ display: 'none' }}
-              onChange={(e) => {
+              onChange={e => {
                 const file = e.target.files?.[0];
-                if (file) {handleFileSelect(file);}
+                if (file) {
+                  handleFileSelect(file);
+                }
               }}
             />
           </UploadZone>
@@ -464,7 +482,12 @@ export const ScreenshotToCodePanel = ({
                 <Label>Framework</Label>
                 <Select
                   value={options.framework}
-                  onChange={(e) => setOptions({ ...options, framework: e.target.value as ImageToCodeOptions['framework'] })}
+                  onChange={e =>
+                    setOptions({
+                      ...options,
+                      framework: e.target.value as ImageToCodeOptions['framework'],
+                    })
+                  }
                 >
                   <option value="react">React</option>
                   <option value="html">HTML</option>
@@ -476,7 +499,12 @@ export const ScreenshotToCodePanel = ({
                 <Label>Styling</Label>
                 <Select
                   value={options.styling}
-                  onChange={(e) => setOptions({ ...options, styling: e.target.value as ImageToCodeOptions['styling'] })}
+                  onChange={e =>
+                    setOptions({
+                      ...options,
+                      styling: e.target.value as ImageToCodeOptions['styling'],
+                    })
+                  }
                 >
                   <option value="tailwind">Tailwind CSS</option>
                   <option value="css">CSS</option>
@@ -492,7 +520,7 @@ export const ScreenshotToCodePanel = ({
                 <input
                   type="checkbox"
                   checked={options.includeComponents}
-                  onChange={(e) => setOptions({ ...options, includeComponents: e.target.checked })}
+                  onChange={e => setOptions({ ...options, includeComponents: e.target.checked })}
                 />
                 Use component library (shadcn/ui)
               </Checkbox>
@@ -501,7 +529,7 @@ export const ScreenshotToCodePanel = ({
                 <input
                   type="checkbox"
                   checked={options.responsive}
-                  onChange={(e) => setOptions({ ...options, responsive: e.target.checked })}
+                  onChange={e => setOptions({ ...options, responsive: e.target.checked })}
                 />
                 Make responsive
               </Checkbox>
@@ -527,20 +555,14 @@ export const ScreenshotToCodePanel = ({
           </>
         )}
 
-        {error && (
-          <StatusMessage type="error">
-            {error}
-          </StatusMessage>
-        )}
+        {error && <StatusMessage type="error">{error}</StatusMessage>}
 
         {result && (
           <AnimatePresence>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <StatusMessage type="success">
-                Code generated successfully! ({result.iterations} iteration{result.iterations > 1 ? 's' : ''})
+                Code generated successfully! ({result.iterations} iteration
+                {result.iterations > 1 ? 's' : ''})
               </StatusMessage>
 
               <CodePreview>

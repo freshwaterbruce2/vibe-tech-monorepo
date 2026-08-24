@@ -66,7 +66,12 @@ vi.mock('@monaco-editor/react', () => ({
             trigger: vi.fn(),
             revealLine: vi.fn(),
           };
-          onMount?.(mockEditor, {} as any);
+          // Editor.tsx registers a ctrl+k keybinding via monaco.KeyMod/KeyCode
+          // on mount, so the monaco stub must provide those enums.
+          onMount?.(mockEditor, {
+            KeyMod: { CtrlCmd: 2048 },
+            KeyCode: { KeyK: 41 },
+          } as any);
         }}
       >
         Mount Editor

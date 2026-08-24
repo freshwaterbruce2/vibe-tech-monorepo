@@ -3,7 +3,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 import { logger } from '../services/Logger';
-import { MODEL_REGISTRY, ModelCapability } from '../services/ai/AIProviderInterface';
+import { DEFAULT_MODEL, MODEL_REGISTRY, ModelCapability } from '../services/ai/AIProviderInterface';
 import type { AIMessage } from '../types';
 
 /**
@@ -12,16 +12,12 @@ import type { AIMessage } from '../types';
  * 2025 Pattern: Separate stores for different domains
  */
 
-const DEFAULT_MODEL = 'moonshot/kimi-2.5-pro';
-const LOCAL_MODEL_IDS = ['local/vibe-completion'] as const;
-const VALID_MODEL_IDS = new Set<string>([
-  ...Object.keys(MODEL_REGISTRY),
-  ...LOCAL_MODEL_IDS,
-]);
+// DEFAULT_MODEL is the single source of truth in AIProviderInterface.ts.
+const VALID_MODEL_IDS = new Set<string>(Object.keys(MODEL_REGISTRY));
 const EXTENDED_THINKING_MODEL_IDS = new Set<string>(
   Object.values(MODEL_REGISTRY)
-    .filter((model) => model.capabilities.includes(ModelCapability.EXTENDED_THINKING))
-    .map((model) => model.id)
+    .filter(model => model.capabilities.includes(ModelCapability.EXTENDED_THINKING))
+    .map(model => model.id)
 );
 
 const resolveModelId = (candidate: unknown): string => {
@@ -113,8 +109,8 @@ export const useAIStore = create<AIState>()(
 
         // Actions
         actions: {
-          addMessage: (message) =>
-            set((state) => {
+          addMessage: message =>
+            set(state => {
               state.messages.push({
                 ...message,
                 id: message.id || Date.now().toString(),
@@ -123,25 +119,25 @@ export const useAIStore = create<AIState>()(
             }),
 
           clearMessages: () =>
-            set((state) => {
+            set(state => {
               state.messages = [];
             }),
 
-          setResponding: (isResponding) =>
-            set((state) => {
+          setResponding: isResponding =>
+            set(state => {
               state.isResponding = isResponding;
             }),
 
           updateMessage: (id, updates) =>
-            set((state) => {
-              const message = state.messages.find((m) => m.id === id);
+            set(state => {
+              const message = state.messages.find(m => m.id === id);
               if (message) {
                 Object.assign(message, updates);
               }
             }),
 
-          setModel: (model) =>
-            set((state) => {
+          setModel: model =>
+            set(state => {
               const resolvedModel = resolveModelId(model);
               if (resolvedModel !== model) {
                 logger.warn(
@@ -155,27 +151,27 @@ export const useAIStore = create<AIState>()(
             }),
 
           toggleReasoningProcess: () =>
-            set((state) => {
+            set(state => {
               state.showReasoningProcess = !state.showReasoningProcess;
             }),
 
-          setCompletionEnabled: (enabled) =>
-            set((state) => {
+          setCompletionEnabled: enabled =>
+            set(state => {
               state.completionEnabled = enabled;
             }),
 
-          setLastCompletion: (completion) =>
-            set((state) => {
+          setLastCompletion: completion =>
+            set(state => {
               state.lastCompletion = completion;
             }),
 
-          updateContext: (context) =>
-            set((state) => {
+          updateContext: context =>
+            set(state => {
               Object.assign(state.activeContext, context);
             }),
 
           clearContext: () =>
-            set((state) => {
+            set(state => {
               state.activeContext = {
                 files: [],
                 symbols: [],
@@ -183,8 +179,8 @@ export const useAIStore = create<AIState>()(
               };
             }),
 
-          saveConversation: (title) =>
-            set((state) => {
+          saveConversation: title =>
+            set(state => {
               const conversation = {
                 id: Date.now().toString(),
                 title: title ?? `Conversation ${state.conversationHistory.length + 1}`,
@@ -199,17 +195,17 @@ export const useAIStore = create<AIState>()(
               }
             }),
 
-          loadConversation: (id) =>
-            set((state) => {
-              const conversation = state.conversationHistory.find((c) => c.id === id);
+          loadConversation: id =>
+            set(state => {
+              const conversation = state.conversationHistory.find(c => c.id === id);
               if (conversation) {
                 state.messages = [...conversation.messages];
               }
             }),
 
-          deleteConversation: (id) =>
-            set((state) => {
-              const index = state.conversationHistory.findIndex((c) => c.id === id);
+          deleteConversation: id =>
+            set(state => {
+              const index = state.conversationHistory.findIndex(c => c.id === id);
               if (index > -1) {
                 state.conversationHistory.splice(index, 1);
               }
@@ -235,7 +231,7 @@ export const useAIStore = create<AIState>()(
       })),
       {
         name: 'vibe-code-studio-ai-store',
-        partialize: (state) => ({
+        partialize: state => ({
           currentModel: state.currentModel,
           showReasoningProcess: state.showReasoningProcess,
           completionEnabled: state.completionEnabled,
@@ -269,7 +265,7 @@ export const useAIStore = create<AIState>()(
 );
 
 // Selector hooks
-export const useAIMessages = () => useAIStore((state) => state.messages);
-export const useAIModel = () => useAIStore((state) => state.currentModel);
-export const useAIContext = () => useAIStore((state) => state.activeContext);
-export const useAIActions = () => useAIStore((state) => state.actions);
+export const useAIMessages = () => useAIStore(state => state.messages);
+export const useAIModel = () => useAIStore(state => state.currentModel);
+export const useAIContext = () => useAIStore(state => state.activeContext);
+export const useAIActions = () => useAIStore(state => state.actions);

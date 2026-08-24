@@ -6,15 +6,14 @@
     "core:default",
     "shell:allow-open",
     "dialog:default",
-    "store:default",
     {
       "identifier": "fs:default",
       "allow": [
-        { "path": "$HOME/**" },
-        { "path": "$APPDATA/**" },
-        { "path": "$DESKTOP/**" },
-        { "path": "$DOCUMENT/**" },
-        { "path": "$DOWNLOAD/**" }
+        { "path": "V:\\**" },
+        { "path": "D:\\data\\vibe-code-studio\\**" },
+        { "path": "D:\\databases\\vibe_studio.db" },
+        { "path": "D:\\logs\\vibe-code-studio\\**" },
+        { "path": "D:\\learning-system\\**" }
       ]
     },
     "fs:allow-exists",

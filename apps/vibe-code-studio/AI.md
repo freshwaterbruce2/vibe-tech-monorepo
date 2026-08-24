@@ -40,7 +40,11 @@ pnpm typecheck
 - Requires Visual Studio Build Tools 2022 + Rust MSVC toolchain for native build.
 - Frontend: Vite on port 5174; Tauri config: `src-tauri/tauri.conf.json`.
 - Use `verify-app-working.ps1` to confirm the packaged app is functional.
+- Keep the installed application at `V:\Apps\Vibe_Code_Studio`; runtime databases, logs, settings, and WebView data remain on `D:\`.
 
+## Path change history
+
+- 2026-07-11: Local verification and MSI smoke paths were pinned to `V:\Apps` so packaging checks cannot select or recreate a C-drive installation. Roll back by reverting the Vibe Code Studio verification/smoke script and documentation changes together; do not move or delete preserved `D:\` runtime data.
 
 ## Dev system hooks
 

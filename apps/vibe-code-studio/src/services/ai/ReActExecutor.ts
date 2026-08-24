@@ -49,7 +49,7 @@ function extractBalancedBraceCandidates(text: string): string[] {
   let startIndex = -1;
 
   let inString = false;
-  let stringQuote: '"' | '\'' | null = null;
+  let stringQuote: '"' | "'" | null = null;
   let escapeNext = false;
 
   for (let index = 0; index < text.length; index++) {
@@ -74,9 +74,9 @@ function extractBalancedBraceCandidates(text: string): string[] {
       continue;
     }
 
-    if (char === '"' || char === '\'') {
+    if (char === '"' || char === "'") {
       inString = true;
-      stringQuote = char as '"' | '\'';
+      stringQuote = char as '"' | "'";
       continue;
     }
 
@@ -114,14 +114,20 @@ function tryParseJsonObjectFromText(text: string, expectedKeys: string[]): JsonO
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) continue;
 
       const parsedObject = parsed as JsonObject;
-      const score = expectedKeys.reduce((count, key) => (
-        Object.prototype.hasOwnProperty.call(parsedObject, key) ? count + 1 : count
-      ), 0);
+      const score = expectedKeys.reduce(
+        (count, key) =>
+          Object.prototype.hasOwnProperty.call(parsedObject, key) ? count + 1 : count,
+        0
+      );
 
       if (expectedKeys.length > 0 && score === 0) continue;
 
       const entry = { score, length: candidate.length, parsed: parsedObject };
-      if (!best || entry.score > best.score || (entry.score === best.score && entry.length < best.length)) {
+      if (
+        !best ||
+        entry.score > best.score ||
+        (entry.score === best.score && entry.length < best.length)
+      ) {
         best = entry;
       }
     } catch {
@@ -148,15 +154,20 @@ export class ReActExecutor {
   ): Promise<ReActThought> {
     const startTime = Date.now();
 
-    const previousLearnings = previousAttempts.length > 0
-      ? `\n**Previous Attempts:**\n${previousAttempts.map((cycle, i) => `
+    const previousLearnings =
+      previousAttempts.length > 0
+        ? `\n**Previous Attempts:**\n${previousAttempts
+            .map(
+              (cycle, i) => `
 Attempt ${i + 1}:
 - Approach: ${cycle.thought.approach}
 - Outcome: ${cycle.observation.actualOutcome}
 - Why it ${cycle.observation.success ? 'worked' : 'failed'}: ${cycle.reflection.rootCause ?? 'N/A'}
 - Learnings: ${cycle.reflection.knowledgeGained}
-`).join('\n')}`
-      : '';
+`
+            )
+            .join('\n')}`
+        : '';
 
     const prompt = `You are an AI coding agent about to execute a task step. Think carefully about the best approach BEFORE taking action.
 
@@ -230,7 +241,6 @@ Reason about the best way to execute this step. Consider:
       logger.debug('[ReAct] Thought response was not valid JSON; using fallback');
     } catch (error) {
       logger.error('[ReAct] ❌ Failed to generate thought:', error);
-
     }
 
     // Fallback to basic thought
@@ -307,7 +317,8 @@ Analyze the outcome compared to your expectations.
 
       if (obsData) {
         const observation: ReActObservation = {
-          actualOutcome: (obsData['actualOutcome'] as string) ?? result.message ?? 'Action executed',
+          actualOutcome:
+            (obsData['actualOutcome'] as string) ?? result.message ?? 'Action executed',
           success: result.success,
           differences: (obsData['differences'] as string[]) || [],
           learnings: (obsData['learnings'] as string[]) || [],
@@ -325,7 +336,6 @@ Analyze the outcome compared to your expectations.
       logger.debug('[ReAct] Observation response was not valid JSON; using fallback');
     } catch (error) {
       logger.error('[ReAct] ❌ Failed to generate observation:', error);
-
     }
 
     return {
@@ -407,7 +417,8 @@ Reflect deeply on what happened. Should we retry with changes, or is this good e
           rootCause: refData['rootCause'] as string | undefined,
           shouldRetry: refData['shouldRetry'] === true,
           suggestedChanges: (refData['suggestedChanges'] as string[]) || [],
-          knowledgeGained: (refData['knowledgeGained'] as string) || 'No specific learning captured',
+          knowledgeGained:
+            (refData['knowledgeGained'] as string) || 'No specific learning captured',
           timestamp: new Date(),
         };
 
@@ -422,7 +433,6 @@ Reflect deeply on what happened. Should we retry with changes, or is this good e
       logger.debug('[ReAct] Reflection response was not valid JSON; using fallback');
     } catch (error) {
       logger.error('[ReAct] ❌ Failed to generate reflection:', error);
-
     }
 
     return {
@@ -463,7 +473,12 @@ Reflect deeply on what happened. Should we retry with changes, or is this good e
 
     // Phase 3: OBSERVATION
     logger.debug('[ReAct] Phase 3/4: Observing outcome...');
-    const observation = await this.generateObservation(thought, step.action, result, actionDuration);
+    const observation = await this.generateObservation(
+      thought,
+      step.action,
+      result,
+      actionDuration
+    );
 
     // Phase 4: REFLECTION
     logger.debug('[ReAct] Phase 4/4: Reflecting on result...');
@@ -477,6 +492,7 @@ Reflect deeply on what happened. Should we retry with changes, or is this good e
       reflection,
       cycleNumber,
       totalDurationMs: Date.now() - cycleStartTime,
+      result, // Preserve raw action result so callers keep file mutations + data
     };
 
     // Store cycle history

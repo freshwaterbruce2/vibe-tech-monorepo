@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import styled from 'styled-components';
 
-import { logger } from '../services/Logger';
 import { vibeTheme } from '../styles/theme';
 
 import { VirtualList } from './VirtualList';
@@ -98,21 +97,21 @@ const FileItem = styled.div<{
   display: flex;
   align-items: center;
   padding: ${vibeTheme.spacing.xs} ${vibeTheme.spacing.sm};
-  padding-left: ${(props) => `${props.$level * 20 + 12}px`};
+  padding-left: ${props => `${props.$level * 20 + 12}px`};
   cursor: pointer;
   user-select: none;
   transition: all ${vibeTheme.animation.duration.fast} ease;
-  background: ${(props) => (props.$selected ? 'rgba(139, 92, 246, 0.2)' : 'transparent')};
+  background: ${props => (props.$selected ? 'rgba(139, 92, 246, 0.2)' : 'transparent')};
 
   &:hover {
-    background: ${(props) =>
+    background: ${props =>
       props.$selected ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.1)'};
   }
 `;
 
 const FileIcon = styled.div<{ $isDirectory?: boolean }>`
   margin-right: ${vibeTheme.spacing.xs};
-  color: ${(props) =>
+  color: ${props =>
     props.$isDirectory ? vibeTheme.colors.purple : vibeTheme.colors.textSecondary};
   flex-shrink: 0;
   display: flex;
@@ -125,7 +124,7 @@ const FileName = styled.span<{ $highlighted?: boolean }>`
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: ${vibeTheme.typography.fontSize.sm};
-  color: ${(props) => (props.$highlighted ? vibeTheme.colors.cyan : vibeTheme.colors.text)};
+  color: ${props => (props.$highlighted ? vibeTheme.colors.cyan : vibeTheme.colors.text)};
 `;
 
 const EmptyState = styled.div`
@@ -177,7 +176,7 @@ export const FileExplorer = ({
 
   // Toggle directory expansion
   const toggleDirectory = useCallback((path: string) => {
-    setExpandedPaths((prev) => {
+    setExpandedPaths(prev => {
       const newSet = new Set(prev);
       if (newSet.has(path)) {
         newSet.delete(path);
@@ -207,7 +206,7 @@ export const FileExplorer = ({
     const result: FileNode[] = [];
 
     const traverse = (nodes: FileNode[]) => {
-      nodes.forEach((node) => {
+      nodes.forEach(node => {
         // Filter by search
         if (searchQuery && !node.name.toLowerCase().includes(searchQuery.toLowerCase())) {
           return;
@@ -261,7 +260,7 @@ export const FileExplorer = ({
             type="text"
             placeholder="Search files..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
           />
         </div>
       </SearchContainer>
@@ -281,67 +280,6 @@ export const FileExplorer = ({
         </EmptyState>
       )}
     </Container>
-  );
-};
-
-// Example usage with mock data
-export const FileExplorerDemo: React.FC = () => {
-  const mockFiles: FileNode[] = [
-    {
-      id: '1',
-      name: 'src',
-      path: '/src',
-      type: 'directory',
-      level: 0,
-      children: [
-        {
-          id: '2',
-          name: 'components',
-          path: '/src/components',
-          type: 'directory',
-          level: 1,
-          children: [
-            {
-              id: '3',
-              name: 'Button.tsx',
-              path: '/src/components/Button.tsx',
-              type: 'file',
-              level: 2,
-            },
-            {
-              id: '4',
-              name: 'Card.tsx',
-              path: '/src/components/Card.tsx',
-              type: 'file',
-              level: 2,
-            },
-          ],
-        },
-        {
-          id: '5',
-          name: 'App.tsx',
-          path: '/src/App.tsx',
-          type: 'file',
-          level: 1,
-        },
-      ],
-    },
-    {
-      id: '6',
-      name: 'package.json',
-      path: '/package.json',
-      type: 'file',
-      level: 0,
-    },
-  ];
-
-  return (
-    <FileExplorer
-      rootPath="/"
-      files={mockFiles}
-      height={600}
-      onFileSelect={(path) => logger.debug('Selected:', path)}
-    />
   );
 };
 

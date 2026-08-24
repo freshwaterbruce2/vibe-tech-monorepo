@@ -1,61 +1,38 @@
 /**
- * Basic E2E Tests for DeepCode Editor
- * Tests core functionality on Windows 11
+ * Basic E2E smoke tests for Vibe Code Studio (web mode).
+ * Auth is mocked by the shared fixture; web mode auto-opens the demo
+ * workspace (demo://workspace) with index.js in Monaco.
  */
+import { expect, gotoAppShell, test, waitForDemoEditor } from './fixtures/auth';
 
-import { test, expect } from '@playwright/test';
-
-test.describe('DeepCode Editor - Basic Functionality', () => {
-  test('should load the application', async ({ page }) => {
-    await page.goto('/');
-
-    // Wait for app to be ready
-    await page.waitForLoadState('networkidle');
-
-    // Check that the page title is correct
-    await expect(page).toHaveTitle(/DeepCode Editor|Vibe Code Studio/);
+test.describe('Vibe Code Studio - Basic Functionality', () => {
+  test('loads the application with the expected title', async ({ page }) => {
+    await gotoAppShell(page);
+    await expect(page).toHaveTitle(/Vibe Code Studio/);
   });
 
-  test('should show welcome screen on first load', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    // App shows welcome screen when no file is open
-    const welcomeText = page.locator('text=Where innovation meets elegant design').first();
-    await expect(welcomeText).toBeVisible({ timeout: 5000 });
+  test('mounts the app shell behind the auth gate', async ({ page }) => {
+    await gotoAppShell(page);
+    await expect(page.locator('[data-testid="app-container"]')).toBeVisible();
   });
 
-  test('should have create file option in welcome screen', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    // Look for any interactive elements in welcome screen
-    // Welcome screen should have buttons for creating files or opening folders
-    const interactiveElements = page.locator('button').first();
-    await expect(interactiveElements).toBeVisible({ timeout: 5000 });
+  test('auto-opens the demo workspace with index.js in the editor', async ({ page }) => {
+    await gotoAppShell(page);
+    await waitForDemoEditor(page);
+    await expect(page.getByText('index.js').first()).toBeVisible({ timeout: 15_000 });
   });
 
-  test('should have AI chat toggle available', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    // Check if AI features are mentioned or accessible
-    const aiFeature = page.locator('text=/ai/i').first();
-    const hasAIFeature = await aiFeature.count() > 0;
-    expect(hasAIFeature).toBeTruthy();
+  test('status bar exposes the panel toggles', async ({ page }) => {
+    await gotoAppShell(page);
+    await expect(page.getByTestId('status-chat-agent-toggle')).toBeVisible();
+    await expect(page.getByTestId('status-terminal-toggle')).toBeVisible();
+    await expect(page.getByTestId('status-sidebar-toggle')).toBeVisible();
+    await expect(page.getByTestId('status-screenshot-toggle')).toBeVisible();
   });
 
-  test('should have app container loaded', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    // Wait for loading screen to disappear (app is mounting)
-    await page.waitForSelector('.loading-screen', { state: 'detached', timeout: 15000 }).catch(() => {
-      // Loading screen might already be gone
-    });
-
-    // Verify main app container loaded with testid
-    const appContainer = page.locator('[data-testid="app-container"]');
-    await expect(appContainer).toBeVisible({ timeout: 10000 });
+  test('opens the AI chat panel from the Chat Agent toggle', async ({ page }) => {
+    await gotoAppShell(page);
+    await page.getByTestId('status-chat-agent-toggle').click();
+    await expect(page.getByTestId('chat-input')).toBeVisible({ timeout: 15_000 });
   });
 });

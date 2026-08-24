@@ -7,34 +7,36 @@ import type { editor } from 'monaco-editor';
  * It expects a ref to the monaco editor instance.
  */
 export const useEditorActions = (editorRef: RefObject<editor.IStandaloneCodeEditor | null>) => {
-    const toggleComment = useCallback(() => {
-        if (editorRef.current) {
-            editorRef.current.getAction('editor.action.commentLine')?.run();
-        }
-    }, [editorRef]);
+  const toggleComment = useCallback(() => {
+    if (editorRef.current) {
+      editorRef.current.getAction('editor.action.commentLine')?.run();
+    }
+  }, [editorRef]);
 
-    const duplicateLine = useCallback(() => {
-        if (editorRef.current) {
-            editorRef.current.getAction('editor.action.copyLinesDownAction')?.run();
-        }
-    }, [editorRef]);
+  const duplicateLine = useCallback(() => {
+    if (editorRef.current) {
+      editorRef.current.getAction('editor.action.copyLinesDownAction')?.run();
+    }
+  }, [editorRef]);
 
-    const moveLineUp = useCallback(() => {
-        if (editorRef.current) {
-            editorRef.current.getAction('editor.action.moveLinesUpAction')?.run();
-        }
-    }, [editorRef]);
+  const moveLineUp = useCallback(() => {
+    if (editorRef.current) {
+      editorRef.current.getAction('editor.action.moveLinesUpAction')?.run();
+    }
+  }, [editorRef]);
 
-    const moveLineDown = useCallback(() => {
-        if (editorRef.current) {
-            editorRef.current.getAction('editor.action.moveLinesDownAction')?.run();
-        }
-    }, [editorRef]);
+  const moveLineDown = useCallback(() => {
+    if (editorRef.current) {
+      editorRef.current.getAction('editor.action.moveLinesDownAction')?.run();
+    }
+  }, [editorRef]);
 
-    // Placeholder for AI completion – actual implementation lives in useEditorSetup
-    const triggerAiCompletion = useCallback(async () => {
-        // No‑op – will be overridden by useEditorSetup if needed
-    }, []);
+  // Manually trigger the monacopilot inline completion registered during
+  // handleEditorMount (useAppHandlers). Monaco renders the suggestion inline;
+  // Tab commits it. This is what Ctrl+Space / Cmd+Space invokes.
+  const triggerAiCompletion = useCallback(async () => {
+    editorRef.current?.trigger('keyboard', 'editor.action.inlineSuggest.trigger', {});
+  }, [editorRef]);
 
-    return { toggleComment, duplicateLine, moveLineUp, moveLineDown, triggerAiCompletion };
+  return { toggleComment, duplicateLine, moveLineUp, moveLineDown, triggerAiCompletion };
 };

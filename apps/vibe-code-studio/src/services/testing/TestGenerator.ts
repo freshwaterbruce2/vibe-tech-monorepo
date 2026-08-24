@@ -59,7 +59,6 @@ export class TestGenerator {
 
       this.logger(`Generated test template for ${filename} using ${framework.name}`);
       return template;
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger(`Failed to generate test: ${errorMessage}`, 'error');
@@ -69,9 +68,7 @@ export class TestGenerator {
 
   // Framework-specific templates
   private generateVitestTemplate(code: string, baseName: string, isReact: boolean): string {
-    const imports = [
-      "import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';"
-    ];
+    const imports = ["import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';"];
 
     if (isReact) {
       imports.push("import { render, screen, fireEvent, cleanup } from '@testing-library/react';");
@@ -103,7 +100,7 @@ export class TestGenerator {
   private generateMochaTemplate(code: string, baseName: string): string {
     const imports = [
       "import { expect } from 'chai';",
-      `import { ${this.extractExports(code).join(', ')} } from './${baseName}';`
+      `import { ${this.extractExports(code).join(', ')} } from './${baseName}';`,
     ];
 
     const tests = this.generateTestCases(code, baseName, false, 'mocha');
@@ -112,9 +109,7 @@ export class TestGenerator {
   }
 
   private generateGenericTemplate(code: string, baseName: string, isReact: boolean): string {
-    const imports = [
-      `import { ${this.extractExports(code).join(', ')} } from './${baseName}';`
-    ];
+    const imports = [`import { ${this.extractExports(code).join(', ')} } from './${baseName}';`];
 
     const tests = this.generateTestCases(code, baseName, isReact);
 
@@ -143,9 +138,15 @@ export class TestGenerator {
     const exportStatements = code.match(/export\s*\{([^}]+)\}/g);
     if (exportStatements) {
       for (const statement of exportStatements) {
-        const names = statement.match(/\{([^}]+)\}/)?.[1]
+        const names = statement
+          .match(/\{([^}]+)\}/)?.[1]
           ?.split(',')
-          .map(name => name.trim().split(/\s+as\s+/)[0]?.trim())
+          .map(name =>
+            name
+              .trim()
+              .split(/\s+as\s+/)[0]
+              ?.trim()
+          )
           .filter((n): n is string => !!n);
         if (names) {
           exports.push(...names);
@@ -208,13 +209,18 @@ export class TestGenerator {
     return tests;
   }
 
-  private generateFunctionTest(func: string, isReact: boolean, testFunction: string, code?: string): string {
+  private generateFunctionTest(
+    func: string,
+    isReact: boolean,
+    testFunction: string,
+    code?: string
+  ): string {
     let test = `  describe('${func}', () => {\n`;
     test += `    ${testFunction}('should be defined', () => {\n`;
     test += `      expect(${func}).toBeDefined();\n`;
     test += `    });\n\n`;
 
-    const isComponent = isReact && (func.charAt(0) === func.charAt(0).toUpperCase());
+    const isComponent = isReact && func.charAt(0) === func.charAt(0).toUpperCase();
 
     if (isComponent) {
       // React component — generate render, snapshot, and interaction tests
@@ -236,7 +242,9 @@ export class TestGenerator {
       test += `    });\n\n`;
     } else {
       // Regular function — generate tests based on parameter analysis
-      const details = code ? this.extractFunctionDetails(code, func) : { params: [], isAsync: false };
+      const details = code
+        ? this.extractFunctionDetails(code, func)
+        : { params: [], isAsync: false };
 
       if (details.params.length === 0) {
         // No-arg function
@@ -272,11 +280,17 @@ export class TestGenerator {
 
         // Test with edge cases for each parameter type
         for (const param of details.params) {
-          if (param.type === 'string' || (!param.type && (param.name.includes('name') || param.name.includes('text') || param.name.includes('str')))) {
+          if (
+            param.type === 'string' ||
+            (!param.type &&
+              (param.name.includes('name') ||
+                param.name.includes('text') ||
+                param.name.includes('str')))
+          ) {
             test += `    ${testFunction}('should handle empty string for ${param.name}', ${details.isAsync ? 'async ' : ''}() => {\n`;
-            const edgeArgs = details.params.map(p =>
-              p.name === param.name ? "''" : this.getSampleValue(p.type, p.name)
-            ).join(', ');
+            const edgeArgs = details.params
+              .map(p => (p.name === param.name ? "''" : this.getSampleValue(p.type, p.name)))
+              .join(', ');
             if (details.isAsync) {
               test += `      const result = await ${func}(${edgeArgs});\n`;
             } else {
@@ -286,11 +300,17 @@ export class TestGenerator {
             test += `    });\n\n`;
           }
 
-          if (param.type === 'number' || (!param.type && (param.name.includes('count') || param.name.includes('num') || param.name.includes('index')))) {
+          if (
+            param.type === 'number' ||
+            (!param.type &&
+              (param.name.includes('count') ||
+                param.name.includes('num') ||
+                param.name.includes('index')))
+          ) {
             test += `    ${testFunction}('should handle zero for ${param.name}', ${details.isAsync ? 'async ' : ''}() => {\n`;
-            const zeroArgs = details.params.map(p =>
-              p.name === param.name ? '0' : this.getSampleValue(p.type, p.name)
-            ).join(', ');
+            const zeroArgs = details.params
+              .map(p => (p.name === param.name ? '0' : this.getSampleValue(p.type, p.name)))
+              .join(', ');
             if (details.isAsync) {
               test += `      const result = await ${func}(${zeroArgs});\n`;
             } else {
@@ -300,9 +320,9 @@ export class TestGenerator {
             test += `    });\n\n`;
 
             test += `    ${testFunction}('should handle negative number for ${param.name}', ${details.isAsync ? 'async ' : ''}() => {\n`;
-            const negArgs = details.params.map(p =>
-              p.name === param.name ? '-1' : this.getSampleValue(p.type, p.name)
-            ).join(', ');
+            const negArgs = details.params
+              .map(p => (p.name === param.name ? '-1' : this.getSampleValue(p.type, p.name)))
+              .join(', ');
             if (details.isAsync) {
               test += `      const result = await ${func}(${negArgs});\n`;
             } else {
@@ -316,7 +336,9 @@ export class TestGenerator {
         // Test optional parameters are truly optional
         const requiredParams = details.params.filter(p => !p.optional);
         if (requiredParams.length < details.params.length && requiredParams.length > 0) {
-          const requiredArgs = requiredParams.map(p => this.getSampleValue(p.type, p.name)).join(', ');
+          const requiredArgs = requiredParams
+            .map(p => this.getSampleValue(p.type, p.name))
+            .join(', ');
           test += `    ${testFunction}('should work with only required arguments', ${details.isAsync ? 'async ' : ''}() => {\n`;
           if (details.isAsync) {
             test += `      const result = await ${func}(${requiredArgs});\n`;
@@ -333,9 +355,10 @@ export class TestGenerator {
         const rt = details.returnType.toLowerCase();
         const asyncPrefix = details.isAsync ? 'async ' : '';
         const awaitPrefix = details.isAsync ? 'await ' : '';
-        const args = details.params.length > 0
-          ? details.params.map(p => this.getSampleValue(p.type, p.name)).join(', ')
-          : '';
+        const args =
+          details.params.length > 0
+            ? details.params.map(p => this.getSampleValue(p.type, p.name)).join(', ')
+            : '';
 
         if (rt === 'boolean') {
           test += `    ${testFunction}('should return a boolean', ${asyncPrefix}() => {\n`;
@@ -377,10 +400,11 @@ export class TestGenerator {
     const constructorParams = code ? this.extractConstructorParams(code, cls) : [];
     const methods = code ? this.extractClassMethods(code, cls) : [];
 
-    const constructorArgs = constructorParams.map(p => this.getSampleValue(undefined, p)).join(', ');
-    const instanceInit = constructorParams.length > 0
-      ? `new ${cls}(${constructorArgs})`
-      : `new ${cls}()`;
+    const constructorArgs = constructorParams
+      .map(p => this.getSampleValue(undefined, p))
+      .join(', ');
+    const instanceInit =
+      constructorParams.length > 0 ? `new ${cls}(${constructorArgs})` : `new ${cls}()`;
 
     // Add a shared instance via beforeEach for method tests
     if (methods.length > 0) {
@@ -397,7 +421,9 @@ export class TestGenerator {
 
     // Generate test for each public method
     for (const method of methods) {
-      const details = code ? this.extractFunctionDetails(code, method) : { params: [], isAsync: false };
+      const details = code
+        ? this.extractFunctionDetails(code, method)
+        : { params: [], isAsync: false };
       const methodArgs = details.params
         .filter(p => !p.optional)
         .map(p => this.getSampleValue(p.type, p.name))
@@ -436,9 +462,13 @@ export class TestGenerator {
     }
 
     // Extract arrow functions
-    const arrowFunctions = code.match(/(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/g);
+    const arrowFunctions = code.match(
+      /(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/g
+    );
     if (arrowFunctions) {
-      functions.push(...arrowFunctions.map(func => func.split(/\s+/)[1]).filter((n): n is string => !!n));
+      functions.push(
+        ...arrowFunctions.map(func => func.split(/\s+/)[1]).filter((n): n is string => !!n)
+      );
     }
 
     return functions;
@@ -461,7 +491,10 @@ export class TestGenerator {
   /**
    * Extract detailed function information including parameters and return hints
    */
-  private extractFunctionDetails(code: string, funcName: string): {
+  private extractFunctionDetails(
+    code: string,
+    funcName: string
+  ): {
     params: Array<{ name: string; type?: string; optional?: boolean; defaultValue?: string }>;
     isAsync: boolean;
     returnType?: string;
@@ -474,15 +507,15 @@ export class TestGenerator {
 
     // Match function declaration: (async) function name(params): ReturnType
     const funcDeclRegex = new RegExp(
-      `(?:async\\s+)?function\\s+${funcName}\\s*\\(([^)]*)\\)(?:\\s*:\\s*([\\w<>\\[\\]|& ]+))?`,
+      `(?:async\\s+)?function\\s+${funcName}\\s*\\(([^)]*)\\)(?:\\s*:\\s*([\\w<>\\[\\]|& ]+))?`
     );
     // Match arrow function: const name = (async) (params): ReturnType =>
     const arrowRegex = new RegExp(
-      `(?:const|let|var)\\s+${funcName}\\s*=\\s*(async\\s+)?\\(([^)]*)\\)(?:\\s*:\\s*([\\w<>\\[\\]|& ]+))?\\s*=>`,
+      `(?:const|let|var)\\s+${funcName}\\s*=\\s*(async\\s+)?\\(([^)]*)\\)(?:\\s*:\\s*([\\w<>\\[\\]|& ]+))?\\s*=>`
     );
     // Match class method: (async) name(params): ReturnType {
     const methodRegex = new RegExp(
-      `(?:async\\s+)?${funcName}\\s*\\(([^)]*)\\)(?:\\s*:\\s*([\\w<>\\[\\]|& ]+))?\\s*\\{`,
+      `(?:async\\s+)?${funcName}\\s*\\(([^)]*)\\)(?:\\s*:\\s*([\\w<>\\[\\]|& ]+))?\\s*\\{`
     );
 
     let paramStr = '';
@@ -493,7 +526,8 @@ export class TestGenerator {
     const methodMatch = code.match(methodRegex);
 
     if (funcMatch) {
-      details.isAsync = code.includes(`async function ${funcName}`) || code.includes(`async\nfunction ${funcName}`);
+      details.isAsync =
+        code.includes(`async function ${funcName}`) || code.includes(`async\nfunction ${funcName}`);
       paramStr = funcMatch[1] ?? '';
       returnType = funcMatch[2]?.trim();
     } else if (arrowMatch) {
@@ -524,7 +558,7 @@ export class TestGenerator {
         }
 
         // Parse name?: Type = default
-        const paramMatch = trimmed.match(/^(\w+)(\?)?\s*(?::\s*([\w<>\[\]|& ]+))?\s*(?:=\s*(.+))?$/);
+        const paramMatch = trimmed.match(/^(\w+)(\?)?\s*(?::\s*([\w<>[\]|& ]+))?\s*(?:=\s*(.+))?$/);
         if (paramMatch) {
           details.params.push({
             name: paramMatch[1]!,
@@ -583,7 +617,8 @@ export class TestGenerator {
     const classBody = classMatch[1] ?? '';
 
     // Match method declarations (not constructor, not private with #)
-    const methodRegex = /(?:public\s+|protected\s+|private\s+)?(?:static\s+)?(?:async\s+)?(\w+)\s*\([^)]*\)\s*(?::\s*[\w<>\[\]| ]+)?\s*\{/g;
+    const methodRegex =
+      /(?:public\s+|protected\s+|private\s+)?(?:static\s+)?(?:async\s+)?(\w+)\s*\([^)]*\)\s*(?::\s*[\w<>[\]| ]+)?\s*\{/g;
     let match;
     while ((match = methodRegex.exec(classBody)) !== null) {
       const name = match[1]!;
@@ -599,11 +634,15 @@ export class TestGenerator {
    * Extract constructor parameters for a class
    */
   private extractConstructorParams(code: string, className: string): string[] {
-    const classRegex = new RegExp(`class\\s+${className}[^{]*\\{[\\s\\S]*?constructor\\s*\\(([^)]*)\\)`);
+    const classRegex = new RegExp(
+      `class\\s+${className}[^{]*\\{[\\s\\S]*?constructor\\s*\\(([^)]*)\\)`
+    );
     const match = code.match(classRegex);
     if (!match?.[1]?.trim()) return [];
 
-    return this.splitParameters(match[1]).map(p => p.trim().split(/[?:=]/)[0]?.trim()).filter((n): n is string => !!n);
+    return this.splitParameters(match[1])
+      .map(p => p.trim().split(/[?:=]/)[0]?.trim())
+      .filter((n): n is string => !!n);
   }
 
   /**
@@ -614,15 +653,38 @@ export class TestGenerator {
       // Infer from parameter name
       const name = paramName?.toLowerCase() ?? '';
       if (name.includes('id')) return "'test-id-1'";
-      if (name.includes('name') || name.includes('title') || name.includes('label')) return "'test-name'";
+      if (name.includes('name') || name.includes('title') || name.includes('label'))
+        return "'test-name'";
       if (name.includes('email')) return "'test@example.com'";
       if (name.includes('password') || name.includes('secret')) return "'test-password'";
       if (name.includes('url') || name.includes('path')) return "'https://example.com'";
-      if (name.includes('count') || name.includes('num') || name.includes('index') || name.includes('size') || name.includes('limit')) return '1';
-      if (name.includes('flag') || name.includes('enabled') || name.includes('active') || name.includes('visible') || name.includes('is')) return 'true';
-      if (name.includes('items') || name.includes('list') || name.includes('array') || name.includes('data')) return '[]';
-      if (name.includes('options') || name.includes('config') || name.includes('settings')) return '{}';
-      if (name.includes('callback') || name.includes('handler') || name.includes('fn')) return '() => {}';
+      if (
+        name.includes('count') ||
+        name.includes('num') ||
+        name.includes('index') ||
+        name.includes('size') ||
+        name.includes('limit')
+      )
+        return '1';
+      if (
+        name.includes('flag') ||
+        name.includes('enabled') ||
+        name.includes('active') ||
+        name.includes('visible') ||
+        name.includes('is')
+      )
+        return 'true';
+      if (
+        name.includes('items') ||
+        name.includes('list') ||
+        name.includes('array') ||
+        name.includes('data')
+      )
+        return '[]';
+      if (name.includes('options') || name.includes('config') || name.includes('settings'))
+        return '{}';
+      if (name.includes('callback') || name.includes('handler') || name.includes('fn'))
+        return '() => {}';
       return "'test-value'";
     }
 

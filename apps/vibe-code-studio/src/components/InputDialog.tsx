@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { X } from 'lucide-react';
 import styled, { keyframes } from 'styled-components';
@@ -53,7 +53,7 @@ const Overlay = styled.div<{ $isOpen: boolean }>`
   bottom: 0;
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(8px);
-  display: ${(props) => (props.$isOpen ? 'flex' : 'none')};
+  display: ${props => (props.$isOpen ? 'flex' : 'none')};
   align-items: center;
   justify-content: center;
   z-index: 9999;
@@ -133,8 +133,8 @@ const Input = styled.input<{ $hasError?: boolean }>`
   width: 100%;
   padding: ${vibeTheme.spacing.sm} ${vibeTheme.spacing.md};
   background: ${vibeTheme.colors.primary};
-  border: 2px solid ${(props) =>
-    props.$hasError ? vibeTheme.colors.error : 'rgba(139, 92, 246, 0.3)'};
+  border: 2px solid
+    ${props => (props.$hasError ? vibeTheme.colors.error : 'rgba(139, 92, 246, 0.3)')};
   border-radius: ${vibeTheme.borderRadius.md};
   color: ${vibeTheme.colors.text};
   font-size: ${vibeTheme.typography.fontSize.base};
@@ -144,12 +144,9 @@ const Input = styled.input<{ $hasError?: boolean }>`
   margin-bottom: ${vibeTheme.spacing.sm};
 
   &:focus {
-    border-color: ${(props) => (props.$hasError ? vibeTheme.colors.error : vibeTheme.colors.cyan)};
+    border-color: ${props => (props.$hasError ? vibeTheme.colors.error : vibeTheme.colors.cyan)};
     box-shadow: 0 0 0 3px
-      ${(props) =>
-        props.$hasError
-          ? 'rgba(239, 68, 68, 0.2)'
-          : 'rgba(0, 212, 255, 0.2)'};
+      ${props => (props.$hasError ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0, 212, 255, 0.2)')};
   }
 
   &::placeholder {
@@ -188,7 +185,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   border: none;
   font-family: ${vibeTheme.typography.fontFamily.primary};
 
-  ${(props) =>
+  ${props =>
     props.$variant === 'primary'
       ? `
     background: ${vibeTheme.gradients.primary};
@@ -246,7 +243,7 @@ export const InputDialog = ({
     }
   }, [isOpen]);
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     const rawValue = inputRef.current?.value ?? '';
     const trimmedValue = rawValue.trim();
 
@@ -268,19 +265,21 @@ export const InputDialog = ({
       inputRef.current.value = '';
     }
     setError(null);
-  };
+  }, [onConfirm, validate]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     onCancel();
     if (inputRef.current) {
       inputRef.current.value = '';
     }
     setError(null);
-  };
+  }, [onCancel]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
-    if (!isOpen) {return;}
+    if (!isOpen) {
+      return;
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -303,7 +302,9 @@ export const InputDialog = ({
     }
   };
 
-  if (!isOpen) {return null;}
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <Overlay $isOpen={isOpen} onClick={handleOverlayClick}>

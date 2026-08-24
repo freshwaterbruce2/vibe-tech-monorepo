@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import {
   Activity,
   AlertCircle,
@@ -13,100 +12,21 @@ import {
   Terminal,
   Zap,
 } from 'lucide-react';
-import { memo } from 'react';
-import styled from 'styled-components';
+import { memo, useMemo } from 'react';
 
 import { useGit } from '../hooks/useGit';
+import { countBySeverity, flattenDiagnostics, useProblemsStore } from '../stores/problemsStore';
 import { vibeTheme } from '../styles/theme';
 import type { EditorFile } from '../types';
-import { shouldForwardMotionProp } from '../utils/motionProps';
 
-const StatusBarContainer = styled.div`
-  display: flex;
-  align-items: center;
-  height: 28px;
-  background: ${vibeTheme.colors.primary};
-  border-top: 1px solid rgba(139, 92, 246, 0.1);
-  color: ${vibeTheme.colors.textSecondary};
-  font-size: ${vibeTheme.typography.fontSize.xs};
-  padding: 0 ${vibeTheme.spacing[4]};
-  justify-content: space-between;
-  flex-shrink: 0;
-`;
-
-const LeftSection = styled.div`
-  display: flex;
-  align-items: center;
-  gap: ${vibeTheme.spacing[3]};
-`;
-
-const RightSection = styled.div`
-  display: flex;
-  align-items: center;
-  gap: ${vibeTheme.spacing[2]};
-`;
-
-const StatusItem = styled(motion.div).withConfig({
-  shouldForwardProp: shouldForwardMotionProp,
-})`
-  display: flex;
-  align-items: center;
-  gap: ${vibeTheme.spacing[1]};
-  cursor: pointer;
-  padding: ${vibeTheme.spacing[1]} ${vibeTheme.spacing[2]};
-  border-radius: ${vibeTheme.borderRadius.sm};
-  background: transparent;
-  transition: ${vibeTheme.animation.transition.all};
-  font-weight: ${vibeTheme.typography.fontWeight.normal};
-  color: ${vibeTheme.colors.textSecondary};
-
-  &:hover {
-    background: ${vibeTheme.colors.hover};
-    color: ${vibeTheme.colors.text};
-  }
-
-  svg {
-    color: inherit;
-    width: 14px;
-    height: 14px;
-  }
-`;
-
-const ToggleButton = styled(motion.button).withConfig({
-  shouldForwardProp: (prop) => prop !== 'active' && shouldForwardMotionProp(prop),
-})<{ active: boolean }>`
-  background: ${(props) => (props.active ? vibeTheme.colors.hoverStrong : 'transparent')};
-  border: 1px solid ${(props) => (props.active ? 'rgba(0, 212, 255, 0.3)' : 'transparent')};
-  color: ${(props) => (props.active ? vibeTheme.colors.text : vibeTheme.colors.textSecondary)};
-  cursor: pointer;
-  padding: ${vibeTheme.spacing[1]} ${vibeTheme.spacing[2]};
-  border-radius: ${vibeTheme.borderRadius.sm};
-  display: flex;
-  align-items: center;
-  gap: ${vibeTheme.spacing[1]};
-  font-size: ${vibeTheme.typography.fontSize.xs};
-  font-weight: ${vibeTheme.typography.fontWeight.normal};
-  font-family: ${vibeTheme.typography.fontFamily.primary};
-  transition: ${vibeTheme.animation.transition.all};
-
-  &:hover {
-    background: ${(props) => (props.active ? vibeTheme.colors.active : vibeTheme.colors.hover)};
-    color: ${vibeTheme.colors.text};
-  }
-
-  svg {
-    color: ${(props) => (props.active ? vibeTheme.colors.cyan : 'inherit')};
-    width: 14px;
-    height: 14px;
-  }
-`;
-
-const Separator = styled.div`
-  width: 1px;
-  height: 16px;
-  background: rgba(139, 92, 246, 0.2);
-  border-radius: ${vibeTheme.borderRadius.full};
-`;
+import {
+  LeftSection,
+  RightSection,
+  Separator,
+  StatusBarContainer,
+  StatusItem,
+  ToggleButton,
+} from './StatusBar.styles';
 
 interface StatusBarProps {
   currentFile: EditorFile | null;
@@ -116,10 +36,13 @@ interface StatusBarProps {
   activeVisualPanel?: string;
   terminalOpen?: boolean;
   agentModeOpen?: boolean;
+  agentManagerOpen?: boolean;
   currentModel?: string;
+  onGitClick?: () => void;
   onToggleSidebar: () => void;
   onToggleAIChat: () => void;
   onToggleBackgroundPanel?: () => void;
+  onOpenAgentManager?: () => void;
   onOpenAgentMode?: () => void;
   onOpenTerminal?: () => void;
   onToggleScreenshot?: () => void;
@@ -135,10 +58,13 @@ const StatusBar = ({
   activeVisualPanel = 'none',
   terminalOpen = false,
   agentModeOpen = false,
+  agentManagerOpen = false,
   currentModel,
+  onGitClick,
   onToggleSidebar,
   onToggleAIChat,
   onToggleBackgroundPanel,
+  onOpenAgentManager,
   onOpenAgentMode,
   onOpenTerminal,
   onToggleScreenshot,
@@ -146,12 +72,23 @@ const StatusBar = ({
   onToggleVisualEditor,
 }: StatusBarProps) => {
   const { isGitRepo, status, branches } = useGit();
+  const bySource = useProblemsStore(state => state.bySource);
+  const setProblemsPanelOpen = useProblemsStore(state => state.actions.setPanelOpen);
+
+  // Real diagnostics count from the shared problems store (task runner / LSP).
+  const diagnosticCounts = useMemo(() => countBySeverity(flattenDiagnostics(bySource)), [bySource]);
+  const { error: errorCount, warning: warningCount } = diagnosticCounts;
+  const hasProblems = errorCount > 0 || warningCount > 0;
+  const problemsLabel = hasProblems
+    ? `${errorCount} error${errorCount === 1 ? '' : 's'}, ` +
+      `${warningCount} warning${warningCount === 1 ? '' : 's'}`
+    : 'No errors';
 
   // Format model name for compact display (e.g. "moonshot/kimi-2.5-pro" → "Kimi 2.5 Pro")
   const modelLabel = (() => {
     if (!currentModel) return 'AI Ready';
     const name = currentModel.split('/').pop() ?? currentModel;
-    return name.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    return name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   })();
 
   const getFileInfo = () => {
@@ -161,13 +98,13 @@ const StatusBar = ({
 
     const lines = currentFile.content.split('\n').length;
     const characters = currentFile.content.length;
-    const words = currentFile.content.split(/\s+/).filter((word) => word.length > 0).length;
+    const words = currentFile.content.split(/\s+/).filter(word => word.length > 0).length;
 
     return { lines, characters, words };
   };
 
   const fileInfo = getFileInfo();
-  const currentBranch = branches.find((b) => b.isCurrent);
+  const currentBranch = branches.find(b => b.isCurrent);
   const gitChanges =
     (status?.modified.length ?? 0) +
     (status?.added.length ?? 0) +
@@ -181,7 +118,8 @@ const StatusBar = ({
           <StatusItem
             whileHover={{ scale: 1.05, y: -1 }}
             whileTap={{ scale: 0.95 }}
-            title={`Current branch: ${currentBranch?.name ?? 'detached'}`}
+            onClick={onGitClick}
+            title={`Current branch: ${currentBranch?.name ?? 'detached'} — open Source Control`}
           >
             <GitBranch size={14} />
             {currentBranch?.name ?? 'detached'}
@@ -191,9 +129,18 @@ const StatusBar = ({
           </StatusItem>
         )}
 
-        <StatusItem whileHover={{ scale: 1.05, y: -1 }} whileTap={{ scale: 0.95 }}>
-          <CheckCircle size={14} />
-          No errors
+        <StatusItem
+          whileHover={{ scale: 1.05, y: -1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setProblemsPanelOpen(true)}
+          title="Open Problems panel"
+        >
+          {hasProblems ? (
+            <AlertCircle size={14} style={{ color: vibeTheme.colors.error }} />
+          ) : (
+            <CheckCircle size={14} />
+          )}
+          {problemsLabel}
         </StatusItem>
 
         {currentFile && (
@@ -231,6 +178,7 @@ const StatusBar = ({
           <ToggleButton
             active={activeVisualPanel === 'screenshot'}
             onClick={onToggleScreenshot}
+            data-testid="status-screenshot-toggle"
             title="Screenshot to Code"
             whileHover={{ scale: 1.05, y: -1 }}
             whileTap={{ scale: 0.95 }}
@@ -244,6 +192,7 @@ const StatusBar = ({
           <ToggleButton
             active={activeVisualPanel === 'library'}
             onClick={onToggleLibrary}
+            data-testid="status-library-toggle"
             title="Component Library"
             whileHover={{ scale: 1.05, y: -1 }}
             whileTap={{ scale: 0.95 }}
@@ -257,6 +206,7 @@ const StatusBar = ({
           <ToggleButton
             active={activeVisualPanel === 'visual'}
             onClick={onToggleVisualEditor}
+            data-testid="status-visual-editor-toggle"
             title="Visual Editor"
             whileHover={{ scale: 1.05, y: -1 }}
             whileTap={{ scale: 0.95 }}
@@ -270,12 +220,13 @@ const StatusBar = ({
           <ToggleButton
             active={agentModeOpen}
             onClick={onOpenAgentMode}
-            title="Open Agent Mode"
+            data-testid="status-review-agents-toggle"
+            title={`Open Multi-Agent Review (${currentModel ?? 'selected model'})`}
             whileHover={{ scale: 1.05, y: -1 }}
             whileTap={{ scale: 0.95 }}
           >
             <Sparkles size={14} />
-            Agent
+            Review Agents
           </ToggleButton>
         )}
 
@@ -283,6 +234,7 @@ const StatusBar = ({
           <ToggleButton
             active={terminalOpen}
             onClick={onOpenTerminal}
+            data-testid="status-terminal-toggle"
             title="Open Terminal"
             whileHover={{ scale: 1.05, y: -1 }}
             whileTap={{ scale: 0.95 }}
@@ -292,11 +244,12 @@ const StatusBar = ({
           </ToggleButton>
         )}
 
-        {onToggleBackgroundPanel && (
+        {onOpenAgentManager && (
           <ToggleButton
-            active={backgroundPanelOpen ?? false}
-            onClick={onToggleBackgroundPanel}
-            title="Toggle Background Tasks"
+            active={agentManagerOpen}
+            onClick={onOpenAgentManager}
+            data-testid="status-tasks-toggle"
+            title="Open Agent Manager (background agents + inbox)"
             whileHover={{ scale: 1.05, y: -1 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -305,20 +258,36 @@ const StatusBar = ({
           </ToggleButton>
         )}
 
+        {onToggleBackgroundPanel && (
+          <ToggleButton
+            active={backgroundPanelOpen ?? false}
+            onClick={onToggleBackgroundPanel}
+            data-testid="status-legacy-tasks-toggle"
+            title="Toggle Legacy Background Tasks"
+            whileHover={{ scale: 1.05, y: -1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Activity size={14} />
+            Legacy Tasks
+          </ToggleButton>
+        )}
+
         <ToggleButton
           active={aiChatOpen}
           onClick={onToggleAIChat}
-          title="Toggle AI Chat"
+          data-testid="status-chat-agent-toggle"
+          title="Open Chat Agent coding executor"
           whileHover={{ scale: 1.05, y: -1 }}
           whileTap={{ scale: 0.95 }}
         >
           <MessageCircle size={14} />
-          AI Chat
+          Chat Agent
         </ToggleButton>
 
         <ToggleButton
           active={sidebarOpen}
           onClick={onToggleSidebar}
+          data-testid="status-sidebar-toggle"
           title="Toggle Sidebar"
           aria-label="Toggle sidebar"
           whileHover={{ scale: 1.05, y: -1 }}

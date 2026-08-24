@@ -6,6 +6,7 @@ import { Bot, Copy, ThumbsDown, ThumbsUp, User } from 'lucide-react';
 
 import SecureMessageContent from '../SecureMessageContent';
 
+import { copyToClipboard, formatTime } from './MessageItem.helpers';
 import {
   ActionButton,
   Message,
@@ -18,15 +19,13 @@ import {
 } from './styled';
 import type { MessageItemProps } from './types';
 
-export function formatTime(date: Date): string {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-export function copyToClipboard(text: string): void {
-  navigator.clipboard.writeText(text);
-}
-
-export function MessageItem({ message, showReasoningProcess, renderAgentTask, onCopy, onFeedback }: MessageItemProps) {
+export function MessageItem({
+  message,
+  showReasoningProcess,
+  renderAgentTask,
+  onCopy,
+  onFeedback,
+}: MessageItemProps) {
   const role = message.role === 'system' ? 'assistant' : message.role;
 
   return (

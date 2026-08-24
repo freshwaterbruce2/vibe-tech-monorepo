@@ -4,10 +4,18 @@
  * Based on 2025 best practices for Electron monitoring
  */
 
-import { Activity, AlertTriangle, Cpu, HardDrive, Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import {
+  Activity,
+  AlertTriangle,
+  Cpu,
+  HardDrive,
+  Minus,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
-import type { } from '../types/electron.d';
+import type {} from '../types/electron.d';
 interface MemoryMetrics {
   totalMemoryMB: number;
   workingSetSizeMB: number;
@@ -46,16 +54,6 @@ const MonitorContainer = styled.div`
   color: #fff;
   z-index: 10000;
   transition: all 0.3s ease;
-
-  &.minimized {
-    width: 60px;
-    height: 60px;
-    padding: 0;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
 `;
 
 const Header = styled.div`
@@ -110,10 +108,7 @@ const MetricLabel = styled.span`
 
 const MetricValue = styled.span<{ $warning?: boolean; $critical?: boolean }>`
   font-weight: 600;
-  color: ${props =>
-    props.$critical ? '#ef4444' :
-      props.$warning ? '#f59e0b' :
-        '#10b981'};
+  color: ${props => (props.$critical ? '#ef4444' : props.$warning ? '#f59e0b' : '#10b981')};
 `;
 
 const TrendIcon = ({ trend }: { trend: string }) => {
@@ -135,10 +130,7 @@ const ProgressBar = styled.div<{ $percentage: number; $warning?: boolean; $criti
     display: block;
     width: ${props => props.$percentage}%;
     height: 100%;
-    background: ${props =>
-    props.$critical ? '#ef4444' :
-      props.$warning ? '#f59e0b' :
-        '#10b981'};
+    background: ${props => (props.$critical ? '#ef4444' : props.$warning ? '#f59e0b' : '#10b981')};
     transition: width 0.3s ease;
   }
 `;
@@ -160,7 +152,7 @@ const ActionButton = styled.button`
 `;
 
 const PerformanceMonitor: React.FC = () => {
-  const [minimized, setMinimized] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [memoryMetrics, setMemoryMetrics] = useState<MemoryMetrics | null>(null);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
   const [memoryStats, setMemoryStats] = useState<MemoryStats | null>(null);
@@ -178,7 +170,10 @@ const PerformanceMonitor: React.FC = () => {
 
     if (window.electron?.ipc) {
       window.electron.ipc.on('memory-metrics', handleMemoryMetrics as (...args: unknown[]) => void);
-      window.electron.ipc.on('performance:metrics', handlePerformanceMetrics as (...args: unknown[]) => void);
+      window.electron.ipc.on(
+        'performance:metrics',
+        handlePerformanceMetrics as (...args: unknown[]) => void
+      );
 
       // Request initial stats
       window.electron.ipc.invoke('memory:get-stats').then(setMemoryStats);
@@ -215,13 +210,7 @@ const PerformanceMonitor: React.FC = () => {
     }
   }, []);
 
-  if (minimized) {
-    return (
-      <MonitorContainer className="minimized" onClick={() => setMinimized(false)}>
-        <Activity size={24} color="#999" />
-      </MonitorContainer>
-    );
-  }
+  if (dismissed) return null;
 
   const memoryUsagePercentage = memoryMetrics
     ? Math.min(100, (memoryMetrics.workingSetSizeMB / 4096) * 100)
@@ -241,7 +230,14 @@ const PerformanceMonitor: React.FC = () => {
           <Activity size={16} />
           Performance Monitor
         </Title>
-        <CloseButton onClick={() => setMinimized(true)}>×</CloseButton>
+        <CloseButton
+          type="button"
+          aria-label="Dismiss performance monitor"
+          title="Dismiss performance monitor"
+          onClick={() => setDismissed(true)}
+        >
+          ×
+        </CloseButton>
       </Header>
 
       {memoryMetrics && (
@@ -281,10 +277,7 @@ const PerformanceMonitor: React.FC = () => {
               <Cpu size={14} />
               CPU Usage
             </MetricLabel>
-            <MetricValue
-              $warning={cpuUsagePercentage > 60}
-              $critical={cpuUsagePercentage > 80}
-            >
+            <MetricValue $warning={cpuUsagePercentage > 60} $critical={cpuUsagePercentage > 80}>
               {cpuUsagePercentage.toFixed(1)}%
             </MetricValue>
           </MetricRow>
@@ -292,10 +285,7 @@ const PerformanceMonitor: React.FC = () => {
           {frameRate > 0 && (
             <MetricRow>
               <MetricLabel>Frame Rate</MetricLabel>
-              <MetricValue
-                $warning={frameRate < 30}
-                $critical={frameRate < 15}
-              >
+              <MetricValue $warning={frameRate < 30} $critical={frameRate < 15}>
                 {frameRate} FPS
               </MetricValue>
             </MetricRow>
@@ -304,10 +294,7 @@ const PerformanceMonitor: React.FC = () => {
           {eventLoopLag > 0 && (
             <MetricRow>
               <MetricLabel>Event Loop Lag</MetricLabel>
-              <MetricValue
-                $warning={eventLoopLag > 50}
-                $critical={eventLoopLag > 100}
-              >
+              <MetricValue $warning={eventLoopLag > 50} $critical={eventLoopLag > 100}>
                 {eventLoopLag.toFixed(1)}ms
               </MetricValue>
             </MetricRow>
@@ -315,9 +302,7 @@ const PerformanceMonitor: React.FC = () => {
         </>
       )}
 
-      <ActionButton onClick={handleForceGC}>
-        Force Garbage Collection
-      </ActionButton>
+      <ActionButton onClick={handleForceGC}>Force Garbage Collection</ActionButton>
 
       <ActionButton onClick={isRecording ? handleStopRecording : handleStartRecording}>
         {isRecording ? 'Stop Recording' : 'Start Performance Recording'}

@@ -5,6 +5,37 @@
  * task planning, execution, and state management.
  */
 
+export type AgentPlanningProtocol = 'agent_plan_v1';
+
+export type AgentPlanningResponseShape = 'json_schema_content' | 'submit_agent_plan_tool_call';
+
+export interface AgentPlanValidationSummary {
+  schemaVersion: 1;
+  valid: boolean;
+  attemptCount: number;
+  stepCount?: number;
+  actionTypes?: string[];
+  issues?: string[];
+}
+
+export interface AgentTaskMetadata {
+  /** Sanitized provider identifier only; never raw provider response data. */
+  provider?: string;
+  /** Provider-reported resolved model when available. */
+  model?: string;
+  /** Model selected by the application and sent with the planning request. */
+  requestedModel?: string;
+  /** Model identifier reported by the provider response. */
+  resolvedModel?: string;
+  requestId?: string;
+  finishReason?: string;
+  planningProtocol?: AgentPlanningProtocol;
+  responseShape?: AgentPlanningResponseShape;
+  validationSummary?: AgentPlanValidationSummary;
+  tokensUsed?: number;
+  executionTimeMs?: number;
+}
+
 export interface AgentTask {
   id: string;
   title: string;
@@ -16,11 +47,9 @@ export interface AgentTask {
   startedAt?: Date;
   completedAt?: Date;
   error?: string;
-  metadata?: {
-    model?: string;
-    tokensUsed?: number;
-    executionTimeMs?: number;
-  };
+  /** Canonical user-facing terminal report, validated before completed persistence. */
+  finalReport?: string;
+  metadata?: AgentTaskMetadata;
 }
 
 export interface AgentStep {
@@ -81,6 +110,7 @@ export interface StepResult {
   data?: unknown;
   message?: string;
   skipped?: boolean; // Indicates step was skipped (e.g., optional file missing)
+  cancelled?: boolean;
   filesModified?: string[];
   filesCreated?: string[];
   filesDeleted?: string[];
@@ -140,6 +170,8 @@ export type ExecutionEvent =
 
 export interface TaskPlanRequest {
   userRequest: string;
+  /** Cancels planning before execution begins. */
+  signal?: AbortSignal;
   context: {
     workspaceRoot: string;
     openFiles?: string[];
@@ -172,6 +204,12 @@ export interface ApprovalRequest {
     reversible: boolean;
     riskLevel: 'low' | 'medium' | 'high';
   };
+  /** Readable preview of the exact mutation that will be applied after approval. */
+  diff?: string;
+  /** Stable identity and SHA-256 hash of the exact bytes approved by the user. */
+  proposalId?: string;
+  proposalHash?: string;
+  changeType?: 'create' | 'modify' | 'delete' | 'create_directory';
 }
 
 export interface ApprovalResponse {
@@ -235,6 +273,7 @@ export interface ReActCycle {
   reflection: ReActReflection;
   cycleNumber: number; // For retry tracking
   totalDurationMs: number;
+  result?: StepResult; // Raw action result (file mutations + data) for downstream tracking
 }
 
 export interface ReActStepExtension extends AgentStep {

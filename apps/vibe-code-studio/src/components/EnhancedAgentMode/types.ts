@@ -27,6 +27,8 @@ export interface EnhancedAgentModeProps {
   readonly performanceOptimizer: AgentPerformanceOptimizer;
   /** Optional workspace context */
   readonly workspaceContext?: WorkspaceContextInfo | undefined;
+  /** Settings-owned model used by every specialized agent through unifiedAI. */
+  readonly currentModel: string;
 }
 
 /** Workspace context information for agent tasks */

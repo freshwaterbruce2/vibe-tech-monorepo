@@ -394,11 +394,6 @@ export const Settings = ({ isOpen, onClose, settings, onSettingsChange }: Settin
                       </option>
                     ))}
                   </optgroup>
-                  <optgroup label="🏠 Local Models">
-                    <option value="local/vibe-completion">
-                      Vibe Custom (Requires Local Server)
-                    </option>
-                  </optgroup>
                 </Select>
               </SettingControl>
             </SettingItem>
@@ -428,18 +423,42 @@ export const Settings = ({ isOpen, onClose, settings, onSettingsChange }: Settin
             )}
 
             {supportsReasoning(localSettings.aiModel) && (
-              <SettingItem>
-                <SettingLabel>
-                  Show Reasoning Process
-                  <span>Display extended thinking in AI responses</span>
-                </SettingLabel>
-                <SettingControl>
-                  <Toggle
-                    checked={localSettings.showReasoningProcess ?? false}
-                    onChange={e => updateSetting('showReasoningProcess', e.target.checked)}
-                  />
-                </SettingControl>
-              </SettingItem>
+              <>
+                <SettingItem>
+                  <SettingLabel>
+                    Show Reasoning Process
+                    <span>Display extended thinking in AI responses</span>
+                  </SettingLabel>
+                  <SettingControl>
+                    <Toggle
+                      checked={localSettings.showReasoningProcess ?? false}
+                      onChange={e => updateSetting('showReasoningProcess', e.target.checked)}
+                    />
+                  </SettingControl>
+                </SettingItem>
+                <SettingItem>
+                  <SettingLabel>
+                    Reasoning Effort
+                    <span>Adjust model thinking depth independently from visibility</span>
+                  </SettingLabel>
+                  <SettingControl>
+                    <Select
+                      aria-label="Reasoning effort"
+                      value={localSettings.reasoningEffort ?? 'medium'}
+                      onChange={e =>
+                        updateSetting(
+                          'reasoningEffort',
+                          e.target.value as 'low' | 'medium' | 'high'
+                        )
+                      }
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                    </Select>
+                  </SettingControl>
+                </SettingItem>
+              </>
             )}
           </SettingsSection>
 

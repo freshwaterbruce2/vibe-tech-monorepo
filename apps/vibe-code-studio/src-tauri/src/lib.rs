@@ -8,6 +8,7 @@ mod commands;
 mod db;
 mod pty;
 mod screenshot;
+mod workspace_mutation;
 
 use commands::greet;
 
@@ -36,10 +37,13 @@ struct BackendSidecar(Mutex<Option<CommandChild>>);
 #[cfg(not(debug_assertions))]
 fn vcs_diag(msg: &str) {
     use std::io::Write;
+    // Version-agnostic per paths-policy: all runtime logs live under D:\logs.
+    let dir = "D:\\logs\\vibe-code-studio";
+    let _ = std::fs::create_dir_all(dir);
     if let Ok(mut f) = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
-        .open("D:\\nx-workspace-data\\ship-logs\\vcs-121\\rust-sidecar.log")
+        .open(format!("{dir}\\rust-sidecar.log"))
     {
         let _ = writeln!(f, "{msg}");
     }
@@ -120,7 +124,18 @@ pub fn run() {
             conn: std::sync::Mutex::new(None),
         })
         .setup(|app| {
-            let window = app.get_webview_window("main").unwrap();
+            let window_config = app
+                .config()
+                .app
+                .windows
+                .iter()
+                .find(|config| config.label == "main")
+                .ok_or("main window configuration is missing")?;
+            let webview_data_dir = std::path::PathBuf::from(r"D:\data\vibe-code-studio\webview");
+            std::fs::create_dir_all(&webview_data_dir)?;
+            let window = tauri::WebviewWindowBuilder::from_config(app, window_config)?
+                .data_directory(webview_data_dir)
+                .build()?;
 
             #[cfg(target_os = "windows")]
             {
@@ -147,8 +162,6 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_os::init())
-        .plugin(tauri_plugin_window_state::Builder::default().build())
-        .plugin(tauri_plugin_store::Builder::default().build())
         // NOTE: tauri-plugin-updater is intentionally not registered.
         // It will be re-enabled once release-artifact signing is configured
         // (generate keys via `tauri signer generate`, populate
@@ -164,6 +177,13 @@ pub fn run() {
             db::db_get_patterns,
             db::db_save_pattern,
             db::db_execute_query,
+            db::db_record_agent_transition,
+            db::db_record_agent_terminal,
+            db::db_get_resumable_agent_tasks,
+            db::db_get_agent_chat_outcomes,
+            db::db_flush_agent_learning_outbox,
+            db::db_record_learning_outcome,
+            workspace_mutation::apply_workspace_mutation,
             screenshot::render_html_screenshot
         ])
         .build(tauri::generate_context!())

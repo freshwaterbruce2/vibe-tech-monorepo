@@ -19,6 +19,10 @@ interface ImportMetaEnv {
   readonly VITE_ERROR_REPORTING_URL?: string;
   readonly VITE_ENABLE_CANCEL_LIFECYCLE?: string;
   readonly VITE_ENABLE_CODE_CORRECTION_ROUTE?: string;
+  // Wave-2 agent UX gates (docs/RUNTIME_DIAGNOSIS.md): multi-agent Review
+  // overlay entry and the legacy BackgroundTaskPanel are opt-in.
+  readonly VITE_ENABLE_REVIEW_AGENTS?: string;
+  readonly VITE_ENABLE_LEGACY_BACKGROUND_TASK_PANEL?: string;
   // These are inherited from Vite's ImportMetaEnv
   // readonly MODE: string
   // readonly DEV: boolean

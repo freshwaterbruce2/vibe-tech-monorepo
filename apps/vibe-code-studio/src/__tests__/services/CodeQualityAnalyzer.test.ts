@@ -6,7 +6,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CodeQualityAnalyzer, QualityReport, FileQuality } from '../../services/CodeQualityAnalyzer';
+import {
+  CodeQualityAnalyzer,
+  QualityReport,
+  FileQuality,
+} from '../../services/CodeQualityAnalyzer';
 import type { FileSystemService } from '../../services/FileSystemService';
 
 // Mock FileSystemService
@@ -19,11 +23,18 @@ describe('CodeQualityAnalyzer', () => {
   beforeEach(() => {
     mockFileSystem = {
       readFile: vi.fn(),
-      getDirectoryStructure: vi.fn(),
+      listDirectory: vi.fn(),
     } as any;
 
     analyzer = new CodeQualityAnalyzer(mockFileSystem);
   });
+
+  /** Stub listDirectory with a per-directory entry map (unknown paths → []). */
+  const mockDirectories = (dirs: Record<string, unknown[]>) => {
+    vi.mocked(mockFileSystem.listDirectory).mockImplementation(
+      async (path: string) => (dirs[path] ?? []) as any
+    );
+  };
 
   describe('analyzeFile', () => {
     it('should analyze a simple TypeScript file', async () => {
@@ -133,9 +144,9 @@ function complexCalculation(x, y, z) {
 
       const result = await analyzer.analyzeFile('/undoc.js', undocumentedCode);
 
-      expect(result.issues.some(issue =>
-        issue.type === 'documentation' && issue.severity === 'warning'
-      )).toBe(true);
+      expect(
+        result.issues.some(issue => issue.type === 'documentation' && issue.severity === 'warning')
+      ).toBe(true);
     });
 
     it('should count lines of code correctly', async () => {
@@ -161,16 +172,13 @@ function test() {
 
   describe('analyzeProject', () => {
     it('should analyze multiple files and generate project report', async () => {
-      vi.mocked(mockFileSystem.getDirectoryStructure).mockResolvedValue({
-        path: '/src',
-        name: 'src',
-        type: 'directory',
-        children: [
+      mockDirectories({
+        '/src': [
           { path: '/src/file1.ts', name: 'file1.ts', type: 'file' },
           { path: '/src/file2.ts', name: 'file2.ts', type: 'file' },
           { path: '/src/file3.ts', name: 'file3.ts', type: 'file' },
         ],
-      } as any);
+      });
 
       vi.mocked(mockFileSystem.readFile)
         .mockResolvedValueOnce('function test1() { return 1; }')
@@ -187,15 +195,12 @@ function test() {
     });
 
     it('should identify files with quality issues', async () => {
-      vi.mocked(mockFileSystem.getDirectoryStructure).mockResolvedValue({
-        path: '/src',
-        name: 'src',
-        type: 'directory',
-        children: [
+      mockDirectories({
+        '/src': [
           { path: '/src/good.ts', name: 'good.ts', type: 'file' },
           { path: '/src/bad.ts', name: 'bad.ts', type: 'file' },
         ],
-      } as any);
+      });
 
       const goodCode = 'export const PI = 3.14159;';
       const badCode = `var x = 1;
@@ -225,15 +230,12 @@ if (x > 0) {
     });
 
     it('should calculate project-wide metrics', async () => {
-      vi.mocked(mockFileSystem.getDirectoryStructure).mockResolvedValue({
-        path: '/src',
-        name: 'src',
-        type: 'directory',
-        children: [
+      mockDirectories({
+        '/src': [
           { path: '/src/file1.ts', name: 'file1.ts', type: 'file' },
           { path: '/src/file2.ts', name: 'file2.ts', type: 'file' },
         ],
-      } as any);
+      });
 
       vi.mocked(mockFileSystem.readFile)
         .mockResolvedValueOnce('const a = 1;\nconst b = 2;')
@@ -245,6 +247,41 @@ if (x > 0) {
       expect(report.totalLinesOfCode).toBe(4);
       expect(report.averageComplexity).toBeGreaterThanOrEqual(1);
       expect(report.filesWithIssues).toBeDefined();
+    });
+
+    it('should recurse into nested subdirectories (regression: only root files analyzed)', async () => {
+      mockDirectories({
+        '/proj': [
+          { path: '/proj/root.config.ts', name: 'root.config.ts', type: 'file' },
+          { path: '/proj/src', name: 'src', type: 'directory' },
+          { path: '/proj/node_modules', name: 'node_modules', type: 'directory' },
+          { path: '/proj/.git', name: '.git', type: 'directory' },
+        ],
+        '/proj/src': [
+          { path: '/proj/src/nested.ts', name: 'nested.ts', type: 'file' },
+          { path: '/proj/src/deep', name: 'deep', type: 'directory' },
+        ],
+        '/proj/src/deep': [{ path: '/proj/src/deep/leaf.ts', name: 'leaf.ts', type: 'file' }],
+        '/proj/node_modules': [{ path: '/proj/node_modules/lib.js', name: 'lib.js', type: 'file' }],
+      });
+      vi.mocked(mockFileSystem.readFile).mockResolvedValue('const answer = 42;');
+
+      const report = await analyzer.analyzeProject('/proj');
+
+      const analyzedPaths = report.fileReports.map(f => f.filePath);
+      expect(analyzedPaths).toEqual(
+        expect.arrayContaining([
+          '/proj/root.config.ts',
+          '/proj/src/nested.ts',
+          '/proj/src/deep/leaf.ts',
+        ])
+      );
+      expect(report.totalFiles).toBe(3);
+      expect(analyzedPaths).not.toContain('/proj/node_modules/lib.js');
+      expect(vi.mocked(mockFileSystem.listDirectory)).not.toHaveBeenCalledWith(
+        '/proj/node_modules'
+      );
+      expect(vi.mocked(mockFileSystem.listDirectory)).not.toHaveBeenCalledWith('/proj/.git');
     });
   });
 

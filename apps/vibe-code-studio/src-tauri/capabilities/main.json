@@ -33,21 +33,12 @@
     {
       "identifier": "fs:scope",
       "allow": [
-        { "path": "$DOCUMENT/**" },
-        { "path": "$HOME/**" },
-        { "path": "$APPDATA/**" },
-        { "path": "V:\\monorepo\\**" },
-        { "path": "D:\\databases\\**" },
-        { "path": "D:\\logs\\**" },
-        { "path": "D:\\data\\**" },
+        { "path": "V:\\**" },
+        { "path": "D:\\databases\\vibe_studio.db" },
+        { "path": "D:\\logs\\vibe-code-studio\\**" },
+        { "path": "D:\\data\\vibe-code-studio\\**" },
         { "path": "D:\\learning-system\\**" }
       ]
-    },
-    "store:default",
-    "store:allow-get",
-    "store:allow-set",
-    "store:allow-delete",
-    "store:allow-save",
-    "store:allow-load"
+    }
   ]
 }

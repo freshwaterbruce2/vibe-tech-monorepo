@@ -108,11 +108,7 @@ describe('useAIStore', () => {
     it('should enable reasoning for supported models', () => {
       const { result } = renderHook(() => useAIStore());
 
-      const reasoningModels = [
-        'deepseek/deepseek-r1',
-        'z-ai/glm-5',
-        'openai/o1-preview',
-      ];
+      const reasoningModels = ['deepseek/deepseek-r1', 'z-ai/glm-5', 'openai/o1-preview'];
 
       reasoningModels.forEach(model => {
         act(() => {
@@ -130,7 +126,7 @@ describe('useAIStore', () => {
         result.current.actions.setModel('openai/gpt-5.3-codex-spark');
       });
 
-      expect(result.current.currentModel).toBe('moonshot/kimi-2.5-pro');
+      expect(result.current.currentModel).toBe('deepseek/deepseek-v4-pro');
     });
 
     it('should toggle reasoning process', () => {

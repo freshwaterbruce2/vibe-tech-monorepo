@@ -17,6 +17,10 @@ const { healthMock } = vi.hoisted(() => ({ healthMock: vi.fn() }));
 vi.mock('../../services/ai/UnifiedAIService', () => ({
   unifiedAI: {
     isAnyProviderConfigured: vi.fn(),
+    getFactory: vi.fn(() => ({
+      getInitializedProviders: vi.fn(() => []),
+      ensureProxyProvidersInitialized: vi.fn(async () => undefined),
+    })),
   },
 }));
 
@@ -29,7 +33,11 @@ vi.mock('../../services/ai/providers/BackendProxyService', () => ({
 import { useAgentModeStore } from '../../components/EnhancedAgentMode/stores/agentModeStore';
 import { unifiedAI } from '../../services/ai/UnifiedAIService';
 
-function mockHealth(health: { reachable: boolean; configured: Record<string, boolean>; anyConfigured: boolean }) {
+function mockHealth(health: {
+  reachable: boolean;
+  configured: Record<string, boolean>;
+  anyConfigured: boolean;
+}) {
   healthMock.mockResolvedValue(health);
 }
 
@@ -64,6 +72,17 @@ afterEach(() => {
 });
 
 describe('agentModeStore.executeTask', () => {
+  it('fails when task is empty or orchestrator is missing', async () => {
+    useAgentModeStore.setState({ task: '   ', orchestrator: undefined });
+    await useAgentModeStore.getState().executeTask();
+    expect(useAgentModeStore.getState().status).toBe('error');
+
+    resetStore();
+    useAgentModeStore.setState({ task: 'real task', orchestrator: undefined });
+    await useAgentModeStore.getState().executeTask();
+    expect(useAgentModeStore.getState().currentProgress).toMatch(/orchestrator unavailable/i);
+  });
+
   it('fails fast with a backend-down message when the proxy is unreachable', async () => {
     vi.mocked(unifiedAI.isAnyProviderConfigured).mockResolvedValue(false);
     mockHealth({ reachable: false, configured: {}, anyConfigured: false });
@@ -77,9 +96,10 @@ describe('agentModeStore.executeTask', () => {
     expect(state.status).toBe('error');
     expect(state.currentProgress).toMatch(/backend.*not running/i);
     // The orchestrator must never run when there's no usable provider.
-    expect((orchestrator as unknown as { processRequest: ReturnType<typeof vi.fn> })
-      .processRequest).not.toHaveBeenCalled();
-    expect(state.logs.some((l) => /backend/i.test(l.content))).toBe(true);
+    expect(
+      (orchestrator as unknown as { processRequest: ReturnType<typeof vi.fn> }).processRequest
+    ).not.toHaveBeenCalled();
+    expect(state.logs.some(l => /backend/i.test(l.content))).toBe(true);
   });
 
   it('reports a missing server key when the proxy is reachable but unconfigured', async () => {
@@ -94,8 +114,9 @@ describe('agentModeStore.executeTask', () => {
     const state = useAgentModeStore.getState();
     expect(state.status).toBe('error');
     expect(state.currentProgress).toMatch(/no provider key configured/i);
-    expect((orchestrator as unknown as { processRequest: ReturnType<typeof vi.fn> })
-      .processRequest).not.toHaveBeenCalled();
+    expect(
+      (orchestrator as unknown as { processRequest: ReturnType<typeof vi.fn> }).processRequest
+    ).not.toHaveBeenCalled();
   });
 
   it('guards an empty task before touching the provider', async () => {

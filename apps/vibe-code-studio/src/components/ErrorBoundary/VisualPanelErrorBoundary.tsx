@@ -3,7 +3,7 @@
  * Specialized error boundary for visual components like Screenshot-to-Code, Component Library, etc.
  */
 
-import React, { Component, type ReactNode, type ErrorInfo } from 'react';
+import { Component, type ReactNode, type ErrorInfo } from 'react';
 import { AlertTriangle, RefreshCw, X } from 'lucide-react';
 import styled from 'styled-components';
 
@@ -127,7 +127,7 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
-  errorInfo: React.ErrorInfo | null;
+  errorInfo: ErrorInfo | null;
   errorCount: number;
 }
 
@@ -158,7 +158,14 @@ export class VisualPanelErrorBoundary extends Component<Props, State> {
     // Report to telemetry/analytics if available
     try {
       const telemetry = (window as unknown as Record<string, unknown>).telemetry as
-        | { reportError: (payload: { component: string; error: string; stack?: string; componentStack: string | null }) => void }
+        | {
+            reportError: (payload: {
+              component: string;
+              error: string;
+              stack?: string;
+              componentStack: string | null;
+            }) => void;
+          }
         | undefined;
       if (telemetry) {
         telemetry.reportError({
@@ -244,16 +251,3 @@ export class VisualPanelErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-
-// Convenient wrapper function for visual panels
-export const withVisualErrorBoundary = <P extends object>(
-  Component: React.ComponentType<P>,
-  componentName: string,
-  onClose?: () => void
-) => {
-  return (props: P) => (
-    <VisualPanelErrorBoundary componentName={componentName} onClose={onClose}>
-      <Component {...props} />
-    </VisualPanelErrorBoundary>
-  );
-};

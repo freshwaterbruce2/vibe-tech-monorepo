@@ -17,6 +17,19 @@ if (-not $stagedFiles -or $stagedFiles.Count -eq 0) {
     exit 0
 }
 
+# Tee the full hook output to D:\logs\pre-commit so a failing step is diagnosable
+# after the fact (per the D:\-drive logging policy) instead of scrolling past in the
+# terminal. Logging must never break a commit — swallow any failure (e.g. D:\ absent).
+$preCommitLog = $null
+try {
+    $logDir = 'D:\logs\pre-commit'
+    if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
+    $preCommitLog = Join-Path $logDir ("precommit-{0}.log" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
+    Start-Transcript -Path $preCommitLog -Force -ErrorAction Stop | Out-Null
+} catch {
+    $preCommitLog = $null
+}
+
 $sourceFiles = @(
     $stagedFiles | Where-Object {
         $_ -match '\.(ts|tsx|js|jsx|mjs|cjs)$' -and
@@ -86,11 +99,13 @@ if ($sourceFiles.Count -gt 0) {
     $exitCode = [Math]::Max(
         [int]$exitCode,
         [int](Invoke-QualityCommand -Label "[2/4] Running ESLint on staged files in batches..." -Command {
-            # Group staged files by their nearest eslint-suppressions.json so
-            # per-project bulk-suppression baselines (ESLint >= 9.24) apply when
-            # linting from the repo root (see .claude/rules/code-size-limits.md —
-            # vibe-code-studio pins its baseline via --suppressions-location).
-            # New violations still fail; only baselined legacy counts pass.
+            # Group staged files by their nearest eslint-suppressions.json.
+            # Bulk-suppression baselines (ESLint >= 9.24) are keyed relative to
+            # the project dir (the dir holding the file), matching how each project
+            # lints itself, so each group is linted FROM that project dir. Files
+            # without a baseline lint from the repo root. New violations still
+            # fail; only baselined legacy counts pass. See
+            # .claude/rules/code-size-limits.md.
             $groups = @{}
             foreach ($file in $sourceFiles) {
                 $dir = Split-Path $file -Parent
@@ -108,24 +123,56 @@ if ($sourceFiles.Count -gt 0) {
                 [void]$groups[$suppressions].Add($file)
             }
 
+            $repoRoot = (Get-Location).Path
             $batchSize = 5
             $eslintFail = $false
             foreach ($suppressions in @($groups.Keys)) {
                 $groupFiles = @($groups[$suppressions])
+                # For a baselined group, lint from the project dir (the dir holding
+                # eslint-suppressions.json) so the file's project-relative keys match.
+                $projRoot = if ($suppressions) {
+                    Split-Path (Join-Path $repoRoot $suppressions) -Parent
+                } else { $repoRoot }
                 for ($i = 0; $i -lt $groupFiles.Count; $i += $batchSize) {
                     $end = [Math]::Min($i + $batchSize - 1, $groupFiles.Count - 1)
                     $batch = $groupFiles[$i..$end]
                     if ($batch -and $batch.Count -gt 0) {
                         if ($suppressions) {
+                            # Re-express staged paths relative to the project dir,
+                            # then lint from there so auto-loaded baseline keys match.
+                            # Forward slashes + `--` avoid Windows ESLint glob failures
+                            # ("No files matching the pattern `"v`"" when `\` escapes).
+                            $rel = @(
+                                $batch | ForEach-Object {
+                                    $p = [System.IO.Path]::GetRelativePath(
+                                        $projRoot,
+                                        (Join-Path $repoRoot $_)
+                                    )
+                                    if (-not $p -or $p -eq '.') { return }
+                                    ($p -replace '\\', '/')
+                                } | Where-Object { $_ }
+                            )
+                            if ($rel.Count -eq 0) { continue }
+                            Push-Location $projRoot
                             # Subset lint always leaves other files' baseline
                             # entries unused — don't fail on unpruned ones.
                             pnpm exec eslint --max-warnings=0 --no-warn-ignored `
-                                --suppressions-location $suppressions `
-                                --pass-on-unpruned-suppressions @batch
+                                --suppressions-location eslint-suppressions.json `
+                                --pass-on-unpruned-suppressions -- @rel
+                            $code = $LASTEXITCODE
+                            Pop-Location
                         } else {
-                            pnpm exec eslint --max-warnings=0 --no-warn-ignored @batch
+                            $normBatch = @(
+                                $batch | ForEach-Object {
+                                    if (-not $_ -or $_ -eq '.') { return }
+                                    ($_ -replace '\\', '/')
+                                } | Where-Object { $_ }
+                            )
+                            if ($normBatch.Count -eq 0) { continue }
+                            pnpm exec eslint --max-warnings=0 --no-warn-ignored -- @normBatch
+                            $code = $LASTEXITCODE
                         }
-                        if ($LASTEXITCODE -ne 0) {
+                        if ($code -ne 0) {
                             $eslintFail = $true
                             break
                         }
@@ -148,10 +195,32 @@ if ($sourceFiles.Count -gt 0) {
 if ($typeScriptFiles.Count -gt 0) {
     # Keep the hook scoped to the index. --uncommitted also includes unrelated
     # unstaged work, which makes normal commits fail on other active lanes.
+    #
+    # Windows CreateProcess has a ~32k arg limit. Large staged sets (full-app
+    # ports) blow up `nx affected --files=a,b,c,...` with "The command line is
+    # too long." Fall back to project-scoped typecheck for those cases.
     $exitCode = [Math]::Max(
         [int]$exitCode,
-        [int](Invoke-QualityCommand -Label "[3/4] Running Nx affected typecheck..." -Command {
-            pnpm exec nx affected -t typecheck --files="$nxTypecheckFileList" --outputStyle=static
+        [int](Invoke-QualityCommand -Label "[3/4] Running Nx typecheck..." -Command {
+            $useFileList = $typeScriptFiles.Count -le 40 -and $nxTypecheckFileList.Length -le 6000
+            if ($useFileList) {
+                pnpm exec nx affected -t typecheck --files="$nxTypecheckFileList" --outputStyle=static
+            } else {
+                $appProjects = @(
+                    $typeScriptFiles | ForEach-Object {
+                        $n = $_ -replace '\\', '/'
+                        if ($n -match '^apps/([^/]+)/') { $Matches[1] }
+                    } | Select-Object -Unique
+                )
+                if ($appProjects.Count -eq 0) {
+                    Write-Host "No apps/* projects in staged TS; falling back to file-list typecheck (may fail on Windows if huge)." -ForegroundColor Yellow
+                    pnpm exec nx affected -t typecheck --files="$nxTypecheckFileList" --outputStyle=static
+                } else {
+                    $plist = ($appProjects -join ',')
+                    Write-Host "Large staged set ($($typeScriptFiles.Count) files) — typechecking projects: $plist" -ForegroundColor DarkGray
+                    pnpm exec nx run-many -t typecheck -p $plist --outputStyle=static
+                }
+            }
         })
     )
 } else {
@@ -181,17 +250,51 @@ if ($env:COVERAGE_GATE -eq 'off') {
     if ($coverableFiles.Count -eq 0) {
         Write-Host "[cov] Diff coverage skipped (no in-scope source staged)" -ForegroundColor DarkGray
     } else {
-        $covFileList = ($coverableFiles -join ',')
+        # 1) Generate coverage by running ONLY the tests related to the staged
+        #    source (Vitest `related`), grouped per owning project. This runs just
+        #    the tests that import the changed files instead of the whole suite, so
+        #    a commit costs ~1-2 min with identical 100%-on-changed-code semantics
+        #    (a changed line is covered iff a test importing that file hits it —
+        #    exactly what `related` runs). Whole-project coverage/lint/all-tests are
+        #    the separate `pnpm run quality:full <project>` pre-push sweep, which is
+        #    where pre-existing/legacy problems are surfaced.
+        $vitestBin = (Resolve-Path (Join-Path $PSScriptRoot '..\node_modules\vitest\vitest.mjs')).Path
 
-        # 1) Generate coverage for projects affected by the staged source.
-        #    Projects without a test:coverage target are skipped by Nx; their
-        #    changed files then surface as "no coverage report" in step 2.
-        $exitCode = [Math]::Max(
-            [int]$exitCode,
-            [int](Invoke-QualityCommand -Label "[cov 1/2] Running coverage for affected projects..." -Command {
-                pnpm exec nx affected -t test:coverage --files="$covFileList" --outputStyle=static
-            })
-        )
+        # Group changed source files by their owning project (nearest package.json).
+        $covByProject = [ordered]@{}
+        foreach ($f in $coverableFiles) {
+            $dir = Split-Path $f -Parent
+            $projRoot = $null
+            while ($dir -and $dir -ne '.') {
+                if (Test-Path (Join-Path $dir 'package.json')) {
+                    $projRoot = ($dir -replace '\\', '/'); break
+                }
+                $dir = Split-Path $dir -Parent
+            }
+            if (-not $projRoot) { continue }
+            if (-not $covByProject.Contains($projRoot)) { $covByProject[$projRoot] = @() }
+            $covByProject[$projRoot] += $f.Substring($projRoot.Length + 1)
+        }
+
+        foreach ($proj in $covByProject.Keys) {
+            # Skip projects with no test:coverage script; step 2 then flags their
+            # changed files as "no coverage report" (same as the old nx-skip path).
+            $pkg = Get-Content (Join-Path $proj 'package.json') -Raw | ConvertFrom-Json
+            if (-not ($pkg.scripts -and $pkg.scripts.'test:coverage')) { continue }
+
+            $relFiles = $covByProject[$proj]
+            $exitCode = [Math]::Max(
+                [int]$exitCode,
+                [int](Invoke-QualityCommand -Label "[cov 1/2] Coverage for tests related to changed files in $proj..." -Command {
+                    Push-Location $proj
+                    try {
+                        node "$vitestBin" related @relFiles --run --coverage --passWithNoTests
+                    } finally {
+                        Pop-Location
+                    }
+                })
+            )
+        }
 
         # 2) Enforce 100% coverage on the added lines of the staged source.
         $exitCode = [Math]::Max(
@@ -247,6 +350,17 @@ if ($lineCountFiles.Count -gt 0) {
             node scripts/validate-file-size.js @lineCountFiles
         })
     )
+
+    # Cyclomatic-complexity cap (CCN <= 15) for the Lizard languages (.py/.rs/etc.).
+    # JS/TS complexity is enforced by the ESLint step above (step 2/4); this covers
+    # what ESLint can't. Grandfathered via complexity-baseline.json; skips (does not
+    # block) if Lizard is absent. The validator filters the staged list internally.
+    $exitCode = [Math]::Max(
+        [int]$exitCode,
+        [int](Invoke-QualityCommand -Label "  Checking complexity caps on staged files..." -Command {
+            node scripts/validate-complexity.js @lineCountFiles
+        })
+    )
 } else {
     Write-Host "  Line-count check skipped (no code files)" -ForegroundColor DarkGray
 }
@@ -286,6 +400,11 @@ if ($exitCode -eq 0) {
     Write-Host "=== Pre-commit checks FAILED ===" -ForegroundColor Red
     Write-Host "Fix the issues above before committing." -ForegroundColor Yellow
     Write-Host "To bypass (emergency only): git commit --no-verify" -ForegroundColor DarkGray
+}
+
+if ($preCommitLog) {
+    try { Stop-Transcript -ErrorAction Stop | Out-Null } catch { }
+    Write-Host "Full pre-commit log: $preCommitLog" -ForegroundColor DarkGray
 }
 
 exit $exitCode

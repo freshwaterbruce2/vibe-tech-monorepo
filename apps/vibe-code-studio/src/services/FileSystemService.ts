@@ -1,7 +1,7 @@
 import { logger } from '../services/Logger';
 import type { FileSystemItem } from '../types';
 
-import { ElectronService } from './ElectronService';
+import { ElectronService, isExpectedPathAbsence } from './ElectronService';
 import { DEMO_FILES } from './FileSystemDemoData';
 
 /** Tracks the modification status of a file in the workspace */
@@ -96,7 +96,7 @@ export class FileSystemService {
 
       if (this.files.size > 0) {
         logger.debug(
-          `[FileSystemService] Restored ${this.files.size} files, ${this.recentFiles.length} recent, ${this.trackedFiles.size} tracked from localStorage`,
+          `[FileSystemService] Restored ${this.files.size} files, ${this.recentFiles.length} recent, ${this.trackedFiles.size} tracked from localStorage`
         );
       }
     } catch (error) {
@@ -106,9 +106,9 @@ export class FileSystemService {
 
   /** Record a file access in the recent files list */
   private recordRecentFile(path: string): void {
-    this.recentFiles = [path, ...this.recentFiles.filter((p) => p !== path)].slice(
+    this.recentFiles = [path, ...this.recentFiles.filter(p => p !== path)].slice(
       0,
-      MAX_RECENT_FILES,
+      MAX_RECENT_FILES
     );
     this.persistToStorage();
   }
@@ -191,8 +191,8 @@ export class FileSystemService {
     });
     this.trackedFiles = remappedTrackedFiles;
 
-    this.recentFiles = this.recentFiles.map((recentPath) =>
-      this.remapNestedPath(recentPath, oldPath, newPath),
+    this.recentFiles = this.recentFiles.map(recentPath =>
+      this.remapNestedPath(recentPath, oldPath, newPath)
     );
   }
 
@@ -215,7 +215,7 @@ export class FileSystemService {
 
   /** Get all tracked files regardless of status */
   getTrackedFiles(): TrackedFile[] {
-    return Array.from(this.trackedFiles.values()).map((t) => ({ ...t }));
+    return Array.from(this.trackedFiles.values()).map(t => ({ ...t }));
   }
 
   // ---------------------------------------------------------------------------
@@ -265,7 +265,7 @@ export class FileSystemService {
   private async searchDirectoryByName(
     dirPath: string,
     lowerQuery: string,
-    maxDepth: number,
+    maxDepth: number
   ): Promise<FileSystemItem[]> {
     if (maxDepth <= 0) return [];
 
@@ -280,7 +280,7 @@ export class FileSystemService {
           const childResults = await this.searchDirectoryByName(
             entry.path,
             lowerQuery,
-            maxDepth - 1,
+            maxDepth - 1
           );
           results.push(...childResults);
         }
@@ -336,7 +336,7 @@ export class FileSystemService {
     filePath: string,
     content: string,
     lowerQuery: string,
-    matchLength: number,
+    matchLength: number
   ): ContentSearchResult[] {
     const results: ContentSearchResult[] = [];
     const lines = content.split('\n');
@@ -391,7 +391,9 @@ export class FileSystemService {
         this.recordRecentFile(path);
         return content || '';
       } catch (error) {
-        logger.error('Electron readFile error:', error);
+        if (!isExpectedPathAbsence(error)) {
+          logger.error('Electron readFile error:', error);
+        }
         throw error;
       }
     }
@@ -678,11 +680,7 @@ export class FileSystemService {
         return items;
       } catch (error) {
         // Handle expected errors gracefully - return empty array
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        const isExpectedError =
-          errorMsg.includes('ENOENT') || errorMsg.includes('No workspace folder approved yet');
-        if (isExpectedError) {
-          logger.debug('[FileSystemService] Expected error, returning empty:', errorMsg);
+        if (isExpectedPathAbsence(error)) {
           return [];
         }
         logger.error('[FileSystemService] Electron listDirectory error:', error);
@@ -766,7 +764,9 @@ export class FileSystemService {
           isDirectory: stats.isDirectory,
         };
       } catch (error) {
-        // File doesn't exist or can't be accessed
+        if (!isExpectedPathAbsence(error)) {
+          logger.error('[FileSystemService] Tauri getFileStats error:', error);
+        }
         throw new Error(`Failed to get file stats: ${error}`);
       }
     }
@@ -827,7 +827,7 @@ export class FileSystemService {
     const resolved = this.joinPath(normalizedRoot, normalizedPath);
 
     logger.debug(
-      `[FileSystemService] Resolved path: "${path}" → "${resolved}" (workspace: ${workspaceRoot})`,
+      `[FileSystemService] Resolved path: "${path}" → "${resolved}" (workspace: ${workspaceRoot})`
     );
     return resolved;
   }

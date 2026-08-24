@@ -125,7 +125,7 @@ describe('AutoFixService', () => {
 
     const fix = await service.generateFix(makeError(), editor);
 
-    expect(setModel).toHaveBeenCalledWith('moonshot/kimi-2.5-pro');
+    expect(setModel).toHaveBeenCalledWith('deepseek/deepseek-v4-flash');
     const prompt = (sendContextualMessage.mock.calls[0]![0] as { userQuery: string }).userQuery;
     expect(prompt).toContain('```typescript');
     expect(prompt).toContain('Error Code: TS2304');
@@ -138,7 +138,7 @@ describe('AutoFixService', () => {
     expect(suggestion.title).toBe('Fix Suggestion 1');
     expect(suggestion.code).toContain('const foo = () => {};');
     expect(fix.explanation).toContain('declares foo before use');
-    expect(fix.modelUsed).toBe('claude-haiku-4.5');
+    expect(fix.modelUsed).toBe('deepseek/deepseek-v4-flash');
     expect(typeof fix.generationTime).toBe('number');
 
     // Shadow model was created against a UUID inmemory URI, patched, disposed.
@@ -356,7 +356,35 @@ describe('AutoFixService', () => {
         error,
         makeEditor(CONTENT, '/test/file.ts', 'typescript')
       );
-      expect(fix.modelUsed).toBe('claude-sonnet-4.5');
+      expect(fix.modelUsed).toBe('deepseek/deepseek-v4-pro');
+    });
+
+    it('routes moderate errors to the fast model when preferSpeed is on (default)', async () => {
+      const { ai } = makeAI(RESPONSE_ONE_BLOCK);
+      const service = new AutoFixService(ai);
+      const error = makeError({
+        code: 'TS9999',
+        message: 'This is a moderately complex type error that exceeds fifty characters in length',
+      });
+      const fix = await service.generateFix(
+        error,
+        makeEditor(CONTENT, '/test/file.ts', 'typescript')
+      );
+      expect(fix.modelUsed).toBe('deepseek/deepseek-v4-flash');
+    });
+
+    it('routes moderate errors to the stronger model when preferSpeed is off', async () => {
+      const { ai } = makeAI(RESPONSE_ONE_BLOCK);
+      const service = new AutoFixService(ai, { preferSpeed: false });
+      const error = makeError({
+        code: 'TS9999',
+        message: 'This is a moderately complex type error that exceeds fifty characters in length',
+      });
+      const fix = await service.generateFix(
+        error,
+        makeEditor(CONTENT, '/test/file.ts', 'typescript')
+      );
+      expect(fix.modelUsed).toBe('deepseek/deepseek-v4-pro');
     });
   });
 });

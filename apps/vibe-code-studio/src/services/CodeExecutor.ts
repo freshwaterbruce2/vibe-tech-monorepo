@@ -37,13 +37,13 @@ export interface SecurityPolicy {
   maxMemoryUsage: number;
 }
 
-export type SupportedLanguage = 
-  | 'javascript' 
-  | 'typescript' 
-  | 'python' 
-  | 'bash' 
-  | 'node' 
-  | 'deno' 
+export type SupportedLanguage =
+  | 'javascript'
+  | 'typescript'
+  | 'python'
+  | 'bash'
+  | 'node'
+  | 'deno'
   | 'bun';
 
 export class CodeExecutor {
@@ -57,36 +57,49 @@ export class CodeExecutor {
     if (defaultTimeout) {
       this.timeout = defaultTimeout;
     }
-    
+
     this.electronService = new ElectronService();
-    
+
     // Default security policy - restrictive by default
     this.securityPolicy = {
       allowNetworkAccess: false,
       allowFileSystemAccess: false,
       allowedDirectories: ['/tmp/deepcode-executor'],
       blockedCommands: [
-        'rm', 'rmdir', 'del', 'format', 'fdisk', 'mkfs',
-        'dd', 'sudo', 'su', 'chmod', 'chown', 'passwd',
-        'useradd', 'userdel', 'systemctl', 'service',
-        'reboot', 'shutdown', 'halt', 'poweroff'
+        'rm',
+        'rmdir',
+        'del',
+        'format',
+        'fdisk',
+        'mkfs',
+        'dd',
+        'sudo',
+        'su',
+        'chmod',
+        'chown',
+        'passwd',
+        'useradd',
+        'userdel',
+        'systemctl',
+        'service',
+        'reboot',
+        'shutdown',
+        'halt',
+        'poweroff',
       ],
       maxExecutionTime: 30000,
       maxMemoryUsage: 512 * 1024 * 1024, // 512MB
-      ...customSecurityPolicy
+      ...customSecurityPolicy,
     };
   }
 
   /**
    * Execute a shell command with security checks
    */
-  async executeCommand(
-    command: string,
-    options: ExecutionOptions = {}
-  ): Promise<ExecutionResult> {
+  async executeCommand(command: string, options: ExecutionOptions = {}): Promise<ExecutionResult> {
     const startTime = Date.now();
     const executionId = `cmd_${++this.executionCounter}_${Date.now()}`;
-    
+
     try {
       // Security validation
       const securityCheck = this.validateCommandSecurity(command);
@@ -96,7 +109,7 @@ export class CodeExecutor {
           output: '',
           error: `Security violation: ${securityCheck.reason}`,
           executionTime: Date.now() - startTime,
-          exitCode: -1
+          exitCode: -1,
         };
       }
 
@@ -107,11 +120,14 @@ export class CodeExecutor {
         environment: {
           PATH: this.getSafePathEnvironment(),
           NODE_ENV: 'sandbox',
-          ...options.environment
+          ...options.environment,
         },
         shell: options.shell !== false,
-        maxMemory: Math.min(options.maxMemory ?? this.securityPolicy.maxMemoryUsage, this.securityPolicy.maxMemoryUsage),
-        ...(options.stdin && { stdin: options.stdin })
+        maxMemory: Math.min(
+          options.maxMemory ?? this.securityPolicy.maxMemoryUsage,
+          this.securityPolicy.maxMemoryUsage
+        ),
+        ...(options.stdin && { stdin: options.stdin }),
       };
 
       // Execute via Electron main process if available
@@ -119,22 +135,21 @@ export class CodeExecutor {
         return await this.executeViaElectron('command', {
           command,
           options: execOptions,
-          executionId
+          executionId,
         });
       }
 
       // Fallback to browser-safe execution (very limited)
       return await this.executeBrowserSafe(command, execOptions, startTime);
-
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      
+
       return {
         success: false,
         output: '',
         error: error instanceof Error ? error.message : 'Unknown execution error',
         executionTime,
-        exitCode: -1
+        exitCode: -1,
       };
     }
   }
@@ -149,7 +164,7 @@ export class CodeExecutor {
   ): Promise<ExecutionResult> {
     const startTime = Date.now();
     const executionId = `code_${language}_${++this.executionCounter}_${Date.now()}`;
-    
+
     try {
       // Validate code syntax first
       const syntaxValidation = await this.validateSyntax(code, language);
@@ -159,7 +174,7 @@ export class CodeExecutor {
           output: '',
           error: `Syntax errors: ${syntaxValidation.errors.join(', ')}`,
           executionTime: Date.now() - startTime,
-          exitCode: -1
+          exitCode: -1,
         };
       }
 
@@ -171,20 +186,20 @@ export class CodeExecutor {
           output: '',
           error: `Security violation: ${securityCheck.reason}`,
           executionTime: Date.now() - startTime,
-          exitCode: -1
+          exitCode: -1,
         };
       }
 
       // Prepare execution based on language
       const executionStrategy = this.getExecutionStrategy(language, code, options);
-      
+
       if (this.electronService.isElectron()) {
         return await this.executeViaElectron('code', {
           code,
           language,
           strategy: executionStrategy,
           options,
-          executionId
+          executionId,
         });
       }
 
@@ -198,18 +213,17 @@ export class CodeExecutor {
         output: '',
         error: `Language ${language} execution not supported in browser mode`,
         executionTime: Date.now() - startTime,
-        exitCode: -1
+        exitCode: -1,
       };
-
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      
+
       return {
         success: false,
         output: '',
         error: error instanceof Error ? error.message : 'Unknown code execution error',
         executionTime,
-        exitCode: -1
+        exitCode: -1,
       };
     }
   }
@@ -226,16 +240,16 @@ export class CodeExecutor {
         case 'javascript':
         case 'node':
           return this.validateJavaScriptSyntax(code);
-        
+
         case 'typescript':
           return this.validateTypeScriptSyntax(code);
-        
+
         case 'python':
           return await this.validatePythonSyntax(code);
-        
+
         case 'bash':
           return this.validateBashSyntax(code);
-        
+
         default:
           // For unsupported languages, skip syntax validation and allow execution
           return { valid: true, errors: [] };
@@ -243,7 +257,7 @@ export class CodeExecutor {
     } catch (error) {
       return {
         valid: false,
-        errors: [error instanceof Error ? error.message : 'Syntax validation error']
+        errors: [error instanceof Error ? error.message : 'Syntax validation error'],
       };
     }
   }
@@ -301,13 +315,13 @@ export class CodeExecutor {
   // Private security validation methods
   private validateCommandSecurity(command: string): { allowed: boolean; reason?: string } {
     const cmd = command.trim().toLowerCase();
-    
+
     // Check for blocked commands
     for (const blocked of this.securityPolicy.blockedCommands) {
       if (cmd.includes(blocked)) {
         return {
           allowed: false,
-          reason: `Command contains blocked operation: ${blocked}`
+          reason: `Command contains blocked operation: ${blocked}`,
         };
       }
     }
@@ -326,7 +340,7 @@ export class CodeExecutor {
       if (pattern.test(cmd)) {
         return {
           allowed: false,
-          reason: 'Command contains potentially dangerous pattern'
+          reason: 'Command contains potentially dangerous pattern',
         };
       }
     }
@@ -334,9 +348,12 @@ export class CodeExecutor {
     return { allowed: true };
   }
 
-  private validateCodeSecurity(code: string, language: SupportedLanguage): { allowed: boolean; reason?: string } {
+  private validateCodeSecurity(
+    code: string,
+    language: SupportedLanguage
+  ): { allowed: boolean; reason?: string } {
     const codeToCheck = code.toLowerCase();
-    
+
     // Common dangerous patterns across languages
     const dangerousPatterns = [
       /require\s*\(\s*['"]fs['"]/,
@@ -370,7 +387,7 @@ export class CodeExecutor {
       if (pattern.test(codeToCheck)) {
         return {
           allowed: false,
-          reason: 'Code contains potentially dangerous operations'
+          reason: 'Code contains potentially dangerous operations',
         };
       }
     }
@@ -383,16 +400,20 @@ export class CodeExecutor {
     return '/usr/local/bin:/usr/bin:/bin';
   }
 
-  private getExecutionStrategy(language: SupportedLanguage, _code: string, _options: ExecutionOptions) {
+  private getExecutionStrategy(
+    language: SupportedLanguage,
+    _code: string,
+    _options: ExecutionOptions
+  ) {
     switch (language) {
       case 'javascript':
       case 'node':
         return {
           runtime: 'node',
           args: ['--max-old-space-size=256', '--no-warnings'],
-          extension: '.js'
+          extension: '.js',
         };
-      
+
       case 'typescript':
         return {
           runtime: 'tsx',
@@ -401,38 +422,38 @@ export class CodeExecutor {
           fallback: {
             runtime: 'node',
             args: ['-r', 'ts-node/register', '--no-warnings'],
-            extension: '.ts'
-          }
+            extension: '.ts',
+          },
         };
-      
+
       case 'python':
         return {
           runtime: 'python3',
           args: ['-u'], // unbuffered output
-          extension: '.py'
+          extension: '.py',
         };
-      
+
       case 'bash':
         return {
           runtime: 'bash',
           args: ['-e'], // exit on error
-          extension: '.sh'
+          extension: '.sh',
         };
-      
+
       case 'deno':
         return {
           runtime: 'deno',
           args: ['run', '--allow-none'],
-          extension: '.ts'
+          extension: '.ts',
         };
-      
+
       case 'bun':
         return {
           runtime: 'bun',
           args: ['run'],
-          extension: '.js'
+          extension: '.js',
         };
-      
+
       default:
         throw new Error(`Unsupported language: ${language}`);
     }
@@ -447,12 +468,12 @@ export class CodeExecutor {
 
     // Strip string literals and comments to avoid false positives
     const stripped = code
-      .replace(/\/\/.*$/gm, '')                    // single-line comments
-      .replace(/\/\*[\s\S]*?\*\//g, '')            // multi-line comments
-      .replace(/#.*$/gm, '')                       // Python comments
-      .replace(/"(?:[^"\\]|\\.)*"/g, '""')         // double-quoted strings
-      .replace(/'(?:[^'\\]|\\.)*'/g, "''")         // single-quoted strings
-      .replace(/`(?:[^`\\]|\\.)*`/g, '``');        // template literals
+      .replace(/\/\/.*$/gm, '') // single-line comments
+      .replace(/\/\*[\s\S]*?\*\//g, '') // multi-line comments
+      .replace(/#.*$/gm, '') // Python comments
+      .replace(/"(?:[^"\\]|\\.)*"/g, '""') // double-quoted strings
+      .replace(/'(?:[^'\\]|\\.)*'/g, "''") // single-quoted strings
+      .replace(/`(?:[^`\\]|\\.)*`/g, '``'); // template literals
 
     const lines = stripped.split('\n');
     for (let i = 0; i < lines.length; i++) {
@@ -484,7 +505,7 @@ export class CodeExecutor {
     } catch (error) {
       return {
         valid: false,
-        errors: [error instanceof Error ? error.message : 'JavaScript syntax error']
+        errors: [error instanceof Error ? error.message : 'JavaScript syntax error'],
       };
     }
   }
@@ -517,16 +538,17 @@ export class CodeExecutor {
     // If no TS-specific errors found, strip type annotations and validate as JS
     if (errors.length === 0) {
       const stripped = code
-        .replace(/:\s*[\w<>\[\]|&,\s]+(?=[=;,)\]}])/g, '')   // strip type annotations
+        .replace(/:\s*[\w<>[\]|&,\s]+(?=[=;,)\]}])/g, '') // strip type annotations
         .replace(/\binterface\s+\w+[\s\S]*?(?=\n\})\n\}/g, '') // strip interfaces
-        .replace(/\btype\s+\w+\s*=\s*[^;]+;/g, '')             // strip type aliases
-        .replace(/<[\w,\s]+>/g, '');                             // strip generics
+        .replace(/\btype\s+\w+\s*=\s*[^;]+;/g, '') // strip type aliases
+        .replace(/<[\w,\s]+>/g, ''); // strip generics
       try {
         new Function(stripped);
       } catch {
         // If stripping types still fails, that's expected for TS-only constructs
         // Only flag it if there are no TS keywords at all
-        const hasTypeScriptConstructs = /\b(interface|type|enum|namespace|declare|as|implements|readonly)\b/.test(code);
+        const hasTypeScriptConstructs =
+          /\b(interface|type|enum|namespace|declare|as|implements|readonly)\b/.test(code);
         if (!hasTypeScriptConstructs) {
           errors.push('TypeScript code contains JavaScript syntax errors');
         }
@@ -546,7 +568,9 @@ export class CodeExecutor {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      if (!line || line.trim() === '' || line.trim().startsWith('#')) {continue;}
+      if (!line || line.trim() === '' || line.trim().startsWith('#')) {
+        continue;
+      }
 
       const leadingWhitespace = line.match(/^(\s*)/)?.[1] ?? '';
       if (leadingWhitespace.includes(' ') && leadingWhitespace.length > 0) usesSpaces = true;
@@ -555,7 +579,11 @@ export class CodeExecutor {
       const trimmed = line.trim();
 
       // Check for block openers that need a colon
-      if (/^(def|class|if|elif|else|for|while|try|except|finally|with|async\s+(def|for|with))\b/.test(trimmed)) {
+      if (
+        /^(def|class|if|elif|else|for|while|try|except|finally|with|async\s+(def|for|with))\b/.test(
+          trimmed
+        )
+      ) {
         // Allow multi-line statements (ending with \) and decorators
         if (!trimmed.endsWith(':') && !trimmed.endsWith('\\') && !trimmed.endsWith(',')) {
           // Look ahead for continuation lines
@@ -563,7 +591,10 @@ export class CodeExecutor {
           for (let j = i + 1; j < lines.length && j <= i + 5; j++) {
             const nextLine = lines[j]?.trim();
             if (!nextLine || nextLine === '') continue;
-            if (nextLine.endsWith(':')) { continued = true; break; }
+            if (nextLine.endsWith(':')) {
+              continued = true;
+              break;
+            }
             if (!nextLine.endsWith('\\') && !nextLine.endsWith(',')) break;
           }
           if (!continued) {
@@ -600,19 +631,19 @@ export class CodeExecutor {
   private validateBashSyntax(code: string): { valid: boolean; errors: string[] } {
     // Basic bash syntax validation
     const bashSyntaxIssues: string[] = [];
-    
+
     // Check for unmatched quotes
     const singleQuotes = (code.match(/'/g) ?? []).length;
     const doubleQuotes = (code.match(/"/g) ?? []).length;
-    
+
     if (singleQuotes % 2 !== 0) {
       bashSyntaxIssues.push('Unmatched single quotes');
     }
-    
+
     if (doubleQuotes % 2 !== 0) {
       bashSyntaxIssues.push('Unmatched double quotes');
     }
-    
+
     return { valid: bashSyntaxIssues.length === 0, errors: bashSyntaxIssues };
   }
 
@@ -622,47 +653,49 @@ export class CodeExecutor {
       const result = await this.electronService.invoke('code-execute', {
         type,
         payload,
-        securityPolicy: this.securityPolicy
+        securityPolicy: this.securityPolicy,
       });
 
-      return (result as ExecutionResult | null) ?? {
-        success: false,
-        output: '',
-        error: 'No response from Electron main process',
-        executionTime: 0,
-        exitCode: -1
-      };
+      return (
+        (result as ExecutionResult | null) ?? {
+          success: false,
+          output: '',
+          error: 'No response from Electron main process',
+          executionTime: 0,
+          exitCode: -1,
+        }
+      );
     } catch (error) {
       return {
         success: false,
         output: '',
         error: error instanceof Error ? error.message : 'Electron execution error',
         executionTime: 0,
-        exitCode: -1
+        exitCode: -1,
       };
     }
   }
 
   private async executeBrowserSafe(
-    _command: string, 
-    _options: ExecutionOptions, 
+    _command: string,
+    _options: ExecutionOptions,
     startTime: number
   ): Promise<ExecutionResult> {
     // Very limited browser-safe command execution
     const executionTime = Date.now() - startTime;
-    
+
     return {
       success: false,
       output: '',
       error: 'Command execution not available in browser mode. Please use the desktop application.',
       executionTime,
-      exitCode: -1
+      exitCode: -1,
     };
   }
 
   private async executeJavaScriptSafe(
-    code: string, 
-    options: ExecutionOptions, 
+    code: string,
+    options: ExecutionOptions,
     startTime: number
   ): Promise<ExecutionResult> {
     try {
@@ -672,7 +705,7 @@ export class CodeExecutor {
           log: (...args: unknown[]) => args.join(' '),
           error: (...args: unknown[]) => args.join(' '),
           warn: (...args: unknown[]) => args.join(' '),
-          info: (...args: unknown[]) => args.join(' ')
+          info: (...args: unknown[]) => args.join(' '),
         },
         setTimeout: undefined,
         setInterval: undefined,
@@ -680,7 +713,7 @@ export class CodeExecutor {
         clearInterval: undefined,
         fetch: undefined,
         XMLHttpRequest: undefined,
-        WebSocket: undefined
+        WebSocket: undefined,
       };
 
       // Create execution function with timeout
@@ -705,7 +738,7 @@ export class CodeExecutor {
               return result;
               `
             );
-            
+
             const result = func(sandbox);
             clearTimeout(timer);
             resolve(result);
@@ -723,18 +756,17 @@ export class CodeExecutor {
         success: true,
         output: typeof result !== 'undefined' ? String(result) : '',
         executionTime,
-        exitCode: 0
+        exitCode: 0,
       };
-
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      
+
       return {
         success: false,
         output: '',
         error: error instanceof Error ? error.message : 'JavaScript execution error',
         executionTime,
-        exitCode: -1
+        exitCode: -1,
       };
     }
   }

@@ -25,11 +25,10 @@ import type {
   IAIService,
 } from '../../../types/ai';
 import type { AIModel } from '../AIProviderInterface';
-import { AIProvider, MODEL_REGISTRY } from '../AIProviderInterface';
+import { AIProvider, DEFAULT_MODEL, MODEL_REGISTRY } from '../AIProviderInterface';
 import { OpenRouterService } from './OpenRouterService';
 
 const DEFAULT_BASE_URL = 'http://localhost:5004/api/ai';
-const DEFAULT_MODEL = 'moonshot/kimi-2.5-pro';
 const DEFAULT_MAX_TOKENS = 8192;
 
 // Moonshot/Kimi rejects arbitrary temperatures — it requires a fixed value per
@@ -71,6 +70,14 @@ interface OpenAIChatRequestBody {
   stream: boolean;
   /** Moonshot-only: explicit thinking-mode toggle */
   thinking?: { type: 'enabled' | 'disabled' };
+  reasoning?: { effort: 'low' | 'medium' | 'high' };
+  response_format?: {
+    type: 'json_schema';
+    json_schema: { name: string; strict: true; schema: Record<string, unknown> };
+  };
+  provider?: { require_parameters: boolean };
+  tools?: AICompletionRequest['tools'];
+  tool_choice?: AICompletionRequest['toolChoice'];
 }
 
 export class BackendProxyService implements IAIService {
@@ -279,7 +286,16 @@ export class BackendProxyService implements IAIService {
   private buildBody(
     messages: ChatMessage[],
     route: ProxyRoute,
-    options: { temperature?: number; maxTokens?: number; stream: boolean }
+    options: {
+      temperature?: number;
+      maxTokens?: number;
+      stream: boolean;
+      reasoningEffort?: 'low' | 'medium' | 'high';
+      responseFormat?: AICompletionRequest['responseFormat'];
+      providerPreferences?: AICompletionRequest['providerPreferences'];
+      tools?: AICompletionRequest['tools'];
+      toolChoice?: AICompletionRequest['toolChoice'];
+    }
   ): OpenAIChatRequestBody {
     const body: OpenAIChatRequestBody = {
       model: route.model,
@@ -297,7 +313,21 @@ export class BackendProxyService implements IAIService {
       body.thinking = { type: useThinking ? 'enabled' : 'disabled' };
     } else {
       body.temperature = options.temperature;
+      if (route.provider === AIProvider.OPENROUTER && options.reasoningEffort) {
+        body.reasoning = { effort: options.reasoningEffort };
+      }
     }
+    if (options.responseFormat) {
+      body.response_format = {
+        type: options.responseFormat.type,
+        json_schema: options.responseFormat.jsonSchema,
+      };
+    }
+    if (options.providerPreferences) {
+      body.provider = { require_parameters: options.providerPreferences.requireParameters };
+    }
+    body.tools = options.tools;
+    body.tool_choice = options.toolChoice;
 
     return body;
   }
@@ -316,7 +346,16 @@ export class BackendProxyService implements IAIService {
   private postChat(
     route: ProxyRoute,
     messages: ChatMessage[],
-    options: { temperature?: number; maxTokens?: number; stream: boolean },
+    options: {
+      temperature?: number;
+      maxTokens?: number;
+      stream: boolean;
+      reasoningEffort?: 'low' | 'medium' | 'high';
+      responseFormat?: AICompletionRequest['responseFormat'];
+      providerPreferences?: AICompletionRequest['providerPreferences'];
+      tools?: AICompletionRequest['tools'];
+      toolChoice?: AICompletionRequest['toolChoice'];
+    },
     controller: AbortController
   ): Promise<Response> {
     const body = this.buildBody(messages, route, options);
@@ -330,14 +369,30 @@ export class BackendProxyService implements IAIService {
   }
 
   private parseCompletion(data: {
+    id?: string;
+    model?: string;
     choices?: Array<{
-      message?: { content?: string; reasoning_content?: string; reasoning?: string };
+      message?: {
+        content?: string;
+        reasoning_content?: string;
+        reasoning?: string;
+        tool_calls?: Array<{
+          id: string;
+          type: 'function';
+          function: { name: string; arguments: string };
+        }>;
+      };
+      finish_reason?: string;
     }>;
     usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
   }): AICompletionResponse {
     const choice = data.choices?.[0];
     return {
       content: choice?.message?.content ?? '',
+      requestId: data.id,
+      model: data.model,
+      finishReason: choice?.finish_reason,
+      toolCalls: choice?.message?.tool_calls,
       // kimi-k2.5 returns reasoning in `reasoning_content`; the newer K2.6 uses
       // `reasoning`. Accept either so thinking output is never silently dropped.
       reasoning_content: choice?.message?.reasoning_content ?? choice?.message?.reasoning,
@@ -357,6 +412,11 @@ export class BackendProxyService implements IAIService {
       temperature: request.temperature,
       maxTokens: request.maxTokens,
       stream: false,
+      reasoningEffort: request.reasoningEffort,
+      responseFormat: request.responseFormat,
+      providerPreferences: request.providerPreferences,
+      tools: request.tools,
+      toolChoice: request.toolChoice,
     };
     const controller = this.trackController(request.signal);
 
@@ -400,6 +460,7 @@ export class BackendProxyService implements IAIService {
       temperature: options?.temperature,
       maxTokens: options?.maxTokens,
       stream: true,
+      reasoningEffort: options?.reasoningEffort,
     };
     const controller = this.trackController(options?.signal);
 
@@ -466,7 +527,10 @@ export class BackendProxyService implements IAIService {
   private parseChunk(line: string): string | null {
     try {
       const data = JSON.parse(line.slice(6));
-      return data.choices?.[0]?.delta?.content ?? null;
+      const delta = data.choices?.[0]?.delta;
+      const reasoning = delta?.reasoning_content ?? delta?.reasoning;
+      if (reasoning) return `[REASONING] ${reasoning}[/REASONING]`;
+      return delta?.content ?? null;
     } catch {
       return null;
     }

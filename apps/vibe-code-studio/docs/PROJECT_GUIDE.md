@@ -133,7 +133,7 @@ const editor = monaco.editor.create(element, {
   value: code,
   language: 'typescript',
   theme: 'vs-dark',
-  automaticLayout: true
+  automaticLayout: true,
 });
 
 // Get/Set content
@@ -202,7 +202,7 @@ CREATE TABLE file_history (
 
 ```powershell
 # Backup database
-Copy-Item D:\databases\vibe-code-studio\*.db D:\backups\vibe-code-studio\
+Copy-Item D:\databases\vibe-code-studio\*.db D:\_backups\vibe-code-studio\
 
 # Query recent projects
 sqlite3 D:\databases\vibe-code-studio\vibe_studio.db "SELECT * FROM recent_projects ORDER BY last_opened DESC LIMIT 10;"
@@ -324,7 +324,7 @@ src-tauri/target/release/bundle/
     └── Vibe Code Studio_<version>_x64-setup.exe   # NSIS installer
 ```
 
-Installed executable: `%LOCALAPPDATA%\Programs\vibe-code-studio\Vibe Code Studio.exe`
+Installed executable: `V:\Apps\Vibe_Code_Studio\vibe-code-studio.exe`
 
 ---
 
@@ -338,9 +338,9 @@ Installed executable: `%LOCALAPPDATA%\Programs\vibe-code-studio\Vibe Code Studio
 export default defineConfig({
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src')
-    }
-  }
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
 });
 ```
 
@@ -385,7 +385,7 @@ pnpm dev --inspect
 
 ```powershell
 # Launch the installed Tauri build
-& "$env:LOCALAPPDATA\Programs\vibe-code-studio\Vibe Code Studio.exe"
+& 'V:\Apps\Vibe_Code_Studio\vibe-code-studio.exe'
 
 # Check logs
 Get-Content D:\logs\vibe-code-studio\app.log -Tail 100
@@ -448,8 +448,8 @@ netstat -ano | findstr :5173
 # Kill hung processes
 Get-Process | Where-Object { $_.ProcessName -like "*vibe*" } | Stop-Process -Force
 
-# Reset installed app data
-Remove-Item -Recurse "$env:LOCALAPPDATA\Programs\vibe-code-studio"
+# Do not recreate a C-drive app profile. Use the app's documented reset workflow
+# for D:\data\vibe-code-studio if a reset is actually required.
 ```
 
 ---
@@ -486,12 +486,12 @@ import { useState, useEffect } from 'react';
 
 const FileExplorer = () => {
   const [files, setFiles] = useState([]);
-  
+
   useEffect(() => {
     // Load files via the Tauri-backed native bridge
     new ElectronService().readDir(projectPath).then(setFiles);
   }, [projectPath]);
-  
+
   return (
     // Render file tree
   );
@@ -592,6 +592,5 @@ ls dist -Recurse | Measure-Object -Property Length -Sum
 
 ---
 
-**Last Updated:** June 20, 2026 (Tauri 2 runtime sync)  
+**Last Updated:** July 18, 2026 (V/D path-policy reconciliation)  
 **Status:** Active Development
-

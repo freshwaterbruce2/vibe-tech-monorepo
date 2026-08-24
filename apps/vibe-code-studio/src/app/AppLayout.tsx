@@ -5,7 +5,7 @@
  * See src/app/contexts.tsx for context definitions.
  */
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Suspense, useMemo, useState } from 'react';
 import styled from 'styled-components';
 
@@ -16,6 +16,8 @@ import { NotificationContainer } from '../components/Notification';
 import Sidebar from '../components/Sidebar';
 import StatusBar from '../components/StatusBar';
 import TitleBar from '../components/TitleBar';
+import { zoomEditorFont } from './appLayout.zoom';
+import { VisualPanelShell } from './VisualPanelShell';
 
 // Lazy-loaded conditional panels (only loaded when their toggle opens them)
 import {
@@ -48,6 +50,7 @@ import {
 
 import type { GeneratedFix } from '../services/AutoFixService';
 import { logger } from '../services/Logger';
+import { useAgentManagerStore } from '../stores/agentManagerStore';
 import { applySettingsChange } from './applySettingsChange';
 import { useAppExtras, useServices, useUIPanel, useWorkspaceCtx } from './contexts';
 import { useEffect } from 'react';
@@ -87,6 +90,13 @@ export function AppLayout() {
   const extras = useAppExtras();
 
   const [workspaceRefreshKey, setWorkspaceRefreshKey] = useState(0);
+  const agentManagerOpen = useAgentManagerStore(state => state.panelOpen);
+  const toggleAgentManagerPanel = useAgentManagerStore(state => state.actions.togglePanel);
+  // Wave-2 agent UX (RUNTIME_DIAGNOSIS.md): Tasks opens the Agent Manager; the
+  // multi-agent Review overlay and the legacy BackgroundTaskPanel are opt-in.
+  const reviewAgentsEnabled = import.meta.env.VITE_ENABLE_REVIEW_AGENTS === 'true';
+  const legacyTaskPanelEnabled =
+    import.meta.env.VITE_ENABLE_LEGACY_BACKGROUND_TASK_PANEL === 'true';
   const [user, setUser] = useState<UserWithPlan | null>(authService.getCurrentUser());
   const [sessionChecked, setSessionChecked] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null);
@@ -187,7 +197,16 @@ export function AppLayout() {
         onToggleSidebar={() => ui.setSidebarOpen(!ui.sidebarOpen)}
         onToggleAIChat={() => ui.setAiChatOpen(!ui.aiChatOpen)}
         onTogglePreview={() => ui.setPreviewOpen(!ui.previewOpen)}
-        onToggleBackgroundPanel={() => ui.setBackgroundPanelOpen(!ui.backgroundPanelOpen)}
+        onToggleBackgroundPanel={
+          legacyTaskPanelEnabled
+            ? () => ui.setBackgroundPanelOpen(!ui.backgroundPanelOpen)
+            : toggleAgentManagerPanel
+        }
+        onToggleGitPanel={() => ui.setGitPanelOpen(!ui.gitPanelOpen)}
+        onFind={() => ui.setGlobalSearchOpen(true)}
+        onReplace={() => ui.setGlobalSearchOpen(true)}
+        onZoomIn={() => ws.updateEditorSettings(zoomEditorFont(ws.editorSettings, 1))}
+        onZoomOut={() => ws.updateEditorSettings(zoomEditorFont(ws.editorSettings, -1))}
         previewOpen={ui.previewOpen}
       />
 
@@ -254,7 +273,6 @@ export function AppLayout() {
         {ui.aiChatOpen && (
           <Suspense fallback={<div>Loading AI Chat...</div>}>
             <LazyAIChat
-              data-testid="ai-chat"
               messages={extras.aiMessages}
               isAiResponding={extras.isAiResponding}
               responseState={extras.aiResponseState}
@@ -263,11 +281,12 @@ export function AppLayout() {
               onClearMessages={extras.clearAiMessages}
               onClose={() => ui.setAiChatOpen(false)}
               showReasoningProcess={ws.editorSettings.showReasoningProcess}
-              currentModel={ws.editorSettings.aiModel}
+              currentModel={extras.currentModel}
               mode={ui.chatMode}
               onModeChange={ui.setChatMode}
               taskPlanner={services.taskPlanner}
               executionEngine={services.executionEngine}
+              agentRuntime={services.agentRuntime}
               workspaceContext={memoizedWorkspaceContext}
               onAddMessage={extras.addAiMessage}
               onUpdateMessage={extras.updateAiMessage}
@@ -287,6 +306,9 @@ export function AppLayout() {
                   `Failed to execute ${task.title}: ${error.message}`
                 );
               }}
+              onTaskCancelled={(task, reason) => {
+                extras.showWarning('Task Cancelled', `${task.title}: ${reason}`);
+              }}
               onMultiFileEditDetected={extras.handleMultiFileEditDetected}
             />
           </Suspense>
@@ -298,7 +320,7 @@ export function AppLayout() {
           </Suspense>
         )}
 
-        {ui.backgroundPanelOpen && (
+        {legacyTaskPanelEnabled && ui.backgroundPanelOpen && (
           <Suspense fallback={null}>
             <BackgroundTaskPanel
               backgroundAgent={services.backgroundAgentSystem}
@@ -319,10 +341,21 @@ export function AppLayout() {
         terminalOpen={ui.terminalOpen}
         agentModeOpen={ui.agentModeOpen}
         currentModel={extras.currentModel}
+        onGitClick={() => ui.setGitPanelOpen(true)}
         onToggleSidebar={() => ui.setSidebarOpen(!ui.sidebarOpen)}
-        onToggleAIChat={() => ui.setAiChatOpen(!ui.aiChatOpen)}
-        onToggleBackgroundPanel={() => ui.setBackgroundPanelOpen(!ui.backgroundPanelOpen)}
-        onOpenAgentMode={() => ui.setAgentModeOpen(true)}
+        onToggleAIChat={() => {
+          const shouldOpen = !ui.aiChatOpen || ui.chatMode !== 'agent';
+          ui.setChatMode('agent');
+          ui.setAiChatOpen(shouldOpen);
+        }}
+        onToggleBackgroundPanel={
+          legacyTaskPanelEnabled
+            ? () => ui.setBackgroundPanelOpen(!ui.backgroundPanelOpen)
+            : undefined
+        }
+        agentManagerOpen={agentManagerOpen}
+        onOpenAgentManager={toggleAgentManagerPanel}
+        onOpenAgentMode={reviewAgentsEnabled ? () => ui.setAgentModeOpen(true) : undefined}
         onOpenTerminal={() => ui.setTerminalOpen(!ui.terminalOpen)}
         onToggleScreenshot={extras.handleToggleScreenshotPanel}
         onToggleLibrary={extras.handleToggleComponentLibrary}
@@ -335,17 +368,7 @@ export function AppLayout() {
       />
 
       <Suspense fallback={null}>
-        <EditorStreamPanel
-          isStreaming={services.liveStream.isCurrentlyStreaming()}
-          onApprove={filePath => {
-            logger.debug(`[App] Approved changes for: ${filePath}`);
-            extras.showSuccess('Changes Approved', `Applied changes to ${filePath}`);
-          }}
-          onReject={filePath => {
-            logger.debug(`[App] Rejected changes for: ${filePath}`);
-            extras.showWarning('Changes Rejected', `Discarded changes to ${filePath}`);
-          }}
-        />
+        <EditorStreamPanel isStreaming={services.liveStream.isCurrentlyStreaming()} />
       </Suspense>
 
       {/* Auto-Fix Error Panel */}
@@ -403,12 +426,12 @@ export function AppLayout() {
         <LazySettings
           isOpen={ui.settingsOpen}
           onClose={() => ui.setSettingsOpen(false)}
-          settings={ws.editorSettings}
+          settings={{ ...ws.editorSettings, aiModel: extras.currentModel }}
           onSettingsChange={newSettings =>
             applySettingsChange(
               {
                 updateEditorSettings: ws.updateEditorSettings,
-                prevAiModel: ws.editorSettings.aiModel,
+                prevAiModel: extras.currentModel,
                 aiService: services.aiService,
                 showSuccess: extras.showSuccess,
                 showError: extras.showError,
@@ -449,60 +472,33 @@ export function AppLayout() {
       {/* Visual No-Code Panels */}
       <AnimatePresence>
         {ui.activeVisualPanel === 'screenshot' && (
-          <motion.div
-            initial={{ opacity: 0, x: 300 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 300 }}
-            style={{
-              position: 'absolute',
-              right: 0,
-              top: 0,
-              bottom: 0,
-              width: '450px',
-              zIndex: 100,
-              boxShadow: '-4px 0 20px rgba(0,0,0,0.3)',
-            }}
+          <VisualPanelShell
+            componentName="Screenshot to Code"
+            motionVariant="side"
+            onClose={() => ui.setActiveVisualPanel('none')}
           >
             <ScreenshotToCodePanel
               apiKey={extras.openrouterApiKey}
               onInsertCode={extras.handleInsertCode}
             />
-          </motion.div>
+          </VisualPanelShell>
         )}
 
         {ui.activeVisualPanel === 'library' && (
-          <motion.div
-            initial={{ opacity: 0, x: 300 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 300 }}
-            style={{
-              position: 'absolute',
-              right: 0,
-              top: 0,
-              bottom: 0,
-              width: '450px',
-              zIndex: 100,
-              boxShadow: '-4px 0 20px rgba(0,0,0,0.3)',
-            }}
+          <VisualPanelShell
+            componentName="Component Library"
+            motionVariant="side"
+            onClose={() => ui.setActiveVisualPanel('none')}
           >
             <ComponentLibrary onInsertComponent={extras.handleInsertCode} />
-          </motion.div>
+          </VisualPanelShell>
         )}
 
         {ui.activeVisualPanel === 'visual' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 200,
-              background: 'rgba(0,0,0,0.95)',
-            }}
+          <VisualPanelShell
+            componentName="Visual Editor"
+            motionVariant="fullscreen"
+            onClose={() => ui.setActiveVisualPanel('none')}
           >
             <VisualEditor
               onSave={(_elements, code) => {
@@ -510,7 +506,7 @@ export function AppLayout() {
                 ui.setActiveVisualPanel('none');
               }}
             />
-          </motion.div>
+          </VisualPanelShell>
         )}
 
         {extras.multiFileApprovalOpen && extras.multiFileEditPlan && (
@@ -565,9 +561,11 @@ export function AppLayout() {
         <AgentManagerPanelHost />
       </Suspense>
 
-      <Suspense fallback={null}>
-        <PerformanceMonitor />
-      </Suspense>
+      {import.meta.env.DEV && (
+        <Suspense fallback={null}>
+          <PerformanceMonitor />
+        </Suspense>
+      )}
 
       {ui.brainScanOpen && (
         <div
@@ -595,6 +593,7 @@ export function AppLayout() {
             }}
             orchestrator={services.orchestrator}
             performanceOptimizer={services.performanceOptimizer}
+            currentModel={extras.currentModel}
             workspaceContext={
               ws.workspaceFolder
                 ? {

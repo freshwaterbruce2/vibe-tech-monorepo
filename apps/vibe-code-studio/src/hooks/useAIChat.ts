@@ -2,6 +2,7 @@ import { startTransition, useCallback, useEffect, useRef, useState } from 'react
 
 import { isCancellationLifecycleEnabled } from '../config/aiRolloutFlags';
 import { MultiFileEditDetector } from '../services/ai/MultiFileEditDetector';
+import { TaskPersistence } from '../services/ai/TaskPersistence';
 import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
 import { logger } from '../services/Logger';
 import { telemetry } from '../services/TelemetryService';
@@ -85,6 +86,72 @@ function loadPersistedMessages(): AIMessage[] {
   }
 }
 
+function parsePersistedMessages(raw: unknown): AIMessage[] {
+  if (typeof raw !== 'string' || !raw.trim()) return [WELCOME_MESSAGE];
+  const parsed = JSON.parse(raw) as Array<AIMessage & { timestamp: string }>;
+  if (!Array.isArray(parsed)) return [WELCOME_MESSAGE];
+  return parsed.map(message => ({
+    ...message,
+    timestamp: new Date(message.timestamp),
+    ...(message.agentTask
+      ? {
+          agentTask: {
+            ...message.agentTask,
+            task: {
+              ...message.agentTask.task,
+              createdAt: new Date(message.agentTask.task.createdAt),
+              ...(message.agentTask.task.startedAt
+                ? { startedAt: new Date(message.agentTask.task.startedAt) }
+                : {}),
+              ...(message.agentTask.task.completedAt
+                ? { completedAt: new Date(message.agentTask.task.completedAt) }
+                : {}),
+            },
+          },
+        }
+      : {}),
+  }));
+}
+
+async function restoreTerminalOutcomes(messages: AIMessage[]): Promise<AIMessage[]> {
+  const persistence = new TaskPersistence();
+  return Promise.all(
+    messages.map(async message => {
+      const task = message.agentTask?.task;
+      if (!task) return message;
+      let outcome;
+      try {
+        [outcome] = await persistence.getChatOutcomes(task.id, 1);
+      } catch (error) {
+        logger.warn(`[useAIChat] Failed to restore terminal outcome for ${task.id}:`, error);
+        return message;
+      }
+      if (!outcome?.finalReport.trim()) return message;
+
+      const finalReport = outcome.finalReport.trim();
+      const status = outcome.outcome;
+      return {
+        ...message,
+        content:
+          status === 'completed' ? `**Agent Task**: ${task.title}\n\n${finalReport}` : finalReport,
+        timestamp: new Date(outcome.createdAt),
+        agentTask: {
+          ...message.agentTask,
+          task: {
+            ...task,
+            status,
+            finalReport,
+            completedAt: new Date(outcome.createdAt),
+          },
+          currentStep: undefined,
+          pendingApproval: undefined,
+          phase: status,
+        },
+      };
+    })
+  );
+}
+
 export interface UseAIChatReturn {
   aiMessages: AIMessage[];
   aiChatOpen: boolean;
@@ -123,6 +190,7 @@ export function useAIChat({
 }: UseAIChatProps): UseAIChatReturn {
   const cancellationLifecycleEnabled = isCancellationLifecycleEnabled();
   const [aiMessages, setAiMessages] = useState<AIMessage[]>(loadPersistedMessages);
+  const [messagesHydrated, setMessagesHydrated] = useState(() => !window.electron?.store);
   const [aiChatOpen, setAiChatOpenState] = useState(false);
   const [isAiResponding, setIsAiResponding] = useState(false);
   const [aiResponseState, setAiResponseState] = useState<AIResponseState>('idle');
@@ -262,8 +330,29 @@ export function useAIChat({
     };
   }, [cancelAiResponseWithReason]);
 
+  useEffect(() => {
+    const store = window.electron?.store;
+    if (!store) return;
+    let cancelled = false;
+    void store
+      .get(CHAT_STORAGE_KEY)
+      .then(parsePersistedMessages)
+      .then(restoreTerminalOutcomes)
+      .then(messages => {
+        if (!cancelled) setAiMessages(messages);
+      })
+      .catch(error => logger.error('[useAIChat] Failed to restore chat history:', error))
+      .finally(() => {
+        if (!cancelled) setMessagesHydrated(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Persist messages on every change — use electron-store in Electron, localStorage as web fallback
   useEffect(() => {
+    if (!messagesHydrated) return;
     try {
       const json = JSON.stringify(aiMessages.slice(-MAX_PERSISTED_MESSAGES));
       if (window.electron?.store) {
@@ -274,7 +363,7 @@ export function useAIChat({
     } catch {
       // ignore quota / store errors
     }
-  }, [aiMessages]);
+  }, [aiMessages, messagesHydrated]);
 
   const handleSendMessage = useCallback(
     async (message: string, contextRequest?: Partial<AIContextRequest>) => {
@@ -434,7 +523,9 @@ export function useAIChat({
           streamedChunkCount += 1;
 
           // Check if this is reasoning content
-          if (chunk.startsWith('[REASONING] ')) {
+          if (chunk.startsWith('[REASONING] ') && chunk.endsWith('[/REASONING]')) {
+            aiReasoningContent += chunk.slice(12, -12);
+          } else if (chunk.startsWith('[REASONING] ')) {
             isCollectingReasoning = true;
             aiReasoningContent += chunk.substring(12); // Remove [REASONING] prefix
           } else if (isCollectingReasoning && chunk === '[/REASONING]') {

@@ -4,7 +4,14 @@
  */
 
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
-import { useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type MutableRefObject,
+  type SetStateAction,
+} from 'react';
 import type { editor as MonacoEditor } from 'monaco-editor';
 import type { AutoFixService, GeneratedFix } from '../../services/AutoFixService';
 import type { DetectedError, ErrorDetector } from '../../services/ErrorDetector';
@@ -33,6 +40,7 @@ export interface UseAppStateReturn {
   chatMode: ChatMode;
   setChatMode: (mode: ChatMode) => void;
   gitPanelOpen: boolean;
+  setGitPanelOpen: (open: boolean) => void;
   globalSearchOpen: boolean;
   setGlobalSearchOpen: (open: boolean) => void;
   keyboardShortcutsOpen: boolean;
@@ -98,7 +106,7 @@ export function useAppState(): UseAppStateReturn {
   // UI State
   const [previewOpen, setPreviewOpen] = useState(false);
   const [chatMode, setChatMode] = useState<ChatMode>('chat');
-  const [gitPanelOpen] = useState(false);
+  const [gitPanelOpen, setGitPanelOpen] = useState(false);
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [keyboardShortcutsOpen, setKeyboardShortcutsOpen] = useState(false);
   const [backgroundPanelOpen, setBackgroundPanelOpen] = useState(false);
@@ -123,6 +131,16 @@ export function useAppState(): UseAppStateReturn {
   const [currentModel, setCurrentModel] = useState(() => useAIStore.getState().currentModel);
   const [currentProvider, setCurrentProvider] = useState('openrouter'); // Use OpenRouter as default (routes all providers)
   const [openrouterApiKey, setOpenrouterApiKey] = useState<string>('');
+
+  useEffect(
+    () =>
+      useAIStore.subscribe((state, previousState) => {
+        if (state.currentModel !== previousState.currentModel) {
+          setCurrentModel(state.currentModel);
+        }
+      }),
+    []
+  );
 
   // Refs for Monaco editor and auto-fix
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
@@ -175,6 +193,7 @@ export function useAppState(): UseAppStateReturn {
     chatMode,
     setChatMode,
     gitPanelOpen,
+    setGitPanelOpen,
     globalSearchOpen,
     setGlobalSearchOpen,
     keyboardShortcutsOpen,

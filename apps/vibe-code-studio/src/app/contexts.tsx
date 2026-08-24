@@ -20,6 +20,7 @@ import type { LiveEditorStream } from '../services/LiveEditorStream';
 import type { ExecutionEngine } from '../services/ai/ExecutionEngine';
 import type { TaskPlanner } from '../services/ai/TaskPlanner';
 import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
+import type { AgentRuntime } from '../services/agent-runtime/AgentRuntime';
 import type { AIModel, AIProvider } from '../services/ai/AIProviderInterface';
 import type { SearchOptions, SearchResult, SearchScope } from '../components/GlobalSearch/types';
 import type { NotificationItem } from '../hooks/useNotifications';
@@ -44,6 +45,7 @@ export interface ServicesContextValue {
   taskPlanner: TaskPlanner;
   liveStream: LiveEditorStream;
   executionEngine: ExecutionEngine;
+  agentRuntime: AgentRuntime;
   backgroundAgentSystem: BackgroundAgentSystem;
   orchestrator: AgentOrchestrator;
   performanceOptimizer: AgentPerformanceOptimizer;
@@ -67,6 +69,7 @@ export interface UIPanelContextValue {
   aiChatOpen: boolean;
   setAiChatOpen: (open: boolean) => void;
   gitPanelOpen: boolean;
+  setGitPanelOpen: (open: boolean) => void;
   globalSearchOpen: boolean;
   setGlobalSearchOpen: (open: boolean) => void;
   keyboardShortcutsOpen: boolean;

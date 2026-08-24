@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -63,7 +63,7 @@ const DialogHeader = styled.div<{ $variant: DialogVariant }>`
   border-bottom: 1px solid rgba(139, 92, 246, 0.1);
   position: relative;
 
-  ${(props) => {
+  ${props => {
     const colors = {
       info: vibeTheme.colors.info,
       warning: vibeTheme.colors.warning,
@@ -93,7 +93,7 @@ const DialogIcon = styled.div<{ $variant: DialogVariant }>`
   border-radius: ${vibeTheme.borderRadius.md};
   flex-shrink: 0;
 
-  ${(props) => {
+  ${props => {
     const config = {
       info: { bg: 'rgba(59, 130, 246, 0.15)', color: vibeTheme.colors.info },
       warning: { bg: 'rgba(245, 158, 11, 0.15)', color: vibeTheme.colors.warning },
@@ -186,7 +186,9 @@ export const Dialog = ({
 }: DialogProps) => {
   // Close on Escape key
   useEffect(() => {
-    if (!isOpen) { return; }
+    if (!isOpen) {
+      return;
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -236,7 +238,9 @@ export const Dialog = ({
     onClose();
   };
 
-  if (!isOpen) { return null; }
+  if (!isOpen) {
+    return null;
+  }
 
   const content = (
     <AnimatePresence>
@@ -305,45 +309,4 @@ export const Dialog = ({
 
   // Render using portal
   return createPortal(content, document.body);
-};
-
-// Hook for managing dialog state
-export const useDialog = () => {
-  const [dialog, setDialog] = React.useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    variant?: DialogVariant;
-    confirmLabel?: string;
-    onConfirm?: () => void;
-  } | null>(null);
-
-  const showDialog = (
-    title: string,
-    message: string,
-    options?: {
-      variant?: DialogVariant;
-      confirmLabel?: string;
-      onConfirm?: () => void;
-    }
-  ) => {
-    setDialog({
-      isOpen: true,
-      title,
-      message,
-      variant: options?.variant ?? 'info',
-      confirmLabel: options?.confirmLabel ?? 'Confirm',
-      onConfirm: options?.onConfirm,
-    });
-  };
-
-  const hideDialog = () => {
-    setDialog(null);
-  };
-
-  return {
-    dialog,
-    showDialog,
-    hideDialog,
-  };
 };

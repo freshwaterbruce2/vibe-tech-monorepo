@@ -1,5 +1,5 @@
-import type { CSSProperties} from 'react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type { CSSProperties, ReactNode, UIEvent } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 
 import { vibeTheme } from '../styles/theme';
@@ -21,7 +21,7 @@ interface VirtualListProps<T> {
   items: T[];
   height: number;
   itemHeight: number | ((index: number) => number);
-  renderItem: (item: T, index: number, style: CSSProperties) => React.ReactNode;
+  renderItem: (item: T, index: number, style: CSSProperties) => ReactNode;
   overscan?: number;
   onScroll?: (scrollTop: number) => void;
   className?: string;
@@ -118,7 +118,7 @@ export function VirtualList<T>({
   }, [items, scrollTop, height, overscan, getItemHeight]);
 
   // Handle scroll
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  const handleScroll = (e: UIEvent<HTMLDivElement>) => {
     const newScrollTop = e.currentTarget.scrollTop;
     setScrollTop(newScrollTop);
     setIsScrolling(true);
@@ -206,62 +206,6 @@ export function VirtualList<T>({
 }
 
 // Memoized version for better performance
-export const MemoizedVirtualList = React.memo(VirtualList) as typeof VirtualList;
-
-// Hook for virtual scrolling logic
-export function useVirtualScroll<T>(
-  items: T[],
-  containerHeight: number,
-  itemHeight: number | ((index: number) => number),
-  overscan: number = 3
-) {
-  const [scrollTop, setScrollTop] = useState(0);
-
-  const getItemHeight = useCallback(
-    (index: number): number => {
-      return typeof itemHeight === 'function' ? itemHeight(index) : itemHeight;
-    },
-    [itemHeight]
-  );
-
-  const visibleRange = React.useMemo(() => {
-    let accumulatedHeight = 0;
-    let startIndex = 0;
-    let endIndex = items.length - 1;
-
-    // Find start index
-    for (let i = 0; i < items.length; i++) {
-      const height = getItemHeight(i);
-      if (accumulatedHeight + height > scrollTop) {
-        startIndex = Math.max(0, i - overscan);
-        break;
-      }
-      accumulatedHeight += height;
-    }
-
-    // Find end index
-    accumulatedHeight = 0;
-    for (let i = startIndex; i < items.length; i++) {
-      if (accumulatedHeight > scrollTop + containerHeight) {
-        endIndex = Math.min(items.length - 1, i + overscan);
-        break;
-      }
-      accumulatedHeight += getItemHeight(i);
-    }
-
-    return { startIndex, endIndex };
-  }, [items, scrollTop, containerHeight, overscan, getItemHeight]);
-
-  const totalHeight = React.useMemo(() => {
-    return items.reduce((acc, _, index) => acc + getItemHeight(index), 0);
-  }, [items, getItemHeight]);
-
-  return {
-    scrollTop,
-    setScrollTop,
-    visibleRange,
-    totalHeight,
-  };
-}
+export const MemoizedVirtualList = memo(VirtualList) as typeof VirtualList;
 
 export default VirtualList;

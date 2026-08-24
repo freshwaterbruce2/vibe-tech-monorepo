@@ -7,31 +7,25 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
-import type {
-  LiveStreamSettings,
-  StreamProgress} from '../services/LiveEditorStream';
-import {
-  liveEditorStream
-} from '../services/LiveEditorStream';
+import type { LiveStreamSettings, StreamProgress } from '../services/LiveEditorStream';
+import { liveEditorStream } from '../services/LiveEditorStream';
 import { vibeTheme } from '../styles/theme';
 
 interface EditorStreamPanelProps {
   isStreaming: boolean;
-  onApprove?: (filePath: string) => void;
-  onReject?: (filePath: string) => void;
   minimized?: boolean;
 }
 
 const PanelContainer = styled.div<{ $minimized: boolean }>`
   position: fixed;
-  bottom: ${props => props.$minimized ? '-200px' : '20px'};
+  bottom: ${props => (props.$minimized ? '-200px' : '20px')};
   right: 20px;
   width: 350px;
   background: #1e1e1e;
   border: 1px solid #3e3e3e;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  padding: ${props => props.$minimized ? '8px' : '16px'};
+  padding: ${props => (props.$minimized ? '8px' : '16px')};
   z-index: 1000;
   transition: all 0.3s ease;
 `;
@@ -130,7 +124,7 @@ const ApprovalSection = styled.div`
   border-top: ${vibeTheme.borders.divider};
 `;
 
-const ApprovalButtons = styled.div`
+const StreamControls = styled.div`
   display: flex;
   gap: 8px;
 `;
@@ -205,50 +199,26 @@ const StatusBadge = styled.div<{ $status: 'idle' | 'streaming' | 'paused' }>`
 
 export const EditorStreamPanel = ({
   isStreaming,
-  onApprove,
-  onReject,
   minimized: initialMinimized = false,
 }: EditorStreamPanelProps) => {
   const [minimized, setMinimized] = useState(initialMinimized);
-  const [settings, setSettings] = useState<LiveStreamSettings>(
-    liveEditorStream.getSettings()
-  );
+  const [settings, setSettings] = useState<LiveStreamSettings>(liveEditorStream.getSettings());
   const [progress, setProgress] = useState<StreamProgress | null>(null);
-  const [currentFile, setCurrentFile] = useState<string>('');
 
   useEffect(() => {
     // Subscribe to progress updates
-    liveEditorStream.onProgress((prog) => {
+    liveEditorStream.onProgress(prog => {
       setProgress(prog);
-      setCurrentFile(prog.filePath);
     });
+  }, []);
 
-    // Subscribe to approval requests
-    liveEditorStream.onApprovalRequired((approved, filePath) => {
-      if (approved && onApprove) {
-        onApprove(filePath);
-      } else if (!approved && onReject) {
-        onReject(filePath);
-      }
-    });
-  }, [onApprove, onReject]);
-
-  const handleSettingChange = (key: keyof LiveStreamSettings, value: LiveStreamSettings[keyof LiveStreamSettings]) => {
+  const handleSettingChange = (
+    key: keyof LiveStreamSettings,
+    value: LiveStreamSettings[keyof LiveStreamSettings]
+  ) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
     liveEditorStream.updateSettings(newSettings);
-  };
-
-  const handleApprove = () => {
-    if (onApprove && currentFile) {
-      onApprove(currentFile);
-    }
-  };
-
-  const handleReject = () => {
-    if (onReject && currentFile) {
-      onReject(currentFile);
-    }
   };
 
   const handleStop = () => {
@@ -256,7 +226,9 @@ export const EditorStreamPanel = ({
   };
 
   const getStatus = (): 'idle' | 'streaming' | 'paused' => {
-    if (isStreaming) { return 'streaming'; }
+    if (isStreaming) {
+      return 'streaming';
+    }
     return 'idle';
   };
 
@@ -267,9 +239,7 @@ export const EditorStreamPanel = ({
           <PanelTitle>Live Editor Streaming</PanelTitle>
           <StatusBadge $status={getStatus()}>{getStatus()}</StatusBadge>
         </div>
-        <MinimizeButton>
-          {minimized ? '▲' : '▼'}
-        </MinimizeButton>
+        <MinimizeButton>{minimized ? '▲' : '▼'}</MinimizeButton>
       </PanelHeader>
 
       {!minimized && (
@@ -280,7 +250,9 @@ export const EditorStreamPanel = ({
                 <ProgressFill $percent={progress.percentComplete} />
               </ProgressBar>
               <ProgressText>
-                <span>{progress.currentChar} / {progress.totalChars} chars</span>
+                <span>
+                  {progress.currentChar} / {progress.totalChars} chars
+                </span>
                 <span>{progress.percentComplete}%</span>
               </ProgressText>
               <ProgressText>
@@ -296,21 +268,9 @@ export const EditorStreamPanel = ({
                 <SettingCheckbox
                   type="checkbox"
                   checked={settings.enabled}
-                  onChange={(e) => handleSettingChange('enabled', e.target.checked)}
-                />
-                {' '}Enable Live Streaming
-              </SettingLabel>
-            </SettingRow>
-
-            <SettingRow>
-              <SettingLabel>
-                <SettingCheckbox
-                  type="checkbox"
-                  checked={settings.autoApprove}
-                  onChange={(e) => handleSettingChange('autoApprove', e.target.checked)}
-                  disabled={!settings.enabled}
-                />
-                {' '}Auto-approve Changes
+                  onChange={e => handleSettingChange('enabled', e.target.checked)}
+                />{' '}
+                Enable Live Streaming
               </SettingLabel>
             </SettingRow>
 
@@ -319,10 +279,10 @@ export const EditorStreamPanel = ({
                 <SettingCheckbox
                   type="checkbox"
                   checked={settings.showDiffOnly}
-                  onChange={(e) => handleSettingChange('showDiffOnly', e.target.checked)}
+                  onChange={e => handleSettingChange('showDiffOnly', e.target.checked)}
                   disabled={!settings.enabled}
-                />
-                {' '}Show Diff Only (No Streaming)
+                />{' '}
+                Show Diff Only (No Streaming)
               </SettingLabel>
             </SettingRow>
 
@@ -335,10 +295,14 @@ export const EditorStreamPanel = ({
                     min="1"
                     max="100"
                     value={settings.streamSpeed}
-                    onChange={(e) => handleSettingChange('streamSpeed', parseInt(e.target.value))}
+                    onChange={e => handleSettingChange('streamSpeed', parseInt(e.target.value))}
                   />
                   <SpeedLabel>
-                    {settings.streamSpeed < 20 ? 'Slow' : settings.streamSpeed < 60 ? 'Medium' : 'Fast'}
+                    {settings.streamSpeed < 20
+                      ? 'Slow'
+                      : settings.streamSpeed < 60
+                        ? 'Medium'
+                        : 'Fast'}
                   </SpeedLabel>
                 </div>
               </>
@@ -347,17 +311,11 @@ export const EditorStreamPanel = ({
 
           {isStreaming && (
             <ApprovalSection>
-              <ApprovalButtons>
-                <Button $variant="primary" onClick={handleApprove}>
-                  ✓ Approve
-                </Button>
-                <Button $variant="danger" onClick={handleReject}>
-                  ✗ Reject
-                </Button>
+              <StreamControls>
                 <Button $variant="secondary" onClick={handleStop}>
                   ⏸ Stop
                 </Button>
-              </ApprovalButtons>
+              </StreamControls>
             </ApprovalSection>
           )}
         </>

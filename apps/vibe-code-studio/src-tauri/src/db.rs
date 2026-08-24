@@ -3,11 +3,19 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::State;
 
+#[path = "agent_persistence.rs"]
+mod agent_persistence;
+#[path = "db_migrations.rs"]
+mod db_migrations;
+
+pub use agent_persistence::{AgentTerminalInput, AgentTransitionInput, LearningOutcome};
+use db_migrations::{configure_connection, run_vibe_studio_migrations};
+
 pub struct DbState {
     pub conn: Mutex<Option<Connection>>,
 }
 
-fn get_db_path() -> PathBuf {
+fn get_db_path() -> Result<PathBuf, String> {
     // App-specific override ONLY. We deliberately do NOT honor the generic
     // DATABASE_PATH here: other monorepo apps consume it (vibe-invoice, vibe-justice),
     // and a stray DATABASE_PATH=...\database.db would point VCS at the wrong file,
@@ -15,117 +23,117 @@ fn get_db_path() -> PathBuf {
     // vibe-blox VIBEBLOX_DATABASE_PATH convention. Unset => canonical default below.
     if let Ok(env_path) = std::env::var("VCS_DATABASE_PATH") {
         if !env_path.trim().is_empty() {
-            return PathBuf::from(env_path);
+            let path = PathBuf::from(env_path.trim());
+            validate_windows_database_path(&path)?;
+            return Ok(path);
         }
     }
 
-    // Follow the Vibe workspace convention: data on D:\databases\
+    // Follow the Vibe workspace convention: durable data stays on D:\.
+    // Do not silently fall back to a user-profile directory: that would split
+    // state and recreate prohibited C:\Users runtime data.
     if cfg!(target_os = "windows") {
-        let d_path = PathBuf::from(r"D:\databases\vibe_studio.db");
-        if d_path.parent().map(|p| p.exists()).unwrap_or(false) {
-            return d_path;
-        }
+        return Ok(PathBuf::from(r"D:\databases\vibe_studio.db"));
     }
     // Fallback to user data directory
-    dirs::data_dir()
+    Ok(dirs::data_dir()
         .unwrap_or_else(|| PathBuf::from("."))
         .join("vibe-code-studio")
-        .join("vibe_studio.db")
+        .join("vibe_studio.db"))
+}
+
+fn validate_windows_database_path(path: &std::path::Path) -> Result<(), String> {
+    if !cfg!(target_os = "windows") {
+        return Ok(());
+    }
+    let normalized = path
+        .to_string_lossy()
+        .replace('/', "\\")
+        .to_ascii_lowercase();
+    if normalized.starts_with("\\\\") || normalized.starts_with(r"\\?\") {
+        return Err("VCS_DATABASE_PATH cannot be a UNC or device path".into());
+    }
+    if normalized.split('\\').any(|segment| segment == "..") {
+        return Err("VCS_DATABASE_PATH cannot contain traversal segments".into());
+    }
+    if !normalized.starts_with(r"d:\databases\") {
+        return Err("VCS_DATABASE_PATH must remain inside D:\\databases".into());
+    }
+    Ok(())
 }
 
 fn ensure_connection(state: &DbState) -> Result<(), String> {
     let mut guard = state.conn.lock().map_err(|e| e.to_string())?;
     if guard.is_none() {
-        let db_path = get_db_path();
+        let db_path = get_db_path()?;
 
         // Ensure parent directory exists
         if let Some(parent) = db_path.parent() {
             std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         }
 
-        let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
-        conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")
-            .map_err(|e| e.to_string())?;
-
-        // Create strategy_memory table if it doesn't exist.
-        // pattern_hash is UNIQUE so db_save_pattern's ON CONFLICT(pattern_hash)
-        // upsert resolves against it (without the constraint the upsert errors).
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS strategy_memory (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                pattern_hash TEXT UNIQUE NOT NULL,
-                pattern_data TEXT NOT NULL,
-                success_rate REAL DEFAULT 0,
-                usage_count INTEGER DEFAULT 0,
-                last_used DATETIME,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )",
-            [],
-        )
-        .map_err(|e| e.to_string())?;
-
-        // Agent schedules (spec 16). The renderer persists full definitions as
-        // JSON blobs via db_execute_query, which rejects DDL — so the table
-        // must be created here.
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS agent_schedules (
-                id TEXT PRIMARY KEY,
-                definition_data TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )",
-            [],
-        )
-        .map_err(|e| e.to_string())?;
-
-        // Verifiable artifacts (spec 09). task_id/kind are real columns so the
-        // panel can filter server-side; the full artifact is a JSON blob.
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS artifacts (
-                id TEXT PRIMARY KEY,
-                task_id TEXT NOT NULL,
-                kind TEXT NOT NULL,
-                artifact_data TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )",
-            [],
-        )
-        .map_err(|e| e.to_string())?;
-
-        // Artifact comments (spec 09 Phase 2). artifact_id/task_id are real
-        // columns for filtering + cascade delete; the comment is a JSON blob.
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS artifact_comments (
-                id TEXT PRIMARY KEY,
-                artifact_id TEXT NOT NULL,
-                task_id TEXT NOT NULL,
-                comment_data TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )",
-            [],
-        )
-        .map_err(|e| e.to_string())?;
-
-        // Knowledge items (spec 04). category is a real column for panel
-        // filtering; the full item is a JSON blob (renderer uses
-        // db_execute_query, which rejects DDL — table must be created here).
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS knowledge_items (
-                id TEXT PRIMARY KEY,
-                category TEXT NOT NULL,
-                item_data TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )",
-            [],
-        )
-        .map_err(|e| e.to_string())?;
+        let mut conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
+        configure_connection(&conn)?;
+        run_vibe_studio_migrations(&mut conn)?;
 
         *guard = Some(conn);
     }
     Ok(())
+}
+
+pub(crate) fn with_connection<T>(
+    state: &DbState,
+    operation: impl FnOnce(&mut Connection) -> Result<T, String>,
+) -> Result<T, String> {
+    ensure_connection(state)?;
+    let mut guard = state.conn.lock().map_err(|error| error.to_string())?;
+    let connection = guard.as_mut().ok_or("DB not initialized")?;
+    operation(connection)
+}
+
+#[tauri::command]
+pub fn db_record_agent_transition(
+    state: State<'_, DbState>,
+    input: AgentTransitionInput,
+) -> Result<serde_json::Value, String> {
+    agent_persistence::db_record_agent_transition(state, input)
+}
+
+#[tauri::command]
+pub fn db_record_agent_terminal(
+    state: State<'_, DbState>,
+    input: AgentTerminalInput,
+) -> Result<serde_json::Value, String> {
+    agent_persistence::db_record_agent_terminal(state, input)
+}
+
+#[tauri::command]
+pub fn db_get_resumable_agent_tasks(
+    state: State<'_, DbState>,
+    limit: Option<i64>,
+) -> Result<serde_json::Value, String> {
+    agent_persistence::db_get_resumable_agent_tasks(state, limit)
+}
+
+#[tauri::command]
+pub fn db_get_agent_chat_outcomes(
+    state: State<'_, DbState>,
+    task_id: String,
+    limit: Option<i64>,
+) -> Result<serde_json::Value, String> {
+    agent_persistence::db_get_agent_chat_outcomes(state, task_id, limit)
+}
+
+#[tauri::command]
+pub fn db_flush_agent_learning_outbox(
+    state: State<'_, DbState>,
+) -> Result<serde_json::Value, String> {
+    agent_persistence::db_flush_agent_learning_outbox(state)
+}
+
+#[tauri::command]
+pub fn db_record_learning_outcome(outcome: LearningOutcome) -> Result<serde_json::Value, String> {
+    agent_persistence::db_record_learning_outcome(outcome)
 }
 
 #[derive(serde::Serialize)]
@@ -222,9 +230,7 @@ fn validate_sql(sql: &str) -> Result<SqlKind, String> {
         return Err("SQL statement is empty".into());
     }
     if trimmed.len() > MAX_SQL_BYTES {
-        return Err(format!(
-            "SQL statement exceeds {MAX_SQL_BYTES}-byte limit"
-        ));
+        return Err(format!("SQL statement exceeds {MAX_SQL_BYTES}-byte limit"));
     }
 
     // Reject statement chaining. A single trailing `;` is allowed.
@@ -236,6 +242,20 @@ fn validate_sql(sql: &str) -> Result<SqlKind, String> {
         return Err("multiple statements are not allowed".into());
     }
 
+    let normalized = no_trail.to_ascii_lowercase();
+    for protected_table in [
+        "agent_task_lifecycle",
+        "agent_task_events",
+        "agent_chat_outcomes",
+        "agent_learning_outbox",
+    ] {
+        if normalized.contains(protected_table) {
+            return Err(format!(
+                "{protected_table} is available only through typed agent persistence commands"
+            ));
+        }
+    }
+
     let verb = no_trail
         .split_whitespace()
         .next()
@@ -245,11 +265,10 @@ fn validate_sql(sql: &str) -> Result<SqlKind, String> {
     match verb.as_str() {
         "SELECT" | "WITH" => Ok(SqlKind::Read),
         "INSERT" | "UPDATE" | "DELETE" => Ok(SqlKind::Write),
-        "ATTACH" | "DETACH" | "PRAGMA" | "VACUUM" | "CREATE" | "DROP"
-        | "ALTER" | "REINDEX" | "BEGIN" | "COMMIT" | "ROLLBACK"
-        | "SAVEPOINT" | "RELEASE" | "ANALYZE" => {
-            Err(format!("SQL verb not permitted via db_execute_query: {verb}"))
-        }
+        "ATTACH" | "DETACH" | "PRAGMA" | "VACUUM" | "CREATE" | "DROP" | "ALTER" | "REINDEX"
+        | "BEGIN" | "COMMIT" | "ROLLBACK" | "SAVEPOINT" | "RELEASE" | "ANALYZE" => Err(format!(
+            "SQL verb not permitted via db_execute_query: {verb}"
+        )),
         _ => Err(format!("unrecognised SQL verb: {verb}")),
     }
 }
@@ -267,8 +286,10 @@ pub fn db_execute_query(
     let conn = guard.as_ref().ok_or("DB not initialized")?;
 
     let params_vec = query_params.unwrap_or_default();
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> =
-        params_vec.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec
+        .iter()
+        .map(|s| s as &dyn rusqlite::types::ToSql)
+        .collect();
 
     if kind == SqlKind::Read {
         let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
@@ -373,10 +394,7 @@ mod tests {
             "COMMIT",
             "ROLLBACK",
         ] {
-            assert!(
-                validate_sql(verb).is_err(),
-                "should reject: {verb}"
-            );
+            assert!(validate_sql(verb).is_err(), "should reject: {verb}");
         }
     }
 
@@ -406,5 +424,41 @@ mod tests {
     #[test]
     fn rejects_load_extension_pragma() {
         assert!(validate_sql("PRAGMA load_extension('evil.dll')").is_err());
+    }
+
+    #[test]
+    fn protects_agent_audit_tables_from_renderer_sql() {
+        assert!(validate_sql("SELECT * FROM agent_task_events").is_err());
+        assert!(validate_sql("UPDATE agent_task_lifecycle SET status=? WHERE task_id=?").is_err());
+        assert!(validate_sql("DELETE FROM agent_learning_outbox").is_err());
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_database_override_must_stay_under_d_databases() {
+        assert!(validate_windows_database_path(std::path::Path::new(
+            r"D:\databases\vibe_studio.db"
+        ))
+        .is_ok());
+        assert!(validate_windows_database_path(std::path::Path::new(
+            r"C:\Users\user\vibe_studio.db"
+        ))
+        .is_err());
+        assert!(validate_windows_database_path(std::path::Path::new(
+            r"V:\monorepo\vibe_studio.db"
+        ))
+        .is_err());
+        assert!(validate_windows_database_path(std::path::Path::new(
+            r"\\server\share\vibe_studio.db"
+        ))
+        .is_err());
+        assert!(validate_windows_database_path(std::path::Path::new(
+            r"D:\databases_evil\vibe_studio.db"
+        ))
+        .is_err());
+        assert!(
+            validate_windows_database_path(std::path::Path::new(r"D:\databases\..\escape.db"))
+                .is_err()
+        );
     }
 }

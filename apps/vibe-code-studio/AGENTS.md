@@ -64,7 +64,7 @@ pnpm nx run vibe-code-studio:verify-app-working
 
 - The Windows release path is Tauri-only.
 - Canonical installer artifacts live under `src-tauri/target/release/bundle/`.
-- Canonical installed executable path is `%LOCALAPPDATA%\Programs\vibe-code-studio\Vibe Code Studio.exe`.
+- Canonical local installation is `V:\Apps\Vibe_Code_Studio\vibe-code-studio.exe`; do not recreate a C-drive installation.
 - Use fresh local Nx runs plus an installer smoke test as release evidence.
 - Do not rely on archived logs or historical delivery notes as proof that the current build is good.
 
@@ -76,6 +76,7 @@ Cause:
 OpenRouter key or proxy configuration is missing.
 
 Fix:
+
 - Verify `VITE_OPENROUTER_API_KEY`
 - If using a local proxy, verify `VITE_OPENROUTER_PROXY_URL`
 - Restart the app after updating credentials
@@ -86,6 +87,7 @@ Cause:
 Rust, WebView2, or Windows build prerequisites are missing.
 
 Fix:
+
 - Re-check the Windows prerequisites in `README.md`
 - Rerun `pnpm nx run vibe-code-studio:package`
 
@@ -95,6 +97,7 @@ Cause:
 `ExecutionEngine` was not instantiated correctly.
 
 Fix:
+
 - Check `src/modules/core/hooks/useAppServices.ts`
 - Use a real `new ExecutionEngine(...)`, never `{ } as any`
 

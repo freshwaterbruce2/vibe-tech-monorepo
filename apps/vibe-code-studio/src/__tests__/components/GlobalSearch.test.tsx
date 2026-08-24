@@ -27,7 +27,7 @@ type SearchInFiles = (
   searchText: string,
   files: string[],
   options: SearchOptions,
-  scope?: SearchScope,
+  scope?: SearchScope
 ) => Promise<Record<string, SearchResult[]>>;
 
 const makeResult = (overrides: Partial<SearchResult> = {}): SearchResult => ({
@@ -48,9 +48,7 @@ interface Handlers {
   onSearchInFiles: ReturnType<typeof vi.fn<SearchInFiles>>;
 }
 
-const makeHandlers = (
-  searchResults: Record<string, SearchResult[]> = {},
-): Handlers => ({
+const makeHandlers = (searchResults: Record<string, SearchResult[]> = {}): Handlers => ({
   onClose: vi.fn<GlobalSearchProps['onClose']>(),
   onOpenFile: vi.fn<GlobalSearchProps['onOpenFile']>(),
   onReplaceInFile: vi.fn<GlobalSearchProps['onReplaceInFile']>().mockResolvedValue(undefined),
@@ -59,7 +57,7 @@ const makeHandlers = (
 
 const renderComponent = (
   props: Partial<React.ComponentProps<typeof GlobalSearch>> = {},
-  handlers: Handlers = makeHandlers(),
+  handlers: Handlers = makeHandlers()
 ) => {
   const merged = {
     isOpen: true,
@@ -74,14 +72,14 @@ const renderComponent = (
   const utils = render(
     <ThemeProvider theme={vibeTheme}>
       <GlobalSearch {...merged} />
-    </ThemeProvider>,
+    </ThemeProvider>
   );
   return { ...utils, handlers };
 };
 
 const renderTheHook = (
   overrides: Partial<Parameters<typeof useGlobalSearch>[0]> = {},
-  handlers: Handlers = makeHandlers(),
+  handlers: Handlers = makeHandlers()
 ) =>
   renderHook(() =>
     useGlobalSearch({
@@ -93,7 +91,7 @@ const renderTheHook = (
       workspaceFiles: ['src/foo.ts', 'src/bar.ts'],
       workspaceRoot: '/workspace',
       ...overrides,
-    }),
+    })
   );
 
 // ---------------------------------------------------------------------------
@@ -183,10 +181,48 @@ describe('GlobalSearch component', () => {
       renderComponent({}, handlers);
       // Close button is the only button with no text label in the header.
       const buttons = screen.getAllByRole('button');
-      const closeBtn = buttons.find((b) => b.textContent === '');
+      const closeBtn = buttons.find(b => b.textContent === '');
       expect(closeBtn).toBeDefined();
       fireEvent.click(closeBtn as HTMLElement);
       expect(handlers.onClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Component: Escape closes the overlay
+  // -------------------------------------------------------------------------
+
+  describe('Escape key', () => {
+    it('calls onClose when Escape is pressed in the auto-focused search input', () => {
+      const handlers = makeHandlers();
+      renderComponent({}, handlers);
+      // The search input is auto-focused on open — Escape from inside a form
+      // element must still close the overlay (enableOnFormTags).
+      const input = screen.getByPlaceholderText('Search text...');
+      fireEvent.keyDown(input, { key: 'Escape', code: 'Escape' });
+      expect(handlers.onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls onClose when Escape is pressed with focus outside the inputs', () => {
+      const handlers = makeHandlers();
+      renderComponent({}, handlers);
+      fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+      expect(handlers.onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not close during an active IME composition (isComposing)', () => {
+      const handlers = makeHandlers();
+      renderComponent({}, handlers);
+      const input = screen.getByPlaceholderText('Search text...');
+      fireEvent.keyDown(input, { key: 'Escape', code: 'Escape', isComposing: true });
+      expect(handlers.onClose).not.toHaveBeenCalled();
+    });
+
+    it('does not fire onClose while the panel is closed', () => {
+      const handlers = makeHandlers();
+      renderComponent({ isOpen: false }, handlers);
+      fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+      expect(handlers.onClose).not.toHaveBeenCalled();
     });
   });
 
@@ -195,6 +231,28 @@ describe('GlobalSearch component', () => {
   // -------------------------------------------------------------------------
 
   describe('Options & scope', () => {
+    it('toggles wholeWord, regex, and filter inputs', async () => {
+      const { handlers } = renderComponent();
+      fireEvent.click(screen.getByText('Ab'));
+      fireEvent.click(screen.getByText('.*'));
+      fireEvent.change(screen.getByPlaceholderText(/files to include/i), {
+        target: { value: 'src/**' },
+      });
+      fireEvent.change(screen.getByPlaceholderText(/files to exclude/i), {
+        target: { value: '**/*.test.ts' },
+      });
+      fireEvent.change(screen.getByPlaceholderText(/search|find/i), {
+        target: { value: 'foo' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /search/i }));
+      await waitFor(() => expect(handlers.onSearchInFiles).toHaveBeenCalled());
+      const opts = handlers.onSearchInFiles.mock.calls.at(-1)?.[2] as SearchOptions;
+      expect(opts.wholeWord).toBe(true);
+      expect(opts.regex).toBe(true);
+      expect(opts.includeFiles).toBe('src/**');
+      expect(opts.excludeFiles).toBe('**/*.test.ts');
+    });
+
     it('passes caseSensitive=true to onSearchInFiles after toggling "Aa"', async () => {
       const handlers = makeHandlers({});
       renderComponent({}, handlers);
@@ -224,6 +282,19 @@ describe('GlobalSearch component', () => {
       const lastCall = handlers.onSearchInFiles.mock.calls.at(-1)!;
       expect(lastCall[3]).toBe('workspace-recursive');
     });
+
+    it('selects open-files scope', async () => {
+      const handlers = makeHandlers({});
+      renderComponent({}, handlers);
+      fireEvent.click(screen.getByText('Open Files'));
+      fireEvent.change(screen.getByPlaceholderText('Search text...'), {
+        target: { value: 'bar' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+      await waitFor(() => expect(handlers.onSearchInFiles).toHaveBeenCalled());
+      const lastCall = handlers.onSearchInFiles.mock.calls.at(-1)!;
+      expect(lastCall[3]).toBe('open-files');
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -248,9 +319,7 @@ describe('GlobalSearch component', () => {
       });
       fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
-      await waitFor(() =>
-        expect(screen.getByText('3 results in 2 files')).toBeInTheDocument(),
-      );
+      await waitFor(() => expect(screen.getByText('3 results in 2 files')).toBeInTheDocument());
 
       const [queryArg, filesArg] = handlers.onSearchInFiles.mock.calls.at(-1)!;
       expect(queryArg).toBe('foo');
@@ -276,9 +345,7 @@ describe('GlobalSearch component', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
       // Auto-expanded => result lines visible without clicking the header.
-      await waitFor(() =>
-        expect(screen.getByText('Line 1, Column 0')).toBeInTheDocument(),
-      );
+      await waitFor(() => expect(screen.getByText('Line 1, Column 0')).toBeInTheDocument());
       // The matched substring is rendered (highlighted) for every result.
       expect(screen.getAllByText('foo').length).toBeGreaterThan(0);
     });
@@ -303,9 +370,7 @@ describe('GlobalSearch component', () => {
       });
       fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
-      await waitFor(() =>
-        expect(screen.getByText('Line 1, Column 0')).toBeInTheDocument(),
-      );
+      await waitFor(() => expect(screen.getByText('Line 1, Column 0')).toBeInTheDocument());
       // Click the file header (the FileName element) to collapse it.
       fireEvent.click(screen.getByText('src/foo.ts'));
       expect(screen.queryByText('Line 1, Column 0')).not.toBeInTheDocument();
@@ -320,9 +385,7 @@ describe('GlobalSearch component', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
       await waitFor(() => expect(handlers.onSearchInFiles).toHaveBeenCalled());
-      await waitFor(() =>
-        expect(screen.getByText('No results found')).toBeInTheDocument(),
-      );
+      await waitFor(() => expect(screen.getByText('No results found')).toBeInTheDocument());
     });
   });
 
@@ -346,7 +409,7 @@ describe('GlobalSearch component', () => {
               onReplaceInFile={handlers.onReplaceInFile}
               onSearchInFiles={handlers.onSearchInFiles}
             />
-          </ThemeProvider>,
+          </ThemeProvider>
         );
 
         act(() => {
@@ -417,8 +480,7 @@ describe('GlobalSearch component', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Replace All' }));
 
       await waitFor(() => expect(handlers.onReplaceInFile).toHaveBeenCalled());
-      const [fileArg, searchArg, replaceArg] =
-        handlers.onReplaceInFile.mock.calls.at(-1)!;
+      const [fileArg, searchArg, replaceArg] = handlers.onReplaceInFile.mock.calls.at(-1)!;
       expect(fileArg).toBe('src/foo.ts');
       expect(searchArg).toBe('foo');
       expect(replaceArg).toBe('bar');
@@ -560,10 +622,7 @@ describe('useGlobalSearch hook', () => {
     });
 
     expect(handlers.onReplaceInFile).toHaveBeenCalledTimes(2);
-    expect(handlers.onReplaceInFile.mock.calls.map((c) => c[0]).sort()).toEqual([
-      'a.ts',
-      'b.ts',
-    ]);
+    expect(handlers.onReplaceInFile.mock.calls.map(c => c[0]).sort()).toEqual(['a.ts', 'b.ts']);
     // After replacing, the hook refreshes results via another search.
     expect(handlers.onSearchInFiles).toHaveBeenCalled();
   });

@@ -3,7 +3,8 @@ import styled from 'styled-components';
 
 import { logger } from '../../services/Logger';
 
-import { ModernErrorBoundary, useErrorHandler, withErrorBoundary } from './ModernErrorBoundary';
+import { ModernErrorBoundary } from './ModernErrorBoundary';
+import { useErrorHandler, withErrorBoundary } from './withErrorBoundary';
 
 // Example components showing different error boundary patterns
 
@@ -141,7 +142,7 @@ export function ErrorBoundaryExamples() {
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
       <h1>Error Boundary Examples - 2025 Patterns</h1>
 
-      <Button onClick={() => setResetKey((k) => k + 1)}>Reset All Error Boundaries</Button>
+      <Button onClick={() => setResetKey(k => k + 1)}>Reset All Error Boundaries</Button>
 
       {/* Example 1: Basic usage */}
       <ModernErrorBoundary resetKeys={[resetKey]}>

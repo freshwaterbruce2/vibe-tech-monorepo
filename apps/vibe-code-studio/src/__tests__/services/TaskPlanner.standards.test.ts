@@ -15,7 +15,8 @@ import {
   setStandardsSetting,
 } from '../../services/ai/standards/standardsSettings';
 import { StrategyMemory } from '../../services/ai/StrategyMemory';
-import { TaskPlanner } from '../../services/ai/TaskPlanner';
+import { AGENT_PLANNING_TIMEOUT_MS, TaskPlanner } from '../../services/ai/TaskPlanner';
+import { AGENT_PLAN_JSON_SCHEMA } from '../../services/agent-runtime/contracts/AgentPlan';
 import type { UnifiedAIService } from '../../services/ai/UnifiedAIService';
 import type { FileSystemService } from '../../services/FileSystemService';
 import { logger } from '../../services/Logger';
@@ -34,25 +35,21 @@ const CURRENT_FILE = `${ROOT}/src/App.tsx`;
 const STANDARDS_HEADER = 'PROJECT AGENT STANDARDS (AGENTS.md):';
 const AGENTS_MD_BODY = '# Standards\nUse pnpm only.';
 
-const PLAN_JSON = [
-  '```json',
-  JSON.stringify({
-    title: 'Read the current file',
-    description: 'Reads one file',
-    reasoning: 'A single read suffices',
-    steps: [
-      {
-        order: 1,
-        title: 'Read file',
-        description: 'Read the target file',
-        action: { type: 'read_file', params: { filePath: CURRENT_FILE } },
-        requiresApproval: false,
-        maxRetries: 1,
-      },
-    ],
-  }),
-  '```',
-].join('\n');
+const PLAN_JSON = JSON.stringify({
+  schemaVersion: 1,
+  title: 'Read the current file',
+  description: 'Reads one file',
+  reasoning: 'A single read suffices',
+  steps: [
+    {
+      title: 'Read file',
+      description: 'Read the target file',
+      action: { type: 'read_file', params: { filePath: CURRENT_FILE } },
+      requiresApproval: false,
+      maxRetries: 1,
+    },
+  ],
+});
 
 /** Shape TaskPlanner actually sends to sendContextualMessage. */
 interface SentContextRequest {
@@ -67,7 +64,10 @@ const makeAiService = (content: string = PLAN_JSON) => {
   );
   return {
     sendContextualMessage,
-    aiService: { sendContextualMessage } as unknown as UnifiedAIService,
+    aiService: {
+      sendContextualMessage,
+      getModel: () => 'deepseek/deepseek-v4-pro',
+    } as unknown as UnifiedAIService,
   };
 };
 
@@ -75,38 +75,80 @@ const makeAiService = (content: string = PLAN_JSON) => {
 const planJsonFor = (
   steps: Array<{ type: string; params: Record<string, unknown>; description?: string }>
 ): string =>
-  [
-    '```json',
-    JSON.stringify({
-      title: 'Multi-step plan',
-      description: 'plan',
-      reasoning: 'because',
-      steps: steps.map((step, index) => ({
-        order: index + 1,
-        title: `Step ${index + 1}`,
-        description: step.description ?? `Step ${index + 1} description`,
-        action: { type: step.type, params: step.params },
-        requiresApproval: false,
-        maxRetries: 1,
-      })),
-    }),
-    '```',
-  ].join('\n');
+  JSON.stringify({
+    schemaVersion: 1,
+    title: 'Multi-step plan',
+    description: 'plan',
+    reasoning: 'because',
+    steps: steps.map((step, index) => ({
+      title: `Step ${index + 1}`,
+      description: step.description ?? `Step ${index + 1} description`,
+      action: { type: step.type, params: step.params },
+      requiresApproval: false,
+      maxRetries: 1,
+    })),
+  });
 
-/** File system stub: only `${ROOT}/AGENTS.md` exists; everything else throws. */
-const makeFileSystemService = (): FileSystemService => {
+const DEFAULT_FILE_CONTENTS: Record<string, string> = {
+  [`${ROOT}/AGENTS.md`]: AGENTS_MD_BODY,
+  [CURRENT_FILE]: 'export const App = () => null;',
+  [`${ROOT}/package.json`]: '{"name":"planner-fixture"}',
+  [`${ROOT}/tsconfig.json`]: '{"compilerOptions":{}}',
+  [`${ROOT}/src/index.ts`]: 'export {};',
+};
+
+const normalizeFixturePath = (path: string): string => path.replace(/\\/g, '/').replace(/\/+$/, '');
+
+const parentFixturePath = (path: string): string => path.slice(0, path.lastIndexOf('/'));
+
+/** File system fixture with exact files and derivable parent-directory listings. */
+const makeFileSystemService = (extraFiles: Record<string, string> = {}): FileSystemService => {
+  const files = new Map(
+    Object.entries({ ...DEFAULT_FILE_CONTENTS, ...extraFiles }).map(([path, content]) => [
+      normalizeFixturePath(path),
+      content,
+    ])
+  );
+  const directories = new Set<string>();
+  for (const path of files.keys()) {
+    let directory = parentFixturePath(path);
+    while (directory) {
+      directories.add(directory);
+      if (directory === ROOT) break;
+      directory = parentFixturePath(directory);
+    }
+  }
   const stub = {
     readFile: vi.fn(async (path: string): Promise<string> => {
-      if (path === `${ROOT}/AGENTS.md`) {
-        return AGENTS_MD_BODY;
+      const content = files.get(normalizeFixturePath(path));
+      if (content !== undefined) return content;
+      throw new Error(`ENOENT: ${normalizeFixturePath(path)}`);
+    }),
+    listDirectory: vi.fn(async (path: string) => {
+      const directory = normalizeFixturePath(path);
+      if (!directories.has(directory)) throw new Error(`ENOENT: ${directory}`);
+      return [...files.keys()]
+        .filter(filePath => parentFixturePath(filePath) === directory)
+        .map(filePath => ({
+          name: filePath.slice(filePath.lastIndexOf('/') + 1),
+          path: filePath,
+          type: 'file' as const,
+        }));
+    }),
+    getFileStats: vi.fn(async (path: string) => {
+      const target = normalizeFixturePath(path);
+      if (files.has(target)) {
+        return { size: files.get(target)?.length ?? 0, isDirectory: false };
       }
-      throw new Error(`ENOENT: ${path}`);
+      if (directories.has(target)) return { size: 0, isDirectory: true };
+      throw new Error(`ENOENT: ${target}`);
     }),
-    listDirectory: vi.fn(async (path: string): Promise<never> => {
-      throw new Error(`ENOENT: ${path}`);
-    }),
-    getFileStats: vi.fn(async (path: string): Promise<never> => {
-      throw new Error(`ENOENT: ${path}`);
+    exists: vi.fn(async (path: string) => files.has(normalizeFixturePath(path))),
+    resolveWorkspacePath: vi.fn((path: string, workspaceRoot = ROOT) => {
+      const normalizedPath = normalizeFixturePath(path);
+      return normalizedPath.startsWith('/')
+        ? normalizedPath
+        : `${normalizeFixturePath(workspaceRoot)}/${normalizedPath}`;
     }),
   };
   return stub as unknown as FileSystemService;
@@ -130,10 +172,781 @@ beforeEach(() => {
 
 afterEach(() => {
   delete win.electron;
+  vi.useRealTimers();
   vi.restoreAllMocks();
 });
 
 describe('TaskPlanner planTask — AGENTS.md standards wiring', () => {
+  it('advertises executable action parameters in the strict provider schema', () => {
+    const params =
+      AGENT_PLAN_JSON_SCHEMA.properties.steps.items.properties.action.properties.params.properties;
+
+    expect(params.filePath).toMatchObject({ type: 'string', minLength: 1 });
+    expect(params.projectName).toMatchObject({ type: 'string', minLength: 1 });
+    expect(params.workspaceRoot).toMatchObject({ type: 'string', minLength: 1 });
+  });
+
+  it('rejects a pre-aborted request before calling the provider', async () => {
+    const caller = new AbortController();
+    caller.abort();
+    const sendContextualMessage = vi.fn();
+    const planner = new TaskPlanner({ sendContextualMessage } as unknown as UnifiedAIService);
+
+    await expect(planner.planTask(makeRequest({ signal: caller.signal }))).rejects.toMatchObject({
+      name: 'AgentPlanningCancelledError',
+    });
+    expect(sendContextualMessage).not.toHaveBeenCalled();
+  });
+
+  it('forwards cancellation to the provider and does not retry', async () => {
+    const caller = new AbortController();
+    const sendContextualMessage = vi.fn(
+      ({ signal }: { signal?: AbortSignal }) =>
+        new Promise<never>((_, reject) =>
+          signal?.addEventListener(
+            'abort',
+            () => reject(new DOMException('aborted', 'AbortError')),
+            { once: true }
+          )
+        )
+    );
+    const planner = new TaskPlanner({ sendContextualMessage } as unknown as UnifiedAIService);
+    const pending = planner.planTask(makeRequest({ signal: caller.signal }));
+    await vi.waitFor(() => expect(sendContextualMessage).toHaveBeenCalledOnce());
+
+    caller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: 'AgentPlanningCancelledError' });
+    expect(sendContextualMessage.mock.calls[0]?.[0].signal.aborted).toBe(true);
+    expect(sendContextualMessage).toHaveBeenCalledOnce();
+  });
+
+  it('enforces the overall 180-second planning deadline', async () => {
+    vi.useFakeTimers();
+    const sendContextualMessage = vi.fn(() => new Promise<never>(() => undefined));
+    const planner = new TaskPlanner({ sendContextualMessage } as unknown as UnifiedAIService);
+    const assertion = expect(planner.planTask(makeRequest())).rejects.toMatchObject({
+      name: 'AgentPlanningTimeoutError',
+      message: expect.stringContaining('180 seconds'),
+    });
+
+    await vi.advanceTimersByTimeAsync(AGENT_PLANNING_TIMEOUT_MS);
+    await assertion;
+  });
+
+  it('retries one schema violation and then accepts a fresh valid plan', async () => {
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ content: '{broken' })
+      .mockResolvedValueOnce({ content: PLAN_JSON });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(makeRequest());
+
+    expect(result.task.steps).toHaveLength(1);
+    expect(sendContextualMessage).toHaveBeenCalledTimes(2);
+    expect(sendContextualMessage.mock.calls[1]?.[0].userQuery).toContain(
+      'previous response violated agent_plan_v1'
+    );
+  });
+
+  it('retries an empty search_codebase query inside the structured boundary', async () => {
+    const invalidPlan = planJsonFor([
+      {
+        type: 'search_codebase',
+        params: { searchQuery: '' },
+      },
+    ]);
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ content: invalidPlan })
+      .mockResolvedValueOnce({
+        content: '',
+        toolCalls: [
+          {
+            id: 'call-search-retry',
+            type: 'function',
+            function: { name: 'submit_agent_plan', arguments: PLAN_JSON },
+          },
+        ],
+      });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(makeRequest());
+
+    expect(result.task.steps[0]?.action.type).toBe('read_file');
+    expect(sendContextualMessage).toHaveBeenCalledTimes(2);
+    expect(sendContextualMessage.mock.calls[1]?.[0]).toMatchObject({
+      toolChoice: 'required',
+      providerPreferences: { requireParameters: true },
+    });
+    expect(sendContextualMessage.mock.calls[1]?.[0].userQuery).toContain(
+      'search_codebase requires a non-empty searchQuery'
+    );
+  });
+
+  it('retries decoded output that fails executable-action validation', async () => {
+    const invalidPlan = planJsonFor([
+      {
+        type: 'run_tests',
+        params: {},
+      },
+    ]);
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ content: invalidPlan })
+      .mockResolvedValueOnce({
+        content: '',
+        toolCalls: [
+          {
+            id: 'call-action-retry',
+            type: 'function',
+            function: { name: 'submit_agent_plan', arguments: PLAN_JSON },
+          },
+        ],
+      });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(makeRequest());
+
+    expect(result.task.steps[0]?.action.type).toBe('read_file');
+    expect(sendContextualMessage).toHaveBeenCalledTimes(2);
+    expect(sendContextualMessage.mock.calls[1]?.[0].userQuery).toContain(
+      'run_tests requires a non-empty projectName'
+    );
+  });
+
+  it('retries a missing planned artifact with a sanitized parent listing, then accepts it', async () => {
+    const missingArtifact = planJsonFor([
+      {
+        type: 'read_file',
+        params: { filePath: 'dist/index.d.ts' },
+      },
+    ]);
+    const correctedPlan = planJsonFor([
+      {
+        type: 'read_file',
+        params: { filePath: 'dist/index.js' },
+      },
+    ]);
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ content: missingArtifact })
+      .mockResolvedValueOnce({
+        content: '',
+        toolCalls: [
+          {
+            id: 'call-corrected-artifact',
+            type: 'function',
+            function: { name: 'submit_agent_plan', arguments: correctedPlan },
+          },
+        ],
+      });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService({ [`${ROOT}/dist/index.js`]: 'top-secret-artifact-content' })
+    );
+
+    const result = await planner.planTask(makeRequest());
+    const retryPrompt = sendContextualMessage.mock.calls[1]?.[0].userQuery as string;
+
+    expect(result.task.steps[0]?.action.params.filePath).toBe('dist/index.js');
+    expect(sendContextualMessage).toHaveBeenCalledTimes(2);
+    expect(retryPrompt).toContain('dist/index.d.ts');
+    expect(retryPrompt).toContain('index.js');
+    expect(retryPrompt).not.toContain('top-secret-artifact-content');
+    expect(retryPrompt).not.toContain('ENOENT:');
+  });
+
+  it('accepts multiple existing read_file and analyze_code targets without retrying', async () => {
+    const existingPlan = planJsonFor([
+      { type: 'read_file', params: { filePath: 'package.json' } },
+      { type: 'analyze_code', params: { filePath: 'tsconfig.json' } },
+      { type: 'read_file', params: { filePath: 'src/index.ts' } },
+    ]);
+    const sendContextualMessage = vi.fn().mockResolvedValue({ content: existingPlan });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(makeRequest());
+
+    expect(result.task.steps.map(step => step.action.type)).toEqual([
+      'read_file',
+      'analyze_code',
+      'read_file',
+    ]);
+    expect(sendContextualMessage).toHaveBeenCalledOnce();
+  });
+
+  it('allows an inspection target created by an earlier mutation step', async () => {
+    const generatedPath = 'generated/report.ts';
+    const generatedThenInspected = planJsonFor([
+      {
+        type: 'write_file',
+        params: { filePath: generatedPath, content: 'export const report = {};' },
+      },
+      { type: 'analyze_code', params: { filePath: generatedPath } },
+    ]);
+    const sendContextualMessage = vi.fn().mockResolvedValue({ content: generatedThenInspected });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(
+      makeRequest({
+        userRequest: 'Create generated/report.ts, then analyze it.',
+      })
+    );
+
+    expect(result.task.steps.map(step => step.action.type)).toEqual(['write_file', 'analyze_code']);
+    expect(result.task.steps[1]?.action.params.filePath).toBe(generatedPath);
+    expect(sendContextualMessage).toHaveBeenCalledOnce();
+  });
+
+  it('keeps missing planned source and config targets inside the structured retry boundary', async () => {
+    const missingSource = planJsonFor([
+      {
+        type: 'read_file',
+        params: { filePath: 'src/missing-source.ts' },
+      },
+    ]);
+    const missingConfig = planJsonFor([
+      {
+        type: 'analyze_code',
+        params: { filePath: 'tsconfig.missing.json' },
+      },
+    ]);
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ content: missingSource })
+      .mockResolvedValueOnce({
+        content: '',
+        toolCalls: [
+          {
+            id: 'call-missing-config',
+            type: 'function',
+            function: { name: 'submit_agent_plan', arguments: missingConfig },
+          },
+        ],
+      });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    await expect(planner.planTask(makeRequest())).rejects.toMatchObject({
+      name: 'AgentPlanningError',
+      metadata: {
+        validationSummary: {
+          valid: false,
+          attemptCount: 2,
+          issues: [expect.stringContaining('tsconfig.missing.json')],
+        },
+      },
+    });
+    expect(sendContextualMessage).toHaveBeenCalledTimes(2);
+    expect(sendContextualMessage.mock.calls[1]?.[0].userQuery).toContain('src/missing-source.ts');
+  });
+
+  it('fails a second invalid planned-file attempt before creating a task', async () => {
+    const missingArtifact = planJsonFor([
+      {
+        type: 'read_file',
+        params: { filePath: 'dist/index.d.ts' },
+      },
+    ]);
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ content: missingArtifact })
+      .mockResolvedValueOnce({
+        content: '',
+        toolCalls: [
+          {
+            id: 'call-repeated-missing-artifact',
+            type: 'function',
+            function: { name: 'submit_agent_plan', arguments: missingArtifact },
+          },
+        ],
+      });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService({ [`${ROOT}/dist/index.js`]: 'compiled output only' })
+    );
+
+    await expect(planner.planTask(makeRequest())).rejects.toMatchObject({
+      name: 'AgentPlanningError',
+      metadata: {
+        validationSummary: {
+          valid: false,
+          attemptCount: 2,
+          issues: [expect.stringContaining('dist/index.d.ts')],
+        },
+      },
+    });
+    expect(sendContextualMessage).toHaveBeenCalledTimes(2);
+    expect(sendContextualMessage.mock.calls[1]?.[0]).toMatchObject({
+      toolChoice: 'required',
+      providerPreferences: { requireParameters: true },
+    });
+  });
+
+  it('rejects synthesis-only plans for explicit file restoration requests', async () => {
+    const synthesisOnly = planJsonFor([
+      {
+        type: 'generate_code',
+        params: { description: 'Restore the entry point', targetLanguage: 'TypeScript' },
+      },
+    ]);
+    const targeted = planJsonFor([
+      {
+        type: 'generate_code',
+        params: {
+          description: 'Restore the entry point',
+          targetLanguage: 'TypeScript',
+          filePath: 'src/index.ts',
+        },
+      },
+    ]);
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ content: synthesisOnly })
+      .mockResolvedValueOnce({ content: targeted });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(
+      makeRequest({
+        userRequest: 'Restore src/index.ts entry point.',
+      })
+    );
+
+    expect(result.task.steps[0]?.action.params.filePath).toBe('src/index.ts');
+    expect(sendContextualMessage.mock.calls[1]?.[0].userQuery).toContain(
+      'no write_file, edit_file, or generate_code action with a matching filePath'
+    );
+    expect(sendContextualMessage.mock.calls[1]?.[0].userQuery).toContain(
+      'copy that exact path into action.params.filePath'
+    );
+  });
+
+  it('narrowly binds one explicit target after repeated final-step omission', async () => {
+    const synthesisOnly = planJsonFor([
+      {
+        type: 'generate_code',
+        params: {
+          description: 'Restore the coherent entry point at src/index.ts',
+          targetLanguage: 'TypeScript',
+        },
+        description: 'Synthesize findings and restore src/index.ts',
+      },
+    ]);
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ content: synthesisOnly })
+      .mockResolvedValueOnce({ content: synthesisOnly });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(
+      makeRequest({
+        userRequest: 'Restore src/index.ts entry point.',
+      })
+    );
+
+    expect(sendContextualMessage).toHaveBeenCalledTimes(2);
+    expect(result.task.steps[0]?.action.params.filePath).toBe('src/index.ts');
+  });
+
+  it('binds a missing runtime description from the final step description', async () => {
+    const missingDescription = planJsonFor([
+      {
+        type: 'generate_code',
+        params: { filePath: 'src/index.ts' },
+        description: 'Restore the coherent entry point at src/index.ts',
+      },
+    ]);
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ content: missingDescription })
+      .mockResolvedValueOnce({ content: missingDescription });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(
+      makeRequest({
+        userRequest: 'Restore src/index.ts entry point.',
+      })
+    );
+
+    expect(sendContextualMessage).toHaveBeenCalledTimes(2);
+    expect(result.task.steps[0]?.action.params.description).toBe(
+      'Restore the coherent entry point at src/index.ts'
+    );
+  });
+
+  it('associates mutation targets with clauses in the exact entry-point request', async () => {
+    const exactPlan = planJsonFor([
+      { type: 'read_file', params: { filePath: 'package.json' } },
+      { type: 'read_file', params: { filePath: 'tsconfig.json' } },
+      { type: 'read_file', params: { filePath: 'src/index.ts' } },
+      { type: 'search_codebase', params: { searchQuery: 'AGENTS.md' } },
+      { type: 'search_codebase', params: { searchQuery: ['export', 'McpServer'] } },
+      {
+        type: 'generate_code',
+        params: {
+          description: 'Restore the coherent entry point',
+          targetLanguage: 'TypeScript',
+          filePath: 'src/index.ts',
+        },
+      },
+    ]);
+    const sendContextualMessage = vi.fn().mockResolvedValue({ content: exactPlan });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(
+      makeRequest({
+        userRequest:
+          'Create src/index.ts Entry Point. Inspect package.json, tsconfig.json, nearest instructions, existing exports, and entry-point conventions. Restore the coherent proactive-recommendations-mcp entry point.',
+      })
+    );
+
+    expect(sendContextualMessage).toHaveBeenCalledTimes(1);
+    expect(result.task.steps.at(-1)?.action.params.filePath).toBe('src/index.ts');
+  });
+
+  it('adds explicitly requested instruction and convention inspections on the final attempt', async () => {
+    const incompletePlan = planJsonFor([
+      { type: 'read_file', params: { filePath: 'package.json' } },
+      { type: 'read_file', params: { filePath: 'tsconfig.json' } },
+      { type: 'read_file', params: { filePath: 'src/index.ts' } },
+      {
+        type: 'generate_code',
+        params: {
+          description: 'Restore the coherent entry point',
+          targetLanguage: 'TypeScript',
+          filePath: 'src/index.ts',
+        },
+      },
+    ]);
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ content: incompletePlan })
+      .mockResolvedValueOnce({ content: incompletePlan });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(
+      makeRequest({
+        userRequest:
+          'Create src/index.ts Entry Point. Inspect package.json, tsconfig.json, nearest instructions, existing exports, and entry-point conventions. Restore the coherent proactive-recommendations-mcp entry point.',
+      })
+    );
+
+    expect(sendContextualMessage).toHaveBeenCalledTimes(2);
+    expect(sendContextualMessage.mock.calls[1]?.[0].userQuery).toContain(
+      'required inspection evidence'
+    );
+    const searches = result.task.steps
+      .filter(step => step.action.type === 'search_codebase')
+      .flatMap(step => step.action.params.searchQuery as string[]);
+    expect(searches).toEqual(
+      expect.arrayContaining(['AGENTS.md', 'export', 'entry point', 'McpServer', 'sibling'])
+    );
+    expect(result.task.steps.at(-1)?.action.params.filePath).toBe('src/index.ts');
+  });
+
+  it('requires plans to cover every explicit mutation target', async () => {
+    const oneTarget = planJsonFor([
+      {
+        type: 'generate_code',
+        params: { description: 'Restore a', filePath: 'src/a.ts' },
+      },
+    ]);
+    const bothTargets = planJsonFor([
+      { type: 'generate_code', params: { description: 'Restore a', filePath: 'src/a.ts' } },
+      { type: 'generate_code', params: { description: 'Update b', filePath: 'src/b.ts' } },
+    ]);
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ content: oneTarget })
+      .mockResolvedValueOnce({ content: bothTargets });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(
+      makeRequest({
+        userRequest: 'Restore src/a.ts and update src/b.ts.',
+      })
+    );
+
+    expect(sendContextualMessage).toHaveBeenCalledTimes(2);
+    expect(sendContextualMessage.mock.calls[1]?.[0].userQuery).toContain('src/b.ts');
+    expect(result.task.steps.map(step => step.action.params.filePath)).toEqual([
+      'src/a.ts',
+      'src/b.ts',
+    ]);
+  });
+
+  it('does not require a mutation target for inspect-only requests', async () => {
+    const inspectPlan = planJsonFor([
+      { type: 'read_file', params: { filePath: 'package.json' } },
+      { type: 'read_file', params: { filePath: 'tsconfig.json' } },
+      { type: 'generate_code', params: { description: 'Summarize the inspected configuration' } },
+    ]);
+    const sendContextualMessage = vi.fn().mockResolvedValue({ content: inspectPlan });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(
+      makeRequest({
+        userRequest: 'Inspect package.json and tsconfig.json, then summarize their configuration.',
+      })
+    );
+
+    expect(sendContextualMessage).toHaveBeenCalledTimes(1);
+    expect(result.task.steps.at(-1)?.action.params.filePath).toBeUndefined();
+  });
+
+  it('adds a missing explicitly requested file inspection without inventing a mutation', async () => {
+    const incompleteInspectPlan = planJsonFor([
+      { type: 'read_file', params: { filePath: 'package.json' } },
+      { type: 'generate_code', params: { description: 'Summarize the inspected configuration' } },
+    ]);
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ content: incompleteInspectPlan })
+      .mockResolvedValueOnce({ content: incompleteInspectPlan });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(
+      makeRequest({
+        userRequest: 'Inspect package.json and tsconfig.json, then summarize their configuration.',
+      })
+    );
+
+    expect(result.task.steps.map(step => step.action.params.filePath)).toContain('tsconfig.json');
+    expect(
+      result.task.steps.every(
+        step =>
+          !['write_file', 'edit_file'].includes(step.action.type) &&
+          !(step.action.type === 'generate_code' && typeof step.action.params.filePath === 'string')
+      )
+    ).toBe(true);
+  });
+
+  it('reports final semantic rejection as AgentPlanningError with provider metadata', async () => {
+    const invalidPlan = planJsonFor([
+      {
+        type: 'search_codebase',
+        params: { searchQuery: [] },
+      },
+    ]);
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ content: invalidPlan })
+      .mockResolvedValueOnce({
+        content: '',
+        provider: 'openrouter',
+        model: 'deepseek/deepseek-v4-pro',
+        requestId: 'request-semantic-rejection',
+        finishReason: 'tool_calls',
+        usage: { promptTokens: 4, completionTokens: 6, totalTokens: 10 },
+        toolCalls: [
+          {
+            id: 'call-invalid-action',
+            type: 'function',
+            function: { name: 'submit_agent_plan', arguments: invalidPlan },
+          },
+        ],
+      });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    await expect(planner.planTask(makeRequest())).rejects.toMatchObject({
+      name: 'AgentPlanningError',
+      metadata: {
+        provider: 'openrouter',
+        model: 'deepseek/deepseek-v4-pro',
+        requestId: 'request-semantic-rejection',
+        finishReason: 'tool_calls',
+        planningProtocol: 'agent_plan_v1',
+        responseShape: 'submit_agent_plan_tool_call',
+        tokensUsed: 10,
+        validationSummary: {
+          schemaVersion: 1,
+          valid: false,
+          attemptCount: 2,
+          issues: [expect.stringContaining('non-empty searchQuery')],
+        },
+      },
+    });
+  });
+
+  it('accepts the native submit_agent_plan tool fallback', async () => {
+    const sendContextualMessage = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('response_format unsupported'))
+      .mockResolvedValueOnce({
+        content: '',
+        toolCalls: [
+          {
+            id: 'call-1',
+            type: 'function',
+            function: { name: 'submit_agent_plan', arguments: PLAN_JSON },
+          },
+        ],
+      });
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(makeRequest());
+
+    expect(result.task.steps[0]?.action.type).toBe('read_file');
+    expect(result.task.metadata).toMatchObject({
+      planningProtocol: 'agent_plan_v1',
+      responseShape: 'submit_agent_plan_tool_call',
+      validationSummary: { valid: true, attemptCount: 2, stepCount: 1 },
+    });
+    expect(sendContextualMessage.mock.calls[1]?.[0]).toMatchObject({
+      toolChoice: 'required',
+      providerPreferences: { requireParameters: true },
+    });
+  });
+
+  it('stores only sanitized provider planning metadata and token totals', async () => {
+    const sendContextualMessage = vi.fn().mockResolvedValue({
+      content: PLAN_JSON,
+      provider: 'openrouter\u0000proxy',
+      model: 'deepseek/deepseek-v4-pro',
+      requestId: 'request-123\n',
+      finishReason: 'stop',
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+    const planner = new TaskPlanner(
+      {
+        sendContextualMessage,
+        getModel: () => 'deepseek/deepseek-v4-pro',
+      } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(makeRequest());
+
+    expect(result.task.status).toBe('planning');
+    expect(result.task.metadata).toEqual({
+      provider: 'openrouter proxy',
+      model: 'deepseek/deepseek-v4-pro',
+      requestedModel: 'deepseek/deepseek-v4-pro',
+      resolvedModel: 'deepseek/deepseek-v4-pro',
+      requestId: 'request-123',
+      finishReason: 'stop',
+      planningProtocol: 'agent_plan_v1',
+      responseShape: 'json_schema_content',
+      tokensUsed: 30,
+      validationSummary: {
+        schemaVersion: 1,
+        valid: true,
+        attemptCount: 1,
+        stepCount: 1,
+        actionTypes: ['read_file'],
+      },
+    });
+    expect(JSON.stringify(result.task.metadata)).not.toContain(PLAN_JSON);
+  });
+
+  it('distinguishes the requested planning model from the provider-resolved model', async () => {
+    const sendContextualMessage = vi.fn().mockResolvedValue({
+      content: PLAN_JSON,
+      provider: 'openrouter',
+      model: 'deepseek/deepseek-v4-flash-20260423',
+    });
+    const planner = new TaskPlanner(
+      {
+        sendContextualMessage,
+        getModel: () => 'deepseek/deepseek-v4-pro',
+      } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    const result = await planner.planTask(makeRequest());
+
+    expect(result.task.metadata).toMatchObject({
+      model: 'deepseek/deepseek-v4-flash-20260423',
+      requestedModel: 'deepseek/deepseek-v4-pro',
+      resolvedModel: 'deepseek/deepseek-v4-flash-20260423',
+    });
+  });
+
+  it('preserves sanitized response metadata when planning ultimately fails', async () => {
+    const sendContextualMessage = vi
+      .fn()
+      .mockResolvedValueOnce({
+        content: '{broken',
+        provider: 'openrouter',
+        model: 'deepseek/deepseek-v4-pro',
+        requestId: 'request-invalid',
+        finishReason: 'stop',
+        usage: { promptTokens: 5, completionTokens: 5, totalTokens: 10 },
+      })
+      .mockRejectedValueOnce(new Error('tool fallback unavailable'));
+    const planner = new TaskPlanner(
+      { sendContextualMessage } as unknown as UnifiedAIService,
+      makeFileSystemService()
+    );
+
+    await expect(planner.planTask(makeRequest())).rejects.toMatchObject({
+      name: 'AgentPlanningError',
+      metadata: {
+        provider: 'openrouter',
+        model: 'deepseek/deepseek-v4-pro',
+        requestId: 'request-invalid',
+        planningProtocol: 'agent_plan_v1',
+        responseShape: 'submit_agent_plan_tool_call',
+        tokensUsed: 10,
+        validationSummary: {
+          schemaVersion: 1,
+          valid: false,
+          attemptCount: 2,
+          issues: ['tool fallback unavailable'],
+        },
+      },
+    });
+  });
+
   it('loads AGENTS.md via the fileSystemService and injects it into the prompt', async () => {
     const { aiService, sendContextualMessage } = makeAiService();
     const planner = new TaskPlanner(aiService, makeFileSystemService());

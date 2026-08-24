@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { FileExplorer, FileExplorerDemo } from '../../components/FileExplorer';
+import { FileExplorer } from '../../components/FileExplorer';
 
 // Mock VirtualList since it's complex and tested separately
 vi.mock('../../components/VirtualList', () => ({
@@ -316,21 +316,6 @@ describe('FileExplorer Component', () => {
       expect(() => {
         fireEvent.click(file);
       }).not.toThrow();
-    });
-  });
-
-  describe('FileExplorerDemo', () => {
-    it('should render demo with mock data', () => {
-      render(<FileExplorerDemo />);
-      expect(screen.getByText('src')).toBeInTheDocument();
-      expect(screen.getByText('package.json')).toBeInTheDocument();
-    });
-
-    it('should expand directories in demo', () => {
-      render(<FileExplorerDemo />);
-
-      fireEvent.click(screen.getByText('src'));
-      expect(screen.getByText('components')).toBeInTheDocument();
     });
   });
 

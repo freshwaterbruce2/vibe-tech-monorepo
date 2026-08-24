@@ -23,8 +23,30 @@ export default defineConfig({
         __dirname,
         'src/__tests__/__mocks__/@monaco-editor/react.tsx'
       ),
+      // main.tsx imports Monaco workers via Vite ?worker; map them for unit tests
+      'monaco-editor/esm/vs/editor/editor.worker?worker': resolve(
+        __dirname,
+        'src/__tests__/__mocks__/empty-worker.ts'
+      ),
+      'monaco-editor/esm/vs/language/css/css.worker?worker': resolve(
+        __dirname,
+        'src/__tests__/__mocks__/empty-worker.ts'
+      ),
+      'monaco-editor/esm/vs/language/html/html.worker?worker': resolve(
+        __dirname,
+        'src/__tests__/__mocks__/empty-worker.ts'
+      ),
+      'monaco-editor/esm/vs/language/json/json.worker?worker': resolve(
+        __dirname,
+        'src/__tests__/__mocks__/empty-worker.ts'
+      ),
+      'monaco-editor/esm/vs/language/typescript/ts.worker?worker': resolve(
+        __dirname,
+        'src/__tests__/__mocks__/empty-worker.ts'
+      ),
     },
   },
+
   test: {
     environment: 'jsdom',
     globals: true,
@@ -35,7 +57,10 @@ export default defineConfig({
     // which starves the ~100-file suite and drops coverage. Cap fork concurrency
     // to cut contention, and raise the test/hook timeouts to absorb slow workers.
     pool: 'forks',
-    poolOptions: { forks: { minForks: 1, maxForks: 2 } },
+    // Vitest 4: poolOptions.forks is deprecated; maxWorkers caps fork concurrency.
+    // Keep at 1 under Windows monorepo load — 2 still timed out two workers once.
+    maxWorkers: 1,
+    fileParallelism: false,
     testTimeout: 20000,
     hookTimeout: 30000,
     exclude: [

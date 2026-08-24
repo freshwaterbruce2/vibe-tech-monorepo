@@ -1,6 +1,6 @@
 {
   "name": "vibe-code-studio",
-  "version": "1.2.1",
+  "version": "1.2.3",
   "description": "Vibe Code Studio - Next-generation AI-powered code editor where innovation meets elegant design",
   "keywords": [
     "code editor",
@@ -27,8 +27,8 @@
     "hook:memory": "node hooks/memory-monitor.js",
     "hook:performance": "node hooks/performance-monitor.js",
     "hook:pre-commit": "node hooks/pre-commit.js",
-    "lint": "cd ../.. && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" pnpm exec eslint apps/vibe-code-studio/src --suppressions-location apps/vibe-code-studio/eslint-suppressions.json",
-    "lint:fix": "cd ../.. && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" pnpm exec eslint apps/vibe-code-studio/src --fix",
+    "lint": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" pnpm exec eslint src",
+    "lint:fix": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" pnpm exec eslint src --fix",
     "package": "pnpm run tauri:build",
     "prepare-native-modules": "node -e \"console.log('No native module preparation required for current local setup.')\"",
     "preview": "vite preview",
