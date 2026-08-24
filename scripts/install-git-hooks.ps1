@@ -43,6 +43,18 @@ try {
 
     [System.IO.File]::WriteAllText($hookPath, $hookBody)
     Write-Host "install-git-hooks: pre-commit hook installed at $hookPath" -ForegroundColor Green
+
+    $prePushPath = Join-Path $hooksDir 'pre-push'
+    $prePushBody = @(
+        '#!/bin/sh',
+        '# Auto-installed by scripts/install-git-hooks.ps1 - do not edit by hand.',
+        '# Runs the CI Quality Gates parity check before allowing a push.',
+        'exec pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "scripts/pre-push.ps1"',
+        ''
+    ) -join "`n"
+
+    [System.IO.File]::WriteAllText($prePushPath, $prePushBody)
+    Write-Host "install-git-hooks: pre-push hook installed at $prePushPath" -ForegroundColor Green
     exit 0
 } catch {
     Write-Host "install-git-hooks: skipped ($($_.Exception.Message))" -ForegroundColor Yellow

@@ -88,61 +88,17 @@ jobs:
       - name: Prepare directly changed projects
         shell: pwsh
         run: |
-          $changedFiles = @(
-            git diff --name-only origin/main...HEAD |
-              # Only SOURCE changes gate lint/typecheck/test. Manifest/config-only
-              # changes (package.json, tsconfig, *.yml) must not trigger whole-project
-              # legacy-debt checks; dependency correctness is covered by
-              # `pnpm install --frozen-lockfile` and the build job.
-              Where-Object { $_ -match '^(apps|packages|plugins|backend|tools)/' -and $_ -match '\.(ts|tsx|js|jsx|mjs|cjs)$' }
-          )
+          # Shared with the local parity gate (scripts/ci-local.mjs / the
+          # pre-push hook) so "green locally" predicts "green in CI" instead
+          # of the two drifting apart.
+          $projectList = node scripts/select-changed-projects.mjs --base origin/main --head HEAD
 
-          if ($changedFiles.Count -eq 0) {
-            Write-Host "No project-owned files changed; Quality Gates will skip Nx target tasks."
-            "NX_CI_PROJECTS=" | Out-File -FilePath $env:GITHUB_ENV -Append
-            exit 0
-          }
-
-          $repoRoot = (Get-Location).Path
-          $projectEntries = @(
-            Get-ChildItem -Path apps,packages,plugins,backend,tools -Recurse -Filter project.json -File |
-              Where-Object {
-                $normalizedPath = $_.FullName.Replace('\', '/')
-                $normalizedPath -notmatch '/(node_modules|dist|build|\.vercel)/'
-              } |
-              ForEach-Object {
-                $project = Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json
-                if ([string]::IsNullOrWhiteSpace($project.name)) {
-                  return
-                }
-
-                $relativeRoot = $_.DirectoryName.Substring($repoRoot.Length + 1).Replace('\', '/')
-                [pscustomobject]@{
-                  Name = $project.name
-                  Root = $relativeRoot
-                }
-              } |
-              Sort-Object { $_.Root.Length } -Descending
-          )
-
-          $projectNames = [System.Collections.Generic.HashSet[string]]::new()
-          foreach ($file in $changedFiles) {
-            $owner = $projectEntries |
-              Where-Object { $file -eq $_.Root -or $file.StartsWith("$($_.Root)/") } |
-              Select-Object -First 1
-
-            if ($null -ne $owner) {
-              [void]$projectNames.Add($owner.Name)
-            }
-          }
-
-          if ($projectNames.Count -eq 0) {
+          if ([string]::IsNullOrWhiteSpace($projectList)) {
             Write-Host "No changed files mapped to Nx projects; Quality Gates will skip Nx target tasks."
             "NX_CI_PROJECTS=" | Out-File -FilePath $env:GITHUB_ENV -Append
             exit 0
           }
 
-          $projectList = (@($projectNames) | Sort-Object) -join ','
           Write-Host "Validating directly changed Nx projects: $projectList"
           "NX_CI_PROJECTS=$projectList" | Out-File -FilePath $env:GITHUB_ENV -Append
 
