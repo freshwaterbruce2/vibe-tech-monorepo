@@ -5,7 +5,7 @@ Uses OpenRouter API for multi-model AI access (2026 standards)
 
 import os
 import requests
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict
 
 
 class AIService:
@@ -197,7 +197,7 @@ class AIService:
 
         except requests.exceptions.RequestException as e:
             print(f"Error calling OpenRouter API: {e}")
-            return f"Error: Unable to connect to OpenRouter. Check OPENROUTER_API_KEY configuration."
+            return "Error: Unable to connect to OpenRouter. Check OPENROUTER_API_KEY configuration."
         except Exception as e:
             print(f"Error in generate_response: {e}")
             return f"Error: {str(e)}"
@@ -263,7 +263,6 @@ class AIService:
             # Extract answer content
             answer = data["choices"][0]["message"]["content"]
 
-            # TODO: Add streaming support via SSE for real-time reasoning display
             return {
                 "reasoning": "",  # Reasoning embedded in answer for now
                 "answer": answer
@@ -273,7 +272,7 @@ class AIService:
             print(f"Error calling OpenRouter API: {e}")
             return {
                 "reasoning": "",
-                "answer": f"Error: Unable to connect to OpenRouter. Check OPENROUTER_API_KEY configuration."
+                "answer": "Error: Unable to connect to OpenRouter. Check OPENROUTER_API_KEY configuration."
             }
         except Exception as e:
             print(f"Error in generate_response_streaming: {e}")
@@ -355,7 +354,7 @@ class AIService:
 
         except requests.exceptions.RequestException as e:
             print(f"Error calling OpenRouter API: {e}")
-            return f"Error: Unable to connect to OpenRouter. Check OPENROUTER_API_KEY configuration."
+            return "Error: Unable to connect to OpenRouter. Check OPENROUTER_API_KEY configuration."
         except Exception as e:
             print(f"Error in generate_rag_response: {e}")
             return f"Error: {str(e)}"
@@ -437,7 +436,6 @@ class AIService:
             # Extract answer content
             answer = data["choices"][0]["message"]["content"]
 
-            # TODO: Add streaming support via SSE for real-time reasoning display
             return {
                 "reasoning": "",  # Reasoning embedded in answer for now
                 "answer": answer
@@ -447,7 +445,7 @@ class AIService:
             print(f"Error calling OpenRouter API: {e}")
             return {
                 "reasoning": "",
-                "answer": f"Error: Unable to connect to OpenRouter. Check OPENROUTER_API_KEY configuration."
+                "answer": "Error: Unable to connect to OpenRouter. Check OPENROUTER_API_KEY configuration."
             }
         except Exception as e:
             print(f"Error in generate_rag_response_streaming: {e}")

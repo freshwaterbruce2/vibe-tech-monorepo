@@ -3,6 +3,7 @@
 @import "./styles/theme/theme-variables.css";
 @import "./styles/components/glass.css";
 @import "./styles/components/particles.css";
+@import "./styles/components/site-background.css";
 @config "../tailwind.config.ts";
 
 @layer base {
@@ -50,33 +51,6 @@
   }
   body {
     color: hsl(var(--foreground));
-    background-color: hsl(var(--background));
     background-color: var(--vibe-bg-deep);
-    background-image:
-      radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.045) 1px, transparent 0),
-      radial-gradient(circle at 3px 5px, rgba(255, 255, 255, 0.025) 1px, transparent 0);
-    background-size:
-      6px 6px,
-      10px 10px;
-    background-blend-mode: overlay;
-    opacity: 1;
-  }
-
-  body::after {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image:
-      radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1px, transparent 0),
-      radial-gradient(circle at 4px 7px, rgba(255, 255, 255, 0.04) 1px, transparent 0);
-    background-size:
-      5px 5px,
-      9px 9px;
-    opacity: var(--vibe-neural-grain);
-    pointer-events: none;
-    z-index: 0;
   }
 }

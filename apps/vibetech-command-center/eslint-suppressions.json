@@ -1,0 +1,127 @@
+{
+  "src/main/ipc/index.ts": {
+    "max-len": {
+      "count": 22
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/service-container.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/main/services/backup-service.ts": {
+    "max-len": {
+      "count": 4
+    }
+  },
+  "src/main/services/claude-bridge.ts": {
+    "max-len": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/services/database-inventory.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/services/db-explorer.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/main/services/db-metrics.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/services/factory-status.ts": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/services/memory-viz.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/services/nx-affected.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/services/nx-graph.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/main/tray.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/mcp/server.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/mcp/tools.ts": {
+    "max-len": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/preload/index.ts": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "src/renderer/components/Panel.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/renderer/hooks/index.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/renderer/panels/AgentOrchestrator.tsx": {
+    "max-len": {
+      "count": 10
+    }
+  },
+  "src/renderer/panels/ClaudeLauncher.tsx": {
+    "max-len": {
+      "count": 4
+    }
+  },
+  "src/renderer/panels/DbExplorer.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/renderer/panels/MemoryViz.tsx": {
+    "max-len": {
+      "count": 8
+    }
+  },
+  "src/shared/types.ts": {
+    "max-len": {
+      "count": 2
+    }
+  }
+}

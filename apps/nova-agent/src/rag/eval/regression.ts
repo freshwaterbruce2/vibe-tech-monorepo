@@ -3,13 +3,19 @@
  * Compares a benchmark run against baseline and fails if quality drops below thresholds.
  *
  * Usage:
- *   pnpm --filter nova-agent exec tsx src/rag/eval/regression.ts [--baseline <name>] [--run <runId>]
+ *   pnpm --filter nova-agent exec tsx src/rag/eval/regression.ts \
+ *     [--baseline <name>] [--run <runId>]
  *
  * Exit code 0 = passed, 1 = regression detected.
  */
 
 import { loadBaseline, loadRun, listRuns } from './results-store.js';
-import type { BenchmarkRun, RegressionCheck, RegressionResult, RegressionThresholds } from './types.js';
+import type {
+  BenchmarkRun,
+  RegressionCheck,
+  RegressionResult,
+  RegressionThresholds,
+} from './types.js';
 import { DEFAULT_REGRESSION_THRESHOLDS } from './types.js';
 
 export function checkRegression(
@@ -20,7 +26,11 @@ export function checkRegression(
   const regressions: RegressionResult[] = [];
 
   // Check metrics at key K values
-  const checks: Array<{ metric: 'ndcg' | 'precision' | 'recall' | 'mrr'; k: number; threshold: number }> = [
+  const checks: Array<{
+    metric: 'ndcg' | 'precision' | 'recall' | 'mrr';
+    k: number;
+    threshold: number;
+  }> = [
     { metric: 'ndcg', k: 5, threshold: thresholds.ndcg5 },
     { metric: 'precision', k: 5, threshold: thresholds.precision5 },
     { metric: 'mrr', k: 5, threshold: thresholds.mrr },

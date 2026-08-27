@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const PRODUCTION_URL = 'https://vibe-tutor-api-711105902979.us-east4.run.app';
+const PRODUCTION_URL = 'https://vibe-tutor-api-734857480460.us-east4.run.app';
 
 // Helper to create full Location object from partial
 const createLocation = (partial: Partial<Location> = {}): Location =>

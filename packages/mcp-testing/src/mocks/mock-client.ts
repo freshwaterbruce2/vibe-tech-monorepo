@@ -1,3 +1,4 @@
+import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import type {
   ToolDefinition,
   ResourceDefinition,
@@ -185,7 +186,7 @@ export class MockMcpClient {
 
       // Execute handler
       const mockContext = {
-        server: {} as any,
+        server: {} as unknown as Server,
         logger: this.logger,
       };
       
@@ -247,7 +248,7 @@ export class MockMcpClient {
 
     try {
       const mockContext = {
-        server: {} as any,
+        server: {} as unknown as Server,
         logger: this.logger,
         params,
       };
@@ -256,7 +257,7 @@ export class MockMcpClient {
       this.logCall('resources/read', { uri }, result, Date.now() - start);
       
       return result;
-    } catch (error) {
+    } catch {
       const errorResult = { contents: [] };
       this.logCall('resources/read', { uri }, errorResult, Date.now() - start);
       return errorResult;
@@ -294,7 +295,7 @@ export class MockMcpClient {
 
     try {
       const mockContext = {
-        server: {} as any,
+        server: {} as unknown as Server,
         logger: this.logger,
       };
       
@@ -302,7 +303,7 @@ export class MockMcpClient {
       this.logCall('prompts/get', { name, arguments: args }, result, Date.now() - start);
       
       return result;
-    } catch (error) {
+    } catch {
       const errorResult = { messages: [] };
       this.logCall('prompts/get', { name, arguments: args }, errorResult, Date.now() - start);
       return errorResult;

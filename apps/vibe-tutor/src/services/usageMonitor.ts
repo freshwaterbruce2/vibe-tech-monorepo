@@ -2,9 +2,6 @@
 
 import { appStore } from '../utils/electronStore';
 
-// Temporary testing override: disable quiet-hours enforcement for manual QA runs.
-const QUIET_HOURS_TEMPORARILY_DISABLED = true;
-
 interface UsageData {
   dailyRequests: number;
   dailyScreenTime: number; // minutes
@@ -30,6 +27,8 @@ class UsageMonitor {
   private sessionStart = 0;
   private lastActivity = 0;
   private warningShown = false;
+  private accumulatedMs = 0;
+  private consecutiveMs = 0;
 
   constructor() {
     this.usage = this.loadUsageData();
@@ -125,17 +124,28 @@ class UsageMonitor {
   }
 
   private updateScreenTime(): void {
-    if (!document.hidden) {
-      const sessionTime = Math.floor((Date.now() - this.sessionStart) / 60000);
-      this.usage.dailyScreenTime += sessionTime;
-      this.sessionStart = Date.now();
-      this.saveUsageData();
+    if (document.hidden) return;
 
-      // Check consecutive usage
-      if (sessionTime >= this.limits.maxConsecutiveTime && !this.warningShown) {
-        this.showBreakReminder();
-        this.warningShown = true;
-      }
+    const now = Date.now();
+    const elapsedMs = now - this.sessionStart;
+    this.sessionStart = now;
+    if (elapsedMs <= 0) return;
+
+    // Accumulate elapsed time and only credit whole minutes, preserving the
+    // sub-minute remainder so short visibility flips aren't silently dropped.
+    this.accumulatedMs += elapsedMs;
+    const wholeMinutes = Math.floor(this.accumulatedMs / 60000);
+    if (wholeMinutes > 0) {
+      this.accumulatedMs -= wholeMinutes * 60000;
+      this.usage.dailyScreenTime += wholeMinutes;
+      this.saveUsageData();
+    }
+
+    // Break reminder once a continuous stretch exceeds the consecutive limit.
+    this.consecutiveMs += elapsedMs;
+    if (this.consecutiveMs >= this.limits.maxConsecutiveTime * 60000 && !this.warningShown) {
+      this.showBreakReminder();
+      this.warningShown = true;
     }
   }
 
@@ -145,6 +155,7 @@ class UsageMonitor {
       // Reset session if inactive for more than 5 minutes
       this.sessionStart = Date.now();
       this.warningShown = false;
+      this.consecutiveMs = 0;
     }
   }
 
@@ -190,10 +201,6 @@ class UsageMonitor {
   }
 
   public checkQuietHours(): boolean {
-    if (QUIET_HOURS_TEMPORARILY_DISABLED) {
-      return false;
-    }
-
     const now = new Date();
     const hour = now.getHours();
 

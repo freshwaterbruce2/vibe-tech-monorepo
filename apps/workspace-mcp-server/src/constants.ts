@@ -4,24 +4,22 @@
  */
 
 import { loadDatabaseInventory } from '@vibetech/shared-config/database-inventory';
+import { resolve } from 'path';
 
-// Workspace root (V:\monorepo on Windows, mapped mount in sandbox)
-export const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || 'V:\\monorepo';
+// Workspace root (source tree root on Windows, mapped mount in sandbox)
+export const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT ?? resolve(__dirname, '..', '..', '..');
 
 // Key files this server reads
 export const ENV_FILE = '.env';
 export const MCP_CONFIG_FILE = '.mcp.json';
 export const PORT_REGISTRY_FILE = 'tools\\port-manager\\port-registry.json';
 
-// Database locations (D:\ drive)
+// Canonical data-drive locations (D:\ drive)
 export const DATA_PATHS = {
   databases: 'D:\\databases',
   logs: 'D:\\logs',
   learningSystem: 'D:\\learning-system',
   data: 'D:\\data',
-  tradingData: 'D:\\trading_data',
-  tradingLogs: 'D:\\trading_logs',
-  pnpmStore: 'D:\\pnpm-store-v2',
 } as const;
 
 // Known database files
@@ -66,3 +64,4 @@ export function maskSecret(value: string): string {
 // Check if an env var name is sensitive
 export function isSensitive(key: string): boolean {
   return SENSITIVE_PATTERNS.some((pattern) => pattern.test(key));
+}

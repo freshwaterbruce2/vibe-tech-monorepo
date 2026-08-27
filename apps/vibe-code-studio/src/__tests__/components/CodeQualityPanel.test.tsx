@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CodeQualityPanel } from '../../components/CodeQualityPanel';
 import type { CodeQualityAnalyzer } from '../../services/CodeQualityAnalyzer';
 import { ThemeProvider } from 'styled-components';
+import type { DefaultTheme } from 'styled-components';
 
 const theme = {
   colors: {
@@ -33,7 +34,9 @@ describe('CodeQualityPanel', () => {
   });
 
   const renderWithTheme = (ui: React.ReactElement) => {
-    return render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>);
+    return render(
+      <ThemeProvider theme={theme as unknown as DefaultTheme}>{ui}</ThemeProvider>
+    );
   };
 
   it('should render file view by default', () => {

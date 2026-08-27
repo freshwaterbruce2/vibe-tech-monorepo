@@ -15,11 +15,17 @@ import {
     MODEL_REGISTRY,
 } from './AIProviderInterface';
 import { ServiceAdapter } from './ProviderAdapter';
+import { BackendProxyService } from './providers/BackendProxyService';
 import { DeepSeekService } from './providers/DeepSeekService';
 import { GoogleGenerativeAIService } from './providers/GoogleGenerativeAIService';
 import { MoonshotService } from './providers/MoonshotService';
 import { OpenRouterService } from './providers/OpenRouterService';
 // Hybrid architecture: Direct APIs for Moonshot, DeepSeek, & Google, OpenRouter for everything else
+
+// Proxy mode (default ON): route all AI calls through the backend proxy so the
+// server injects provider keys (no client-side keys). Set VITE_USE_AI_PROXY=false
+// for direct BYOK mode.
+const USE_AI_PROXY = import.meta.env['VITE_USE_AI_PROXY'] !== 'false';
 
 export interface ProviderStatus {
   provider: AIProvider;
@@ -59,6 +65,13 @@ export class AIProviderFactory {
    * OpenRouter Proxy: Everything else (Claude, GPT, Llama, Gemini, etc.)
    */
   private createProvider(provider: AIProvider): IAIProvider {
+    // Proxy mode (default): all providers route through the backend proxy.
+    // The server injects keys, so no client-side API key is required.
+    if (USE_AI_PROXY) {
+      logger.info(`[AIProviderFactory] Creating provider ${provider} via backend proxy`);
+      return new ServiceAdapter(new BackendProxyService(), provider);
+    }
+
     // Moonshot: Direct API for Kimi K2.5 (262K context, vision, thinking mode)
     if (provider === AIProvider.MOONSHOT) {
       logger.info(`[AIProviderFactory] Creating Moonshot provider (direct API)`);
@@ -351,7 +364,10 @@ export class AIProviderFactory {
     tokensUsed: number;
     estimatedCost: number;
     requestCount: number;
-    byProvider: Map<AIProvider, { tokensUsed: number; estimatedCost: number; requestCount: number }>;
+    byProvider: Map<
+      AIProvider,
+      { tokensUsed: number; estimatedCost: number; requestCount: number }
+    >;
   }> {
     let totalTokens = 0;
     let totalCost = 0;

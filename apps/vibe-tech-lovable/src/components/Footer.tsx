@@ -15,8 +15,17 @@ const Footer = () => {
               The marketing hub for Vibe Tech products, AI tools, and business automation.
             </p>
             <div className="text-white">
-              <p>Bruce Freshwater · freshwaterbruce@icloud.com</p>
-              <p>(803) 825-8860</p>
+              <p>
+                Bruce Freshwater ·{' '}
+                <a className="hover:text-aura-accent underline-offset-4 hover:underline" href="mailto:Bfreshwater@vibe-tech.org">
+                  Bfreshwater@vibe-tech.org
+                </a>
+              </p>
+              <p>
+                <a className="hover:text-aura-accent underline-offset-4 hover:underline" href="tel:+18038252876">
+                  (803) 825-2876
+                </a>
+              </p>
             </div>
           </div>
           

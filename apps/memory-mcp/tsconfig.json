@@ -12,6 +12,10 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@vibetech/memory": ["../../packages/memory/src/index.ts"]
+    },
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "types": ["node"]

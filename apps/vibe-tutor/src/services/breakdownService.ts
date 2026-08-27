@@ -1,6 +1,7 @@
 import { logger } from '../utils/logger';
 import { sessionStore } from '../utils/electronStore';
 import { createChatCompletion } from './secureClient';
+import { MODELS } from './openrouter';
 
 export const breakDownTask = async (taskTitle: string, subject: string): Promise<string[]> => {
   const cacheKey = `breakdown_${subject}_${taskTitle}`.toLowerCase().replace(/\s/g, '');
@@ -37,7 +38,7 @@ export const breakDownTask = async (taskTitle: string, subject: string): Promise
         },
       ],
       {
-        model: 'deepseek-chat',
+        model: MODELS.PRIMARY_PAID,
         temperature: 0.3,
         retryCount: 2,
       },

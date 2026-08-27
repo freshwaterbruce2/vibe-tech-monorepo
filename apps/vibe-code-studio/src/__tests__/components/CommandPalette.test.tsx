@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FileText, GitBranch, Search, Settings } from 'lucide-react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -122,7 +122,7 @@ describe('CommandPalette Component', () => {
     it('should render all provided commands', () => {
       render(<CommandPalette {...defaultProps} />);
 
-      mockCommands.forEach((command) => {
+      mockCommands.forEach(command => {
         expect(screen.getByText(command.title)).toBeInTheDocument();
       });
     });
@@ -598,6 +598,141 @@ describe('CommandPalette Component', () => {
       await user.type(searchInput, 'new');
 
       expect(screen.getByText('New File')).toBeInTheDocument();
+    });
+  });
+
+  describe('Workspace Symbol Mode (spec 07 AC #6)', () => {
+    const symbolCommand = (title: string) => ({
+      id: `sym-${title}`,
+      title,
+      description: `Class · C:\\ws\\b.ts:5`,
+      category: 'Workspace Symbols',
+      action: vi.fn(),
+    });
+
+    it('queries onSymbolQuery for # searches and lists results without re-filtering', async () => {
+      const user = userEvent.setup();
+      const onSymbolQuery = vi.fn().mockResolvedValue([symbolCommand('ZetaClass')]);
+      render(<CommandPalette {...defaultProps} onSymbolQuery={onSymbolQuery} />);
+
+      const searchInput = screen.getByPlaceholderText('Type a command or search...');
+      await user.type(searchInput, '#zeta');
+
+      // Server-side fuzzy hit shown even though 'ZetaClass' ≠ raw '#zeta' filter.
+      expect(await screen.findByText('ZetaClass')).toBeInTheDocument();
+      expect(onSymbolQuery).toHaveBeenLastCalledWith('zeta');
+      expect(screen.getByText('Workspace Symbols')).toBeInTheDocument();
+      expect(screen.queryByText('New File')).not.toBeInTheDocument();
+    });
+
+    it('executes a symbol result and closes the palette', async () => {
+      const user = userEvent.setup();
+      const command = symbolCommand('MySymbol');
+      const onSymbolQuery = vi.fn().mockResolvedValue([command]);
+      render(<CommandPalette {...defaultProps} onSymbolQuery={onSymbolQuery} />);
+
+      await user.type(screen.getByPlaceholderText('Type a command or search...'), '#my');
+      await user.click(await screen.findByText('MySymbol'));
+
+      expect(command.action).toHaveBeenCalledTimes(1);
+      expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows an empty list when the symbol query rejects', async () => {
+      const user = userEvent.setup();
+      const onSymbolQuery = vi.fn().mockRejectedValue(new Error('relay down'));
+      render(<CommandPalette {...defaultProps} onSymbolQuery={onSymbolQuery} />);
+
+      await user.type(screen.getByPlaceholderText('Type a command or search...'), '#x');
+      await waitFor(() => expect(onSymbolQuery).toHaveBeenCalledWith('x'));
+
+      expect(screen.queryByText('New File')).not.toBeInTheDocument();
+      expect(screen.queryByText('Workspace Symbols')).not.toBeInTheDocument();
+    });
+
+    it('survives # searches with the default (LSP-backed) symbol provider', async () => {
+      const user = userEvent.setup();
+      render(<CommandPalette {...defaultProps} />); // no onSymbolQuery override
+
+      await user.type(screen.getByPlaceholderText('Type a command or search...'), '#q');
+
+      // No language client is live under vitest → empty result set, no crash.
+      await waitFor(() => expect(screen.queryByText('New File')).not.toBeInTheDocument());
+    });
+
+    it('leaves normal (non-#) searches on the client-side filter', async () => {
+      const user = userEvent.setup();
+      const onSymbolQuery = vi.fn().mockResolvedValue([]);
+      render(<CommandPalette {...defaultProps} onSymbolQuery={onSymbolQuery} />);
+
+      await user.type(screen.getByPlaceholderText('Type a command or search...'), 'new');
+      expect(screen.getByText('New File')).toBeInTheDocument();
+      expect(onSymbolQuery).not.toHaveBeenCalled();
+    });
+
+    it('still matches normal searches by keyword', async () => {
+      const user = userEvent.setup();
+      const keywordCommand = {
+        id: 'kw',
+        title: 'Obscure Title',
+        action: vi.fn(),
+        keywords: ['squiggle'],
+      };
+      render(<CommandPalette {...defaultProps} commands={[keywordCommand]} />);
+
+      await user.type(screen.getByPlaceholderText('Type a command or search...'), 'squig');
+      expect(screen.getByText('Obscure Title')).toBeInTheDocument();
+    });
+
+    it('executes a command item via keyboard (Space) and closes', () => {
+      render(<CommandPalette {...defaultProps} />);
+
+      const item = screen.getByText('New File').closest('[role="button"]');
+      expect(item).not.toBeNull();
+      fireEvent.keyDown(item as HTMLElement, { key: ' ' });
+
+      expect(mockCommands[0].action).toHaveBeenCalledTimes(1);
+      expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('Ctrl+T opens the palette in symbol mode even when the host keeps it closed', async () => {
+      const onSymbolQuery = vi.fn().mockResolvedValue([]);
+      render(
+        <CommandPalette
+          isOpen={false}
+          onClose={defaultProps.onClose}
+          commands={mockCommands}
+          onSymbolQuery={onSymbolQuery}
+        />
+      );
+      expect(screen.queryByPlaceholderText('Type a command or search...')).not.toBeInTheDocument();
+
+      fireEvent.keyDown(document, { key: 'ctrl+t' });
+
+      const searchInput = await screen.findByPlaceholderText('Type a command or search...');
+      expect(searchInput).toHaveValue('#');
+      await waitFor(() => expect(onSymbolQuery).toHaveBeenCalledWith(''));
+    });
+
+    it('Escape closes a Ctrl+T-opened palette', async () => {
+      const onSymbolQuery = vi.fn().mockResolvedValue([]);
+      render(
+        <CommandPalette
+          isOpen={false}
+          onClose={defaultProps.onClose}
+          commands={mockCommands}
+          onSymbolQuery={onSymbolQuery}
+        />
+      );
+      fireEvent.keyDown(document, { key: 'ctrl+t' });
+      await screen.findByPlaceholderText('Type a command or search...');
+
+      fireEvent.keyDown(document, { key: 'Escape' });
+
+      await waitFor(() =>
+        expect(screen.queryByPlaceholderText('Type a command or search...')).not.toBeInTheDocument()
+      );
+      expect(defaultProps.onClose).toHaveBeenCalled();
     });
   });
 

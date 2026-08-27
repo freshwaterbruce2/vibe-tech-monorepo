@@ -54,7 +54,28 @@ describe('FirstRunOnboarding', () => {
     expect(onComplete).toHaveBeenCalledWith({
       avatar: 'avatar-boy-headphones',
       userType: 'kid',
+      name: '',
     });
     expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled();
+  });
+
+  it('captures a display name entered on the final step', async () => {
+    const onComplete = vi.fn().mockResolvedValue(undefined);
+    render(<FirstRunOnboarding onComplete={onComplete} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /i'm the kid/i }));
+    fireEvent.click(screen.getByRole('button', { name: /choose avatar focus gamer/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+    fireEvent.change(screen.getByLabelText(/what should we call you/i), {
+      target: { value: 'Sam' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /start earning/i }));
+
+    expect(onComplete).toHaveBeenCalledWith({
+      avatar: 'avatar-boy-headphones',
+      userType: 'kid',
+      name: 'Sam',
+    });
   });
 });

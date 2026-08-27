@@ -1,0 +1,114 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/**
+ * Ship configuration state, persisted in vibe-app.json under the "ship" key.
+ * Tracks platform provisioning IDs, deployment URLs, and verification status.
+ */
+export interface ShipConfig {
+  projectName: string;
+  displayName: string;
+  git: {
+    branch: string | null;
+    prUrl: string | null;
+    committed: boolean;
+  };
+  vercel: {
+    projectId: string | null;
+    orgId: string | null;
+    url: string | null;
+  };
+  railway: {
+    projectId: string | null;
+    serviceId: string | null;
+    url: string | null;
+    volumeId: string | null;
+  };
+  stripe: {
+    webhookId: string | null;
+    webhookSecret: string | null;
+    productId: string | null;
+    priceId: string | null;
+  };
+  deployed: {
+    deployed: boolean;
+    deployedAt: string | null;
+    frontendUrl: string | null;
+    backendUrl: string | null;
+  };
+  verified: {
+    verified: boolean;
+    verifiedAt: string | null;
+  };
+}
+
+// Resolve project root two dirs up from this ship/ directory:
+// ship/ -> src/ (or scripts/) -> projectRoot. Using fileURLToPath keeps this
+// correct regardless of the caller's working directory.
+const here = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(here, '..', '..');
+const manifestPath = path.join(projectRoot, 'vibe-app.json');
+
+// Central default so every caller sees the same empty provisioning state and
+// downstream checks can safely read nested fields without null guards everywhere.
+function defaultConfig(): ShipConfig {
+  return {
+    projectName: '<%= projectName %>',
+    displayName: '<%= displayName %>',
+    git: { branch: null, prUrl: null, committed: false },
+    vercel: { projectId: null, orgId: null, url: null },
+    railway: { projectId: null, serviceId: null, url: null, volumeId: null },
+    stripe: {
+      webhookId: null,
+      webhookSecret: null,
+      productId: null,
+      priceId: null,
+    },
+    deployed: {
+      deployed: false,
+      deployedAt: null,
+      frontendUrl: null,
+      backendUrl: null,
+    },
+    verified: { verified: false, verifiedAt: null },
+  };
+}
+
+// Read the ship section from the manifest. Missing files or missing section
+// yield defaults so provisioning scripts can run cleanly on a fresh scaffold.
+export async function loadConfig(): Promise<ShipConfig> {
+  try {
+    const raw = await readFile(manifestPath, 'utf8');
+    const manifest = JSON.parse(raw) as Record<string, unknown>;
+    const shipSection = (manifest['ship'] ?? {}) as Partial<ShipConfig>;
+    // Merge over defaults so new fields added later still resolve cleanly.
+    return { ...defaultConfig(), ...shipSection };
+  } catch {
+    return defaultConfig();
+  }
+}
+
+// Merge the ship section back into the full manifest so we never clobber the
+// sibling fields (generatedBy, monetization, etc.) that other tools rely on.
+export async function saveConfig(config: ShipConfig): Promise<void> {
+  let manifest: Record<string, unknown> = {};
+  try {
+    const raw = await readFile(manifestPath, 'utf8');
+    manifest = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    // Manifest may not exist yet on a broken scaffold; start from an empty object.
+  }
+  manifest['ship'] = config;
+  await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+}
+
+// Provisioning is only considered complete when both hosting platforms have
+// been linked, because a half-provisioned app cannot be deployed reliably.
+export function isProvisioned(config: ShipConfig): boolean {
+  return Boolean(config.vercel.projectId && config.railway.projectId);
+}
+
+export function isDeployed(config: ShipConfig): boolean {
+  return config.deployed.deployed === true;
+}

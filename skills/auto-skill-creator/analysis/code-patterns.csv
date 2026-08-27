@@ -1,0 +1,3 @@
+"pattern_name","language","success_count","success_rate_pct","use_cases"
+"logger-utility","typescript","32","96.97","logging,console-replacement,environment-aware,ring-buffer,capacitor,react,typescript"
+"dead-code-sweep / zero-import-check","bash","4","80.0","[""dead-code"",""audit"",""deletion"",""monorepo"",""TypeScript"",""React""]"

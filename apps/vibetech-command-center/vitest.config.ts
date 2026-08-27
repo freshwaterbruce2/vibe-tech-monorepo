@@ -11,8 +11,13 @@ export default {
     setupFiles: ['./tests/setup.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html'],
-      include: ['src/main/services/**/*.ts', 'src/renderer/**/*.{ts,tsx}'],
+      reporter: ['text', 'html', 'json'],
+      include: [
+        'src/main/csp.ts',
+        'src/main/entry.ts',
+        'src/main/services/**/*.ts',
+        'src/renderer/**/*.{ts,tsx}',
+      ],
       exclude: ['**/*.spec.*']
     }
   },

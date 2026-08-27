@@ -2,7 +2,7 @@
 [CmdletBinding()]
 param(
     [string]$DatabaseRoot = 'D:\databases',
-    [string]$OutputPath = (Join-Path (Resolve-Path (Join-Path $PSScriptRoot '..')).Path 'tmp\database-health-report.json'),
+    [string]$OutputPath,
     [switch]$IncludeIntegrityCheck,
     [switch]$IncludeArchived,
     [switch]$CheckpointLargeWal
@@ -10,6 +10,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $workspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+if ([string]::IsNullOrEmpty($OutputPath)) {
+    $OutputPath = Join-Path $workspaceRoot 'tmp\database-health-report.json'
+}
 $sqlite = Get-Command sqlite3 -ErrorAction SilentlyContinue
 $excludedPathFragments = @('\_archive', '\backups\', '\cdev-databases\')
 $knownDistinctNameGroups = @(
@@ -192,7 +195,7 @@ $report = [ordered]@{
     databaseRoot = $DatabaseRoot
     sqlite3Available = [bool]$sqlite
     summary = [ordered]@{
-        totalDatabases = $records.Count
+        totalDatabases = @($records).Count
         coreDatabases = ($records | Where-Object isCore | Measure-Object).Count
         duplicateNameGroups = $duplicateGroups.Count
         knownDistinctNameGroups = $knownDistinctGroups.Count
@@ -214,7 +217,7 @@ $report | ConvertTo-Json -Depth 8 | Set-Content -Path $OutputPath -Encoding UTF8
 
 Write-Host "Database Health Report" -ForegroundColor Cyan
 Write-Host "  Root:       $DatabaseRoot"
-Write-Host "  Databases:  $($records.Count)"
+Write-Host "  Databases:  $(@($records).Count)"
 Write-Host "  Duplicates: $($duplicateGroups.Count)"
 Write-Host "  Known distinct names: $($knownDistinctGroups.Count)"
 Write-Host "  Large WALs: $($largeWalFiles.Count)"
@@ -242,3 +245,6 @@ if ($largeWalFiles.Count -gt 0) {
         Write-Host "  $($item.relativePath) ($($item.walMB) MB)" -ForegroundColor Yellow
     }
 }
+
+$global:LASTEXITCODE = 0
+

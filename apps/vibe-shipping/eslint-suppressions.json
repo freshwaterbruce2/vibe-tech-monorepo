@@ -1,0 +1,266 @@
+{
+  "apps/vibe-shipping/src/__tests__/test-utils.tsx": {
+    "@typescript-eslint/no-dynamic-delete": {
+      "count": 2
+    }
+  },
+  "apps/vibe-shipping/src/components/ErrorBoundary.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/components/ShippingTable.tsx": {
+    "max-len": {
+      "count": 3
+    }
+  },
+  "apps/vibe-shipping/src/components/admin/AdminDashboard.tsx": {
+    "@typescript-eslint/await-thenable": {
+      "count": 1
+    },
+    "max-len": {
+      "count": 3
+    }
+  },
+  "apps/vibe-shipping/src/components/pwa/PWAAuditDashboard.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/components/pwa/PerformanceMonitor.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/components/pwa/PwaWrapper.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/components/tenant/UpgradeButton.tsx": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-shipping/src/components/test/SentryTestComponent.tsx": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-shipping/src/components/ui/AdvancedHybridInputBar.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/components/ui/command.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/components/voice/VoiceQuickReference.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/firebase/configLazy.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/firebase/services.ts": {
+    "@typescript-eslint/no-extraneous-class": {
+      "count": 6
+    }
+  },
+  "apps/vibe-shipping/src/hooks/useAndroidSpeechRecognition.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/hooks/useDebounce.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/hooks/usePalletEntries.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/hooks/useUserSettings.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/hooks/useVoiceCommand.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/lib/sentry.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/middleware/tenant.middleware.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-shipping/src/pages/LandingPage.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/pages/Settings.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/pages/Support.tsx": {
+    "max-len": {
+      "count": 5
+    }
+  },
+  "apps/vibe-shipping/src/pages/settings/AutomationTab.tsx": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-shipping/src/pages/settings/EnvironmentTab.tsx": {
+    "max-len": {
+      "count": 5
+    }
+  },
+  "apps/vibe-shipping/src/pages/settings/LayoutTab.tsx": {
+    "max-len": {
+      "count": 3
+    }
+  },
+  "apps/vibe-shipping/src/pages/settings/OperationsTab.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/pages/settings/TeamsTab.tsx": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-shipping/src/pages/settings/WarehouseTab.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/pages/settings/hooks/useSettingsForm.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/pages/settings/tabs/WarehouseBasicTab.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/pages/settings/types.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/services/advanced-offline-manager.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/services/emailService.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/services/shippingService.ts": {
+    "@typescript-eslint/no-extraneous-class": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/services/squarePaymentService.ts": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-shipping/src/services/squarePaymentServiceLazy.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/services/tenantApiService.ts": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-shipping/src/stores/analyticsStore.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-shipping/src/stores/mapStore.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-shipping/src/stores/notificationStore.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/stores/shipmentStore.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/stores/userStore.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/sw/advanced-sw.ts": {
+    "@typescript-eslint/await-thenable": {
+      "count": 3
+    }
+  },
+  "apps/vibe-shipping/src/utils/androidUtils.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-shipping/src/utils/errorHandling.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-shipping/src/utils/registerServiceWorker.ts": {
+    "max-len": {
+      "count": 1
+    }
+  }
+}

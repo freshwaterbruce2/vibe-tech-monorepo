@@ -1,7 +1,5 @@
 import { lazy, Suspense, type Dispatch, type ReactNode, type SetStateAction } from 'react';
-import FirstRunOnboarding, {
-  type OnboardingResult,
-} from './core/FirstRunOnboarding';
+import FirstRunOnboarding, { type OnboardingResult } from './core/FirstRunOnboarding';
 import FirstWeekChecklist from './dashboard/FirstWeekChecklist';
 import HomeworkDashboard from './dashboard/HomeworkDashboard';
 import SubjectCards from './dashboard/SubjectCards';
@@ -60,11 +58,7 @@ interface AppViewRendererProps {
   handleChecklistNavigate: (view: View, action?: OnboardingNavigationAction) => void;
   handleClaimReward: (rewardId: string) => boolean;
   handleEarnTokens: (amount: number, reason?: string) => void;
-  handleGameCompleted: (
-    gameId: string,
-    score: number,
-    details: GameCompletionDetails,
-  ) => void;
+  handleGameCompleted: (gameId: string, score: number, details: GameCompletionDetails) => void;
   handleOnboardingComplete: (data: OnboardingResult) => void;
   handleRemovePlaylist: (id: string) => void;
   handleSpendTokens: (amount: number, reason?: string) => boolean;
@@ -76,12 +70,14 @@ interface AppViewRendererProps {
   homeworkItems: HomeworkItem[];
   onDashboardOnboardingActionHandled: () => void;
   onboardingFlags: OnboardingFlags;
+  onUserNameSaved: (name: string) => void;
   playlists: MusicPlaylist[];
   rewards: Reward[];
   selectedRealmSubject: SubjectType | null;
   setSelectedRealmSubject: (subject: SubjectType | null) => void;
   setView: (view: View) => void;
   updateRewards: Dispatch<SetStateAction<Reward[]>>;
+  userName: string;
   userTokens: number;
   view: View;
   worksheetLeveledUp: boolean;
@@ -124,12 +120,14 @@ export function AppViewRenderer({
   homeworkItems,
   onDashboardOnboardingActionHandled,
   onboardingFlags,
+  onUserNameSaved,
   playlists,
   rewards,
   selectedRealmSubject,
   setSelectedRealmSubject,
   setView,
   updateRewards,
+  userName,
   userTokens,
   view,
   worksheetLeveledUp,
@@ -216,10 +214,7 @@ export function AppViewRenderer({
       case 'schedules':
         return (
           <RouteErrorBoundary routeName="Schedules Hub">
-            <SchedulesHub
-              onEarnTokens={handleEarnTokens}
-              onClose={() => setView('dashboard')}
-            />
+            <SchedulesHub onEarnTokens={handleEarnTokens} onClose={() => setView('dashboard')} />
           </RouteErrorBoundary>
         );
       case 'parent':
@@ -312,6 +307,8 @@ export function AppViewRenderer({
               onSpendTokens={handleSpendTokens}
               onGameCompleted={handleGameCompleted}
               onClose={() => setView('dashboard')}
+              userName={userName}
+              onUserNameSaved={onUserNameSaved}
             />
           </RouteErrorBoundary>
         );

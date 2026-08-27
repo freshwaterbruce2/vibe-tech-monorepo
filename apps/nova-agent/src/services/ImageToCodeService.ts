@@ -7,6 +7,41 @@
 
 import { analyzeImage, sendKimiMessage, type KimiChatOptions } from './moonshot';
 
+const ALLOWED_STYLING: readonly string[] = ['tailwind', 'styled-components', 'css-modules'];
+
+function validateComponentName(name: string | undefined): name is string {
+  return typeof name === 'string' && /^[A-Z][A-Za-z0-9_]*$/.test(name);
+}
+
+function validateStyling(styling: string | undefined): string {
+  return styling && ALLOWED_STYLING.includes(styling) ? styling : 'tailwind';
+}
+
+function buildComponentPrompt(componentName: string, styling: string, useTS: boolean): string {
+  return `Convert this UI mockup to a production-ready React component.
+
+Requirements:
+- Component name: ${componentName}
+- Language: ${useTS ? 'TypeScript' : 'JavaScript'}
+- Styling: ${styling}
+- Make it responsive
+- Include accessibility attributes (aria-labels, roles)
+- Use semantic HTML
+
+Return a JSON object with this exact structure:
+{
+  "code": "// Full component code here",
+  "componentName": "${componentName}",
+  "dependencies": ["list", "of", "npm", "packages"],
+  "metadata": {
+    "responsive": true,
+    "accessibility": true,
+    "colors": ["#hex1", "#hex2"],
+    "suggestedComponents": ["Button", "Card"]
+  }
+}`;
+}
+
 export interface ImageData {
   base64: string;
   mimeType: string;
@@ -51,7 +86,12 @@ export class ImageToCodeService {
 
   async loadImage(pathOrUrl: string): Promise<ImageData> {
     if (pathOrUrl.startsWith('http')) {
-      const response = await fetch(pathOrUrl);
+      const response = await fetch(pathOrUrl, {
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      }
       const buffer = await response.arrayBuffer();
       const base64 = this.arrayBufferToBase64(buffer);
       const mimeType = response.headers.get('content-type') ?? 'image/png';
@@ -125,7 +165,7 @@ Return a JSON object with:
     });
 
     // Parse JSON from response
-    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    const jsonMatch = result.match(/\{[\s\S]*?\}/);
     if (jsonMatch) {
       try {
         return JSON.parse(jsonMatch[0]);
@@ -155,34 +195,14 @@ Return a JSON object with:
     imageData: ImageData,
     options: ComponentGenerationOptions,
   ): Promise<GeneratedComponent> {
-    const styling = options.styling ?? 'tailwind';
-    const componentName = options.componentName ?? 'GeneratedComponent';
+    const styling = validateStyling(options.styling);
+    const componentName = validateComponentName(options.componentName)
+      ? options.componentName
+      : 'GeneratedComponent';
     const useTS = options.typescript !== false;
 
     const dataUrl = `data:${imageData.mimeType};base64,${imageData.base64}`;
-
-    const prompt = `Convert this UI mockup to a production-ready React component.
-
-Requirements:
-- Component name: ${componentName}
-- Language: ${useTS ? 'TypeScript' : 'JavaScript'}
-- Styling: ${styling}
-- Make it responsive
-- Include accessibility attributes (aria-labels, roles)
-- Use semantic HTML
-
-Return a JSON object with this exact structure:
-{
-  "code": "// Full component code here",
-  "componentName": "${componentName}",
-  "dependencies": ["list", "of", "npm", "packages"],
-  "metadata": {
-    "responsive": true,
-    "accessibility": true,
-    "colors": ["#hex1", "#hex2"],
-    "suggestedComponents": ["Button", "Card"]
-  }
-}`;
+    const prompt = buildComponentPrompt(componentName, styling, useTS);
 
     const kimiOptions: KimiChatOptions = {
       thinking: true,
@@ -194,7 +214,7 @@ Return a JSON object with this exact structure:
     const result = await analyzeImage(dataUrl, prompt, kimiOptions);
 
     // Parse JSON from response
-    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    const jsonMatch = result.match(/\{[\s\S]*?\}/);
     if (jsonMatch) {
       try {
         return JSON.parse(jsonMatch[0]);

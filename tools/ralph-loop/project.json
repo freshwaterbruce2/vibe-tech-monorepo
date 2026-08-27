@@ -1,0 +1,5 @@
+{
+  "name": "@vibetech/ralph-loop",
+  "projectType": "application",
+  "tags": ["scope:tooling", "type:tool", "language:typescript"]
+}

@@ -128,9 +128,12 @@ export class MemoryManager {
   }
 
   /**
-   * Get system statistics
+   * Get system statistics.
+   * @param options.includeDecay - compute decay scores (default: false). This loads
+   *   every semantic memory row and can be slow on large databases; only enable when
+   *   decay stats are explicitly needed.
    */
-  getStats() {
+  getStats(options: { includeDecay?: boolean } = {}) {
     const dbStats = this.dbManager.getStats();
 
     // Count semantic rows whose stored embedding_model differs from current model (Phase 2)
@@ -168,7 +171,9 @@ export class MemoryManager {
         staleDimensionCount,
       },
       vectorExtension: this.dbManager.isVectorExtensionLoaded(),
-      decay: this.decay ? this.decay.getStats(this.dbManager.getDb()) : undefined,
+      decay: options.includeDecay && this.decay
+        ? this.decay.getStats(this.dbManager.getDb())
+        : undefined,
       latency: latencyStats,
     };
   }

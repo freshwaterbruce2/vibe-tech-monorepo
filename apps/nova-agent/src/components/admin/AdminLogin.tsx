@@ -69,7 +69,11 @@ const AdminLogin = ({ onClose }: AdminLoginProps) => {
         </CardDescription>
       </CardHeader>
 
-      <form onSubmit={(e) => { void handleLogin(e); }}>
+      <form
+        onSubmit={(e) => {
+          void handleLogin(e);
+        }}
+      >
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password" className="text-white">
@@ -78,6 +82,8 @@ const AdminLogin = ({ onClose }: AdminLoginProps) => {
             <div className="relative">
               <Input
                 id="password"
+                name="password"
+                autoComplete="current-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}

@@ -95,9 +95,9 @@ Write-Host "  Root: $learningRoot"
 Write-Host "`n[1/5] Checking required directories..." -ForegroundColor Yellow
 foreach ($path in @(
         @{ Path = $learningRoot; Label = 'learning-system root' },
-        @{ Path = 'D:\learning-system\logs'; Label = 'logs' },
-        @{ Path = 'D:\learning-system\scripts'; Label = 'scripts' },
-        @{ Path = 'D:\learning-system\backups'; Label = 'backups' }
+        @{ Path = (Join-Path $learningRoot 'logs'); Label = 'logs' },
+        @{ Path = (Join-Path $learningRoot 'scripts'); Label = 'scripts' },
+        @{ Path = (Join-Path $learningRoot 'backups'); Label = 'backups' }
     )) {
     Test-RequiredPath -Path $path.Path -Label $path.Label
 }
@@ -110,20 +110,32 @@ foreach ($path in @(
 }
 
 Write-Host "`n[3/5] Checking canonical documentation..." -ForegroundColor Yellow
+# Current vs historical expectations:
+# - Present authoritative files under D:\learning-system: README.md, D_DRIVE_OVERVIEW.md,
+#   COMPLETE_GUIDE.md, DOCUMENTATION_INDEX.md, enhanced_agent_guidelines.md
+# - DB inventory is canonical under D:\databases\DB_INVENTORY.md
+# - DATABASE_INVENTORY.md under learning-system is a retired/historical name (still on disk but not required)
 foreach ($path in @(
-        @{ Path = 'D:\learning-system\README.md'; Label = 'README' },
-        @{ Path = 'D:\learning-system\COMPLETE_GUIDE.md'; Label = 'COMPLETE_GUIDE' },
-        @{ Path = 'D:\learning-system\DATABASE_INVENTORY.md'; Label = 'DATABASE_INVENTORY' },
-        @{ Path = 'D:\learning-system\DOCUMENTATION_INDEX.md'; Label = 'DOCUMENTATION_INDEX' },
-        @{ Path = 'D:\learning-system\enhanced_agent_guidelines.md'; Label = 'enhanced_agent_guidelines' },
+        @{ Path = (Join-Path $learningRoot 'README.md'); Label = 'README' },
+        @{ Path = (Join-Path $learningRoot 'D_DRIVE_OVERVIEW.md'); Label = 'D_DRIVE_OVERVIEW' },
+        @{ Path = (Join-Path $learningRoot 'COMPLETE_GUIDE.md'); Label = 'COMPLETE_GUIDE' },
+        @{ Path = (Join-Path $learningRoot 'DOCUMENTATION_INDEX.md'); Label = 'DOCUMENTATION_INDEX' },
+        @{ Path = (Join-Path $learningRoot 'enhanced_agent_guidelines.md'); Label = 'enhanced_agent_guidelines' },
         @{ Path = 'D:\databases\DB_INVENTORY.md'; Label = 'D:\databases DB_INVENTORY' }
     )) {
     Test-RequiredPath -Path $path.Path -Label $path.Label
 }
+# Historical/retired under learning-system (tolerated, not blocking)
+$histDbInv = Join-Path $learningRoot 'DATABASE_INVENTORY.md'
+if (Test-Path -LiteralPath $histDbInv) {
+    Write-Host "  OK  (historical) DATABASE_INVENTORY.md (retired name; prefer databases/DB_INVENTORY)" -ForegroundColor DarkGray
+} else {
+    Write-Host "  (absent historical DATABASE_INVENTORY.md - acceptable)" -ForegroundColor DarkGray
+}
 
 Write-Host "`n[4/5] Checking environment and hooks..." -ForegroundColor Yellow
-if (-not (Test-Path -LiteralPath 'D:\learning-system\.venv')) {
-    Add-Warning 'No D:\learning-system\.venv directory found.'
+if (-not (Test-Path -LiteralPath (Join-Path $learningRoot '.venv'))) {
+    Add-Warning "No (Join-Path `$learningRoot '.venv') directory found."
     Write-Host '  WARN Python virtual environment missing' -ForegroundColor Yellow
 } else {
     Write-Host '  OK  Python virtual environment found' -ForegroundColor Green
@@ -138,11 +150,14 @@ if (-not (Test-Path -LiteralPath 'V:\monorepo\.claude\hooks')) {
 
 Write-Host "`n[5/5] Checking split authority..." -ForegroundColor Yellow
 $learningDbRefs = Get-ReferenceCount -Literal 'D:\learning-system\agent_learning.db'
+$deprecatedPathRef = Join-Path $learningRoot 'agent_learning.db'
+$learningDbRefsWithRoot = Get-ReferenceCount -Literal $deprecatedPathRef
 $databaseDbRefs = Get-ReferenceCount -Literal 'D:\databases\agent_learning.db'
 
-if ($learningDbRefs -gt 0) {
-    Add-Warning "Deprecated references to D:\learning-system\agent_learning.db exist ($learningDbRefs refs). Update these to D:\databases\agent_learning.db."
-    Write-Host "  WARN Split authority: found $learningDbRefs references to deprecated learning-system path." -ForegroundColor Yellow
+if ($learningDbRefs -gt 0 -or $learningDbRefsWithRoot -gt 0) {
+    $totalDeprecatedRefs = $learningDbRefs + $learningDbRefsWithRoot
+    Add-Warning "Deprecated references to agent_learning.db in the learning-system directory exist ($totalDeprecatedRefs refs). Update these to D:\databases\agent_learning.db."
+    Write-Host "  WARN Split authority: found $totalDeprecatedRefs references to deprecated learning-system path." -ForegroundColor Yellow
 } else {
     Write-Host '  OK  No deprecated split authority references detected for agent_learning.db' -ForegroundColor Green
 }
@@ -192,3 +207,5 @@ if ($script:issues.Count -gt 0) {
 }
 
 Write-Host "`nLearning system validation passed." -ForegroundColor Green
+$global:LASTEXITCODE = 0
+

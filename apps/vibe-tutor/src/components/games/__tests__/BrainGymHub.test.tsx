@@ -53,9 +53,19 @@ vi.mock('../PatternQuestGame', () => ({ default: () => <div data-testid="pattern
 vi.mock('../MusicNotesGame', () => ({ default: () => <div data-testid="musicnotes-game" /> }));
 
 vi.mock('../../avatar/AvatarProfile', () => ({
-  default: ({ onOpenShop }: { onOpenShop?: () => void }) => (
+  default: ({
+    onOpenShop,
+    userName,
+    onUserNameSaved,
+  }: {
+    onOpenShop?: () => void;
+    userName?: string;
+    onUserNameSaved?: (name: string) => void;
+  }) => (
     <div data-testid="avatar-profile">
+      <span data-testid="avatar-profile-username">{userName}</span>
       <button onClick={() => onOpenShop?.()}>Open Shop</button>
+      <button onClick={() => onUserNameSaved?.('Renamed')}>Save Name</button>
     </div>
   ),
 }));
@@ -74,7 +84,12 @@ const defaultProps = {
   onClose: vi.fn(),
 };
 
-function renderHub(overrides: Partial<typeof defaultProps> = {}) {
+interface RenderHubOverrides extends Partial<typeof defaultProps> {
+  userName?: string;
+  onUserNameSaved?: (name: string) => void;
+}
+
+function renderHub(overrides: RenderHubOverrides = {}) {
   return render(<BrainGymHub {...defaultProps} {...overrides} />);
 }
 
@@ -259,6 +274,18 @@ describe('BrainGymHub — hub view', () => {
         await vi.dynamicImportSettled();
       });
       expect(screen.getByTestId('avatar-profile')).toBeInTheDocument();
+    });
+
+    it('forwards userName and onUserNameSaved through to AvatarProfile', async () => {
+      const onUserNameSaved = vi.fn();
+      renderHub({ userName: 'Blake', onUserNameSaved });
+      fireEvent.click(screen.getByRole('button', { name: /my avatar/i }));
+      await act(async () => {
+        await vi.dynamicImportSettled();
+      });
+      expect(screen.getByTestId('avatar-profile-username')).toHaveTextContent('Blake');
+      fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+      expect(onUserNameSaved).toHaveBeenCalledWith('Renamed');
     });
 
     it('AvatarProfile screen has a "Back to Hub" button', async () => {

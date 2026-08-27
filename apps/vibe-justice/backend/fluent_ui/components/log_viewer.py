@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QVBoxLayout, QWidget
-from qfluentwidgets import CaptionLabel, CardWidget, TextEdit, TitleLabel
+from qfluentwidgets import CaptionLabel, TextEdit, TitleLabel
 
 
 class LogViewer(QWidget):

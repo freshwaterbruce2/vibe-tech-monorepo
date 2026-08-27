@@ -31,6 +31,11 @@ env:
   NX_DAEMON: 'false'
   NX_NO_CLOUD: 'true'
   NX_SKIP_REMOTE_CACHE: 'true'
+  # CI runners have no V:\ — override the .npmrc developer-local store-dir to a
+  # sibling of the workspace (same volume, so hard-linking stays valid, but
+  # outside the checkout so nx does not infer phantom projects from the store).
+  # NB: runner.temp is unavailable in workflow-level env; github.workspace is.
+  npm_config_store_dir: '${{ github.workspace }}-pnpm-store'
 
 jobs:
   quality:
@@ -81,8 +86,13 @@ jobs:
       - name: Typecheck
         run: cd apps/nova-agent && pnpm run typecheck
 
+      # Run through Nx (not a raw `pnpm run test`) so the `test` target's
+      # `dependsOn: ["^build"]` (nx.json targetDefaults) builds the FULL
+      # transitive workspace-dependency closure first — including
+      # @vibetech/shared-config, which the manual build step above does not
+      # cover. Vitest then resolves every workspace package's dist/ entry.
       - name: Unit tests
-        run: cd apps/nova-agent && pnpm run test
+        run: pnpm nx test nova-agent
 
   e2e:
     name: E2E Tests
@@ -116,6 +126,8 @@ jobs:
           pnpm --dir packages/openrouter-client run build
           pnpm --dir packages/shared-utils run build
           pnpm --dir packages/inngest-client run build
+          pnpm --dir packages/logger run build
+          pnpm --dir packages/shared-config run build
 
       - name: Install Playwright Chromium
         run: cd apps/nova-agent && pnpm exec playwright install chromium
@@ -150,9 +162,17 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      - uses: dtolnay/rust-toolchain@56f8432d46fe713a2d66526aa7a8c2e139734b3d # stable
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
         with:
           toolchain: stable
+
+      # lance-encoding (via lancedb) compiles .proto files at build time and
+      # needs the protoc binary — absent on vanilla windows-latest runners.
+      - name: Install protoc (required by lance-encoding/prost-build)
+        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
+        with:
+          version: '26.x'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache pnpm store
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -166,12 +186,9 @@ jobs:
       # this cache path must be updated to match. The default path below is correct
       # for vanilla GitHub Actions windows-latest runners.
       - name: Cache Rust target
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2.9.1
         with:
-          path: apps/nova-agent/src-tauri/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('apps/nova-agent/src-tauri/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+          workspaces: apps/nova-agent/src-tauri -> target
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

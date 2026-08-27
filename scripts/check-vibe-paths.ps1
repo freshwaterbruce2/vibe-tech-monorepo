@@ -7,6 +7,17 @@ param(
 $ErrorActionPreference = 'Stop'
 $workspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 
+# Repository root: prefer the CI-provided workspace ($env:GITHUB_WORKSPACE),
+# fall back to the PSScriptRoot-relative path for local execution. CI runners
+# check out under D:\a\... and have no V:\ drive, so the source root must not be
+# hardcoded to V:\monorepo.
+$repoRoot = if ($env:GITHUB_WORKSPACE) {
+    (Resolve-Path -LiteralPath $env:GITHUB_WORKSPACE).Path
+}
+else {
+    $workspaceRoot
+}
+
 $script:issues = New-Object System.Collections.Generic.List[string]
 $script:warnings = New-Object System.Collections.Generic.List[string]
 
@@ -102,23 +113,44 @@ function Find-DeprecatedReferences {
         return @()
     }
 
-    $matches = foreach ($file in $Files) {
-        if (-not $file) {
-            continue
-        }
-
-        $path = $file.FullName
-        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-            continue
-        }
-
+    $matches = @()
+    $rg = Get-Command rg -ErrorAction SilentlyContinue
+    if ($rg) {
+        $tempFile = [System.IO.Path]::GetTempFileName()
         try {
-            Select-String -LiteralPath $path -SimpleMatch $Literal -ErrorAction SilentlyContinue
+            $filePaths = @($Files | Where-Object { $_ } | ForEach-Object { $_.FullName })
+            $filePaths | Set-Content -Path $tempFile -Encoding UTF8
+            $rgResult = & $rg.Source --color never --fixed-strings -n -H --files-from $tempFile -- $Literal 2>$null
+            foreach ($line in $rgResult) {
+                if ($line -match '^(?i)([a-z]:[^:]+):(\d+):(.*)$') {
+                    $matches += [pscustomobject]@{
+                        Path = $Matches[1]
+                        LineNumber = [int]$Matches[2]
+                        Line = $Matches[3]
+                    }
+                }
+            }
         }
         catch {
-            # File-level scan races can happen while the workspace changes.
-            # Skip files that disappear between enumeration and content scan.
-            continue
+            # Fallback
+            $filePaths = @($Files | Where-Object { $_ } | ForEach-Object { $_.FullName })
+            if ($filePaths.Count -gt 0) {
+                $matches = Select-String -Path $filePaths -SimpleMatch $Literal -ErrorAction SilentlyContinue
+            }
+        }
+        finally {
+            if (Test-Path -LiteralPath $tempFile) {
+                Remove-Item -Path $tempFile -Force
+            }
+        }
+    }
+    else {
+        $filePaths = @($Files | Where-Object { $_ } | ForEach-Object { $_.FullName })
+        if ($filePaths.Count -gt 0) {
+            try {
+                $matches = Select-String -Path $filePaths -SimpleMatch $Literal -ErrorAction SilentlyContinue
+            }
+            catch {}
         }
     }
     if ($IgnoreLiteral) {
@@ -145,7 +177,7 @@ if ($FixPermissions) {
 
 Write-Host "[1/3] Checking canonical storage roots..." -ForegroundColor Yellow
 foreach ($entry in @(
-        @{ Path = 'V:\monorepo'; Label = 'source root' },
+        @{ Path = $repoRoot; Label = 'source root' },
         @{ Path = 'D:\learning-system'; Label = 'learning-system root' },
         @{ Path = 'D:\databases'; Label = 'databases root' },
         @{ Path = 'D:\logs'; Label = 'logs root' },
@@ -226,3 +258,5 @@ if ($script:issues.Count -gt 0) {
 }
 
 Write-Host "`nPath policy validation passed." -ForegroundColor Green
+$global:LASTEXITCODE = 0
+

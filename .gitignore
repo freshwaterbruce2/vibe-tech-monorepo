@@ -12,6 +12,8 @@ dist
 dist-ssr
 space-agent/
 *.local
+scratch/
+.mcp-fleet-staging/
 
 # Editor directories and files
 .vscode/*
@@ -59,6 +61,9 @@ npm-shrinkwrap.json
 **/.claude/worktrees/
 .claude/scratch/
 **/.claude/scratch/
+# Runtime scheduler lock (per-session sessionId/pid churn — not source)
+.claude/scheduled_tasks.lock
+**/.claude/scheduled_tasks.lock
 
 # OpenCode / local assistant tooling (machine-specific)
 .opencode/
@@ -92,7 +97,6 @@ npm-shrinkwrap.json
 build/
 .nx/*
 !.nx/
-!.nx/SELF_HEALING.md
 .next/
 out/
 *.tsbuildinfo
@@ -136,6 +140,7 @@ node_modules/.vite/
 # Test coverage
 coverage/
 coverage-report/
+coverage-*/
 *.lcov
 *.coverage
 .nyc_output
@@ -323,6 +328,20 @@ apps/vibe-justice/frontend/src-tauri/binaries/*.exe
 apps/vibe-tutor/release/
 apps/vibetech-command-center/release/
 
+# Generated knowledge-graph artifacts (graphify / nx graph exports)
+graphify-out/
+**/graphify-out/
+*-graph.json
+
+# User-generated uploads (data belongs on D:\ per paths-policy)
+apps/ai-avatar-youtube-saas/public/uploads/
+
+# Large source design assets (keep on disk / Git LFS, not regular git)
+apps/nova-agent/branding/nova-logo-source.png
+
+# Gemini ralph loop runtime state
+.gemini/ralph/
+
 # Archive (moved to D:\archive)
 archive/
 # Allow intentionally archived vibe-justice docs
@@ -367,7 +386,6 @@ vitest.config.*.timestamp*
 
 # NX local cache
 .nx/
-!.nx/SELF_HEALING.md
 
 # Personal scratchpad
 MEMORY.md
@@ -385,6 +403,18 @@ MEMORY.md
 .projects/vault
 .projects/state.test.json
 .projects/state.local.test.json
-.env
-.env.local
 .env.test
+.env
+
+# Local Verdaccio npm registry cache
+.verdaccio/
+
+# Compiled TS output leaked into package src (stray tsc without outDir).
+# All packages/* are TypeScript-authored; .js/.js.map in their src is build output.
+packages/**/src/**/*.js
+packages/**/src/**/*.js.map
+*.tsbuildinfo
+
+# Cursor IDE local config (machine-specific, not shared)
+.cursor/
+

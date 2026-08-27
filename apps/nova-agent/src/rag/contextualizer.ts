@@ -18,6 +18,16 @@
 import type { Chunk, RAGConfig } from './types.js';
 
 const REQUEST_TIMEOUT_MS = 15_000;
+
+/**
+ * Escape characters that have special meaning in XML text content.
+ * Prevents document/chunk content from breaking the XML tags or injecting
+ * unintended structure into the LLM prompt.
+ */
+function escapeXml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 const MAX_RETRIES = 3;
 const RETRY_BASE_DELAY_MS = 1500;
 
@@ -152,8 +162,8 @@ export class Contextualizer {
    * OpenRouter passes Anthropic prompt-cache markers through to upstream when
    * the model is Anthropic-family.
    */
-  private async callApi(document: string, chunkContent: string): Promise<string> {
-    const body = {
+  private buildRequestBody(document: string, chunkContent: string): unknown {
+    return {
       model: this.model,
       max_tokens: this.maxTokens,
       temperature: 0,
@@ -163,14 +173,14 @@ export class Contextualizer {
           content: [
             {
               type: 'text',
-              text: `<document>\n${document}\n</document>`,
+              text: `<document>\n${escapeXml(document)}\n</document>`,
               cache_control: { type: 'ephemeral' as const },
             },
             {
               type: 'text',
               text:
                 'Here is the chunk we want to situate within the whole document:\n' +
-                `<chunk>\n${chunkContent}\n</chunk>\n` +
+                `<chunk>\n${escapeXml(chunkContent)}\n</chunk>\n` +
                 'Please give a short succinct context to situate this chunk within ' +
                 'the overall document for the purposes of improving search retrieval ' +
                 'of the chunk. Answer only with the succinct context and nothing else.',
@@ -179,41 +189,49 @@ export class Contextualizer {
         },
       ],
     };
+  }
+
+  private async performAttempt(body: unknown): Promise<string> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch(`${this.endpoint}/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Contextualizer API ${res.status}: ${errText.slice(0, 300)}`);
+    }
+
+    this.stats.apiCalls++;
+    const data = (await res.json()) as ChatCompletionResponse;
+    const usage = data.usage;
+    if (usage) {
+      this.stats.promptTokens += usage.prompt_tokens ?? 0;
+      this.stats.completionTokens += usage.completion_tokens ?? 0;
+      this.stats.cachedPromptTokens += usage.prompt_tokens_details?.cached_tokens ?? 0;
+    }
+
+    const content = data.choices[0]?.message?.content?.trim();
+    if (!content) throw new Error('Contextualizer API returned empty content');
+    return content;
+  }
+
+  private async callApi(document: string, chunkContent: string): Promise<string> {
+    const body = this.buildRequestBody(document, chunkContent);
 
     let lastError: Error | null = null;
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-        let res: Response;
-        try {
-          res = await fetch(`${this.endpoint}/v1/chat/completions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-            signal: controller.signal,
-          });
-        } finally {
-          clearTimeout(timeout);
-        }
-
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(`Contextualizer API ${res.status}: ${errText.slice(0, 300)}`);
-        }
-
-        this.stats.apiCalls++;
-        const data = (await res.json()) as ChatCompletionResponse;
-        const usage = data.usage;
-        if (usage) {
-          this.stats.promptTokens += usage.prompt_tokens ?? 0;
-          this.stats.completionTokens += usage.completion_tokens ?? 0;
-          this.stats.cachedPromptTokens += usage.prompt_tokens_details?.cached_tokens ?? 0;
-        }
-
-        const content = data.choices[0]?.message?.content?.trim();
-        if (!content) throw new Error('Contextualizer API returned empty content');
-        return content;
+        return await this.performAttempt(body);
       } catch (error) {
         lastError = error as Error;
         if (attempt < MAX_RETRIES - 1) {

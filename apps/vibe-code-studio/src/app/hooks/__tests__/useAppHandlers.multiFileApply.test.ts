@@ -14,6 +14,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
 
 import { useAppHandlers, type UseAppHandlersProps } from '../useAppHandlers';
+import { recordDiffArtifact } from '../../../services/artifacts/artifactCapture';
+import { useAIStore } from '../../../stores/useAIStore';
 
 // Keep the hook render light: SearchService is instantiated via useMemo on render,
 // and monacopilot is an external dep only used inside handleEditorMount.
@@ -24,6 +26,15 @@ vi.mock('../../../services/SearchService', () => ({
   },
 }));
 vi.mock('monacopilot', () => ({ registerCompletion: vi.fn() }));
+// Spec 09: applied multi-file edits record a diff artifact. runArtifactAction is the
+// real fire-and-forget wrapper's seam — the mock invokes the action synchronously so
+// the recordDiffArtifact call inside the handler actually executes.
+vi.mock('../../../services/artifacts/artifactCapture', () => ({
+  recordDiffArtifact: vi.fn().mockResolvedValue({ id: 'artifact-1', kind: 'diff' }),
+  runArtifactAction: vi.fn((action: () => Promise<unknown>) => {
+    void action();
+  }),
+}));
 
 function makeChange(path: string): FileChange {
   return {
@@ -116,7 +127,7 @@ describe('useAppHandlers — multi-file Apply', () => {
     const applyChanges = props.multiFileEditor.applyChanges as ReturnType<typeof vi.fn>;
     expect(applyChanges).toHaveBeenCalledTimes(1);
     const passedChanges = applyChanges.mock.calls[0][0] as FileChange[];
-    expect(passedChanges.map((c) => c.path)).toEqual(['a.ts']); // 'b.ts' filtered out
+    expect(passedChanges.map(c => c.path)).toEqual(['a.ts']); // 'b.ts' filtered out
   });
 
   it('closes the panel and reports success on a successful apply', async () => {
@@ -131,6 +142,41 @@ describe('useAppHandlers — multi-file Apply', () => {
     expect(props.setMultiFileApprovalOpen).toHaveBeenCalledWith(false);
     expect(props.setMultiFileEditPlan).toHaveBeenCalledWith(null);
     expect(props.setMultiFileChanges).toHaveBeenCalledWith([]);
+  });
+
+  it('records a diff artifact for the applied changes (spec 09 AC #4)', async () => {
+    const props = makeProps();
+    const { result } = renderHook(() => useAppHandlers(props));
+
+    await act(async () => {
+      await result.current.handleApplyMultiFileChanges(['a.ts']);
+    });
+
+    expect(recordDiffArtifact).toHaveBeenCalledTimes(1);
+    const [taskId, title, changes, impact] = (recordDiffArtifact as ReturnType<typeof vi.fn>).mock
+      .calls[0] as [string, string, FileChange[], string];
+    expect(taskId).toBe('plan-1');
+    expect(title).toBe('Applied edits — Test multi-file edit');
+    expect(changes.map(c => c.path)).toEqual(['a.ts']); // only the selected changes
+    expect(impact).toBe('low');
+  });
+
+  it('does not record a diff artifact when apply fails', async () => {
+    const failing = vi.fn().mockResolvedValue({
+      success: false,
+      appliedFiles: [],
+      failedFiles: [{ path: 'a.ts', error: 'boom' }],
+      error: 'boom',
+      rollbackAvailable: false,
+    });
+    const props = makeProps({ multiFileEditor: { applyChanges: failing } as never });
+    const { result } = renderHook(() => useAppHandlers(props));
+
+    await act(async () => {
+      await result.current.handleApplyMultiFileChanges(['a.ts']);
+    });
+
+    expect(recordDiffArtifact).not.toHaveBeenCalled();
   });
 
   it('does not call applyChanges when there is no plan (Bug B guard)', async () => {
@@ -174,5 +220,45 @@ describe('useAppHandlers — multi-file Apply', () => {
     expect(props.setMultiFileApprovalOpen).toHaveBeenCalledWith(false);
     expect(props.setMultiFileEditPlan).toHaveBeenCalledWith(null);
     expect(props.setMultiFileChanges).toHaveBeenCalledWith([]);
+  });
+});
+
+describe('useAppHandlers — model change', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useAIStore.getState().actions.setModel('moonshot/kimi-2.5-pro');
+  });
+
+  it('persists the selected model to the AI store and the service', async () => {
+    const setModel = vi.fn();
+    const setCurrentModel = vi.fn();
+    const props = makeProps({
+      aiService: { setModel } as never,
+      setCurrentModel,
+    });
+    const { result } = renderHook(() => useAppHandlers(props));
+
+    await act(async () => {
+      await result.current.handleModelChange({ id: 'openai/gpt-5.2' } as never);
+    });
+
+    expect(setCurrentModel).toHaveBeenCalledWith('openai/gpt-5.2');
+    expect(setModel).toHaveBeenCalledWith('openai/gpt-5.2');
+    expect(useAIStore.getState().currentModel).toBe('openai/gpt-5.2');
+  });
+
+  it('surfaces an error when the AI service rejects the model', async () => {
+    const setModel = vi.fn(() => {
+      throw new Error('bad model');
+    });
+    const showError = vi.fn();
+    const props = makeProps({ aiService: { setModel } as never, showError });
+    const { result } = renderHook(() => useAppHandlers(props));
+
+    await act(async () => {
+      await result.current.handleModelChange({ id: 'openai/gpt-5.2' } as never);
+    });
+
+    expect(showError).toHaveBeenCalledWith('Model Error', 'bad model');
   });
 });

@@ -40,7 +40,7 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
     _token: Monaco.CancellationToken
   ): Promise<Monaco.languages.CodeActionList | undefined> {
     // Check if there are any markers (errors) at this position
-    const {markers} = context;
+    const { markers } = context;
     if (!markers || markers.length === 0) {
       return undefined;
     }
@@ -67,8 +67,8 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
         command: {
           id: 'autofix.fixWithAI',
           title: 'Fix with AI',
-          arguments: [model, marker]
-        }
+          arguments: [model, marker],
+        },
       };
 
       actions.push(fixAction);
@@ -82,8 +82,8 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
           command: {
             id: 'autofix.fixAllWithAI',
             title: 'Fix All with AI',
-            arguments: [model, relevantMarkers]
-          }
+            arguments: [model, relevantMarkers],
+          },
         };
 
         actions.push(fixAllAction);
@@ -92,7 +92,7 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
 
     return {
       actions,
-      dispose: () => {} // No cleanup needed
+      dispose: () => {}, // No cleanup needed
     };
   }
 
@@ -113,94 +113,107 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
    * Register command handlers for the code actions
    * Must be called after provider is registered
    */
-  registerCommandHandlers(editor: Monaco.editor.IStandaloneCodeEditor, _monacoInstance: typeof Monaco) {
-    // Handler for single fix — registered as an editor action so Monaco's command service can invoke it
+  registerCommandHandlers(
+    editor: Monaco.editor.IStandaloneCodeEditor,
+    _monacoInstance: typeof Monaco
+  ) {
+    // Registered as editor actions so Monaco's command service can invoke them.
     editor.addAction({
       id: 'autofix.fixWithAI',
       label: 'Fix with AI',
       keybindings: [],
-      run: async (_ed, ...args: unknown[]) => {
-        const model = args[0] as Monaco.editor.ITextModel;
-        const marker = args[1] as Monaco.editor.IMarker;
-        try {
-          logger.debug('[CodeActionProvider] Fixing single error:', marker.message);
-
-          // Convert Monaco marker to DetectedError
-          const error = this.markerToDetectedError(marker, model);
-
-          // Generate fix using AutoFixService
-          const fix = await this.autoFixService.generateFix(error, editor);
-
-          if (fix.suggestions.length === 0) {
-            throw new Error('No fix suggestions generated');
-          }
-
-          // Apply the first (highest confidence) suggestion
-          const suggestion = fix.suggestions[0]!;
-          this.applyFix(editor, model, suggestion);
-
-          // Notify success
-          if (this.onFixApplied) {
-            this.onFixApplied(suggestion.title);
-          }
-
-          logger.debug('[CodeActionProvider] Fix applied successfully');
-        } catch (error) {
-          logger.error('[CodeActionProvider] Fix failed:', error);
-          if (this.onFixFailed) {
-            this.onFixFailed(error as Error);
-          }
-        }
-      }
+      run: (_ed, ...args: unknown[]) =>
+        this.runSingleFix(
+          editor,
+          args[0] as Monaco.editor.ITextModel,
+          args[1] as Monaco.editor.IMarker
+        ),
     });
 
-    // Handler for fix all
     editor.addAction({
       id: 'autofix.fixAllWithAI',
       label: 'Fix all with AI',
       keybindings: [],
-      run: async (_ed, ...args: unknown[]) => {
-        const model = args[0] as Monaco.editor.ITextModel;
-        const markers = args[1] as Monaco.editor.IMarker[];
+      run: (_ed, ...args: unknown[]) =>
+        this.runFixAll(
+          editor,
+          args[0] as Monaco.editor.ITextModel,
+          args[1] as Monaco.editor.IMarker[]
+        ),
+    });
+  }
+
+  private async runSingleFix(
+    editor: Monaco.editor.IStandaloneCodeEditor,
+    model: Monaco.editor.ITextModel,
+    marker: Monaco.editor.IMarker
+  ): Promise<void> {
+    try {
+      logger.debug('[CodeActionProvider] Fixing single error:', marker.message);
+      const error = this.markerToDetectedError(marker, model);
+      const fix = await this.autoFixService.generateFix(error, editor);
+
+      if (fix.suggestions.length === 0) {
+        throw new Error('No fix suggestions generated');
+      }
+
+      // Apply the first (highest confidence) suggestion
+      const suggestion = fix.suggestions[0]!;
+      this.applyFix(editor, model, suggestion);
+      if (this.onFixApplied) {
+        this.onFixApplied(suggestion.title);
+      }
+
+      logger.debug('[CodeActionProvider] Fix applied successfully');
+    } catch (error) {
+      logger.error('[CodeActionProvider] Fix failed:', error);
+      if (this.onFixFailed) {
+        this.onFixFailed(error as Error);
+      }
+    }
+  }
+
+  private async runFixAll(
+    editor: Monaco.editor.IStandaloneCodeEditor,
+    model: Monaco.editor.ITextModel,
+    markers: Monaco.editor.IMarker[]
+  ): Promise<void> {
+    try {
+      logger.debug('[CodeActionProvider] Fixing multiple errors:', markers.length);
+
+      let fixedCount = 0;
+      const errors: string[] = [];
+
+      // Fix errors one by one (could be optimized with batch processing)
+      for (const marker of markers) {
         try {
-          logger.debug('[CodeActionProvider] Fixing multiple errors:', markers.length);
+          const error = this.markerToDetectedError(marker, model);
+          const fix = await this.autoFixService.generateFix(error, editor);
 
-          let fixedCount = 0;
-        const errors: string[] = [];
-
-        // Fix errors one by one (could be optimized with batch processing)
-        for (const marker of markers) {
-          try {
-            const error = this.markerToDetectedError(marker, model);
-            const fix = await this.autoFixService.generateFix(error, editor);
-
-            if (fix.suggestions.length > 0) {
-              const suggestion = fix.suggestions[0]!;
-              this.applyFix(editor, model, suggestion);
-              fixedCount++;
-            }
-          } catch (err) {
-            errors.push(`${marker.message}: ${(err as Error).message}`);
+          if (fix.suggestions.length > 0) {
+            const suggestion = fix.suggestions[0]!;
+            this.applyFix(editor, model, suggestion);
+            fixedCount++;
           }
-        }
-
-        // Notify success
-        if (this.onFixApplied) {
-          this.onFixApplied(`Fixed ${fixedCount} of ${markers.length} issues`);
-        }
-
-        if (errors.length > 0 && this.onFixFailed) {
-          this.onFixFailed(new Error(`Some fixes failed: ${errors.join(', ')}`));
-        }
-
-        logger.debug('[CodeActionProvider] Batch fix complete:', fixedCount, 'fixed');
-      } catch (error) {
-        logger.error('[CodeActionProvider] Batch fix failed:', error);
-        if (this.onFixFailed) {
-          this.onFixFailed(error as Error);
+        } catch (err) {
+          errors.push(`${marker.message}: ${(err as Error).message}`);
         }
       }
-    }});
+
+      if (this.onFixApplied) {
+        this.onFixApplied(`Fixed ${fixedCount} of ${markers.length} issues`);
+      }
+      if (errors.length > 0 && this.onFixFailed) {
+        this.onFixFailed(new Error(`Some fixes failed: ${errors.join(', ')}`));
+      }
+
+      logger.debug('[CodeActionProvider] Batch fix complete:', fixedCount, 'fixed');
+    } catch (error) {
+      logger.error('[CodeActionProvider] Batch fix failed:', error);
+      if (this.onFixFailed) {
+        this.onFixFailed(error as Error);
+      }
+    }
   }
 
   /**
@@ -214,12 +227,13 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
     const type = marker.source === 'eslint' ? 'eslint' : 'typescript';
 
     // Extract error code
-    const code = typeof marker.code === 'object' && marker.code !== null
-      ? (marker.code as { value: string }).value
-      : marker.code;
+    const code =
+      typeof marker.code === 'object' && marker.code !== null
+        ? (marker.code as { value: string }).value
+        : marker.code;
 
     return {
-      id: `marker-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `marker-${crypto.randomUUID()}`,
       type,
       severity,
       message: marker.message,
@@ -227,7 +241,7 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
       line: marker.startLineNumber,
       column: marker.startColumn,
       code: code?.toString(),
-      source: marker.source
+      source: marker.source,
     };
   }
 
@@ -245,10 +259,10 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
         startLineNumber: suggestion.startLine,
         startColumn: 1,
         endLineNumber: suggestion.endLine,
-        endColumn: model.getLineMaxColumn(suggestion.endLine)
+        endColumn: model.getLineMaxColumn(suggestion.endLine),
       },
       text: suggestion.code,
-      forceMoveMarkers: true
+      forceMoveMarkers: true,
     };
 
     // Apply edit
@@ -257,7 +271,7 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
     // Move cursor to fixed location
     editor.setPosition({
       lineNumber: suggestion.startLine,
-      column: 1
+      column: 1,
     });
 
     // Reveal the changed line
@@ -271,7 +285,6 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
     if (message.length <= maxLength) {
       return message;
     }
-    return `${message.substring(0, maxLength)  }...`;
+    return `${message.substring(0, maxLength)}...`;
   }
-
 }

@@ -182,13 +182,13 @@ describe('calculateCost pricing', () => {
 
     await refreshLivePricing();
 
-    // claude-opus-4.5 fallback: input 0.015, output 0.075 per 1M tokens.
+    // claude-opus-4.5 fallback: input 15.0, output 75.0 per 1M tokens.
     const cost = calculateCost('anthropic/claude-opus-4.5', {
       prompt_tokens: 1_000_000,
       completion_tokens: 1_000_000,
     });
 
-    expect(cost).toBeCloseTo(0.09, 6);
+    expect(cost).toBeCloseTo(90.0, 6);
   });
 
   it('throws when the API key is not configured', async () => {

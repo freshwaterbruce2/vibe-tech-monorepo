@@ -11,10 +11,26 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./tests/setup-env.ts', './tests/setup.ts'],
     exclude: ['**/node_modules/**', '**/*.spec.ts'],
-    include: ['**/*.test.{ts,tsx}'],
+    include: ['**/*.test.{ts,tsx}', 'electron/**/*.test.ts'],
     coverage: {
       provider: 'istanbul',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'json-summary', 'html'],
+      // `all` instruments every in-scope source file, not just those a test
+      // imports — so untested files surface in the report and the diff-coverage
+      // gate (which reads coverage-final.json) can see them.
+      all: true,
+      include: ['src/**/*.{ts,tsx}', 'electron/csp.ts'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/**/__tests__/**',
+        'src/**/*.d.ts',
+        'src/types.ts',
+        'src/**/*.types.ts',
+        'src/types/**',
+        'src/**/*.config.*',
+        'src/vite-env.d.ts',
+        'electron/**/*.test.ts',
+      ],
     },
   },
   resolve: {

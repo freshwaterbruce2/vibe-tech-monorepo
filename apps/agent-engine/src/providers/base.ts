@@ -13,11 +13,16 @@ export function ensureProvider<T>(value: T | undefined, message: string): T {
 export function createBehavioralProvider(
   mode: BehavioralProviderMode = CONFIG.AGENT_ENGINE_BEHAVIORAL_PROVIDER,
 ): LlmProvider {
-  if (mode === 'scripted') {
+  let resolvedMode = mode;
+  if (resolvedMode === 'auto') {
+    resolvedMode = CONFIG.AGENT_ENGINE_BEHAVIORAL_PROVIDER;
+  }
+
+  if (resolvedMode === 'scripted') {
     return new ScriptedBehavioralProvider();
   }
 
-  if (mode === 'moonshot') {
+  if (resolvedMode === 'moonshot') {
     return new MoonshotProvider();
   }
 

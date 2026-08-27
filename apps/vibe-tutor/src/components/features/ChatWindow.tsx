@@ -1,5 +1,5 @@
-import { Bot, GraduationCap, Heart, Send, Sparkles, X } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { Bot, Flag, GraduationCap, Heart, Send, Sparkles, X } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { dataStore } from '../../services/dataStore';
 import { GradientIcon } from '../ui/icons/GradientIcon';
 import { useChatMessages } from '../../hooks/useChatMessages';
@@ -7,6 +7,7 @@ import { secureClient } from '../../services/secureClient';
 import LifeSkillsChecklist from './LifeSkillsChecklist';
 import SocialSkillsTips from './SocialSkillsTips';
 import { logger } from '../../utils/logger';
+import type { ChatMessage } from '../../types';
 
 interface ChatWindowProps {
   title: string;
@@ -19,48 +20,92 @@ type ConnectionStatus = 'checking' | 'connected' | 'disconnected';
 
 const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatWindowProps) => {
   const {
-    messages, setMessages, input, setInput, isLoading,
-    showLifeSkills, setShowLifeSkills, showSocialTips, setShowSocialTips,
-    messagesEndRef, handleSend, handleAskBuddy, startTransition,
+    messages,
+    setMessages,
+    input,
+    setInput,
+    isLoading,
+    showLifeSkills,
+    setShowLifeSkills,
+    showSocialTips,
+    setShowSocialTips,
+    messagesEndRef,
+    handleSend,
+    handleAskBuddy,
+    startTransition,
   } = useChatMessages({ title, type, onSendMessage });
 
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('checking');
   const [showOfflineBanner, setShowOfflineBanner] = useState(false);
+  const [reportedTimestamps, setReportedTimestamps] = useState<Set<number>>(new Set());
+  const [reportingTimestamp, setReportingTimestamp] = useState<number | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    const CHECK_TIMEOUT_MS = 3000;
-
-    const checkConnection = async () => {
+  const handleReport = useCallback(
+    async (msg: ChatMessage) => {
+      if (reportingTimestamp !== null || reportedTimestamps.has(msg.timestamp)) return;
+      setReportingTimestamp(msg.timestamp);
       try {
-        const timeoutPromise = new Promise<false>((resolve) =>
-          setTimeout(() => resolve(false), CHECK_TIMEOUT_MS),
-        );
-        const healthPromise = secureClient.healthCheck();
-        const isHealthy = await Promise.race([healthPromise, timeoutPromise]);
+        await secureClient.reportMessage({
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp,
+          chatType: type,
+        });
+        setReportedTimestamps((prev) => new Set(prev).add(msg.timestamp));
+      } catch (error) {
+        logger.error('Failed to report message:', error);
+      } finally {
+        setReportingTimestamp(null);
+      }
+    },
+    [reportingTimestamp, reportedTimestamps, type],
+  );
 
-        if (cancelled) return;
+  const checkConnection = useCallback(async () => {
+    // If the device itself reports offline, skip the network round-trip.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setConnectionStatus('disconnected');
+      setShowOfflineBanner(true);
+      return;
+    }
 
-        if (isHealthy) {
-          setConnectionStatus('connected');
-          setShowOfflineBanner(false);
-        } else {
-          setConnectionStatus('disconnected');
-          setShowOfflineBanner(true);
-        }
-      } catch {
-        if (cancelled) return;
+    const CHECK_TIMEOUT_MS = 3000;
+    try {
+      const timeoutPromise = new Promise<false>((resolve) =>
+        setTimeout(() => resolve(false), CHECK_TIMEOUT_MS),
+      );
+      const isHealthy = await Promise.race([secureClient.healthCheck(), timeoutPromise]);
+      if (isHealthy) {
+        setConnectionStatus('connected');
+        setShowOfflineBanner(false);
+      } else {
         setConnectionStatus('disconnected');
         setShowOfflineBanner(true);
       }
-    };
+    } catch {
+      setConnectionStatus('disconnected');
+      setShowOfflineBanner(true);
+    }
+  }, []);
 
+  useEffect(() => {
     void checkConnection();
 
-    return () => {
-      cancelled = true;
+    // React to device connectivity changes so the chat re-enables on reconnect
+    // and locks down immediately when the network drops.
+    const handleOnline = () => void checkConnection();
+    const handleOffline = () => {
+      setConnectionStatus('disconnected');
+      setShowOfflineBanner(true);
     };
-  }, []);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [checkConnection]);
 
   return (
     <div className="h-full flex flex-col p-4 md:p-8 pb-24 md:pb-8 relative">
@@ -336,7 +381,31 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                     }`}
                   >
                     <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                    <div className="flex justify-end mt-2">
+                    <div className="flex items-center justify-end gap-3 mt-2">
+                      {msg.role !== 'user' && (
+                        <button
+                          type="button"
+                          onClick={() => void handleReport(msg)}
+                          disabled={
+                            reportingTimestamp === msg.timestamp ||
+                            reportedTimestamps.has(msg.timestamp)
+                          }
+                          className="flex items-center gap-1 text-xs opacity-60 hover:opacity-100 disabled:opacity-40 transition-opacity"
+                          aria-label={
+                            reportedTimestamps.has(msg.timestamp)
+                              ? 'Message reported'
+                              : 'Report this message'
+                          }
+                          title={
+                            reportedTimestamps.has(msg.timestamp)
+                              ? 'Reported — thank you'
+                              : 'Report inappropriate response'
+                          }
+                        >
+                          <Flag size={12} />
+                          {reportedTimestamps.has(msg.timestamp) ? 'Reported' : 'Report'}
+                        </button>
+                      )}
                       <span className="text-xs opacity-60">
                         {new Date(msg.timestamp).toLocaleTimeString([], {
                           hour: '2-digit',
@@ -400,14 +469,18 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                 void handleSend();
               }
             }}
-            placeholder={`Message ${type === 'tutor' ? 'your AI Tutor' : 'your AI Buddy'}... (Enter to send, Shift+Enter for new line)`}
+            placeholder={
+              connectionStatus === 'disconnected'
+                ? "You're offline — reconnect to chat"
+                : `Message ${type === 'tutor' ? 'your AI Tutor' : 'your AI Buddy'}... (Enter to send, Shift+Enter for new line)`
+            }
             className="flex-1 bg-transparent px-4 py-3 text-text-primary outline-none focus:ring-2 focus:ring-[var(--primary-accent)] focus:ring-inset rounded placeholder-text-muted"
-            disabled={isLoading}
+            disabled={isLoading || connectionStatus === 'disconnected'}
             aria-label="Chat input"
           />
           <button
             onClick={() => void handleSend()}
-            disabled={isLoading || !input.trim()}
+            disabled={isLoading || !input.trim() || connectionStatus === 'disconnected'}
             className="glass-button p-3 ml-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
             aria-label="Send message"
           >

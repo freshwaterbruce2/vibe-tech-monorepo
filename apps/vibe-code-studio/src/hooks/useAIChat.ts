@@ -1,10 +1,18 @@
-import { startTransition, useCallback, useEffect, useState } from 'react';
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react';
 
+import { isCancellationLifecycleEnabled } from '../config/aiRolloutFlags';
 import { MultiFileEditDetector } from '../services/ai/MultiFileEditDetector';
 import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
 import { logger } from '../services/Logger';
+import { telemetry } from '../services/TelemetryService';
 import { entitlementsService } from '../services/EntitlementsService';
-import type { AIContextRequest, AIMessage, EditorFile, WorkspaceContext } from '../types';
+import type {
+  AIContextRequest,
+  AIMessage,
+  AIResponseState,
+  EditorFile,
+  WorkspaceContext,
+} from '../types';
 import type { FileChange, MultiFileEditPlan } from '../types/multifile';
 
 const CHAT_STORAGE_KEY = 'vibe-code-studio:chat-messages';
@@ -32,13 +40,46 @@ Let's build something amazing together!`,
   timestamp: new Date(),
 };
 
+interface ActiveGenerationSession {
+  sessionId: string;
+  responseMessageId: string;
+}
+
+type CancelReason =
+  | 'user_action'
+  | 'chat_closed'
+  | 'superseded_by_new_request'
+  | 'component_unmount'
+  | 'unknown';
+
+type TelemetryValue = string | number | boolean | undefined;
+
+function emitLifecycleTelemetry(event: string, dimensions: Record<string, TelemetryValue>): void {
+  const sanitizedDimensions: Record<string, string | number | boolean> = {};
+  Object.entries(dimensions).forEach(([key, value]) => {
+    if (value !== undefined) {
+      sanitizedDimensions[key] = value;
+    }
+  });
+
+  telemetry.trackEvent(event, sanitizedDimensions);
+}
+
+function isAbortError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return error.name === 'AbortError' || /abort(ed|ing)?/i.test(error.message);
+}
+
 function loadPersistedMessages(): AIMessage[] {
   try {
     // Synchronous context — electron-store is async so localStorage is the only option here
     const raw = localStorage.getItem(CHAT_STORAGE_KEY);
     if (!raw) return [WELCOME_MESSAGE];
     const parsed = JSON.parse(raw) as Array<AIMessage & { timestamp: string }>;
-    return parsed.map((m) => ({ ...m, timestamp: new Date(m.timestamp) }));
+    return parsed.map(m => ({ ...m, timestamp: new Date(m.timestamp) }));
   } catch {
     return [WELCOME_MESSAGE];
   }
@@ -48,8 +89,10 @@ export interface UseAIChatReturn {
   aiMessages: AIMessage[];
   aiChatOpen: boolean;
   isAiResponding: boolean;
+  aiResponseState: AIResponseState;
   setAiChatOpen: (open: boolean) => void;
   handleSendMessage: (message: string, contextRequest?: Partial<AIContextRequest>) => Promise<void>;
+  cancelAiResponse: () => void;
   clearAiMessages: () => void;
   addAiMessage: (message: AIMessage) => void;
   updateAiMessage: (messageId: string, updater: (msg: AIMessage) => AIMessage) => void;
@@ -78,9 +121,26 @@ export function useAIChat({
   sidebarOpen = true,
   previewOpen = false,
 }: UseAIChatProps): UseAIChatReturn {
+  const cancellationLifecycleEnabled = isCancellationLifecycleEnabled();
   const [aiMessages, setAiMessages] = useState<AIMessage[]>(loadPersistedMessages);
-  const [aiChatOpen, setAiChatOpen] = useState(false);
+  const [aiChatOpen, setAiChatOpenState] = useState(false);
   const [isAiResponding, setIsAiResponding] = useState(false);
+  const [aiResponseState, setAiResponseState] = useState<AIResponseState>('idle');
+  const activeSessionRef = useRef<ActiveGenerationSession | null>(null);
+  const cancellationReasonsRef = useRef<Map<string, CancelReason>>(new Map());
+  const activeRequestTokenRef = useRef(0);
+  const isMountedRef = useRef(true);
+
+  const emitGenerationTelemetry = useCallback(
+    (event: string, dimensions: Record<string, TelemetryValue>) => {
+      emitLifecycleTelemetry(event, {
+        request_mode: 'chat',
+        cancellation_lifecycle_enabled: cancellationLifecycleEnabled,
+        ...dimensions,
+      });
+    },
+    [cancellationLifecycleEnabled]
+  );
 
   const addAiMessage = useCallback((message: AIMessage) => {
     // Use startTransition for non-urgent message additions (e.g., agent task updates)
@@ -88,10 +148,10 @@ export function useAIChat({
     const isUrgent = message.role === 'user';
 
     if (isUrgent) {
-      setAiMessages((prev) => [...prev, message]);
+      setAiMessages(prev => [...prev, message]);
     } else {
       startTransition(() => {
-        setAiMessages((prev) => [...prev, message]);
+        setAiMessages(prev => [...prev, message]);
       });
     }
   }, []);
@@ -100,10 +160,10 @@ export function useAIChat({
     (messageId: string, updater: (msg: AIMessage) => AIMessage) => {
       // Use startTransition for non-urgent message updates (agent task step progress)
       startTransition(() => {
-        setAiMessages((prev) => prev.map((msg) => (msg.id === messageId ? updater(msg) : msg)));
+        setAiMessages(prev => prev.map(msg => (msg.id === messageId ? updater(msg) : msg)));
       });
     },
-    [],
+    []
   );
 
   const clearAiMessages = useCallback(() => {
@@ -114,6 +174,93 @@ export function useAIChat({
       localStorage.removeItem(CHAT_STORAGE_KEY);
     }
   }, []);
+
+  const markResponseCancelled = useCallback((responseMessageId: string) => {
+    startTransition(() => {
+      setAiMessages(prev =>
+        prev.map(msg => {
+          if (msg.id !== responseMessageId || msg.role !== 'assistant') {
+            return msg;
+          }
+
+          const trimmed = msg.content.trim();
+          if (trimmed.length === 0) {
+            return { ...msg, content: 'Generation cancelled.' };
+          }
+
+          if (trimmed.includes('_Generation cancelled._')) {
+            return msg;
+          }
+
+          return { ...msg, content: `${trimmed}\n\n_Generation cancelled._` };
+        })
+      );
+    });
+  }, []);
+
+  const cancelAiResponseWithReason = useCallback(
+    (reason: CancelReason) => {
+      const activeSession = activeSessionRef.current;
+      if (!activeSession) {
+        return false;
+      }
+
+      if (cancellationLifecycleEnabled) {
+        setAiResponseState('cancelling');
+      }
+
+      const cancelled = aiService.cancelGenerationSession(activeSession.sessionId);
+      activeSessionRef.current = null;
+      cancellationReasonsRef.current.set(activeSession.sessionId, reason);
+
+      emitGenerationTelemetry('stream_cancel_requested', {
+        reason,
+        result_status: cancelled ? 'accepted' : 'session_missing',
+        session_id: activeSession.sessionId,
+      });
+
+      if (!cancelled) {
+        cancellationReasonsRef.current.delete(activeSession.sessionId);
+        setAiResponseState('idle');
+        return false;
+      }
+
+      setIsAiResponding(false);
+
+      if (cancellationLifecycleEnabled) {
+        markResponseCancelled(activeSession.responseMessageId);
+        setAiResponseState('cancelled');
+      } else {
+        setAiResponseState('idle');
+      }
+
+      return true;
+    },
+    [aiService, cancellationLifecycleEnabled, emitGenerationTelemetry, markResponseCancelled]
+  );
+
+  const cancelAiResponse = useCallback(() => {
+    void cancelAiResponseWithReason('user_action');
+  }, [cancelAiResponseWithReason]);
+
+  const setAiChatOpen = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        void cancelAiResponseWithReason('chat_closed');
+      }
+      setAiChatOpenState(open);
+    },
+    [cancelAiResponseWithReason]
+  );
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      void cancelAiResponseWithReason('component_unmount');
+    };
+  }, [cancelAiResponseWithReason]);
 
   // Persist messages on every change — use electron-store in Electron, localStorage as web fallback
   useEffect(() => {
@@ -133,7 +280,7 @@ export function useAIChat({
     async (message: string, contextRequest?: Partial<AIContextRequest>) => {
       const plan = entitlementsService.getCurrentPlan();
       if (plan === 'free') {
-        const userMsgsCount = aiMessages.filter((m) => m.role === 'user').length;
+        const userMsgsCount = aiMessages.filter(m => m.role === 'user').length;
         if (userMsgsCount >= 10) {
           const limitMsg: AIMessage = {
             id: crypto.randomUUID(),
@@ -141,9 +288,16 @@ export function useAIChat({
             content: `⚠️ **Free Plan Limit Reached**\n\nYou have used your daily limit of 10 messages. Please click the [Upgrade to Pro](#login) link or go to Settings to unlock unlimited AI assistant queries, autocomplete, custom rules, and multi-agent execution.`,
             timestamp: new Date(),
           };
-          setAiMessages((prev) => [...prev, limitMsg]);
+          setAiMessages(prev => [...prev, limitMsg]);
           return;
         }
+      }
+
+      const requestToken = activeRequestTokenRef.current + 1;
+      activeRequestTokenRef.current = requestToken;
+
+      if (activeSessionRef.current) {
+        void cancelAiResponseWithReason('superseded_by_new_request');
       }
 
       // Add user message
@@ -156,6 +310,20 @@ export function useAIChat({
       addAiMessage(userMessage);
 
       setIsAiResponding(true);
+      setAiResponseState('streaming');
+      emitGenerationTelemetry('generation_request_started', {
+        request_token: requestToken,
+        has_current_file: Boolean(currentFile),
+        open_file_count: openFiles.length,
+        has_workspace_folder: Boolean(workspaceFolder),
+        has_context_override: Boolean(contextRequest),
+      });
+
+      let generationSessionId: string | null = null;
+      let activeResponseId: string | null = null;
+      let streamStartedAt = Date.now();
+      let streamedChunkCount = 0;
+      let streamCancelled = false;
 
       try {
         // Build system prompt with workspace and file context
@@ -195,18 +363,47 @@ export function useAIChat({
         }
 
         if (openFiles.length > 0) {
-          systemPrompt += `\n\n## Open Files\n${openFiles.map((f) => `- ${f.name}`).join('\n')}`;
+          systemPrompt += `\n\n## Open Files\n${openFiles.map(f => `- ${f.name}`).join('\n')}`;
         }
 
         systemPrompt += `\n\nWhen the user asks you to review, explain, or modify code, use the file contents above. Provide specific, actionable feedback referencing line numbers and code snippets.`;
 
         // Build conversation history from previous messages
         const conversationMessages = aiMessages
-          .filter((m) => m.role === 'user' || m.role === 'assistant')
+          .filter(m => m.role === 'user' || m.role === 'assistant')
           .slice(-10) // Last 10 messages for context
-          .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+          .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
 
-        // Build context request with enhanced user activity
+        // Get AI response using streaming
+        let aiResponseContent = '';
+        let aiReasoningContent = '';
+        let isCollectingReasoning = false;
+        const aiResponseId = crypto.randomUUID();
+        activeResponseId = aiResponseId;
+
+        // Add initial AI message
+        const aiMessage: AIMessage = {
+          id: aiResponseId,
+          role: 'assistant',
+          content: '',
+          timestamp: new Date(),
+        };
+        addAiMessage(aiMessage);
+
+        const generationSession = aiService.createGenerationSession();
+        generationSessionId = generationSession.id;
+        streamStartedAt = Date.now();
+        activeSessionRef.current = {
+          sessionId: generationSession.id,
+          responseMessageId: aiResponseId,
+        };
+        cancellationReasonsRef.current.delete(generationSession.id);
+        emitGenerationTelemetry('stream_started', {
+          session_id: generationSession.id,
+          model: typeof aiService.getModel === 'function' ? aiService.getModel() : 'unknown',
+        });
+
+        // Stream the response
         const fullContextRequest: AIContextRequest = {
           userQuery: message,
           systemPrompt,
@@ -220,29 +417,22 @@ export function useAIChat({
             sidebarOpen,
             previewOpen,
             aiChatOpen,
-            recentFiles: openFiles.slice(0, 5).map((f) => f.name),
+            recentFiles: openFiles.slice(0, 5).map(f => f.name),
             workspaceFolder,
           },
           ...contextRequest,
+          signal: generationSession.signal,
         };
 
-        // Get AI response using streaming
-        let aiResponseContent = '';
-        let aiReasoningContent = '';
-        let isCollectingReasoning = false;
-        const aiResponseId = crypto.randomUUID();
-
-        // Add initial AI message
-        const aiMessage: AIMessage = {
-          id: aiResponseId,
-          role: 'assistant',
-          content: '',
-          timestamp: new Date(),
-        };
-        addAiMessage(aiMessage);
-
-        // Stream the response
         for await (const chunk of aiService.sendContextualMessageStream(fullContextRequest)) {
+          if (
+            !isMountedRef.current ||
+            activeSessionRef.current?.sessionId !== generationSession.id
+          ) {
+            break;
+          }
+          streamedChunkCount += 1;
+
           // Check if this is reasoning content
           if (chunk.startsWith('[REASONING] ')) {
             isCollectingReasoning = true;
@@ -257,8 +447,14 @@ export function useAIChat({
 
           // Use startTransition to mark streaming updates as non-urgent (improves performance)
           startTransition(() => {
-            setAiMessages((prev) => {
-              return prev.map((msg) => {
+            if (
+              !isMountedRef.current ||
+              activeSessionRef.current?.sessionId !== generationSession.id
+            ) {
+              return;
+            }
+            setAiMessages(prev => {
+              return prev.map(msg => {
                 if (msg.id === aiResponseId) {
                   const updatedMsg: AIMessage = {
                     ...msg,
@@ -273,6 +469,34 @@ export function useAIChat({
           });
         }
 
+        if (generationSession.signal.aborted) {
+          const cancelReason =
+            cancellationReasonsRef.current.get(generationSession.id) ?? 'unknown';
+          streamCancelled = true;
+          emitGenerationTelemetry('stream_cancelled', {
+            session_id: generationSession.id,
+            reason: cancelReason,
+            result_status: 'aborted',
+            chunk_count: streamedChunkCount,
+            duration_ms: Date.now() - streamStartedAt,
+          });
+          if (cancellationLifecycleEnabled) {
+            markResponseCancelled(aiResponseId);
+          }
+          if (activeRequestTokenRef.current === requestToken) {
+            setAiResponseState(cancellationLifecycleEnabled ? 'cancelled' : 'idle');
+          }
+          return;
+        }
+
+        emitGenerationTelemetry('stream_completed', {
+          session_id: generationSession.id,
+          result_status: 'completed',
+          chunk_count: streamedChunkCount,
+          response_char_count: aiResponseContent.length,
+          duration_ms: Date.now() - streamStartedAt,
+        });
+
         // Check for multi-file edit patterns in the AI response
         if (onMultiFileEditDetected && aiResponseContent) {
           const detector = new MultiFileEditDetector();
@@ -285,24 +509,70 @@ export function useAIChat({
 
         // Response is complete (no need to mark anything since we don't have isTyping)
       } catch (error) {
+        if (isAbortError(error)) {
+          logger.info('[useAIChat] Generation cancelled');
+          const cancelReason =
+            (generationSessionId && cancellationReasonsRef.current.get(generationSessionId)) ??
+            'unknown';
+          if (!streamCancelled) {
+            emitGenerationTelemetry('stream_cancelled', {
+              session_id: generationSessionId ?? 'unknown',
+              reason: cancelReason,
+              result_status: 'abort_error',
+              chunk_count: streamedChunkCount,
+              duration_ms: Date.now() - streamStartedAt,
+            });
+          }
+          if (activeResponseId && cancellationLifecycleEnabled) {
+            markResponseCancelled(activeResponseId);
+          }
+          if (activeRequestTokenRef.current === requestToken) {
+            setAiResponseState(cancellationLifecycleEnabled ? 'cancelled' : 'idle');
+          }
+          return;
+        }
+
         logger.error('AI chat error:', error);
+        setAiResponseState('error');
+        emitGenerationTelemetry('stream_error', {
+          session_id: generationSessionId ?? 'unknown',
+          result_status: 'error',
+          error_name: error instanceof Error ? error.name : 'unknown_error',
+          duration_ms: Date.now() - streamStartedAt,
+        });
 
         // Add error message
+        const detail = error instanceof Error ? error.message : 'Unknown error';
+        const quotaError = /\b(429|402)\b|insufficient balance|quota/i.test(detail);
+        const hint = quotaError
+          ? 'The provider account is out of credit — check Settings > API Keys or switch model.'
+          : detail.includes('API key')
+            ? 'Please add your API key in Settings > API Keys.'
+            : 'Please try again.';
         const errorMessage: AIMessage = {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. ${
-            error instanceof Error && error.message.includes('API key')
-              ? 'Please add your API key in Settings > API Keys.'
-              : 'Please try again.'
-          }`,
+          content: `Sorry, I encountered an error: ${detail}. ${hint}`,
           timestamp: new Date(),
         };
         addAiMessage(errorMessage);
 
         onError?.(error as Error);
       } finally {
-        setIsAiResponding(false);
+        if (generationSessionId) {
+          aiService.completeGenerationSession(generationSessionId);
+          cancellationReasonsRef.current.delete(generationSessionId);
+          if (activeSessionRef.current?.sessionId === generationSessionId) {
+            activeSessionRef.current = null;
+          }
+        }
+
+        if (isMountedRef.current && activeRequestTokenRef.current === requestToken) {
+          setIsAiResponding(false);
+          setAiResponseState(prev =>
+            prev === 'streaming' || prev === 'cancelling' ? 'idle' : prev
+          );
+        }
       }
     },
     [
@@ -316,15 +586,23 @@ export function useAIChat({
       sidebarOpen,
       previewOpen,
       aiMessages,
-    ],
+      aiChatOpen,
+      cancelAiResponseWithReason,
+      cancellationLifecycleEnabled,
+      emitGenerationTelemetry,
+      markResponseCancelled,
+      onMultiFileEditDetected,
+    ]
   );
 
   return {
     aiMessages,
     aiChatOpen,
     isAiResponding,
+    aiResponseState,
     setAiChatOpen,
     handleSendMessage,
+    cancelAiResponse,
     clearAiMessages,
     addAiMessage,
     updateAiMessage,

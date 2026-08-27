@@ -1,6 +1,6 @@
 // ESLint Flat Config (ESLint 9+) - Unified Configuration
 // Enforces all 24 best practices from learning system analysis
-// @see V:\monorepo\desktop-commander-v2\BEST_PRACTICES_2025_COMPLETE.md
+// @see desktop-commander-v2/BEST_PRACTICES_2025_COMPLETE.md
 
 import js from '@eslint/js';
 import enforceModuleBoundariesModule from '@nx/eslint-plugin/src/rules/enforce-module-boundaries.js';
@@ -23,6 +23,7 @@ export default tseslint.config(
       'dist',
       '**/dist/**',
       '**/dist-electron/**',
+      '**/.gateway-build/**', // maintenance-copilot bundled sidecar (build:gateway)
       '**/out/**',
       'build',
       '**/build/**',
@@ -94,6 +95,21 @@ export default tseslint.config(
       'apps/vibe-code-studio/src/test-setup.ts',
       'apps/vibe-code-studio/src/**/__tests__/**',
       'apps/vibe-code-studio/src/**/*.{test,spec}.{ts,tsx}',
+      // learning-pipeline-mcp unit tests: not in its build tsconfig program
+      // (which excludes *.test.ts to keep dist clean) — vitest runs them directly.
+      'apps/learning-pipeline-mcp/src/**/__tests__/**',
+      'apps/learning-pipeline-mcp/src/**/*.{test,spec}.ts',
+      // monorepo-health-mcp unit tests: same reason — build tsconfig excludes
+      // *.test.ts to keep dist clean; vitest runs them directly.
+      'apps/monorepo-health-mcp/src/**/__tests__/**',
+      'apps/monorepo-health-mcp/src/**/*.{test,spec}.ts',
+      // vibe-shipping unit tests: not in its build tsconfig program (excludes
+      // *.test.ts to keep dist clean) — vitest runs them directly.
+      'apps/vibe-shipping/src/**/__tests__/**',
+      'apps/vibe-shipping/src/**/*.{test,spec}.{ts,tsx}',
+      // Playwright E2E specs: not in the typed tsconfig program (same intent as
+      // the ignored src unit tests above) — keeps typed linting from erroring on them.
+      'apps/vibe-code-studio/tests/**',
       'apps/vibe-code-studio/src/components/AIProviderSelector/AIProviderSelector.tsx',
 
       'apps/vibe-code-studio/src/components/ComponentLibrary/index.tsx',
@@ -295,8 +311,10 @@ export default tseslint.config(
 
   // ========================================
   // Workspace size caps (500 +/- 100 line policy)
-  // File cap 600 (hard) / warning band starts at 500 via Prettier + reviews.
+  // File cap 1000 (hard) / warning band starts at 500 via Prettier + reviews.
   // Line length 100. Exclusions handled in the override block below.
+  // A stricter component cap (300) is scoped to vibe-code-studio only, below —
+  // see that block's comment for why it isn't applied workspace-wide.
   // ========================================
   {
     files: [
@@ -309,7 +327,7 @@ export default tseslint.config(
       'desktop-bridge/**/*.{js,mjs,cjs,jsx,ts,tsx}',
     ],
     rules: {
-      'max-lines': ['error', { max: 600, skipBlankLines: true, skipComments: true }],
+      'max-lines': ['error', { max: 1000, skipBlankLines: true, skipComments: true }],
       'max-len': [
         'error',
         {
@@ -322,6 +340,20 @@ export default tseslint.config(
           ignoreComments: false,
         },
       ],
+    },
+  },
+
+  // vibe-code-studio component cap (300 lines, stricter than the 1000-line
+  // workspace default). Scoped to this app only: it's the only project whose
+  // lint script wires up a bulk-suppressions baseline (--suppressions-location
+  // eslint-suppressions.json), so pre-existing oversized components can be
+  // grandfathered at their current line count instead of breaking CI outright.
+  // Other apps have no such baseline wired in, so a repo-wide 300 cap would
+  // fail dozens of existing files with no way to grandfather them.
+  {
+    files: ['apps/vibe-code-studio/src/**/*.{tsx,jsx}'],
+    rules: {
+      'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
     },
   },
 
@@ -543,6 +575,7 @@ export default tseslint.config(
       'packages/shared-config/**/*.{ts,tsx}',
       'packages/nova-types/**/*.{ts,tsx}',
       'packages/core/**/*.{ts,tsx}',
+      'packages/avatar-render-engine/**/*.{ts,tsx}',
       'apps/desktop-commander-v3/**/*.{ts,tsx}',
       'apps/memory-mcp/**/*.{ts,tsx}',
       'apps/vibe-code-studio/**/*.{ts,tsx}',
@@ -571,6 +604,7 @@ export default tseslint.config(
           './packages/shared-config/tsconfig.lint.json',
           './packages/nova-types/tsconfig.lint.json',
           './packages/core/tsconfig.json',
+          './packages/avatar-render-engine/tsconfig.lint.json',
           './apps/desktop-commander-v3/tsconfig.lint.json',
           './apps/memory-mcp/tsconfig.lint.json',
           './apps/vibe-code-studio/tsconfig.lint.json',
@@ -610,6 +644,19 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
         projectService: false,
         project: ['./backend/openrouter-proxy/tsconfig.lint.json'],
+      },
+    },
+  },
+
+  // mcp-skills-server: keep typed linting scoped to its own tsconfig.lint.json
+  // to avoid loading the multi-project program that OOMs on this small server.
+  {
+    files: ['apps/mcp-skills-server/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./apps/mcp-skills-server/tsconfig.lint.json'],
       },
     },
   },

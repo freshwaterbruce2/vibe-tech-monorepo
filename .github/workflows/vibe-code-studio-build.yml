@@ -1,0 +1,85 @@
+# Vibe Code Studio Desktop Build (Tauri 2)
+#
+# Packages the actual Windows installer (MSI/NSIS) on every PR/push that could
+# touch the desktop build. Without this, a tauri.conf.json / sidecar / Rust
+# regression would only surface on a manual local `pnpm tauri:build` run.
+#
+# Lint/typecheck/unit tests are already covered by ci.yml and the PR review
+# bot (vcs-review.yml) — this workflow only builds the installer, nothing else.
+
+name: Vibe Code Studio Desktop Build
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/vibe-code-studio/**'
+      - 'packages/**'
+      - '.github/workflows/vibe-code-studio-build.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/vibe-code-studio/**'
+      - 'packages/**'
+      - '.github/workflows/vibe-code-studio-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vibe-code-studio-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10.33.0'
+  NODE_OPTIONS: '--max-old-space-size=4096'
+  # CI runners have no V:\ — override the .npmrc developer-local store-dir
+  # (store-dir=V:\pnpm-store) to a sibling of the workspace (same volume, so
+  # hard-linking stays valid, but outside the checkout so nx does not infer
+  # phantom projects from the store).
+  npm_config_store_dir: '${{ github.workspace }}-pnpm-store'
+
+jobs:
+  build:
+    name: Tauri Build (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
+        with:
+          toolchain: stable
+
+      - name: Cache Rust target
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2.9.1
+        with:
+          workspaces: apps/vibe-code-studio/src-tauri -> target
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # tauri.conf.json's beforeBuildCommand runs scripts/build-sidecar.cjs
+      # (esbuild-bundles the Node backend, ships better-sqlite3 + a copy of
+      # node.exe as the Tauri externalBin sidecar) followed by the Vite
+      # production build, before `tauri build` compiles and bundles the app.
+      - name: Build Tauri installer (incl. Node sidecar)
+        run: cd apps/vibe-code-studio && pnpm run tauri:build
+
+      - name: Upload installers
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vibe-code-studio-installers
+          path: apps/vibe-code-studio/src-tauri/target/release/bundle/
+          retention-days: 7

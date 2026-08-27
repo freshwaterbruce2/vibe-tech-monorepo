@@ -10,28 +10,29 @@ export interface NotificationItem {
   duration?: number | undefined;
 }
 
+function buildNotification(
+  type: NotificationType,
+  title: string,
+  message?: string,
+  duration = 5000
+): NotificationItem {
+  return { id: `notification-${crypto.randomUUID()}`, type, title, message, duration };
+}
+
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   const addNotification = useCallback(
     (type: NotificationType, title: string, message?: string, duration = 5000) => {
-      const id = `notification-${Date.now()}-${Math.random()}`;
-      const notification: NotificationItem = {
-        id,
-        type,
-        title,
-        message,
-        duration,
-      };
-
-      setNotifications((prev) => [...prev, notification]);
-      return id;
+      const notification = buildNotification(type, title, message, duration);
+      setNotifications(prev => [...prev, notification]);
+      return notification.id;
     },
     []
   );
 
   const removeNotification = useCallback((id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
 
   const showSuccess = useCallback(

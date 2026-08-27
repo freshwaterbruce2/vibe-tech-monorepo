@@ -1,15 +1,16 @@
 import { createChatCompletion } from './secureClient';
+import { MODELS } from './openrouter';
 
 import type { ParsedHomework } from '../types';
 import { learningAnalytics } from './learningAnalytics';
 import { logger } from '../utils/logger';
 
-
-
-export const parseHomeworkFromVoice = async (transcript: string): Promise<ParsedHomework | null> => {
-    try {
-        const today = new Date().toISOString().split('T')[0];
-        const prompt = `Parse the following user transcript to extract homework details. The current date is ${today}.
+export const parseHomeworkFromVoice = async (
+  transcript: string,
+): Promise<ParsedHomework | null> => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const prompt = `Parse the following user transcript to extract homework details. The current date is ${today}.
         - The subject should be a school subject (e.g., "math", "science", "english", "history").
         - The title is the description of the task (e.g., "10 problems", "complete worksheet", "chapter 5 reading").
         - The due date must be converted to YYYY-MM-DD format.
@@ -23,8 +24,8 @@ export const parseHomeworkFromVoice = async (transcript: string): Promise<Parsed
 
         Transcript: "${transcript}"`;
 
-        // Add system message to ensure JSON response
-        const systemPrompt = `You must respond ONLY with valid JSON matching this schema:
+    // Add system message to ensure JSON response
+    const systemPrompt = `You must respond ONLY with valid JSON matching this schema:
         {
             "subject": "string - school subject",
             "title": "string - assignment description",
@@ -32,49 +33,57 @@ export const parseHomeworkFromVoice = async (transcript: string): Promise<Parsed
         }
         No other text, just the JSON object.`;
 
-        const startTime = Date.now();
-        const response = await createChatCompletion([
-            {
-                role: "system",
-                content: systemPrompt
-            },
-            {
-                role: "user",
-                content: prompt
-            }
-        ], {
-            model: "deepseek-chat",
-            temperature: 0.3,
-        });
+    const startTime = Date.now();
+    const response = await createChatCompletion(
+      [
+        {
+          role: 'system',
+          content: systemPrompt,
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      {
+        model: MODELS.PRIMARY_PAID,
+        temperature: 0.3,
+      },
+    );
 
-        const duration = Date.now() - startTime;
-        if (response) {
-            void learningAnalytics.logAICall('deepseek-chat', prompt.length + systemPrompt.length, response.length, duration);
-            try {
-                // Try to extract JSON from the response
-                let jsonStr = response;
+    const duration = Date.now() - startTime;
+    if (response) {
+      void learningAnalytics.logAICall(
+        MODELS.PRIMARY_PAID,
+        prompt.length + systemPrompt.length,
+        response.length,
+        duration,
+      );
+      try {
+        // Try to extract JSON from the response
+        let jsonStr = response;
 
-                // If response contains extra text, extract JSON
-                const jsonMatch = response.match(/\{[^}]*\}/);
-                if (jsonMatch) {
-                    jsonStr = jsonMatch[0];
-                }
-
-                const parsed = JSON.parse(jsonStr);
-                return {
-                    subject: parsed.subject ?? '',
-                    title: parsed.title ?? '',
-                    dueDate: parsed.dueDate ?? '',
-                };
-            } catch (parseError) {
-                logger.error("Failed to parse homework response:", parseError);
-                // Fallback: try to extract info manually
-                return null;
-            }
+        // If response contains extra text, extract JSON
+        const jsonMatch = response.match(/\{[^}]*\}/);
+        if (jsonMatch) {
+          jsonStr = jsonMatch[0];
         }
+
+        const parsed = JSON.parse(jsonStr);
+        return {
+          subject: parsed.subject ?? '',
+          title: parsed.title ?? '',
+          dueDate: parsed.dueDate ?? '',
+        };
+      } catch (parseError) {
+        logger.error('Failed to parse homework response:', parseError);
+        // Fallback: try to extract info manually
         return null;
-    } catch (error) {
-        logger.error("Error parsing homework with DeepSeek:", error);
-        return null;
+      }
     }
+    return null;
+  } catch (error) {
+    logger.error('Error parsing homework with DeepSeek:', error);
+    return null;
+  }
 };

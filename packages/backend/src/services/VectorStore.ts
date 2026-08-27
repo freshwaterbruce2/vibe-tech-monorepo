@@ -46,6 +46,10 @@ export class VectorStore {
         verbose: (msg) => log.debug(`[SQLite] ${msg}`),
       });
 
+      // Enforce WAL mode and busy_timeout = 5000 (Drive segregation and concurrency standards)
+      this.db.pragma('journal_mode = WAL');
+      this.db.pragma('busy_timeout = 5000');
+
       this.initializeSchema();
       this.configureOnnxRuntime();
     } catch (error) {
@@ -73,9 +77,9 @@ export class VectorStore {
         'app.asar.unpacked',
         'node_modules/onnxruntime-node/bin',
       );
-      // Note: env.onnx.wasm.wasmPaths might need adjustment depending on version, checking docs or assuming user is correct.
+      // Note: env.onnx.wasm.wasmPaths might need adjustment depending on version,
+      // checking docs or assuming user is correct.
       // The user code: env.onnx.wasm.wasmPaths = unpackedBin;
-      // In newer xenova/transformers, it might be different, but adhering to user snippet.
       const envWithOnnx = env as typeof env & {
         onnx?: {
           wasm?: {

@@ -1,6 +1,8 @@
+import os
+
 from google import genai
 
-client = genai.Client(api_key="AIzaSyC7C8ygLq8DR77XXDOJV45_DnjLJVfnGlU")
+client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 print("Available Gemini Models:")
 print("=" * 60)

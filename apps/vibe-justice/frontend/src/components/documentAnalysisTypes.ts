@@ -1,4 +1,4 @@
-import type { CaseType, CompleteAnalysisResponse } from '../types/documentAnalysis'
+import type { CompleteAnalysisResponse } from '../types/documentAnalysis'
 
 export interface Document {
   id: string
@@ -14,6 +14,7 @@ export interface Document {
 // Using CompleteAnalysisResponse type instead of custom interface
 export type AnalysisResult = CompleteAnalysisResponse
 
+export type { CaseType } from '../types/documentAnalysis'
 export { CASE_TYPE_LABELS as caseTypeLabels } from '../types/documentAnalysis'
 export { CASE_TYPE_DESCRIPTIONS as caseTypeDescriptions } from '../types/documentAnalysis'
 

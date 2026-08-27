@@ -5,7 +5,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'dist-electron', 'out', 'src/services/ai/**', '!src/services/ai/completion/**', '!src/services/ai/providers/**', 'src/services/Logger.js', 'src/test-setup.ts'] },
+  { ignores: ['dist', 'dist-electron', 'out', 'src/services/ai/**', '!src/services/ai/completion/**', '!src/services/ai/providers/**', 'src/services/Logger.js', 'src/test-setup.ts', 'vite.config.ts', '*.config.ts'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],

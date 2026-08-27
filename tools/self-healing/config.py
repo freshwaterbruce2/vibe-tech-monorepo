@@ -8,7 +8,6 @@ import yaml
 
 
 DEFAULT_CONFIG_PATHS = [
-    Path(r"V:\monorepo\.woodpecker\self-healing-config.yml"),
     Path(r"V:\monorepo\.github\self-healing-config.yml"),
 ]
 

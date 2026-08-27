@@ -39,7 +39,7 @@ export class TerminalService {
   /**
    * Execute command in terminal
    */
-  async executeCommand(terminalId: string, command: string): Promise<string> {
+  async executeCommand(terminalId: string, command: string, timeoutMs = 5000): Promise<string> {
     const session = this.getTerminal(terminalId);
     return new Promise((resolve, reject) => {
       if (!session.process) {
@@ -48,16 +48,34 @@ export class TerminalService {
       }
 
       let output = '';
-      const handler = (data: string) => (output += data);
-      session.onData(handler);
-
-      session.write(command);
-
-      setTimeout(() => {
-        // Cleanup handler? Logic from original file was weak here (race condition).
-        // Keeping it simple as per original implementation intent.
+      let resolved = false;
+      const handler = (data: string) => {
+        output += data;
+      };
+      const exitHandler = () => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
         resolve(output);
-      }, 100);
+      };
+      const timer = setTimeout(() => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+        resolve(output);
+      }, timeoutMs);
+      const cleanup = () => {
+        clearTimeout(timer);
+        session.offData(handler);
+        session.offExit(exitHandler);
+      };
+
+      session.onData(handler);
+      session.onExit(exitHandler);
+
+      const normalizedCommand =
+        command.endsWith('\r') || command.endsWith('\n') ? command : `${command}\r\n`;
+      session.write(normalizedCommand);
     });
   }
 

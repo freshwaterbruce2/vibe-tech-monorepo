@@ -22,7 +22,12 @@ export class RAGEmbedder {
     const vectors = await this.callEmbeddingAPI([text]);
     const vec = vectors[0] ?? [];
     this.totalCalls++;
-    return { vector: vec, dimension: vec.length, model: this.model, durationMs: Date.now() - start };
+    return {
+      vector: vec,
+      dimension: vec.length,
+      model: this.model,
+      durationMs: Date.now() - start,
+    };
   }
 
   async embedBatch(texts: string[]): Promise<EmbeddingBatchResult> {
@@ -68,15 +73,22 @@ export class RAGEmbedder {
             signal: controller.signal,
           });
         } finally { clearTimeout(timeoutId); }
-        if (!response.ok) throw new Error(`Embedding API error ${response.status}: ${await response.text()}`);
-        const data = await response.json() as { data: Array<{ embedding: number[]; index: number }>; usage?: { total_tokens: number } };
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`Embedding API error ${response.status}: ${text}`);
+        }
+        const data = await response.json() as {
+          data: Array<{ embedding: number[]; index: number }>;
+          usage?: { total_tokens: number };
+        };
         if (data.usage) this.totalTokens += data.usage.total_tokens;
         return data.data.sort((a, b) => a.index - b.index).map((d) => d.embedding);
       } catch (error) {
         lastError = error as Error;
         if (attempt < MAX_RETRIES - 1) {
           const is429 = lastError.message.includes('429');
-          const delay = is429 ? RATE_LIMIT_DELAY_MS * Math.pow(2, attempt) : RETRY_DELAY_MS * Math.pow(2, attempt);
+          const baseDelay = is429 ? RATE_LIMIT_DELAY_MS : RETRY_DELAY_MS;
+          const delay = baseDelay * Math.pow(2, attempt);
           await new Promise((r) => setTimeout(r, delay));
         }
       }

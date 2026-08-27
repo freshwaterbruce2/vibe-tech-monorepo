@@ -203,8 +203,10 @@ export function useZenColoring() {
   };
 
   const currentPalette = activePalette === 'ai'
-    ? Object.fromEntries(Object.entries(sessionInfo.palette).map(([k, v]) => [k, v.hex]))
-    : PALETTES[activePalette] || PALETTES.celestial;
+    ? Object.values(sessionInfo.palette).map((v) => v.hex)
+    : activePalette === 'classic'
+    ? (currentArtwork.classicPalette || [])
+    : (activePalette in PALETTES ? PALETTES[activePalette as keyof typeof PALETTES] : PALETTES.celestial);
 
   const handleFill = (id: string) => {
     if (id.startsWith('ant')) return;
@@ -298,12 +300,14 @@ export function useZenColoring() {
     symmetryMode,
     setSymmetryMode,
     isClassicMode,
+    setIsClassicMode,
     activeCategory,
     setActiveCategory,
     hintPathId,
     notice,
     exporting,
     pendingReset,
+    setPendingReset,
     selectedVectorArtwork,
     setSelectedVectorArtwork,
     sessionInfo,

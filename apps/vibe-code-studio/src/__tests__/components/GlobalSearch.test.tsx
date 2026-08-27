@@ -11,7 +11,12 @@ import { ThemeProvider } from 'styled-components';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { GlobalSearch, useGlobalSearch } from '../../components/GlobalSearch';
-import type { SearchOptions, SearchResult, SearchScope } from '../../components/GlobalSearch';
+import type {
+  GlobalSearchProps,
+  SearchOptions,
+  SearchResult,
+  SearchScope,
+} from '../../components/GlobalSearch';
 import { vibeTheme } from '../../styles/theme';
 
 // ---------------------------------------------------------------------------
@@ -37,19 +42,19 @@ const makeResult = (overrides: Partial<SearchResult> = {}): SearchResult => ({
 });
 
 interface Handlers {
-  onClose: ReturnType<typeof vi.fn>;
-  onOpenFile: ReturnType<typeof vi.fn>;
-  onReplaceInFile: ReturnType<typeof vi.fn>;
-  onSearchInFiles: ReturnType<typeof vi.fn> & SearchInFiles;
+  onClose: ReturnType<typeof vi.fn<GlobalSearchProps['onClose']>>;
+  onOpenFile: ReturnType<typeof vi.fn<GlobalSearchProps['onOpenFile']>>;
+  onReplaceInFile: ReturnType<typeof vi.fn<GlobalSearchProps['onReplaceInFile']>>;
+  onSearchInFiles: ReturnType<typeof vi.fn<SearchInFiles>>;
 }
 
 const makeHandlers = (
   searchResults: Record<string, SearchResult[]> = {},
 ): Handlers => ({
-  onClose: vi.fn(),
-  onOpenFile: vi.fn(),
-  onReplaceInFile: vi.fn().mockResolvedValue(undefined),
-  onSearchInFiles: vi.fn().mockResolvedValue(searchResults) as Handlers['onSearchInFiles'],
+  onClose: vi.fn<GlobalSearchProps['onClose']>(),
+  onOpenFile: vi.fn<GlobalSearchProps['onOpenFile']>(),
+  onReplaceInFile: vi.fn<GlobalSearchProps['onReplaceInFile']>().mockResolvedValue(undefined),
+  onSearchInFiles: vi.fn<SearchInFiles>().mockResolvedValue(searchResults),
 });
 
 const renderComponent = (

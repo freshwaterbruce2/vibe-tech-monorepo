@@ -8,6 +8,10 @@
       "destination": "/api/$1"
     },
     {
+      "source": "/tutor/privacy-policy",
+      "destination": "/tutor/privacy-policy/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -260,15 +260,32 @@ impl DatabaseService {
              LIMIT ?1",
         )?;
 
+        // Free-text columns may contain invalid UTF-8 (e.g. truncated multi-byte
+        // sequences from historical rows). A direct `String` read then fails with
+        // "Conversion error ... invalid utf-8 sequence" and takes down the whole
+        // dashboard fetch. Read the raw `ValueRef` bytes and decode lossily so the
+        // row stays usable. (rusqlite's `Vec<u8>` only accepts BLOB, not TEXT, so
+        // we must match the ValueRef directly rather than `get::<Vec<u8>>`.)
+        let lossy_text = |vr: rusqlite::types::ValueRef<'_>| -> Option<String> {
+            match vr {
+                rusqlite::types::ValueRef::Text(b) | rusqlite::types::ValueRef::Blob(b) => {
+                    Some(String::from_utf8_lossy(b).into_owned())
+                }
+                _ => None,
+            }
+        };
+
         let results = stmt.query_map(params![limit], |row| {
-            let tags_json: String = row.get(9)?;
+            let content = lossy_text(row.get_ref(2)?).unwrap_or_default();
+            let context = lossy_text(row.get_ref(3)?);
+            let tags_json = lossy_text(row.get_ref(9)?).unwrap_or_else(|| "[]".to_string());
             let tags: Vec<String> = serde_json::from_str(&tags_json).unwrap_or_default();
 
             Ok(Memory {
                 id: row.get(0)?,
                 memory_type: row.get(1)?,
-                content: row.get(2)?,
-                context: row.get(3)?,
+                content,
+                context,
                 importance: row.get(4)?,
                 access_count: row.get(5)?,
                 created_at: row.get(6)?,

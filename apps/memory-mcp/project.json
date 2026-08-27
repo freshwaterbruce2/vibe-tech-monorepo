@@ -14,7 +14,8 @@
       "executor": "nx:run-script",
       "options": { "script": "build" },
       "outputs": ["{projectRoot}/dist"],
-      "cache": true
+      "cache": true,
+      "dependsOn": []
     },
     "lint": {
       "executor": "nx:run-script",
@@ -27,10 +28,18 @@
       "cache": true,
       "dependsOn": []
     },
+    "test:coverage": {
+      "executor": "nx:run-script",
+      "options": { "script": "test:coverage" },
+      "outputs": ["{projectRoot}/coverage"],
+      "cache": true,
+      "dependsOn": []
+    },
     "typecheck": {
       "executor": "nx:run-script",
       "options": { "script": "typecheck" },
-      "cache": true
+      "cache": true,
+      "dependsOn": []
     }
   },
   "tags": ["scope:mcp", "type:mcp-server", "language:typescript"]

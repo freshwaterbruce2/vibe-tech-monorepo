@@ -4,7 +4,6 @@ _worktrees
 _worktrees/**
 .pytest_cache
 .pytest_cache/**
-.claude/skills/**
 .codex/**
 .playwright-cli/**
 .playwright-mcp/**
@@ -17,3 +16,4 @@ tmp/monorepo-sync-audit-report.json
 token*.png
 id_zoom*.png
 bottoken.png
+personal-tools/**

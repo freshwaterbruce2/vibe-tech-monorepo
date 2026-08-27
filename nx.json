@@ -166,7 +166,7 @@
       "cache": false
     },
     "typecheck": {
-      "dependsOn": [],
+      "dependsOn": ["^build"],
       "inputs": ["default", "^default", "{projectRoot}/tsconfig.json"],
       "outputs": [],
       "cache": true
@@ -248,14 +248,6 @@
   "tui": {
     "enabled": false
   },
-  "release": {
-    "projects": ["packages/*"],
-    "projectsRelationship": "independent",
-    "version": {
-      "currentVersionResolver": "disk",
-      "specifierSource": "prompt"
-    }
-  },
   "analytics": true,
   "sync": {
     "applyChanges": true
@@ -276,5 +268,6 @@
         "linter": "eslint"
       }
     }
-  }
+  },
+  "nxCloudId": "6977fcd7ceb01e5b11be2a95"
 }

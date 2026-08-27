@@ -63,23 +63,23 @@ describe('ErrorDetector', () => {
     mockEditor = {
       getModel: vi.fn(() => ({
         uri: { path: '/test/file.ts' },
-        getAllDecorations: vi.fn(() => [])
+        getAllDecorations: vi.fn(() => []),
       })),
       onDidChangeModelDecorations: vi.fn(() => ({ dispose: vi.fn() })),
-      onDidChangeModel: vi.fn(() => ({ dispose: vi.fn() }))
+      onDidChangeModel: vi.fn(() => ({ dispose: vi.fn() })),
     };
 
     // Mock Monaco namespace
     mockMonaco = {
       editor: {
         getModelMarkers: vi.fn(() => []),
-        setModelMarkers: vi.fn()
+        setModelMarkers: vi.fn(),
       },
       MarkerSeverity: {
         Error: 8,
         Warning: 4,
-        Info: 2
-      }
+        Info: 2,
+      },
     };
 
     onErrorCallback = vi.fn();
@@ -104,7 +104,7 @@ describe('ErrorDetector', () => {
           editor: mockEditor as any,
           monaco: mockMonaco,
           onError: onErrorCallback,
-          onErrorResolved: onErrorResolvedCallback
+          onErrorResolved: onErrorResolvedCallback,
         });
       }).not.toThrow();
     });
@@ -112,7 +112,7 @@ describe('ErrorDetector', () => {
     it('should start monitoring on initialization', () => {
       detector = new ErrorDetector({
         editor: mockEditor as any,
-        monaco: mockMonaco
+        monaco: mockMonaco,
       });
 
       expect(mockEditor.onDidChangeModelDecorations).toHaveBeenCalled();
@@ -122,7 +122,7 @@ describe('ErrorDetector', () => {
     it('should throw if editor is not provided', () => {
       expect(() => {
         new ErrorDetector({
-          monaco: mockMonaco
+          monaco: mockMonaco,
         });
       }).toThrow('Editor is required');
     });
@@ -139,8 +139,8 @@ describe('ErrorDetector', () => {
           endLineNumber: 10,
           endColumn: 8,
           code: '2339',
-          source: 'ts'
-        }
+          source: 'ts',
+        },
       ];
 
       mockMonaco.editor.getModelMarkers.mockReturnValue(markers);
@@ -148,7 +148,7 @@ describe('ErrorDetector', () => {
       detector = new ErrorDetector({
         editor: mockEditor as any,
         monaco: mockMonaco,
-        onError: onErrorCallback
+        onError: onErrorCallback,
       });
 
       // Trigger error detection
@@ -161,7 +161,7 @@ describe('ErrorDetector', () => {
           message: "Property 'foo' does not exist on type 'Bar'",
           line: 10,
           column: 5,
-          code: '2339'
+          code: '2339',
         })
       );
     });
@@ -176,8 +176,8 @@ describe('ErrorDetector', () => {
           endLineNumber: 5,
           endColumn: 8,
           code: '6133',
-          source: 'ts'
-        }
+          source: 'ts',
+        },
       ];
 
       mockMonaco.editor.getModelMarkers.mockReturnValue(markers);
@@ -185,7 +185,7 @@ describe('ErrorDetector', () => {
       detector = new ErrorDetector({
         editor: mockEditor as any,
         monaco: mockMonaco,
-        onError: onErrorCallback
+        onError: onErrorCallback,
       });
 
       detector.checkForErrors();
@@ -194,7 +194,7 @@ describe('ErrorDetector', () => {
         expect.objectContaining({
           type: 'typescript',
           severity: 'warning',
-          message: "Variable 'x' is never used"
+          message: "Variable 'x' is never used",
         })
       );
     });
@@ -207,7 +207,7 @@ describe('ErrorDetector', () => {
           startLineNumber: 1,
           startColumn: 1,
           endLineNumber: 1,
-          endColumn: 1
+          endColumn: 1,
         },
         {
           severity: 8,
@@ -215,8 +215,8 @@ describe('ErrorDetector', () => {
           startLineNumber: 2,
           startColumn: 1,
           endLineNumber: 2,
-          endColumn: 1
-        }
+          endColumn: 1,
+        },
       ];
 
       mockMonaco.editor.getModelMarkers.mockReturnValue(markers);
@@ -224,7 +224,7 @@ describe('ErrorDetector', () => {
       detector = new ErrorDetector({
         editor: mockEditor as any,
         monaco: mockMonaco,
-        onError: onErrorCallback
+        onError: onErrorCallback,
       });
 
       detector.checkForErrors();
@@ -244,8 +244,8 @@ describe('ErrorDetector', () => {
           endLineNumber: 15,
           endColumn: 21,
           code: 'semi',
-          source: 'eslint'
-        }
+          source: 'eslint',
+        },
       ];
 
       mockMonaco.editor.getModelMarkers.mockReturnValue(markers);
@@ -253,7 +253,7 @@ describe('ErrorDetector', () => {
       detector = new ErrorDetector({
         editor: mockEditor as any,
         monaco: mockMonaco,
-        onError: onErrorCallback
+        onError: onErrorCallback,
       });
 
       detector.checkForErrors();
@@ -263,7 +263,7 @@ describe('ErrorDetector', () => {
           type: 'eslint',
           severity: 'error',
           message: 'Missing semicolon',
-          code: 'semi'
+          code: 'semi',
         })
       );
     });
@@ -280,7 +280,7 @@ Error: Cannot read property 'foo' of undefined
       detector = new ErrorDetector({
         editor: mockEditor as any,
         monaco: mockMonaco,
-        onError: onErrorCallback
+        onError: onErrorCallback,
       });
 
       detector.parseConsoleOutput(consoleOutput);
@@ -293,7 +293,7 @@ Error: Cannot read property 'foo' of undefined
           file: expect.stringContaining('file.ts'),
           line: 25,
           column: 10,
-          stackTrace: expect.stringContaining('at Object.<anonymous>')
+          stackTrace: expect.stringContaining('at Object.<anonymous>'),
         })
       );
     });
@@ -307,7 +307,7 @@ TypeError: x is not a function
       detector = new ErrorDetector({
         editor: mockEditor as any,
         monaco: mockMonaco,
-        onError: onErrorCallback
+        onError: onErrorCallback,
       });
 
       detector.parseConsoleOutput(consoleOutput);
@@ -317,7 +317,7 @@ TypeError: x is not a function
           type: 'runtime',
           message: 'x is not a function',
           line: 42,
-          column: 5
+          column: 5,
         })
       );
     });
@@ -328,7 +328,7 @@ TypeError: x is not a function
       detector = new ErrorDetector({
         editor: mockEditor as any,
         monaco: mockMonaco,
-        onError: onErrorCallback
+        onError: onErrorCallback,
       });
 
       detector.parseConsoleOutput(consoleOutput);
@@ -348,8 +348,8 @@ TypeError: x is not a function
           startColumn: 1,
           endLineNumber: 1,
           endColumn: 1,
-          code: 'test-error'
-        }
+          code: 'test-error',
+        },
       ];
 
       mockMonaco.editor.getModelMarkers.mockReturnValue(initialMarkers);
@@ -358,7 +358,7 @@ TypeError: x is not a function
         editor: mockEditor as any,
         monaco: mockMonaco,
         onError: onErrorCallback,
-        onErrorResolved: onErrorResolvedCallback
+        onErrorResolved: onErrorResolvedCallback,
       });
 
       detector.checkForErrors();
@@ -379,15 +379,15 @@ TypeError: x is not a function
           startLineNumber: 1,
           startColumn: 1,
           endLineNumber: 1,
-          endColumn: 1
-        }
+          endColumn: 1,
+        },
       ];
 
       mockMonaco.editor.getModelMarkers.mockReturnValue(markers);
 
       detector = new ErrorDetector({
         editor: mockEditor as any,
-        monaco: mockMonaco
+        monaco: mockMonaco,
       });
 
       detector.checkForErrors();
@@ -405,13 +405,13 @@ TypeError: x is not a function
           startLineNumber: 1,
           startColumn: 1,
           endLineNumber: 1,
-          endColumn: 1
-        }
+          endColumn: 1,
+        },
       ]);
 
       detector = new ErrorDetector({
         editor: mockEditor as any,
-        monaco: mockMonaco
+        monaco: mockMonaco,
       });
 
       detector.checkForErrors();
@@ -432,7 +432,7 @@ TypeError: x is not a function
 
       detector = new ErrorDetector({
         editor: mockEditor as any,
-        monaco: mockMonaco
+        monaco: mockMonaco,
       });
 
       detector.dispose();
@@ -444,7 +444,7 @@ TypeError: x is not a function
       detector = new ErrorDetector({
         editor: mockEditor as any,
         monaco: mockMonaco,
-        onError: onErrorCallback
+        onError: onErrorCallback,
       });
 
       detector.dispose();
@@ -456,8 +456,8 @@ TypeError: x is not a function
           startLineNumber: 1,
           startColumn: 1,
           endLineNumber: 1,
-          endColumn: 1
-        }
+          endColumn: 1,
+        },
       ]);
 
       detector.checkForErrors();
@@ -476,8 +476,8 @@ TypeError: x is not a function
           startColumn: 1,
           endLineNumber: 1,
           endColumn: 1,
-          code: 'same'
-        }
+          code: 'same',
+        },
       ];
 
       mockMonaco.editor.getModelMarkers.mockReturnValue(markers);
@@ -485,7 +485,7 @@ TypeError: x is not a function
       detector = new ErrorDetector({
         editor: mockEditor as any,
         monaco: mockMonaco,
-        onError: onErrorCallback
+        onError: onErrorCallback,
       });
 
       // Check twice with same error
@@ -505,8 +505,8 @@ TypeError: x is not a function
             startLineNumber: 1,
             startColumn: 1,
             endLineNumber: 1,
-            endColumn: 1
-          }
+            endColumn: 1,
+          },
         ])
         .mockReturnValueOnce([
           {
@@ -515,14 +515,14 @@ TypeError: x is not a function
             startLineNumber: 2, // Different line
             startColumn: 1,
             endLineNumber: 2,
-            endColumn: 1
-          }
+            endColumn: 1,
+          },
         ]);
 
       detector = new ErrorDetector({
         editor: mockEditor as any,
         monaco: mockMonaco,
-        onError: onErrorCallback
+        onError: onErrorCallback,
       });
 
       detector.checkForErrors();
@@ -530,6 +530,82 @@ TypeError: x is not a function
 
       // Should emit both (different locations)
       expect(onErrorCallback).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('Guard Paths', () => {
+    it('skips marker inspection when the editor has no model', () => {
+      mockEditor.getModel = vi.fn(() => null);
+
+      detector = new ErrorDetector({
+        editor: mockEditor as any,
+        monaco: mockMonaco,
+        onError: onErrorCallback,
+      });
+
+      // Constructor already ran one check; call explicitly too.
+      detector.checkForErrors();
+
+      expect(mockMonaco.editor.getModelMarkers).not.toHaveBeenCalled();
+      expect(onErrorCallback).not.toHaveBeenCalled();
+      expect(detector.getActiveErrors()).toHaveLength(0);
+    });
+
+    it('ignores console output after disposal', () => {
+      detector = new ErrorDetector({
+        editor: mockEditor as any,
+        monaco: mockMonaco,
+        onError: onErrorCallback,
+      });
+
+      detector.dispose();
+
+      detector.parseConsoleOutput('Error: boom\n    at fn (V:\\monorepo\\app.ts:3:7)');
+
+      expect(onErrorCallback).not.toHaveBeenCalled();
+      expect(detector.getActiveErrors()).toHaveLength(0);
+    });
+  });
+
+  describe('Error IDs', () => {
+    it('assigns a UUID-backed err- id to parsed runtime errors', () => {
+      detector = new ErrorDetector({
+        editor: mockEditor as any,
+        monaco: mockMonaco,
+        onError: onErrorCallback,
+      });
+
+      detector.parseConsoleOutput('Error: boom\n    at fn (V:\\monorepo\\app.ts:3:7)');
+
+      const uuidPattern = /^err-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+      expect(onErrorCallback).toHaveBeenCalledWith(
+        expect.objectContaining({ id: expect.stringMatching(uuidPattern) })
+      );
+    });
+
+    it('assigns UUID-backed ids to marker-derived errors too', () => {
+      mockMonaco.editor.getModelMarkers.mockReturnValue([
+        {
+          severity: 8,
+          message: 'Marker error',
+          startLineNumber: 1,
+          startColumn: 1,
+          endLineNumber: 1,
+          endColumn: 2,
+        },
+      ]);
+
+      detector = new ErrorDetector({
+        editor: mockEditor as any,
+        monaco: mockMonaco,
+      });
+
+      detector.checkForErrors();
+
+      const [error] = detector.getActiveErrors();
+      expect(error.id).toMatch(
+        /^err-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+      );
     });
   });
 });

@@ -17,7 +17,7 @@ const {
 describe('blakeConfig', () => {
   describe('BLAKE_CONFIG', () => {
     it('has required top-level properties', () => {
-      expect(BLAKE_CONFIG.userName).toBe('Blake');
+      expect(BLAKE_CONFIG.userName).toBe('Friend');
       expect(BLAKE_CONFIG.theme).toBe('roblox-gaming');
       expect(BLAKE_CONFIG.focusSessionDuration).toBe(15);
       expect(BLAKE_CONFIG.breakDuration).toBe(5);
@@ -77,10 +77,15 @@ describe('blakeConfig', () => {
       expect(typeof message).toBe('string');
     });
 
-    it('includes Blake name', () => {
-      // All greeting templates include "Blake"
+    it('interpolates the provided name into the greeting', () => {
+      // The greeting is profile-driven — pass a name and it appears in the message.
+      const message = getWelcomeMessage('Alex');
+      expect(message).toContain('Alex');
+    });
+
+    it('falls back to the neutral default name when none is provided', () => {
       const message = getWelcomeMessage();
-      expect(message).toContain('Blake');
+      expect(message).toContain('Friend');
     });
   });
 });

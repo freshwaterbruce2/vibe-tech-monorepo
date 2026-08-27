@@ -9,6 +9,7 @@ import type {
   TaskNotification,
   TaskProgress,
   TaskQueueOptions,
+  TaskResult,
   TaskStats,
   TaskType,
 } from '@vibetech/types';
@@ -67,7 +68,7 @@ export class TaskQueue {
       cancelable?: boolean;
       pausable?: boolean;
       metadata?: Record<string, unknown>;
-    } = {},
+    } = {}
   ): string {
     if (this.tasks.size >= this.options.maxQueueSize) {
       throw new Error('Task queue is full');
@@ -99,8 +100,8 @@ export class TaskQueue {
       showToast: false,
     });
 
-    this.persistState().catch((err) =>
-      logger.error('Failed to persist state after adding task', err),
+    this.persistState().catch(err =>
+      logger.error('Failed to persist state after adding task', err)
     );
     return task.id;
   }
@@ -216,18 +217,18 @@ export class TaskQueue {
 
     if (filter) {
       if (filter.status) {
-        tasks = tasks.filter((t) => filter.status!.includes(t.status));
+        tasks = tasks.filter(t => filter.status!.includes(t.status));
       }
       if (filter.type) {
-        tasks = tasks.filter((t) => filter.type!.includes(t.type));
+        tasks = tasks.filter(t => filter.type!.includes(t.type));
       }
       if (filter.priority) {
-        tasks = tasks.filter((t) => filter.priority!.includes(t.priority));
+        tasks = tasks.filter(t => filter.priority!.includes(t.priority));
       }
       if (filter.searchTerm) {
         const term = filter.searchTerm.toLowerCase();
         tasks = tasks.filter(
-          (t) => t.name.toLowerCase().includes(term) || t.description?.toLowerCase().includes(term),
+          t => t.name.toLowerCase().includes(term) || t.description?.toLowerCase().includes(term)
         );
       }
     }
@@ -242,12 +243,12 @@ export class TaskQueue {
     const tasks = Array.from(this.tasks.values());
     const completedTasks = [
       ...this.taskHistory,
-      ...tasks.filter((t) => t.status === TaskStatus.COMPLETED),
+      ...tasks.filter(t => t.status === TaskStatus.COMPLETED),
     ];
 
     const completionTimes = completedTasks
-      .filter((t) => t.startedAt && t.completedAt)
-      .map((t) => t.completedAt!.getTime() - t.startedAt!.getTime());
+      .filter(t => t.startedAt && t.completedAt)
+      .map(t => t.completedAt!.getTime() - t.startedAt!.getTime());
 
     const averageCompletionTime =
       completionTimes.length > 0
@@ -256,11 +257,11 @@ export class TaskQueue {
 
     return {
       total: tasks.length,
-      queued: tasks.filter((t) => t.status === TaskStatus.QUEUED).length,
-      running: tasks.filter((t) => t.status === TaskStatus.RUNNING).length,
-      completed: tasks.filter((t) => t.status === TaskStatus.COMPLETED).length,
-      failed: tasks.filter((t) => t.status === TaskStatus.FAILED).length,
-      canceled: tasks.filter((t) => t.status === TaskStatus.CANCELED).length,
+      queued: tasks.filter(t => t.status === TaskStatus.QUEUED).length,
+      running: tasks.filter(t => t.status === TaskStatus.RUNNING).length,
+      completed: tasks.filter(t => t.status === TaskStatus.COMPLETED).length,
+      failed: tasks.filter(t => t.status === TaskStatus.FAILED).length,
+      canceled: tasks.filter(t => t.status === TaskStatus.CANCELED).length,
       averageCompletionTime,
     };
   }
@@ -286,7 +287,7 @@ export class TaskQueue {
       }
     });
 
-    completedIds.forEach((id) => this.tasks.delete(id));
+    completedIds.forEach(id => this.tasks.delete(id));
     this.persistState();
   }
 
@@ -294,7 +295,7 @@ export class TaskQueue {
    * Clear all tasks
    */
   clearAll(): void {
-    this.tasks.forEach((task) => {
+    this.tasks.forEach(task => {
       if (task.status === TaskStatus.RUNNING) {
         this.cancelTask(task.id);
       }
@@ -350,7 +351,7 @@ export class TaskQueue {
 
   private getNextTask(): BackgroundTask | null {
     const queuedTasks = Array.from(this.tasks.values())
-      .filter((t) => t.status === TaskStatus.QUEUED)
+      .filter(t => t.status === TaskStatus.QUEUED)
       .sort((a, b) => {
         // Sort by priority (higher first), then by creation time (earlier first)
         if (a.priority !== b.priority) {
@@ -401,72 +402,80 @@ export class TaskQueue {
         this.persistState();
       });
 
-      task.result = result;
-      task.status = result.success ? TaskStatus.COMPLETED : TaskStatus.FAILED;
-      task.completedAt = new Date();
+      this.finishTask(task, result);
+    } catch (error) {
+      this.handleTaskFailure(task, error);
+    }
+  }
+
+  private finishTask(task: BackgroundTask, result: TaskResult): void {
+    task.result = result;
+    task.status = result.success ? TaskStatus.COMPLETED : TaskStatus.FAILED;
+    task.completedAt = new Date();
+
+    this.notify({
+      taskId: task.id,
+      taskName: task.name,
+      type: result.success ? 'completed' : 'failed',
+      message: result.success
+        ? `Task "${task.name}" completed successfully`
+        : `Task "${task.name}" failed: ${result.error}`,
+      timestamp: new Date(),
+      showToast: true,
+    });
+
+    this.runningTasks.delete(task.id);
+    this.moveToHistory(task);
+    this.persistState();
+  }
+
+  private handleTaskFailure(task: BackgroundTask, error: unknown): void {
+    task.status = TaskStatus.FAILED;
+    task.result = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+    task.completedAt = new Date();
+
+    // Retry if enabled and under max retries
+    if (this.options.retryFailedTasks && task.retryCount < task.maxRetries) {
+      task.retryCount++;
+      task.status = TaskStatus.QUEUED;
+      // Reset timestamps for retry
+      (task as BackgroundTask & { startedAt?: Date }).startedAt = undefined;
+      (task as BackgroundTask & { completedAt?: Date }).completedAt = undefined;
 
       this.notify({
         taskId: task.id,
         taskName: task.name,
-        type: result.success ? 'completed' : 'failed',
-        message: result.success
-          ? `Task "${task.name}" completed successfully`
-          : `Task "${task.name}" failed: ${result.error}`,
+        type: 'progress',
+        message: `Task "${task.name}" failed, retrying (${task.retryCount}/${task.maxRetries})`,
+        timestamp: new Date(),
+        showToast: false,
+      });
+    } else {
+      this.notify({
+        taskId: task.id,
+        taskName: task.name,
+        type: 'failed',
+        message: `Task "${task.name}" failed: ${task.result.error}`,
         timestamp: new Date(),
         showToast: true,
       });
 
-      this.runningTasks.delete(task.id);
       this.moveToHistory(task);
-      this.persistState();
-    } catch (error) {
-      task.status = TaskStatus.FAILED;
-      task.result = {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-      task.completedAt = new Date();
-
-      // Retry if enabled and under max retries
-      if (this.options.retryFailedTasks && task.retryCount < task.maxRetries) {
-        task.retryCount++;
-        task.status = TaskStatus.QUEUED;
-        // Reset timestamps for retry
-        (task as BackgroundTask & { startedAt?: Date }).startedAt = undefined;
-        (task as BackgroundTask & { completedAt?: Date }).completedAt = undefined;
-
-        this.notify({
-          taskId: task.id,
-          taskName: task.name,
-          type: 'progress',
-          message: `Task "${task.name}" failed, retrying (${task.retryCount}/${task.maxRetries})`,
-          timestamp: new Date(),
-          showToast: false,
-        });
-      } else {
-        this.notify({
-          taskId: task.id,
-          taskName: task.name,
-          type: 'failed',
-          message: `Task "${task.name}" failed: ${task.result.error}`,
-          timestamp: new Date(),
-          showToast: true,
-        });
-
-        this.moveToHistory(task);
-      }
-
-      this.runningTasks.delete(task.id);
-      this.persistState();
     }
+
+    this.runningTasks.delete(task.id);
+    this.persistState();
   }
 
   private notify(notification: TaskNotification): void {
-    this.listeners.forEach((listener) => listener(notification));
+    this.listeners.forEach(listener => listener(notification));
   }
 
   private generateId(): string {
-    return `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `task_${crypto.randomUUID()}`;
   }
 
   private moveToHistory(task: BackgroundTask): void {

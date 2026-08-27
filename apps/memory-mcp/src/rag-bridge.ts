@@ -6,12 +6,19 @@
  * Static imports allow tsup to bundle nova-agent's RAG modules at build time.
  */
 
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { RAGIndexer } from '../../nova-agent/src/rag/indexer.js';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { RAGRetriever } from '../../nova-agent/src/rag/retriever.js';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { RAGReranker } from '../../nova-agent/src/rag/reranker.js';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { RAGCache } from '../../nova-agent/src/rag/cache.js';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { DEFAULT_RAG_CONFIG } from '../../nova-agent/src/rag/types.js';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import type { RAGConfig, SearchResult } from '../../nova-agent/src/rag/types.js';
+import { resolve } from 'path';
 
 export interface RAGSearchParams {
   query: string;
@@ -35,22 +42,25 @@ export interface RAGSearchResponse {
   durationMs: number;
 }
 
+interface RAGPipeline {
+  indexer: RAGIndexer;
+  retriever: RAGRetriever;
+  reranker: RAGReranker;
+  cache: RAGCache;
+}
+
 // Lazy-loaded pipeline instances
-let indexer: RAGIndexer | null = null;
-let retriever: RAGRetriever | null = null;
-let reranker: RAGReranker | null = null;
-let cache: RAGCache | null = null;
-let initialized = false;
+let pipeline: RAGPipeline | null = null;
 let initError: string | null = null;
 
 function getConfig(): RAGConfig {
   return {
     ...DEFAULT_RAG_CONFIG,
-    lanceDbPath: process.env.RAG_LANCE_DB_PATH ?? 'D:\\nova-agent-data\\lance-db',
-    cachePath: process.env.RAG_CACHE_PATH ?? 'D:\\nova-agent-data\\cache\\query-cache.sqlite',
-    hashIndexPath: process.env.RAG_HASH_INDEX_PATH ?? 'D:\\nova-agent-data\\indexes\\file-hashes.json',
-    logPath: process.env.RAG_LOG_PATH ?? 'D:\\nova-agent-data\\logs\\rag-operations.log',
-    workspaceRoot: process.env.RAG_WORKSPACE_ROOT ?? 'V:\\monorepo',
+    lanceDbPath: process.env.RAG_LANCE_DB_PATH ?? 'D:\\databases\\memory-mcp\\rag\\lance-db',
+    cachePath: process.env.RAG_CACHE_PATH ?? 'D:\\databases\\memory-mcp\\rag\\query-cache.sqlite',
+    hashIndexPath: process.env.RAG_HASH_INDEX_PATH ?? 'D:\\data\\memory-mcp\\rag\\file-hashes.json',
+    logPath: process.env.RAG_LOG_PATH ?? 'D:\\logs\\memory-mcp\\rag-operations.log',
+    workspaceRoot: process.env.RAG_WORKSPACE_ROOT ?? resolve(__dirname, '..', '..'),
     embeddingEndpoint: process.env.RAG_EMBEDDING_ENDPOINT ?? 'http://localhost:3001',
     embeddingModel: process.env.RAG_EMBEDDING_MODEL ?? 'text-embedding-3-small',
     maxChunkTokens: 512,
@@ -79,25 +89,26 @@ function getConfig(): RAGConfig {
 /**
  * Lazily initialize RAG pipeline components
  */
-async function ensureInitialized(): Promise<void> {
-  if (initialized) return;
+async function ensureInitialized(): Promise<RAGPipeline> {
+  if (pipeline) return pipeline;
   if (initError) throw new Error(`RAG init failed previously: ${initError}`);
 
   try {
     const config = getConfig();
 
-    indexer = new RAGIndexer(config);
+    const indexer = new RAGIndexer(config);
     await indexer.init();
 
-    retriever = new RAGRetriever(config);
-    reranker = new RAGReranker();
-    cache = new RAGCache(config);
+    const retriever = new RAGRetriever(config);
+    const reranker = new RAGReranker();
+    const cache = new RAGCache(config);
 
     // Start background auto-indexing (runs every autoIndexIntervalMs = 15 min)
     indexer.startAutoIndex();
 
-    initialized = true;
+    pipeline = { indexer, retriever, reranker, cache };
     console.error('[RAG Bridge] Pipeline initialized successfully');
+    return pipeline;
   } catch (error) {
     initError = (error as Error).message;
     console.error('[RAG Bridge] Init failed:', initError);
@@ -110,15 +121,15 @@ async function ensureInitialized(): Promise<void> {
  * Returns immediately; the result is logged when the index completes.
  */
 export async function ragTriggerIndex(): Promise<{ started: boolean; message: string }> {
-  await ensureInitialized();
+  const { indexer } = await ensureInitialized();
 
-  const state = indexer!.getState();
+  const state = indexer.getState();
   if (state.isRunning) {
     return { started: false, message: 'Index already running' };
   }
 
   // Fire-and-forget — do not await
-  indexer!.index().then((result) => {
+  indexer.index().then((result) => {
     console.error(
       `[RAG Bridge] Index complete: ${result.filesProcessed} files, ${result.chunksCreated} chunks, ${result.errors.length} errors`,
     );
@@ -126,7 +137,10 @@ export async function ragTriggerIndex(): Promise<{ started: boolean; message: st
     console.error('[RAG Bridge] Index error:', err.message);
   });
 
-  return { started: true, message: 'Indexing started in background — check memory_rag_index_status for progress' };
+  return {
+    started: true,
+    message: 'Indexing started in background — check memory_rag_index_status for progress',
+  };
 }
 
 /**
@@ -135,10 +149,10 @@ export async function ragTriggerIndex(): Promise<{ started: boolean; message: st
 export async function ragSearch(params: RAGSearchParams): Promise<RAGSearchResponse> {
   const start = Date.now();
 
-  await ensureInitialized();
+  const { indexer, retriever, reranker, cache } = await ensureInitialized();
 
   // Check cache first
-  const cached = cache!.get(params.query);
+  const cached = cache.get(params.query);
   if (cached) {
     return {
       results: cached.map(formatResult),
@@ -148,7 +162,7 @@ export async function ragSearch(params: RAGSearchParams): Promise<RAGSearchRespo
   }
 
   // Get the LanceDB table
-  const table = indexer!.getTable();
+  const table = indexer.getTable();
   if (!table) {
     return {
       results: [],
@@ -160,7 +174,7 @@ export async function ragSearch(params: RAGSearchParams): Promise<RAGSearchRespo
   const limit = params.limit ?? 5;
 
   // Run hybrid search
-  const candidates = await retriever!.search(table, {
+  const candidates = await retriever.search(table, {
     text: params.query,
     limit,
     fileTypes: params.fileTypes,
@@ -168,10 +182,10 @@ export async function ragSearch(params: RAGSearchParams): Promise<RAGSearchRespo
   });
 
   // Rerank with RRF (args: candidates, query, limit)
-  const reranked = await reranker!.rerank(candidates, params.query, limit);
+  const reranked = await reranker.rerank(candidates, params.query, limit);
 
   // Cache the results
-  cache!.set(params.query, reranked.results);
+  cache.set(params.query, reranked.results);
 
   return {
     results: reranked.results.map(formatResult),
@@ -184,10 +198,10 @@ export async function ragSearch(params: RAGSearchParams): Promise<RAGSearchRespo
  * Get current index status
  */
 export async function ragIndexStatus(): Promise<Record<string, unknown>> {
-  await ensureInitialized();
+  const { indexer, cache } = await ensureInitialized();
 
-  const state = indexer!.getState();
-  const cacheStats = cache!.getStats();
+  const state = indexer.getState();
+  const cacheStats = cache.getStats();
 
   return { ...state, cacheStats };
 }
@@ -195,11 +209,13 @@ export async function ragIndexStatus(): Promise<Record<string, unknown>> {
 /**
  * Invalidate cache for specific file paths
  */
-export async function ragInvalidate(filePaths: string[]): Promise<{ invalidated: number; reindexed: boolean }> {
-  await ensureInitialized();
+export async function ragInvalidate(
+  filePaths: string[],
+): Promise<{ invalidated: number; reindexed: boolean }> {
+  const { indexer, cache } = await ensureInitialized();
 
-  const invalidated = cache!.invalidateByPaths(filePaths);
-  await indexer!.invalidate(filePaths);
+  const invalidated = cache.invalidateByPaths(filePaths);
+  await indexer.invalidate(filePaths);
 
   return { invalidated, reindexed: false };
 }

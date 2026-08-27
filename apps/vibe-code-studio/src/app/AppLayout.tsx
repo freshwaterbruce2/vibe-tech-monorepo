@@ -6,7 +6,7 @@
  */
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import styled from 'styled-components';
 
 // Eagerly loaded core components (always visible)
@@ -17,105 +17,44 @@ import Sidebar from '../components/Sidebar';
 import StatusBar from '../components/StatusBar';
 import TitleBar from '../components/TitleBar';
 
-// Lazy-loaded conditional components (only loaded when their panel is opened)
-const EnhancedAgentMode = lazy(() => import('../components/EnhancedAgentMode/EnhancedAgentMode'));
-const BackgroundTaskPanel = lazy(() => import('../components/BackgroundTaskPanel').then(m => ({ default: m.BackgroundTaskPanel })));
-const ComponentLibrary = lazy(() => import('../components/ComponentLibrary').then(m => ({ default: m.ComponentLibrary })));
-const EditorStreamPanel = lazy(() => import('../components/EditorStreamPanel').then(m => ({ default: m.EditorStreamPanel })));
-const ErrorFixPanel = lazy(() => import('../components/ErrorFixPanel'));
-const GitPanel = lazy(() => import('../components/GitPanel'));
-const GlobalSearch = lazy(() => import('../components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
-const KeyboardShortcuts = lazy(() => import('../components/KeyboardShortcuts').then(m => ({ default: m.KeyboardShortcuts })));
-const MultiFileEditApprovalPanel = lazy(() => import('../components/MultiFileEditApprovalPanel').then(m => ({ default: m.MultiFileEditApprovalPanel })));
-const PerformanceMonitor = lazy(() => import('../components/PerformanceMonitor'));
-const PreviewPanel = lazy(() => import('../components/PreviewPanel').then(m => ({ default: m.PreviewPanel })));
-const ScreenshotToCodePanel = lazy(() => import('../components/ScreenshotToCodePanel').then(m => ({ default: m.ScreenshotToCodePanel })));
-const TerminalPanel = lazy(() => import('../components/TerminalPanel').then(m => ({ default: m.TerminalPanel })));
-const VisualEditor = lazy(() => import('../components/VisualEditor').then(m => ({ default: m.VisualEditor })));
-const WelcomeScreen = lazy(() => import('../components/WelcomeScreen'));
+// Lazy-loaded conditional panels (only loaded when their toggle opens them)
+import {
+  AgentManagerPanelHost,
+  BackgroundTaskPanel,
+  BrainScanPanel,
+  BrowserPermissionPromptHost,
+  ComponentLibrary,
+  EditorStreamPanel,
+  EnhancedAgentMode,
+  ErrorFixPanel,
+  GitPanel,
+  GlobalSearch,
+  KeyboardShortcuts,
+  KnowledgePanelHost,
+  MultiFileEditApprovalPanel,
+  PerformanceMonitor,
+  PlanModeDialogHost,
+  PreviewPanel,
+  ArtifactsPanelHost,
+  ProblemsPanelHost,
+  SchedulePanelHost,
+  ScreenshotToCodePanel,
+  SettingsSyncDialog,
+  TerminalPanel,
+  TestExplorerPanelHost,
+  VisualEditor,
+  WelcomeScreen,
+} from './lazyPanels';
 
 import type { GeneratedFix } from '../services/AutoFixService';
 import { logger } from '../services/Logger';
+import { applySettingsChange } from './applySettingsChange';
 import { useAppExtras, useServices, useUIPanel, useWorkspaceCtx } from './contexts';
 import { useEffect } from 'react';
-import { LandingPage, createDefaultLandingContent } from '@vibetech/landing';
-import { authService, UserWithPlan } from '../services/AuthService';
+import { LandingPage } from '@vibetech/landing';
+import { authService, type UserWithPlan } from '../services/AuthService';
 import { AuthModal } from '../components/AuthModal';
-
-const vibeStudioLandingContent = createDefaultLandingContent({
-  productName: 'Vibe Code Studio',
-  badge: 'VIBE CODE STUDIO • NEURAL INTERFACE',
-  title: 'Next-generation AI-powered code editor where innovation meets elegant design',
-  subtitle: 'Resurrect your workflows with context-aware AI assistant, proactive error fixing, multi-agent orchestrations, and a premium developer environment.',
-  primaryAction: { label: 'Get Started Free', href: '#signup' },
-  secondaryAction: { label: 'Sign In', href: '#login' },
-  previewLabel: 'What\'s Included',
-  previewItems: [
-    '⚡ Proactive AI Autocomplete',
-    '🧠 Full Codebase Semantic Search',
-    '🛠️ Real-time Auto-Fix & Debugging',
-    '🤝 Multi-Agent Swarm Orchestrator'
-  ],
-  featuresHeading: 'Engineered for Elite Developers',
-  featuresSubheading: 'Built on Tauri 2.0 with a high-performance SQLite WAL storage engine.',
-  features: [
-    {
-      title: 'Context-Aware AI Chat',
-      description: 'Interact with your codebase. Vibe Code Studio understands file relationships, test suites, and project dependencies.'
-    },
-    {
-      title: 'Auto-Fix Proactive Debugger',
-      description: 'Errors are caught and resolved before you hit compile. Generate unit tests and refactor with single-click diff approval.'
-    },
-    {
-      title: 'Monetized App Factory',
-      description: 'Integrated with Stripe billing, secure scrypt/bcrypt authentication, and real-time entitlements gating.'
-    }
-  ],
-  pricingHeading: 'Simple, Flexible Pricing',
-  pricingSubheading: 'Unlock the full power of context-aware multi-agent development.',
-  tiers: [
-    {
-      name: 'Free Tier',
-      price: '$0',
-      subtitle: 'For evaluation and personal projects',
-      features: [
-        'Core editor workspace',
-        'Basic AI chat assistant (10 messages/day)',
-        'Local SQLite storage mode',
-        'Standard theme library'
-      ]
-    },
-    {
-      name: 'Pro Tier',
-      price: '$19',
-      subtitle: 'Per month, billed monthly',
-      featured: true,
-      features: [
-        'Unlimited AI chat assistant queries',
-        'Proactive AI autocomplete',
-        'Multi-agent execution engine',
-        'Custom workspace rules & parser',
-        'Priority feature flags & telemetry'
-      ]
-    }
-  ],
-  faqHeading: 'Frequently Asked Questions',
-  faqSubheading: 'Everything you need to know about plans and security.',
-  faqs: [
-    {
-      question: 'Is my codebase secure?',
-      answer: 'Yes. All state is saved locally in D:\\databases\\vibe_studio.db. We support local models and secure proxy channels.'
-    },
-    {
-      question: 'How do I upgrade to Pro?',
-      answer: 'Click the upgrade action to initiate a Stripe session. Once processed via the Stripe Webhook Bus, your features will unlock instantly.'
-    }
-  ],
-  ctaHeading: 'Ready to elevate your development environment?',
-  ctaBody: 'Create a free account or upgrade to Pro to start shipping with advanced agent intelligence.',
-  ctaAction: { label: 'Get Started Now', href: '#signup' }
-});
+import { vibeStudioLandingContent } from './landingContent';
 
 // Styled Components
 const AppContainer = styled.div`
@@ -160,7 +99,7 @@ export function AppLayout() {
     };
     initSession();
 
-    const unsubscribe = authService.subscribe((u) => {
+    const unsubscribe = authService.subscribe(u => {
       setUser(u);
     });
     return unsubscribe;
@@ -192,8 +131,8 @@ export function AppLayout() {
         ? {
             workspaceRoot: ws.workspaceFolder,
             currentFile: ws.currentFile?.path,
-            openFiles: ws.openFiles.map((f) => f.path),
-            recentFiles: ws.openFiles.slice(0, 5).map((f) => f.path),
+            openFiles: ws.openFiles.map(f => f.path),
+            recentFiles: ws.openFiles.slice(0, 5).map(f => f.path),
           }
         : undefined,
     [ws.workspaceFolder, ws.currentFile?.path, ws.openFiles]
@@ -201,7 +140,17 @@ export function AppLayout() {
 
   if (!sessionChecked) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#08111f', color: '#67e8f9', fontFamily: 'system-ui' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          background: '#08111f',
+          color: '#67e8f9',
+          fontFamily: 'system-ui',
+        }}
+      >
         <div style={{ fontSize: '18px', fontWeight: 600 }}>Initializing Neural Interface...</div>
       </div>
     );
@@ -232,7 +181,9 @@ export function AppLayout() {
         onOpenFolder={ws.handleOpenFolderDialog}
         onSaveAll={ws.handleSaveAll}
         onCloseFolder={ws.handleCloseFolder}
-        onScreenshotToCode={() => ui.setActiveVisualPanel(ui.activeVisualPanel === 'screenshot' ? 'none' : 'screenshot')}
+        onScreenshotToCode={() =>
+          ui.setActiveVisualPanel(ui.activeVisualPanel === 'screenshot' ? 'none' : 'screenshot')
+        }
         onToggleSidebar={() => ui.setSidebarOpen(!ui.sidebarOpen)}
         onToggleAIChat={() => ui.setAiChatOpen(!ui.aiChatOpen)}
         onTogglePreview={() => ui.setPreviewOpen(!ui.previewOpen)}
@@ -305,7 +256,11 @@ export function AppLayout() {
             <LazyAIChat
               data-testid="ai-chat"
               messages={extras.aiMessages}
+              isAiResponding={extras.isAiResponding}
+              responseState={extras.aiResponseState}
               onSendMessage={extras.handleAIMessage}
+              onCancelResponse={extras.cancelAiResponse}
+              onClearMessages={extras.clearAiMessages}
               onClose={() => ui.setAiChatOpen(false)}
               showReasoningProcess={ws.editorSettings.showReasoningProcess}
               currentModel={ws.editorSettings.aiModel}
@@ -318,29 +273,36 @@ export function AppLayout() {
               onUpdateMessage={extras.updateAiMessage}
               onFileChanged={(filePath, action) => {
                 logger.debug('[App] Agent file changed:', filePath, action);
-                setWorkspaceRefreshKey((current) => current + 1);
+                setWorkspaceRefreshKey(current => current + 1);
                 if (action === 'created' || action === 'modified') {
                   ws.handleOpenFile(filePath);
                 }
               }}
-              onTaskComplete={(task) => {
+              onTaskComplete={task => {
                 extras.showSuccess('Task Completed', `Successfully executed: ${task.title}`);
               }}
               onTaskError={(task, error) => {
-                extras.showError('Task Failed', `Failed to execute ${task.title}: ${error.message}`);
+                extras.showError(
+                  'Task Failed',
+                  `Failed to execute ${task.title}: ${error.message}`
+                );
               }}
               onMultiFileEditDetected={extras.handleMultiFileEditDetected}
             />
           </Suspense>
         )}
 
-        {ui.gitPanelOpen && <Suspense fallback={null}><GitPanel workingDirectory={ws.workspaceFolder ?? undefined} /></Suspense>}
+        {ui.gitPanelOpen && (
+          <Suspense fallback={null}>
+            <GitPanel workingDirectory={ws.workspaceFolder ?? undefined} />
+          </Suspense>
+        )}
 
         {ui.backgroundPanelOpen && (
           <Suspense fallback={null}>
             <BackgroundTaskPanel
               backgroundAgent={services.backgroundAgentSystem}
-              onTaskClick={(task) => {
+              onTaskClick={task => {
                 logger.debug('[App] Background task clicked:', task);
               }}
             />
@@ -367,16 +329,19 @@ export function AppLayout() {
         onToggleVisualEditor={extras.handleToggleVisualEditor}
       />
 
-      <NotificationContainer notifications={extras.notifications} onClose={extras.removeNotification} />
+      <NotificationContainer
+        notifications={extras.notifications}
+        onClose={extras.removeNotification}
+      />
 
       <Suspense fallback={null}>
         <EditorStreamPanel
           isStreaming={services.liveStream.isCurrentlyStreaming()}
-          onApprove={(filePath) => {
+          onApprove={filePath => {
             logger.debug(`[App] Approved changes for: ${filePath}`);
             extras.showSuccess('Changes Approved', `Applied changes to ${filePath}`);
           }}
-          onReject={(filePath) => {
+          onReject={filePath => {
             logger.debug(`[App] Rejected changes for: ${filePath}`);
             extras.showWarning('Changes Rejected', `Discarded changes to ${filePath}`);
           }}
@@ -385,15 +350,17 @@ export function AppLayout() {
 
       {/* Auto-Fix Error Panel */}
       {ui.errorFixPanelOpen && extras.currentError && (
-        <div style={{
-          position: 'fixed',
-          bottom: '80px',
-          right: '20px',
-          zIndex: 2000,
-          maxWidth: '600px',
-          maxHeight: 'calc(100vh - 100px)',
-          overflowY: 'auto',
-        }}>
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '80px',
+            right: '20px',
+            zIndex: 2000,
+            maxWidth: '600px',
+            maxHeight: 'calc(100vh - 100px)',
+            overflowY: 'auto',
+          }}
+        >
           <Suspense fallback={null}>
             <ErrorFixPanel
               error={extras.currentError}
@@ -408,10 +375,15 @@ export function AppLayout() {
                 extras.setCurrentFix(null);
               }}
               onRetry={() => {
-                if (extras.currentError && ws.editorRef.current && extras.autoFixServiceRef.current) {
+                if (
+                  extras.currentError &&
+                  ws.editorRef.current &&
+                  extras.autoFixServiceRef.current
+                ) {
                   extras.setFixLoading(true);
                   extras.setFixError('');
-                  extras.autoFixServiceRef.current.generateFix(extras.currentError, ws.editorRef.current as never)
+                  extras.autoFixServiceRef.current
+                    .generateFix(extras.currentError, ws.editorRef.current as never)
                     .then((fix: GeneratedFix) => {
                       extras.setCurrentFix(fix);
                       extras.setFixLoading(false);
@@ -432,22 +404,18 @@ export function AppLayout() {
           isOpen={ui.settingsOpen}
           onClose={() => ui.setSettingsOpen(false)}
           settings={ws.editorSettings}
-          onSettingsChange={async (newSettings) => {
-            ws.updateEditorSettings(newSettings);
-            if (newSettings.aiModel && newSettings.aiModel !== ws.editorSettings.aiModel) {
-              try {
-                await services.aiService.setModel(newSettings.aiModel);
-                extras.showSuccess('Settings Updated', 'Your preferences have been saved');
-              } catch (error) {
-                extras.showError(
-                  'Model Error',
-                  error instanceof Error ? error.message : 'Failed to update AI model'
-                );
-              }
-            } else {
-              extras.showSuccess('Settings Updated', 'Your preferences have been saved');
-            }
-          }}
+          onSettingsChange={newSettings =>
+            applySettingsChange(
+              {
+                updateEditorSettings: ws.updateEditorSettings,
+                prevAiModel: ws.editorSettings.aiModel,
+                aiService: services.aiService,
+                showSuccess: extras.showSuccess,
+                showError: extras.showError,
+              },
+              newSettings
+            )
+          }
         />
       </Suspense>
 
@@ -466,7 +434,7 @@ export function AppLayout() {
           onOpenFile={ws.handleOpenFileFromSearch}
           onReplaceInFile={ws.handleReplaceInFile}
           onSearchInFiles={ws.handleSearchInFiles}
-          workspaceFiles={ws.openFiles.map((f) => f.path)}
+          workspaceFiles={ws.openFiles.map(f => f.path)}
           workspaceRoot={ws.workspaceFolder}
         />
       </Suspense>
@@ -558,15 +526,63 @@ export function AppLayout() {
       </AnimatePresence>
 
       <Suspense fallback={null}>
-        <TerminalPanel
-          isOpen={ui.terminalOpen}
-          onClose={() => ui.setTerminalOpen(false)}
-        />
+        <TerminalPanel isOpen={ui.terminalOpen} onClose={() => ui.setTerminalOpen(false)} />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <ProblemsPanelHost onOpenFile={ws.handleOpenFileFromSearch} />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SchedulePanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <ArtifactsPanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <BrowserPermissionPromptHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <PlanModeDialogHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SettingsSyncDialog />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <KnowledgePanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <TestExplorerPanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <AgentManagerPanelHost />
       </Suspense>
 
       <Suspense fallback={null}>
         <PerformanceMonitor />
       </Suspense>
+
+      {ui.brainScanOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1500,
+            background: 'rgba(8, 17, 31, 0.85)',
+          }}
+        >
+          <Suspense fallback={null}>
+            <BrainScanPanel onClose={() => ui.setBrainScanOpen(false)} />
+          </Suspense>
+        </div>
+      )}
 
       {ui.agentModeOpen && (
         <Suspense fallback={null}>
@@ -579,11 +595,15 @@ export function AppLayout() {
             }}
             orchestrator={services.orchestrator}
             performanceOptimizer={services.performanceOptimizer}
-            workspaceContext={ws.workspaceFolder ? {
-              workspaceFolder: ws.workspaceFolder,
-              currentFile: ws.currentFile?.path,
-              openFiles: ws.openFiles.map((f) => f.path),
-            } : undefined}
+            workspaceContext={
+              ws.workspaceFolder
+                ? {
+                    workspaceFolder: ws.workspaceFolder,
+                    currentFile: ws.currentFile?.path,
+                    openFiles: ws.openFiles.map(f => f.path),
+                  }
+                : undefined
+            }
           />
         </Suspense>
       )}

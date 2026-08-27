@@ -8,8 +8,13 @@
     <meta name="author" content="Nova Agent" />
     <meta name="robots" content="noindex, nofollow" />
 
+    <!-- Node `process` global shim: must run before the ESM entry so transitively
+         bundled Node code (via @vibetech/core barrel) doesn't throw at eval and
+         leave the webview blank. Classic script => runs before deferred modules. -->
+    <script src="/node-globals-shim.js"></script>
+
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
 
     <!-- Theme Color -->
     <meta name="theme-color" content="#a855f7" />

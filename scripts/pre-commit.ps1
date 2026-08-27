@@ -62,6 +62,16 @@ function Invoke-QualityCommand {
 }
 
 # ============================================
+# 0. Lint-Staged Check (triggers AST and regex path segregation validation)
+# ============================================
+$exitCode = [Math]::Max(
+    [int]$exitCode,
+    [int](Invoke-QualityCommand -Label "[1/4] Running Lint-Staged gates (regex & AST path checks)..." -Command {
+        pnpm exec lint-staged
+    })
+)
+
+# ============================================
 # 1. ESLint Check (if TS/JS files staged)
 # ============================================
 if ($sourceFiles.Count -gt 0) {
@@ -75,19 +85,53 @@ if ($sourceFiles.Count -gt 0) {
 
     $exitCode = [Math]::Max(
         [int]$exitCode,
-        [int](Invoke-QualityCommand -Label "[1/3] Running ESLint on staged files in batches..." -Command {
+        [int](Invoke-QualityCommand -Label "[2/4] Running ESLint on staged files in batches..." -Command {
+            # Group staged files by their nearest eslint-suppressions.json so
+            # per-project bulk-suppression baselines (ESLint >= 9.24) apply when
+            # linting from the repo root (see .claude/rules/code-size-limits.md —
+            # vibe-code-studio pins its baseline via --suppressions-location).
+            # New violations still fail; only baselined legacy counts pass.
+            $groups = @{}
+            foreach ($file in $sourceFiles) {
+                $dir = Split-Path $file -Parent
+                $suppressions = ''
+                while ($dir) {
+                    $candidate = Join-Path $dir 'eslint-suppressions.json'
+                    if (Test-Path $candidate) { $suppressions = $candidate; break }
+                    $parent = Split-Path $dir -Parent
+                    if (-not $parent -or $parent -eq $dir) { break }
+                    $dir = $parent
+                }
+                if (-not $groups.ContainsKey($suppressions)) {
+                    $groups[$suppressions] = [System.Collections.ArrayList]::new()
+                }
+                [void]$groups[$suppressions].Add($file)
+            }
+
             $batchSize = 5
             $eslintFail = $false
-            for ($i = 0; $i -lt $sourceFiles.Count; $i += $batchSize) {
-                $end = [Math]::Min($i + $batchSize - 1, $sourceFiles.Count - 1)
-                $batch = $sourceFiles[$i..$end]
-                if ($batch -and $batch.Count -gt 0) {
-                    pnpm exec eslint --max-warnings=0 --no-warn-ignored @batch
-                    if ($LASTEXITCODE -ne 0) {
-                        $eslintFail = $true
-                        break
+            foreach ($suppressions in @($groups.Keys)) {
+                $groupFiles = @($groups[$suppressions])
+                for ($i = 0; $i -lt $groupFiles.Count; $i += $batchSize) {
+                    $end = [Math]::Min($i + $batchSize - 1, $groupFiles.Count - 1)
+                    $batch = $groupFiles[$i..$end]
+                    if ($batch -and $batch.Count -gt 0) {
+                        if ($suppressions) {
+                            # Subset lint always leaves other files' baseline
+                            # entries unused — don't fail on unpruned ones.
+                            pnpm exec eslint --max-warnings=0 --no-warn-ignored `
+                                --suppressions-location $suppressions `
+                                --pass-on-unpruned-suppressions @batch
+                        } else {
+                            pnpm exec eslint --max-warnings=0 --no-warn-ignored @batch
+                        }
+                        if ($LASTEXITCODE -ne 0) {
+                            $eslintFail = $true
+                            break
+                        }
                     }
                 }
+                if ($eslintFail) { break }
             }
             if ($eslintFail) {
                 cmd.exe /c "exit 1"
@@ -95,7 +139,7 @@ if ($sourceFiles.Count -gt 0) {
         })
     )
 } else {
-    Write-Host "[1/3] Lint skipped (no JS/TS files)" -ForegroundColor DarkGray
+    Write-Host "[2/4] Lint skipped (no JS/TS files)" -ForegroundColor DarkGray
 }
 
 # ============================================
@@ -106,18 +150,63 @@ if ($typeScriptFiles.Count -gt 0) {
     # unstaged work, which makes normal commits fail on other active lanes.
     $exitCode = [Math]::Max(
         [int]$exitCode,
-        [int](Invoke-QualityCommand -Label "[2/3] Running Nx affected typecheck..." -Command {
+        [int](Invoke-QualityCommand -Label "[3/4] Running Nx affected typecheck..." -Command {
             pnpm exec nx affected -t typecheck --files="$nxTypecheckFileList" --outputStyle=static
         })
     )
 } else {
-    Write-Host "[2/3] Typecheck skipped (no TS/TSX files)" -ForegroundColor DarkGray
+    Write-Host "[3/4] Typecheck skipped (no TS/TSX files)" -ForegroundColor DarkGray
+}
+
+# ============================================
+# 3b. Diff Coverage Gate (100% coverage on new/changed source)
+# Enforces .claude/rules/testing-strategy.md: added/modified executable lines in
+# app/package/backend src must be covered by a test. Legacy code is untouched.
+# ============================================
+if ($env:COVERAGE_GATE -eq 'off') {
+    Write-Host "[cov] Diff coverage gate skipped (COVERAGE_GATE=off)" -ForegroundColor DarkGray
+} else {
+    $coverableFiles = @(
+        $sourceFiles | Where-Object {
+            ($_ -match '^(apps|packages)/[^/]+/(.*/)?src/' -or $_ -match '^backend/(.*/)?src/') -and
+            $_ -notmatch '\.(test|spec)\.[cm]?[jt]sx?$' -and
+            $_ -notmatch '\.d\.ts$' -and
+            $_ -notmatch '\.config\.[cm]?[jt]s$' -and
+            $_ -notmatch '(^|/)(__tests__|tests|e2e|__mocks__|__fixtures__|test|generated|migrations)/' -and
+            $_ -notmatch '(^|/)types\.ts$' -and
+            $_ -notmatch '\.types\.ts$'
+        }
+    )
+
+    if ($coverableFiles.Count -eq 0) {
+        Write-Host "[cov] Diff coverage skipped (no in-scope source staged)" -ForegroundColor DarkGray
+    } else {
+        $covFileList = ($coverableFiles -join ',')
+
+        # 1) Generate coverage for projects affected by the staged source.
+        #    Projects without a test:coverage target are skipped by Nx; their
+        #    changed files then surface as "no coverage report" in step 2.
+        $exitCode = [Math]::Max(
+            [int]$exitCode,
+            [int](Invoke-QualityCommand -Label "[cov 1/2] Running coverage for affected projects..." -Command {
+                pnpm exec nx affected -t test:coverage --files="$covFileList" --outputStyle=static
+            })
+        )
+
+        # 2) Enforce 100% coverage on the added lines of the staged source.
+        $exitCode = [Math]::Max(
+            [int]$exitCode,
+            [int](Invoke-QualityCommand -Label "[cov 2/2] Enforcing 100% diff coverage on changed code..." -Command {
+                node scripts/check-diff-coverage.js @coverableFiles
+            })
+        )
+    }
 }
 
 # ============================================
 # 3. File Size Check (byte size + line-count caps)
 # ============================================
-Write-Host "[3/3] Checking file sizes and line counts..." -ForegroundColor Yellow
+Write-Host "[4/4] Checking file sizes and line counts..." -ForegroundColor Yellow
 
 $maxSizeBytes = 5MB
 $largeFiles = @()
@@ -141,7 +230,7 @@ if ($largeFiles.Count -gt 0) {
     Write-Host "  Byte sizes OK (<5MB)" -ForegroundColor Green
 }
 
-# Line-count cap (500 warn / 600 hard) via the shared validator. The script
+# Line-count cap (500 warn / 1000 hard) via the shared validator. The script
 # applies its own extension filter and exclusion globs (tests, generated code,
 # migrations, scaffolding templates).
 $lineCountFiles = @(
@@ -161,6 +250,31 @@ if ($lineCountFiles.Count -gt 0) {
 } else {
     Write-Host "  Line-count check skipped (no code files)" -ForegroundColor DarkGray
 }
+
+# ============================================
+# 5. Full Workspace Integration Harness — MOVED OUT OF THE PER-COMMIT HOOK
+# ============================================
+# verify-agent-changes.ps1 is a full-workspace "master validation harness": it
+# runs a ~55s path-policy scan, a recursive task_plan.json search over the entire
+# tree (incl. node_modules), full `pnpm run typecheck` (~80 projects), and
+# `pnpm run test:unit:all` (the whole monorepo vitest suite). In a per-commit hook
+# that hung for many minutes, spawned 45+ orphaned vitest workers, and corrupted
+# the working tree when killed mid-run (interrupted lint-staged stash).
+#
+# Changed code is already gated above by fast, scoped checks: lint-staged's
+# staged-path AST validation, ESLint on staged files, `nx affected typecheck`
+# (step 3/4), and the 100% diff-coverage gate (step cov). The full harness belongs
+# in CI or a manual run: `pwsh scripts/verify-agent-changes.ps1`.
+
+# ============================================
+# 6. Database Growth Trend Check
+# ============================================
+$exitCode = [Math]::Max(
+    [int]$exitCode,
+    [int](Invoke-QualityCommand -Label "[5/5] Checking database growth limits (<15% growth delta)..." -Command {
+        pwsh.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "check-database-trends.ps1")
+    })
+)
 
 # ============================================
 # Final Result

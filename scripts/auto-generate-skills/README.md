@@ -1,8 +1,8 @@
 # Auto-Generate Skills & Agents System
 
-**Last Updated:** 2026-01-18
-**Status:** Production Ready
-**Based on:** META-SKILL research (January 2026)
+**Last Updated:** 2026-06-27
+**Status:** Production Ready (Analyze + Generate + Monitor flow; Deploy step manual)
+**Based on:** META-SKILL research (January 2026); .agent/ is generated output location
 
 ---
 
@@ -202,11 +202,10 @@ The `/generate-skills` workflow is located at:
 
 1. Analyze learning data
 2. Display candidates to user
-3. Generate selected skills
+3. Generate selected skills (output under `.agent\skills\`)
 4. User review & approval
-5. Deploy approved skills
-6. Track deployment
-7. Monitor performance
+5. Activate (restart IDE; no separate Deploy-Skill yet)
+6. Track/monitor performance (Monitor-GeneratedSkills.ps1)
 
 ### Manual Workflow
 
@@ -540,7 +539,8 @@ V:\monorepo\
 │       ├── README.md (this file)
 │       ├── Analyze-Patterns.ps1
 │       ├── Generate-Skill.ps1
-│       └── Monitor-GeneratedSkills.ps1
+│       ├── Monitor-GeneratedSkills.ps1
+│       └── Deploy-Skill.ps1 (stub: not yet implemented)
 ├── .agent\
 │   ├── workflows\
 │   │   └── generate-skills.md

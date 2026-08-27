@@ -26,6 +26,12 @@
       "options": { "script": "test" },
       "cache": true
     },
+    "test:coverage": {
+      "executor": "nx:run-script",
+      "options": { "script": "test:coverage" },
+      "outputs": ["{projectRoot}/coverage"],
+      "cache": true
+    },
     "typecheck": {
       "executor": "nx:run-script",
       "options": { "script": "typecheck" },

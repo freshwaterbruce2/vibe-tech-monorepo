@@ -27,6 +27,22 @@ try {
         }
         Remove-Item $stateFile -Force -ErrorAction SilentlyContinue
     }
+
+    # Optional learning-system session archive (off by default)
+    if ($env:SESSION_ARCHIVE_ON_STOP -eq '1') {
+        $endSessionScript = 'D:\learning-system\sessions\scripts\end-session.ps1'
+        if (Test-Path -LiteralPath $endSessionScript) {
+            & pwsh -NoProfile -ExecutionPolicy Bypass -File $endSessionScript `
+                -Agent 'Claude Code' `
+                -Summary ("Session ended (reason={0})" -f $stopReason) `
+                -ErrorAction SilentlyContinue 2>$null | Out-Null
+        }
+    }
+
+    # Preview workspace orphan cleanup (dry-run unless PROCESS_CLEANUP_ON_STOP=force)
+    $cleanupArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'V:\monorepo\scripts\cleanup-processes.ps1', '-Agents')
+    if ($env:PROCESS_CLEANUP_ON_STOP -eq 'force') { $cleanupArgs += '-Force' }
+    & pwsh @cleanupArgs 2>$null | Out-Null
 } catch {}
 
 exit 0

@@ -55,11 +55,9 @@ export class RAGChunker {
 
     try {
       // Create a virtual source file for parsing
-      const sourceFile = this.tsProject.createSourceFile(
-        `virtual-${Date.now()}.tsx`,
-        content,
-        { overwrite: true },
-      );
+      const sourceFile = this.tsProject.createSourceFile(`virtual-${Date.now()}.tsx`, content, {
+        overwrite: true,
+      });
 
       // Extract import block as context (shared across chunks)
       const imports = this.extractImports(sourceFile);
@@ -76,7 +74,10 @@ export class RAGChunker {
       sourceFile.delete();
     } catch (error) {
       // AST parse failed — fall back to sliding window
-      console.error(`[RAGChunker] AST parse failed for ${filePath}, using sliding window:`, (error as Error).message);
+      console.error(
+        `[RAGChunker] AST parse failed for ${filePath}, using sliding window:`,
+        (error as Error).message,
+      );
       return this.chunkSlidingWindow(filePath, content, language);
     }
 
@@ -120,10 +121,7 @@ export class RAGChunker {
     const kind = node.getKind();
 
     // Skip import/export declarations (they're metadata, not content)
-    if (
-      kind === SyntaxKind.ImportDeclaration ||
-      kind === SyntaxKind.ImportEqualsDeclaration
-    ) {
+    if (kind === SyntaxKind.ImportDeclaration || kind === SyntaxKind.ImportEqualsDeclaration) {
       return null;
     }
 
@@ -157,9 +155,7 @@ export class RAGChunker {
    * Extract import statements from source file
    */
   private extractImports(sourceFile: SourceFile): string[] {
-    return sourceFile
-      .getImportDeclarations()
-      .map((imp) => imp.getText().trim());
+    return sourceFile.getImportDeclarations().map((imp) => imp.getText().trim());
   }
 
   /**
@@ -283,9 +279,17 @@ function extractSymbolName(node: Node): string | null {
 
   if (kind === SyntaxKind.VariableStatement) {
     // Extract variable name(s) from the declaration
-    const declarations = (node as { getDeclarationList?: () => { getDeclarations?: () => Array<{ getName?: () => string }> } }).getDeclarationList?.()?.getDeclarations?.();
+    interface DeclNode {
+      getDeclarationList?: () => {
+        getDeclarations?: () => Array<{ getName?: () => string }>;
+      };
+    }
+    const declarations = (node as DeclNode).getDeclarationList?.()?.getDeclarations?.();
     if (declarations && declarations.length > 0) {
-      return declarations.map((d: { getName?: () => string }) => d.getName?.()).filter(Boolean).join(', ');
+      return declarations
+        .map((d: { getName?: () => string }) => d.getName?.())
+        .filter(Boolean)
+        .join(', ');
     }
   }
 

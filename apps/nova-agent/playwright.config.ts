@@ -31,10 +31,9 @@ export default defineConfig({
     // Allow 0.2% pixel diff to absorb font-hinting + antialiasing noise
     // across Windows renders, while still catching real layout breakage.
     toHaveScreenshot: {
-      // Raised from 0.002 to 0.05 to absorb Windows font-hinting / anti-aliasing
-      // variance between Chromium launches while still catching real layout
-      // breakage (the Jan 31 regression altered ~30% of pixels).
-      maxDiffPixelRatio: 0.05,
+      // Tightened to 0.002 to catch real layout breakage; font-hinting variance
+      // is managed via consistent browser flags and single-worker execution.
+      maxDiffPixelRatio: 0.002,
       animations: 'disabled',
     },
   },
