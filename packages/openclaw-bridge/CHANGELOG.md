@@ -76,5 +76,5 @@ This release modernizes the openclaw-bridge package to work with [OpenClaw v2026
 
 ---
 
-[2.0.0]: https://github.com/freshwaterbruce2/Monorepo/compare/openclaw-bridge-v1.0.0...openclaw-bridge-v2.0.0
-[1.0.0]: https://github.com/freshwaterbruce2/Monorepo/releases/tag/openclaw-bridge-v1.0.0
+[2.0.0]: https://github.com/freshwaterbruce2/vibe-tech-monorepo/compare/openclaw-bridge-v1.0.0...openclaw-bridge-v2.0.0
+[1.0.0]: https://github.com/freshwaterbruce2/vibe-tech-monorepo/releases/tag/openclaw-bridge-v1.0.0

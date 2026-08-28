@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "composite": true,
     "target": "ES2022",
     "module": "ESNext",
     "lib": ["ES2022"],
@@ -9,7 +10,11 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "src",
-    "paths": {},
+    "baseUrl": ".",
+    "paths": {
+      "@vibetech/shared-config": ["../shared-config/dist/index.d.ts"],
+      "@vibetech/shared-config/*": ["../shared-config/dist/*.d.ts"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -18,5 +23,10 @@
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"],
-  "extends": "../../tsconfig.base.json"
+  "extends": "../../tsconfig.base.json",
+  "references": [
+    {
+      "path": "../shared-config"
+    }
+  ]
 }

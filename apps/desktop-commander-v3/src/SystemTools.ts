@@ -3,11 +3,19 @@
  * Uses systeminformation library and PowerShell for system operations.
  */
 
-import { exec } from "node:child_process";
+import { exec, execFile } from "node:child_process";
 import { promisify } from "node:util";
 import si from "systeminformation";
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+
+// Encode a PowerShell script as base64 UTF-16LE for -EncodedCommand.
+// This bypasses every layer of shell quoting (cmd.exe + PowerShell), so
+// multi-line scripts and `$var = "..."` assignments pass through verbatim.
+function encodePowerShellCommand(script: string): string {
+	return Buffer.from(script, "utf16le").toString("base64");
+}
 
 export interface BatteryInfo {
 	hasBattery: boolean;
@@ -47,16 +55,16 @@ export interface DiskInfo {
  */
 export async function setVolume(action: "up" | "down" | "mute"): Promise<void> {
 	// Volume key codes: VOLUME_UP=0xAF, VOLUME_DOWN=0xAE, VOLUME_MUTE=0xAD
-	let vkCode: number;
+	let vkCode: string;
 	switch (action) {
 		case "up":
-			vkCode = 0xaf;
+			vkCode = "0xAF";
 			break;
 		case "down":
-			vkCode = 0xae;
+			vkCode = "0xAE";
 			break;
 		case "mute":
-			vkCode = 0xad;
+			vkCode = "0xAD";
 			break;
 		default:
 			throw new Error(`Unknown volume action: ${action}`);
@@ -221,11 +229,22 @@ export async function getEnvironmentVariables(
 	return result;
 }
 
+// Deny-list for dangerous PowerShell patterns
+const BLOCKED_POWERSHELL_PATTERNS: RegExp[] = [
+	/Remove-Item.*-Force/i,
+	/Format-Volume/i,
+	/Clear-Disk/i,
+	/rm\s+-rf/i,
+	/Stop-Computer/i,
+	/Restart-Computer/i,
+	/Invoke-Expression/i,
+	/\biex\b/i,
+	/DownloadString/i,
+	/WebClient/i,
+];
+
 /**
- * Run a PowerShell command (unrestricted for AI agent use)
- *
- * SECURITY WARNING: This function executes arbitrary PowerShell commands.
- * Only use with trusted AI agents in controlled environments.
+ * Run a PowerShell command (deny-list restricted).
  *
  * @param command - PowerShell command to execute
  * @param timeout - Max execution time in milliseconds (default: 60000ms)
@@ -239,11 +258,83 @@ export async function runPowerShell(
 		throw new Error("Command cannot be empty");
 	}
 
+	for (const pattern of BLOCKED_POWERSHELL_PATTERNS) {
+		if (pattern.test(command)) {
+			throw new Error(`Command not allowed: ${command}`);
+		}
+	}
+
 	try {
-		const { stdout, stderr } = await execAsync(
-			`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${command.replaceAll('"', '\\"')}"`,
+		const { stdout, stderr } = await execFileAsync(
+			"powershell.exe",
+			[
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-EncodedCommand",
+				encodePowerShellCommand(command),
+			],
 			{
 				maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large outputs
+				timeout,
+				windowsHide: true,
+			},
+		);
+
+		return {
+			output: stdout || stderr,
+			success: true,
+			exitCode: 0,
+		};
+	} catch (error: unknown) {
+		const err = error as { stderr?: string; stdout?: string; message?: string; code?: number };
+		return {
+			output: err.stderr || err.stdout || err.message || "Unknown error",
+			success: false,
+			exitCode: err.code || 1,
+		};
+	}
+}
+
+/**
+ * Run an unrestricted PowerShell command.
+ * Requires DC_ALLOW_UNSAFE_POWERSHELL=1 environment variable.
+ *
+ * SECURITY WARNING: This function executes arbitrary PowerShell commands.
+ * Only use with trusted AI agents in controlled environments.
+ *
+ * @param command - PowerShell command to execute
+ * @param options - Execution options
+ * @returns Object containing output and success status
+ */
+export async function runPowerShellUnsafe(
+	command: string,
+	options: { timeoutMs?: number } = {},
+): Promise<{ output: string; success: boolean; exitCode?: number }> {
+	if (!process.env.DC_ALLOW_UNSAFE_POWERSHELL) {
+		throw new Error(
+			"Unsafe PowerShell is disabled. Set DC_ALLOW_UNSAFE_POWERSHELL=1 to enable.",
+		);
+	}
+
+	if (!command || command.trim().length === 0) {
+		throw new Error("Command cannot be empty");
+	}
+
+	const timeout = options.timeoutMs ?? 60000;
+
+	try {
+		const { stdout, stderr } = await execFileAsync(
+			"powershell.exe",
+			[
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-EncodedCommand",
+				encodePowerShellCommand(command),
+			],
+			{
+				maxBuffer: 50 * 1024 * 1024,
 				timeout,
 				windowsHide: true,
 			},
@@ -283,12 +374,17 @@ export async function runCmd(
 	}
 
 	try {
-		const { stdout, stderr } = await execAsync(
-			`cmd.exe /c "${command.replaceAll('"', '\\"')}"`,
+		// execFile drops Node's automatic `cmd.exe /s /c "..."` wrap, so we
+		// only have ONE layer of cmd parsing instead of two — multi-line
+		// strings with embedded quotes survive intact.
+		const { stdout, stderr } = await execFileAsync(
+			"cmd.exe",
+			["/c", command],
 			{
 				maxBuffer: 50 * 1024 * 1024, // 50MB buffer
 				timeout,
 				windowsHide: true,
+				windowsVerbatimArguments: true,
 			},
 		);
 
@@ -305,4 +401,29 @@ export async function runCmd(
 			exitCode: err.code || 1,
 		};
 	}
+}
+
+/**
+ * Show a Windows toast notification.
+ */
+export async function showNotification(
+	title: string,
+	message: string,
+): Promise<void> {
+	const t = title.replace(/'/g, "''");
+	const m = message.replace(/'/g, "''");
+	const psScript = `
+[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+[Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
+$xml = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
+$text = $xml.GetElementsByTagName('text')
+$text[0].AppendChild($xml.CreateTextNode('${t}')) | Out-Null
+$text[1].AppendChild($xml.CreateTextNode('${m}')) | Out-Null
+$toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
+[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Desktop Commander').Show($toast)
+`;
+	await execAsync(
+		`powershell.exe -NoProfile -Command "${psScript.replace(/\n/g, " ")}"`,
+		{ maxBuffer: 1024 * 1024 },
+	);
 }

@@ -51,7 +51,7 @@ const HomeworkItem = ({ item, onToggleComplete, onBreakdownClick }: HomeworkItem
     today: 'border-yellow-500/50 bg-yellow-500/5',
     tomorrow: 'border-orange-500/30 bg-orange-500/5',
     future: 'border-[var(--glass-border)]',
-    completed: 'border-fuchsia-500/30 bg-fuchsia-500/5',
+    completed: 'border-violet-500/30 bg-violet-500/5',
   };
 
   return (

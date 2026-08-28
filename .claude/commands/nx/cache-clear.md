@@ -239,5 +239,5 @@ $ARGUMENTS
 - Cache clear is safe and won't delete source code
 - First build after clear will be slower
 - Deep clear also removes node_modules cache
-- All commands run from C:\dev as base directory
+- All commands run from V:\monorepo as base directory
 - Cache automatically rebuilds on next run

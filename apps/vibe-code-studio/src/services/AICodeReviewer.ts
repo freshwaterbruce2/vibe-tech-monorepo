@@ -67,6 +67,24 @@ export interface CodeSmell {
   description: string;
 }
 
+/**
+ * Optional AI inline-comment provider (spec 15). When supplied,
+ * reviewChanges merges its findings with the heuristic pass; when absent,
+ * behavior is byte-identical to the historical local-only path.
+ */
+export type AiCommentProvider = (parsed: ParsedDiff, diff: string) => Promise<ReviewComment[]>;
+
+export interface ReviewChangesOptions {
+  aiCommentProvider?: AiCommentProvider;
+}
+
+/** Mutable cursor threaded through parseDiff's helpers */
+interface DiffParseState {
+  file: DiffFile | null;
+  chunk: DiffChunk | null;
+  newLineNumber: number;
+}
+
 export class AICodeReviewer {
   private aiService: UnifiedAIService;
   private reviewCache: Map<string, { review: CodeReview; timestamp: number }> = new Map();
@@ -80,100 +98,99 @@ export class AICodeReviewer {
    * Parse git diff
    */
   parseDiff(diff: string): ParsedDiff {
-    const files: DiffFile[] = [];
-    let totalAdditions = 0;
-    let totalDeletions = 0;
+    const parsed: ParsedDiff = { files: [], totalAdditions: 0, totalDeletions: 0 };
+    const state: DiffParseState = { file: null, chunk: null, newLineNumber: 0 };
 
-    const lines = diff.split('\n');
-    let currentFile: DiffFile | null = null;
-    let currentChunk: DiffChunk | null = null;
-    let newLineNumber = 0;
-
-    for (const line of lines) {
+    for (const line of diff.split('\n')) {
       // File header: diff --git a/file b/file
       if (line.startsWith('diff --git')) {
-        if (currentFile) {
-          files.push(currentFile);
-        }
+        // Flush the open chunk BEFORE closing the file — without this, a
+        // multi-file diff attaches each file's last chunk to the NEXT file
+        // (pre-existing bug surfaced by spec 15's multi-file PRs).
+        this.flushFile(parsed, state);
         const match = line.match(/b\/(.+)$/);
-        currentFile = {
-          path: match?.[1] ?? 'unknown',
-          additions: 0,
-          deletions: 0,
-          chunks: []
-        };
+        state.file = { path: match?.[1] ?? 'unknown', additions: 0, deletions: 0, chunks: [] };
         continue;
       }
 
       // Chunk header: @@ -10,6 +10,8 @@
       if (line.startsWith('@@')) {
         const match = line.match(/@@ -(\d+),?\d* \+(\d+),?\d* @@/);
-        if (match?.[1] && match[2] && currentFile) {
-          if (currentChunk) {
-            currentFile.chunks.push(currentChunk);
+        if (match?.[1] && match[2] && state.file) {
+          if (state.chunk) {
+            state.file.chunks.push(state.chunk);
           }
-          newLineNumber = parseInt(match[2], 10);
-          currentChunk = {
-            oldStart: parseInt(match[1], 10),
-            newStart: newLineNumber,
-            lines: []
-          };
+          state.newLineNumber = parseInt(match[2], 10);
+          const oldStart = parseInt(match[1], 10);
+          state.chunk = { oldStart, newStart: state.newLineNumber, lines: [] };
         }
         continue;
       }
 
-      // Content lines
-      if (currentChunk && currentFile) {
-        if (line.startsWith('+') && !line.startsWith('+++')) {
-          currentChunk.lines.push({
-            type: 'add',
-            content: line.substring(1),
-            lineNumber: newLineNumber++
-          });
-          currentFile.additions++;
-          totalAdditions++;
-        } else if (line.startsWith('-') && !line.startsWith('---')) {
-          currentChunk.lines.push({
-            type: 'remove',
-            content: line.substring(1),
-            lineNumber: newLineNumber
-          });
-          currentFile.deletions++;
-          totalDeletions++;
-        } else if (line.startsWith(' ')) {
-          currentChunk.lines.push({
-            type: 'context',
-            content: line.substring(1),
-            lineNumber: newLineNumber++
-          });
-        }
-      }
+      this.parseContentLine(parsed, state, line);
     }
 
-    // Push last file
-    if (currentFile) {
-      if (currentChunk) {
-        currentFile.chunks.push(currentChunk);
-      }
-      files.push(currentFile);
-    }
+    this.flushFile(parsed, state);
+    return parsed;
+  }
 
-    return {
-      files,
-      totalAdditions,
-      totalDeletions
-    };
+  /** Close the current chunk + file (if any) into the parsed result */
+  private flushFile(parsed: ParsedDiff, state: DiffParseState): void {
+    if (!state.file) {
+      return;
+    }
+    if (state.chunk) {
+      state.file.chunks.push(state.chunk);
+      state.chunk = null;
+    }
+    parsed.files.push(state.file);
+    state.file = null;
+  }
+
+  /** Append one +/-/space content line to the open chunk */
+  private parseContentLine(parsed: ParsedDiff, state: DiffParseState, line: string): void {
+    if (!state.chunk || !state.file) {
+      return;
+    }
+    if (line.startsWith('+') && !line.startsWith('+++')) {
+      state.chunk.lines.push({
+        type: 'add',
+        content: line.substring(1),
+        lineNumber: state.newLineNumber++,
+      });
+      state.file.additions++;
+      parsed.totalAdditions++;
+    } else if (line.startsWith('-') && !line.startsWith('---')) {
+      state.chunk.lines.push({
+        type: 'remove',
+        content: line.substring(1),
+        lineNumber: state.newLineNumber,
+      });
+      state.file.deletions++;
+      parsed.totalDeletions++;
+    } else if (line.startsWith(' ')) {
+      state.chunk.lines.push({
+        type: 'context',
+        content: line.substring(1),
+        lineNumber: state.newLineNumber++,
+      });
+    }
   }
 
   /**
    * Review code changes
    */
-  async reviewChanges(diff: string): Promise<CodeReview> {
-    // Check cache
+  async reviewChanges(diff: string, options: ReviewChangesOptions = {}): Promise<CodeReview> {
+    // Check cache — bypassed when an AI provider is supplied: the cache key
+    // is a 500-char diff prefix, and a stale heuristics-only entry must not
+    // shadow an AI-powered pass.
+    const useCache = !options.aiCommentProvider;
     const cacheKey = this.hashDiff(diff);
-    const cached = this.getFromCache(cacheKey);
-    if (cached) {
-      return { ...cached, cached: true };
+    if (useCache) {
+      const cached = this.getFromCache(cacheKey);
+      if (cached) {
+        return { ...cached, cached: true };
+      }
     }
 
     const parsed = this.parseDiff(diff);
@@ -191,9 +208,9 @@ export class AICodeReviewer {
       }
     }
 
-    // AI-powered insights
+    // AI-powered inline comments (opt-in via injected provider)
     try {
-      const aiComments = await this.generateAIComments(diff);
+      const aiComments = await this.generateAIComments(diff, parsed, options.aiCommentProvider);
       comments.push(...aiComments);
     } catch (error) {
       logger.warn('AI review failed:', error);
@@ -208,10 +225,12 @@ export class AICodeReviewer {
       comments,
       qualityScore,
       issueCount,
-      verdict
+      verdict,
     };
 
-    this.cacheReview(cacheKey, review);
+    if (useCache) {
+      this.cacheReview(cacheKey, review);
+    }
 
     return review;
   }
@@ -236,16 +255,16 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
         userQuery: prompt,
         relatedFiles: [],
         conversationHistory: [],
-        workspaceContext: undefined as any
+        workspaceContext: undefined,
       });
-      const parsed = JSON.parse(response.content);
+      const parsed = JSON.parse(response.content ?? '');
       return parsed;
-    } catch (_error) {
+    } catch {
       return {
         summary: 'Code review completed',
         suggestions: ['Add more tests', 'Consider edge cases', 'Review error handling'],
         strengths: ['Clear implementation', 'Good code structure'],
-        concerns: []
+        concerns: [],
       };
     }
   }
@@ -267,7 +286,7 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
                 type: 'long-line',
                 file: file.path,
                 line: line.lineNumber,
-                description: 'Line exceeds 120 characters'
+                description: 'Line exceeds 120 characters',
               });
             }
 
@@ -277,7 +296,7 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
                 type: 'debug-code',
                 file: file.path,
                 line: line.lineNumber,
-                description: 'Remove console.log before committing'
+                description: 'Remove console.log before committing',
               });
             }
 
@@ -287,7 +306,7 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
                 type: 'todo',
                 file: file.path,
                 line: line.lineNumber,
-                description: 'Unresolved TODO/FIXME comment'
+                description: 'Unresolved TODO/FIXME comment',
               });
             }
           }
@@ -303,7 +322,7 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
    */
   private analyzeLineForIssues(file: string, line: DiffLine): ReviewComment[] {
     const comments: ReviewComment[] = [];
-    const {content} = line;
+    const { content } = line;
 
     // Null reference
     if (content.match(/\bnull\s*\.\s*\w+|\.toString\(\)|\.toUpperCase\(\)/)) {
@@ -314,7 +333,7 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
         category: 'bug',
         type: 'issue',
         message: 'Potential null reference',
-        suggestion: 'Add null check or use optional chaining'
+        suggestion: 'Add null check or use optional chaining',
       });
     }
 
@@ -327,7 +346,7 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
         category: 'style',
         type: 'issue',
         message: 'Debug statement found',
-        suggestion: 'Remove console.log or use proper logging'
+        suggestion: 'Remove console.log or use proper logging',
       });
     }
 
@@ -340,7 +359,7 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
         category: 'style',
         type: 'improvement',
         message: 'Consider adding semicolon',
-        suggestion: 'Add semicolon for consistency'
+        suggestion: 'Add semicolon for consistency',
       });
     }
 
@@ -348,11 +367,19 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
   }
 
   /**
-   * Generate AI comments
+   * Generate AI inline comments via the injected provider (spec 15). With no
+   * provider (all pre-existing local callers) this contributes nothing —
+   * identical to the historical behavior.
    */
-  private async generateAIComments(_diff: string): Promise<ReviewComment[]> {
-    // Simplified - would call AI service in production
-    return [];
+  private async generateAIComments(
+    diff: string,
+    parsed: ParsedDiff,
+    provider?: AiCommentProvider
+  ): Promise<ReviewComment[]> {
+    if (!provider) {
+      return [];
+    }
+    return provider(parsed, diff);
   }
 
   /**
@@ -366,7 +393,7 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
     return {
       errors: comments.filter(c => c.severity === 'error').length,
       warnings: comments.filter(c => c.severity === 'warning').length,
-      info: comments.filter(c => c.severity === 'info').length
+      info: comments.filter(c => c.severity === 'info').length,
     };
   }
 
@@ -421,7 +448,9 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
    */
   private getFromCache(key: string): CodeReview | null {
     const cached = this.reviewCache.get(key);
-    if (!cached) {return null;}
+    if (!cached) {
+      return null;
+    }
 
     if (Date.now() - cached.timestamp > this.cacheTimeout) {
       this.reviewCache.delete(key);
@@ -437,7 +466,7 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
   private cacheReview(key: string, review: CodeReview): void {
     this.reviewCache.set(key, {
       review,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 }

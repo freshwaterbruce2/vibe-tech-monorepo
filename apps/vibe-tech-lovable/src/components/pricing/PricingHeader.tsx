@@ -17,15 +17,15 @@ const PricingHeader = ({ billingCycle, setBillingCycle }: PricingHeaderProps) =>
       className="mb-16"
     >
       <PageHeader
-        title="Pricing Made Simple"
-        subtitle="Professional web design services at competitive rates. Get more value than DIY platforms with the quality of agency work at a fraction of the price."
+        title="Product Launch Pricing"
+        subtitle="Simple monthly support for turning shipped apps into visible offers, qualified leads, and revenue-ready launch paths."
         className="text-white"
       />
       
       {/* Value proposition */}
       <div className="flex justify-center mb-8">
         <Badge variant="outline" className="px-4 py-2 bg-aura-accent/10 text-aura-accent border-aura-accent/30 text-sm text-white">
-          Higher quality than DIY platforms, more affordable than agencies
+          Built for Vibe Tutor, Chessmaster Academy, Proposal Review, Clinic Autopilot, Invoice Automation, and every Vibe-Tech project
         </Badge>
       </div>
       
@@ -58,7 +58,7 @@ const PricingHeader = ({ billingCycle, setBillingCycle }: PricingHeaderProps) =>
             animate={{ opacity: 1, y: 0 }}
             className="text-sm text-aura-accent"
           >
-            You're saving up to $360 per year!
+            Annual billing keeps more budget available for product launches.
           </motion.p>
         )}
       </div>

@@ -31,7 +31,16 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
+
+# ship artifacts (local-only)
+_backups/
+_builds/
+
+# credentials — NEVER commit
+secrets/
+*.service-account.json
 
 # typescript
 *.tsbuildinfo

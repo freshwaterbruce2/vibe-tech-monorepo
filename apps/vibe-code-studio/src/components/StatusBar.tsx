@@ -1,11 +1,25 @@
 import { motion } from 'framer-motion';
-import { Activity, AlertCircle, CheckCircle, GitBranch, ImageIcon, Layers, MessageCircle, Package, Sidebar, Sparkles, Terminal, Zap } from 'lucide-react';
-import { memo, useEffect, useState } from 'react';
+import {
+  Activity,
+  AlertCircle,
+  CheckCircle,
+  GitBranch,
+  ImageIcon,
+  Layers,
+  MessageCircle,
+  Package,
+  Sidebar,
+  Sparkles,
+  Terminal,
+  Zap,
+} from 'lucide-react';
+import { memo } from 'react';
 import styled from 'styled-components';
 
 import { useGit } from '../hooks/useGit';
 import { vibeTheme } from '../styles/theme';
 import type { EditorFile } from '../types';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 
 const StatusBarContainer = styled.div`
   display: flex;
@@ -32,7 +46,9 @@ const RightSection = styled.div`
   gap: ${vibeTheme.spacing[2]};
 `;
 
-const StatusItem = styled(motion.div)`
+const StatusItem = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   display: flex;
   align-items: center;
   gap: ${vibeTheme.spacing[1]};
@@ -57,14 +73,11 @@ const StatusItem = styled(motion.div)`
 `;
 
 const ToggleButton = styled(motion.button).withConfig({
-  shouldForwardProp: (prop) => prop !== 'active',
+  shouldForwardProp: (prop) => prop !== 'active' && shouldForwardMotionProp(prop),
 })<{ active: boolean }>`
-  background: ${(props) =>
-    props.active ? vibeTheme.colors.hoverStrong : 'transparent'};
-  border: 1px solid ${(props) =>
-    props.active ? 'rgba(0, 212, 255, 0.3)' : 'transparent'};
-  color: ${(props) =>
-    props.active ? vibeTheme.colors.text : vibeTheme.colors.textSecondary};
+  background: ${(props) => (props.active ? vibeTheme.colors.hoverStrong : 'transparent')};
+  border: 1px solid ${(props) => (props.active ? 'rgba(0, 212, 255, 0.3)' : 'transparent')};
+  color: ${(props) => (props.active ? vibeTheme.colors.text : vibeTheme.colors.textSecondary)};
   cursor: pointer;
   padding: ${vibeTheme.spacing[1]} ${vibeTheme.spacing[2]};
   border-radius: ${vibeTheme.borderRadius.sm};
@@ -77,14 +90,12 @@ const ToggleButton = styled(motion.button).withConfig({
   transition: ${vibeTheme.animation.transition.all};
 
   &:hover {
-    background: ${(props) =>
-      props.active ? vibeTheme.colors.active : vibeTheme.colors.hover};
+    background: ${(props) => (props.active ? vibeTheme.colors.active : vibeTheme.colors.hover)};
     color: ${vibeTheme.colors.text};
   }
 
   svg {
-    color: ${(props) =>
-      props.active ? vibeTheme.colors.cyan : 'inherit'};
+    color: ${(props) => (props.active ? vibeTheme.colors.cyan : 'inherit')};
     width: 14px;
     height: 14px;
   }
@@ -101,6 +112,11 @@ interface StatusBarProps {
   currentFile: EditorFile | null;
   aiChatOpen: boolean;
   backgroundPanelOpen?: boolean;
+  sidebarOpen?: boolean;
+  activeVisualPanel?: string;
+  terminalOpen?: boolean;
+  agentModeOpen?: boolean;
+  currentModel?: string;
   onToggleSidebar: () => void;
   onToggleAIChat: () => void;
   onToggleBackgroundPanel?: () => void;
@@ -115,6 +131,11 @@ const StatusBar = ({
   currentFile,
   aiChatOpen,
   backgroundPanelOpen,
+  sidebarOpen = true,
+  activeVisualPanel = 'none',
+  terminalOpen = false,
+  agentModeOpen = false,
+  currentModel,
   onToggleSidebar,
   onToggleAIChat,
   onToggleBackgroundPanel,
@@ -126,32 +147,12 @@ const StatusBar = ({
 }: StatusBarProps) => {
   const { isGitRepo, status, branches } = useGit();
 
-  // Simple demo mode toggle using localStorage
-  // Simple demo mode toggle using localStorage
-  const [isDemoMode, setIsDemoMode] = useState(false);
-
-  useEffect(() => {
-    const loadDemoMode = async () => {
-        if (typeof window !== 'undefined' && window.electron?.store) {
-            const val = await window.electron.store.get('forceDemoMode');
-            setIsDemoMode(String(val) === 'true');
-        } else if (typeof localStorage !== 'undefined') {
-            setIsDemoMode(String(window.electronAPI.store.get('forceDemoMode')) === 'true');
-        }
-    };
-    loadDemoMode();
-  }, []);
-
-  const toggleDemoMode = async () => {
-    const newValue = !isDemoMode;
-    setIsDemoMode(newValue);
-    if (typeof window !== 'undefined' && window.electron?.store) {
-      await window.electron.store.set('forceDemoMode', String(newValue));
-    } else if (typeof localStorage !== 'undefined') {
-      window.electronAPI.store.set('forceDemoMode', String(newValue));
-    }
-    window.location.reload(); // Reload to reinitialize AI services
-  };
+  // Format model name for compact display (e.g. "moonshot/kimi-2.5-pro" → "Kimi 2.5 Pro")
+  const modelLabel = (() => {
+    if (!currentModel) return 'AI Ready';
+    const name = currentModel.split('/').pop() ?? currentModel;
+    return name.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  })();
 
   const getFileInfo = () => {
     if (!currentFile) {
@@ -221,14 +222,14 @@ const StatusBar = ({
       <RightSection>
         <StatusItem whileHover={{ scale: 1.05, y: -1 }} whileTap={{ scale: 0.95 }}>
           <Zap size={14} />
-          DeepSeek AI Ready
+          {modelLabel}
         </StatusItem>
 
         <Separator />
 
         {onToggleScreenshot && (
           <ToggleButton
-            active={false}
+            active={activeVisualPanel === 'screenshot'}
             onClick={onToggleScreenshot}
             title="Screenshot to Code"
             whileHover={{ scale: 1.05, y: -1 }}
@@ -241,7 +242,7 @@ const StatusBar = ({
 
         {onToggleLibrary && (
           <ToggleButton
-            active={false}
+            active={activeVisualPanel === 'library'}
             onClick={onToggleLibrary}
             title="Component Library"
             whileHover={{ scale: 1.05, y: -1 }}
@@ -254,7 +255,7 @@ const StatusBar = ({
 
         {onToggleVisualEditor && (
           <ToggleButton
-            active={false}
+            active={activeVisualPanel === 'visual'}
             onClick={onToggleVisualEditor}
             title="Visual Editor"
             whileHover={{ scale: 1.05, y: -1 }}
@@ -267,7 +268,7 @@ const StatusBar = ({
 
         {onOpenAgentMode && (
           <ToggleButton
-            active={false}
+            active={agentModeOpen}
             onClick={onOpenAgentMode}
             title="Open Agent Mode"
             whileHover={{ scale: 1.05, y: -1 }}
@@ -280,7 +281,7 @@ const StatusBar = ({
 
         {onOpenTerminal && (
           <ToggleButton
-            active={false}
+            active={terminalOpen}
             onClick={onOpenTerminal}
             title="Open Terminal"
             whileHover={{ scale: 1.05, y: -1 }}
@@ -316,24 +317,14 @@ const StatusBar = ({
         </ToggleButton>
 
         <ToggleButton
-          active={true}
+          active={sidebarOpen}
           onClick={onToggleSidebar}
           title="Toggle Sidebar"
+          aria-label="Toggle sidebar"
           whileHover={{ scale: 1.05, y: -1 }}
           whileTap={{ scale: 0.95 }}
         >
           <Sidebar size={14} />
-        </ToggleButton>
-
-        <ToggleButton
-          active={isDemoMode}
-          onClick={toggleDemoMode}
-          title={isDemoMode ? "Demo Mode ON (click to use real API)" : "Demo Mode OFF (click to use mock data)"}
-          whileHover={{ scale: 1.05, y: -1 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Sparkles size={14} />
-          {isDemoMode ? 'Demo' : 'Live'}
         </ToggleButton>
       </RightSection>
     </StatusBarContainer>

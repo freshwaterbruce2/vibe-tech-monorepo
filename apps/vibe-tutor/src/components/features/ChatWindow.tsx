@@ -1,10 +1,13 @@
-import { Bot, GraduationCap, Heart, Send, Sparkles, X } from 'lucide-react';
-import React from 'react';
+import { Bot, Flag, GraduationCap, Heart, Send, Sparkles, X } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { dataStore } from '../../services/dataStore';
 import { GradientIcon } from '../ui/icons/GradientIcon';
 import { useChatMessages } from '../../hooks/useChatMessages';
+import { secureClient } from '../../services/secureClient';
 import LifeSkillsChecklist from './LifeSkillsChecklist';
 import SocialSkillsTips from './SocialSkillsTips';
+import { logger } from '../../utils/logger';
+import type { ChatMessage } from '../../types';
 
 interface ChatWindowProps {
   title: string;
@@ -13,12 +16,96 @@ interface ChatWindowProps {
   type?: 'tutor' | 'friend';
 }
 
+type ConnectionStatus = 'checking' | 'connected' | 'disconnected';
+
 const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatWindowProps) => {
   const {
-    messages, setMessages, input, setInput, isLoading,
-    showLifeSkills, setShowLifeSkills, showSocialTips, setShowSocialTips,
-    messagesEndRef, handleSend, handleAskBuddy, startTransition,
+    messages,
+    setMessages,
+    input,
+    setInput,
+    isLoading,
+    showLifeSkills,
+    setShowLifeSkills,
+    showSocialTips,
+    setShowSocialTips,
+    messagesEndRef,
+    handleSend,
+    handleAskBuddy,
+    startTransition,
   } = useChatMessages({ title, type, onSendMessage });
+
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('checking');
+  const [showOfflineBanner, setShowOfflineBanner] = useState(false);
+  const [reportedTimestamps, setReportedTimestamps] = useState<Set<number>>(new Set());
+  const [reportingTimestamp, setReportingTimestamp] = useState<number | null>(null);
+
+  const handleReport = useCallback(
+    async (msg: ChatMessage) => {
+      if (reportingTimestamp !== null || reportedTimestamps.has(msg.timestamp)) return;
+      setReportingTimestamp(msg.timestamp);
+      try {
+        await secureClient.reportMessage({
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp,
+          chatType: type,
+        });
+        setReportedTimestamps((prev) => new Set(prev).add(msg.timestamp));
+      } catch (error) {
+        logger.error('Failed to report message:', error);
+      } finally {
+        setReportingTimestamp(null);
+      }
+    },
+    [reportingTimestamp, reportedTimestamps, type],
+  );
+
+  const checkConnection = useCallback(async () => {
+    // If the device itself reports offline, skip the network round-trip.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setConnectionStatus('disconnected');
+      setShowOfflineBanner(true);
+      return;
+    }
+
+    const CHECK_TIMEOUT_MS = 3000;
+    try {
+      const timeoutPromise = new Promise<false>((resolve) =>
+        setTimeout(() => resolve(false), CHECK_TIMEOUT_MS),
+      );
+      const isHealthy = await Promise.race([secureClient.healthCheck(), timeoutPromise]);
+      if (isHealthy) {
+        setConnectionStatus('connected');
+        setShowOfflineBanner(false);
+      } else {
+        setConnectionStatus('disconnected');
+        setShowOfflineBanner(true);
+      }
+    } catch {
+      setConnectionStatus('disconnected');
+      setShowOfflineBanner(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    void checkConnection();
+
+    // React to device connectivity changes so the chat re-enables on reconnect
+    // and locks down immediately when the network drops.
+    const handleOnline = () => void checkConnection();
+    const handleOffline = () => {
+      setConnectionStatus('disconnected');
+      setShowOfflineBanner(true);
+    };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [checkConnection]);
 
   return (
     <div className="h-full flex flex-col p-4 md:p-8 pb-24 md:pb-8 relative">
@@ -35,7 +122,7 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                   setShowLifeSkills(false);
                   setShowSocialTips(false);
                 }}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="min-h-[44px] min-w-[44px] p-2 hover:bg-white/10 rounded-lg transition-colors"
                 title="Close panel"
                 aria-label="Close panel"
               >
@@ -49,7 +136,38 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
       )}
 
       <header className="mb-4 md:mb-8 text-center">
-        <div className="flex items-center justify-center gap-4 mb-4">
+        <div className="relative flex items-center justify-center gap-4 mb-4">
+          {/* Connection status dot */}
+          <div
+            className="absolute right-0 top-0"
+            role="status"
+            aria-label={
+              connectionStatus === 'checking'
+                ? 'Checking AI connection'
+                : connectionStatus === 'connected'
+                  ? 'AI Tutor connected'
+                  : 'AI Tutor offline'
+            }
+          >
+            <span
+              className={`block w-3 h-3 rounded-full${connectionStatus === 'checking' ? ' animate-pulse' : ''}`}
+              style={{
+                backgroundColor:
+                  connectionStatus === 'connected'
+                    ? '#4ADE80'
+                    : connectionStatus === 'disconnected'
+                      ? '#EF4444'
+                      : '#F59E0B',
+              }}
+              title={
+                connectionStatus === 'connected'
+                  ? 'AI Tutor connected'
+                  : connectionStatus === 'disconnected'
+                    ? 'AI Tutor offline'
+                    : 'Checking connection...'
+              }
+            />
+          </div>
           {type === 'tutor' ? (
             <GradientIcon
               Icon={GraduationCap}
@@ -73,7 +191,7 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={() => setShowLifeSkills(true)}
-                  className="glass-card px-3 py-1.5 rounded-lg hover:bg-purple-500/20 transition-all text-sm flex items-center gap-1"
+                  className="glass-card min-h-[44px] px-3 py-2 rounded-lg hover:bg-violet-500/20 transition-all text-sm flex items-center gap-1"
                   title="Daily Life Skills Checklist"
                   aria-label="Daily Life Skills Checklist"
                 >
@@ -82,7 +200,7 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                 </button>
                 <button
                   onClick={() => setShowSocialTips(true)}
-                  className="glass-card px-3 py-1.5 rounded-lg hover:bg-purple-500/20 transition-all text-sm flex items-center gap-1"
+                  className="glass-card min-h-[44px] px-3 py-2 rounded-lg hover:bg-violet-500/20 transition-all text-sm flex items-center gap-1"
                   title="Social Skills Tips"
                   aria-label="Social Skills Tips"
                 >
@@ -107,17 +225,40 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                   try {
                     await dataStore.saveChatHistory(type, []);
                   } catch (error) {
-                    console.error('Failed to clear chat history:', error);
+                    logger.error('Failed to clear chat history:', error);
                   }
                 });
               }}
-              className="px-4 py-2 text-sm bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-lg text-red-200 transition-all duration-200 hover:scale-105"
+              className="min-h-[44px] px-4 py-2 text-sm bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-lg text-red-200 transition-all duration-200 hover:scale-105"
             >
               Clear Chat
             </button>
           </div>
         )}
       </header>
+
+      {/* Offline connection banner */}
+      {showOfflineBanner && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 mb-3 px-4 py-3 rounded-xl border text-sm"
+          style={{
+            backgroundColor: 'var(--error-surface)',
+            borderColor: 'var(--error-accent)',
+            color: 'var(--error-accent)',
+          }}
+        >
+          <span>AI Tutor is offline — check your connection</span>
+          <button
+            type="button"
+            onClick={() => setShowOfflineBanner(false)}
+            className="shrink-0 min-h-[44px] min-w-[44px] p-1 rounded hover:bg-white/10 transition-colors"
+            aria-label="Dismiss offline warning"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       <div aria-live="polite" className="flex-1 overflow-y-auto mb-4 p-6 glass-card space-y-6">
         {messages.length === 0 && !isLoading && (
@@ -144,13 +285,13 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {(type === 'tutor'
-                ? ['Help me with maths', 'Explain photosynthesis', 'Quiz me on history']
+                ? ['Help me with math', 'Explain photosynthesis', 'Quiz me on history']
                 : ['How are you today?', 'I need some advice', 'Tell me something fun']
               ).map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => setInput(prompt)}
-                  className="px-4 py-2 text-sm rounded-xl bg-white/5 border border-[var(--glass-border)] text-text-secondary hover:bg-white/10 hover:text-text-primary transition-all duration-200"
+                  className="min-h-[44px] px-4 py-2 text-sm rounded-xl bg-white/5 border border-[var(--glass-border)] text-text-secondary hover:bg-white/10 hover:text-text-primary transition-all duration-200"
                 >
                   {prompt}
                 </button>
@@ -240,7 +381,31 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                     }`}
                   >
                     <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                    <div className="flex justify-end mt-2">
+                    <div className="flex items-center justify-end gap-3 mt-2">
+                      {msg.role !== 'user' && (
+                        <button
+                          type="button"
+                          onClick={() => void handleReport(msg)}
+                          disabled={
+                            reportingTimestamp === msg.timestamp ||
+                            reportedTimestamps.has(msg.timestamp)
+                          }
+                          className="flex items-center gap-1 text-xs opacity-60 hover:opacity-100 disabled:opacity-40 transition-opacity"
+                          aria-label={
+                            reportedTimestamps.has(msg.timestamp)
+                              ? 'Message reported'
+                              : 'Report this message'
+                          }
+                          title={
+                            reportedTimestamps.has(msg.timestamp)
+                              ? 'Reported — thank you'
+                              : 'Report inappropriate response'
+                          }
+                        >
+                          <Flag size={12} />
+                          {reportedTimestamps.has(msg.timestamp) ? 'Reported' : 'Report'}
+                        </button>
+                      )}
                       <span className="text-xs opacity-60">
                         {new Date(msg.timestamp).toLocaleTimeString([], {
                           hour: '2-digit',
@@ -294,6 +459,8 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
         <div className="flex items-center glass-card p-3 border-[var(--glass-border)] hover:border-[var(--border-hover)] transition-all duration-300">
           <input
             type="text"
+            id="chat-input"
+            name="chat-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -302,14 +469,18 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                 void handleSend();
               }
             }}
-            placeholder={`Message ${type === 'tutor' ? 'your AI Tutor' : 'your AI Buddy'}... (Enter to send, Shift+Enter for new line)`}
-            className="flex-1 bg-transparent px-4 py-3 text-text-primary outline-none placeholder-text-muted"
-            disabled={isLoading}
+            placeholder={
+              connectionStatus === 'disconnected'
+                ? "You're offline — reconnect to chat"
+                : `Message ${type === 'tutor' ? 'your AI Tutor' : 'your AI Buddy'}... (Enter to send, Shift+Enter for new line)`
+            }
+            className="flex-1 bg-transparent px-4 py-3 text-text-primary outline-none focus:ring-2 focus:ring-[var(--primary-accent)] focus:ring-inset rounded placeholder-text-muted"
+            disabled={isLoading || connectionStatus === 'disconnected'}
             aria-label="Chat input"
           />
           <button
             onClick={() => void handleSend()}
-            disabled={isLoading || !input.trim()}
+            disabled={isLoading || !input.trim() || connectionStatus === 'disconnected'}
             className="glass-button p-3 ml-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
             aria-label="Send message"
           >

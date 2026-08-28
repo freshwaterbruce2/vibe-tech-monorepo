@@ -1,0 +1,113 @@
+{
+  "name": "vibe-tutor-mobile",
+  "private": true,
+  "version": "1.6.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "pnpm run typecheck && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "android:sync": "pnpm run build && node scripts/ensure-android.cjs",
+    "android:build": "node scripts/run-gradle.cjs assembleDebug",
+    "android:build:clean": "node scripts/run-gradle.cjs clean assembleDebug",
+    "android:bundle:release": "pnpm run android:sync && node scripts/run-gradle.cjs bundleRelease",
+    "android:doctor": "pnpm exec cap doctor",
+    "expo:export": "expo export --platform web"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
+    "@expo/vector-icons": "^15.1.1",
+    "@react-native-async-storage/async-storage": "2.1.0",
+    "@vibetech/auth": "workspace:*",
+    "@vibetech/billing": "workspace:*",
+    "@vibetech/entitlements": "workspace:*",
+    "expo": "~54.0.33",
+    "lucide-react": "0.563.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-native": "0.81.5",
+    "react-native-safe-area-context": "~5.4.0",
+    "react-native-screens": "~4.16.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.3",
+    "typescript": "5.9.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.1.9"
+  },
+  "nx": {
+    "projectType": "application",
+    "sourceRoot": "apps/vibe-tutor-mobile/src",
+    "targets": {
+      "test": {
+        "executor": "nx:run-script",
+        "options": {
+          "script": "test"
+        },
+        "cache": true
+      },
+      "build": {
+        "executor": "nx:run-script",
+        "options": {
+          "script": "build"
+        },
+        "outputs": [
+          "{projectRoot}/dist"
+        ],
+        "cache": true
+      },
+      "typecheck": {
+        "executor": "nx:run-script",
+        "options": {
+          "script": "typecheck"
+        }
+      },
+      "android-sync": {
+        "executor": "nx:run-script",
+        "options": {
+          "script": "android:sync"
+        },
+        "cache": false
+      },
+      "android-build": {
+        "executor": "nx:run-script",
+        "options": {
+          "script": "android:build"
+        },
+        "outputs": [
+          "{projectRoot}/android/app/build"
+        ],
+        "cache": true
+      },
+      "android-bundle-release": {
+        "executor": "nx:run-script",
+        "options": {
+          "script": "android:bundle:release"
+        },
+        "outputs": [
+          "{projectRoot}/android/app/build/outputs/bundle/release"
+        ],
+        "cache": false
+      },
+      "android-doctor": {
+        "executor": "nx:run-script",
+        "options": {
+          "script": "android:doctor"
+        },
+        "cache": false
+      }
+    },
+    "tags": [
+      "type:mobile",
+      "scope:vibe-tutor",
+      "platform:android"
+    ]
+  }
+}

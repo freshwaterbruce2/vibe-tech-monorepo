@@ -1,0 +1,10 @@
+# INTENTIONALLY no [target.*] linker pin.
+#
+# Pinning an absolute link.exe path breaks every time the MSVC toolset version
+# changes (see apps/nova-agent for the failure mode). Instead, the MSVC build
+# environment (PATH/INCLUDE/LIB) is injected at dev/build time by
+# scripts/run-tauri.cjs via vswhere.exe + vcvars64.bat — same pattern as
+# apps/vibe-code-studio.
+#
+# The Cargo target dir is set globally in ~/.cargo/config.toml
+# (target-dir = "D:/cargo-targets") per the workspace paths policy.

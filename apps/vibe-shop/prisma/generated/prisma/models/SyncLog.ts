@@ -217,7 +217,7 @@ export type SyncLogGroupByOutputType = {
   _max: SyncLogMaxAggregateOutputType | null
 }
 
-type GetSyncLogGroupByPayload<T extends SyncLogGroupByArgs> = Prisma.PrismaPromise<
+export type GetSyncLogGroupByPayload<T extends SyncLogGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<SyncLogGroupByOutputType, T['by']> &
       {
@@ -1088,6 +1088,11 @@ export type SyncLogFindManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Skip the first `n` SyncLogs.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of SyncLogs.
+   */
   distinct?: Prisma.SyncLogScalarFieldEnum | Prisma.SyncLogScalarFieldEnum[]
 }
 

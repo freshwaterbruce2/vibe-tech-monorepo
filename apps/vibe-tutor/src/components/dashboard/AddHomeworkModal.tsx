@@ -3,6 +3,7 @@ import { parseHomeworkFromVoice } from '../../services/homeworkParserService';
 import type { ParsedHomework } from '../../types';
 import { appStore } from '../../utils/electronStore';
 import { MicrophoneIcon } from '../ui/icons/MicrophoneIcon';
+import { logger } from '../../utils/logger';
 
 interface AddHomeworkModalProps {
   onClose: () => void;
@@ -50,7 +51,7 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       const result = event.results[0]?.[0];
       if (!result) {
-        console.warn('Speech recognition returned empty result');
+        logger.warn('Speech recognition returned empty result');
         return;
       }
       const transcript = result.transcript;
@@ -64,7 +65,7 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
             setDueDate(parsed.dueDate ?? '');
           }
         })
-        .catch((err) => console.error('Homework parsing failed:', err))
+        .catch((err) => logger.error('Homework parsing failed:', err))
         .finally(() => setIsParsing(false));
     };
     recognition.onspeechend = () => {
@@ -72,7 +73,7 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
       setIsListening(false);
     };
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error('Speech recognition error:', event.error);
+      logger.error('Speech recognition error:', event.error);
       setIsListening(false);
     };
   }, []);
@@ -100,7 +101,7 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
         recognition.start();
         setIsListening(true);
       } catch (error) {
-        console.error('Failed to start speech recognition:', error);
+        logger.error('Failed to start speech recognition:', error);
         setIsListening(false);
       }
     }
@@ -114,19 +115,27 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+    <div
+      className="fixed inset-0 bg-slate-900/70 backdrop-blur-lg flex items-center justify-center z-[60] p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-homework-title"
+    >
       <div
         ref={modalRef}
-        className="bg-background-surface border border-[var(--border-color)] rounded-2xl shadow-2xl shadow-black/50 p-8 w-full max-w-lg transform transition-all animate-fade-in-up"
+        className="bg-background-surface border border-[var(--border-color)] rounded-2xl shadow-2xl shadow-black/50 p-6 md:p-8 w-full max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto transform transition-all animate-fade-in-up"
       >
-        <h2 className="text-2xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-[var(--secondary-accent)] to-[var(--primary-accent)]">
+        <h2 id="add-homework-title" className="text-2xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-[var(--secondary-accent)] to-[var(--primary-accent)]">
           New Assignment
         </h2>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <input
               type="text"
+              id="hw-subject"
+              name="hw-subject"
               placeholder="Subject (e.g., Math)"
+              aria-label="Subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               className="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-text-primary text-base focus:ring-2 focus:ring-[var(--primary-accent)] focus:border-transparent outline-none"
@@ -135,7 +144,10 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
             />
             <input
               type="text"
+              id="hw-title"
+              name="hw-title"
               placeholder="Title (e.g., Complete worksheet)"
+              aria-label="Assignment title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-text-primary text-base focus:ring-2 focus:ring-[var(--primary-accent)] focus:border-transparent outline-none"
@@ -144,6 +156,9 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
             />
             <input
               type="date"
+              id="hw-due-date"
+              name="hw-due-date"
+              aria-label="Due date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
               className="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-text-primary text-base focus:ring-2 focus:ring-[var(--primary-accent)] focus:border-transparent outline-none"
@@ -162,7 +177,7 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
                 <button
                   type="button"
                   onClick={handleListen}
-                  className={`px-6 py-3 rounded-full flex items-center justify-center mx-auto transition-all duration-300 font-semibold ${isListening ? 'bg-red-500 text-white w-full' : 'bg-transparent border-2 border-[var(--primary-accent)] text-[var(--primary-accent)] hover:bg-primary-accent/20'}`}
+                  className={`min-h-[48px] px-6 py-3 rounded-full flex items-center justify-center mx-auto transition-all duration-300 font-semibold ${isListening ? 'bg-red-500 text-white w-full' : 'bg-transparent border-2 border-[var(--primary-accent)] text-[var(--primary-accent)] hover:bg-primary-accent/20'}`}
                   style={!isListening ? { boxShadow: 'var(--neon-glow-primary)' } : {}}
                 >
                   <MicrophoneIcon className="w-6 h-6 mr-2" />
@@ -189,17 +204,17 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
               </div>
             )}
           </div>
-          <div className="mt-8 flex justify-end space-x-4">
+          <div className="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 sm:gap-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 rounded-lg text-slate-300 bg-slate-700/50 hover:bg-slate-700 transition-all duration-300 hover:scale-105"
+              className="min-h-[48px] px-6 py-3 rounded-lg text-slate-300 bg-slate-700/50 hover:bg-slate-700 transition-all duration-300 hover:scale-105"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="glass-button px-6 py-2 rounded-lg text-white font-semibold hover:scale-105 transition-all duration-300 shadow-lg"
+              className="glass-button min-h-[48px] px-6 py-3 rounded-lg text-white font-semibold hover:scale-105 transition-all duration-300 shadow-lg"
             >
               Add Assignment
             </button>

@@ -268,4 +268,3 @@ export const ImageGallery = ({
 		</div>
 	);
 };
-// @ts-nocheck

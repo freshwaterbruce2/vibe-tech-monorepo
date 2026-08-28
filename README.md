@@ -5,16 +5,16 @@ Multi-project monorepo spanning desktop, web, mobile, and infrastructure applica
 ## Prerequisites
 
 - **Node.js** 22+
-- **pnpm** 10.33+ (`corepack enable && corepack prepare pnpm@latest`)
+- **pnpm** 10.33+ (`corepack enable && corepack prepare pnpm@10.33.0 --activate`)
 - **Windows 11** (primary development platform)
-- **Rust toolchain** (MSVC) -- required for Tauri apps (nova-agent, vtde)
+- **Rust toolchain** (MSVC) -- required for Tauri apps (nova-agent, vibe-code-studio, vibe-justice)
 - **Python 3.11+** -- required for crypto-enhanced only
 - **Visual Studio Build Tools 2022** -- native module compilation
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/freshwaterbruce2/Monorepo.git vibetech
+git clone https://github.com/freshwaterbruce2/vibe-tech-monorepo.git vibetech
 cd vibetech
 pnpm install
 pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
@@ -27,23 +27,21 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 | App | Description | Tech | Status |
 |-----|-------------|------|--------|
 | nova-agent | AI desktop assistant with RAG pipeline | Tauri, React, Rust, LanceDB | Active |
-| vtde | VibeTech Desktop Environment | Tauri, React | Active |
-| vibe-code-studio | AI-powered code editor | Electron, Tauri, React | Maintained |
-| gravity-claw | Arcade claw machine game | Electron, React | Maintained |
-| clawdbot-desktop | Desktop automation bot | Electron | Experimental |
+| vibetech-command-center | Ops control plane (legacy name "VTDE") | Electron 33, electron-vite, React | Active |
+| vibe-code-studio | AI-powered code editor | Tauri 2, React, Monaco | Maintained |
+| gravity-claw | AI agent orchestrator with tool routing and chat bridges | Electron, React, Hono | Maintained |
 
 ### Web
 
 | App | Description | Tech | Status |
 |-----|-------------|------|--------|
-| vibe-shop | E-commerce platform | React, Vite | Active |
+| trendmart (`apps/vibe-shop`) | E-commerce platform | Next.js, Prisma | Active |
 | vibe-justice | Legal AI platform | React, Python FastAPI | Maintained |
 | business-booking-platform | Hotel booking with AI search | React, Vite | Maintained |
 | invoice-automation-saas | SaaS invoice automation | React, Vite | Maintained |
 | vibe-tech-lovable | Landing page / marketing site | React, Vite | Maintained |
-| monorepo-dashboard | Workspace health dashboard | React, Vite | Active |
+| chessmaster-academy | Chess lessons, puzzles, and AI tutor | React, Vite, Capacitor | Active |
 | VibeBlox | Token incentive system for kids | React, Hono | Experimental |
-| avge-dashboard | Aviation dashboard | React | Experimental |
 | prompt-engineer | Prompt testing workbench | React, Vite | Experimental |
 
 ### Mobile
@@ -63,7 +61,7 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 | mcp-gateway | Bridges OpenClaw to MCP servers via IPC | Active |
 | mcp-rag-server | Nova-Agent RAG pipeline for Claude | Active |
 | desktop-commander-v3 | Unrestricted terminal access for AI agents | Active |
-| mcp-codeberg | Codeberg API (deprecated, migrated to GitHub) | Deprecated |
+| workspace-mcp-server | Workspace metadata and env MCP server | Active |
 
 ### Infrastructure
 
@@ -72,16 +70,16 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 | agent-engine | Autonomous coding engine with gated self-improvement | Active |
 | crypto-enhanced | Crypto trading system (Python) | Active |
 | ai-youtube-pipeline | YouTube content pipeline | Experimental |
-| symptom-tracker | Health symptom tracker | Experimental |
-| vibe-booking-backend | Booking platform backend | Maintained |
+| symptom-tracker-api | Health symptom tracker API | Experimental |
+| vibe-tech-backend | Shared backend server with local SQLite database | Maintained |
 
-## Shared Packages (25 total)
+## Shared Packages (34 total)
 
 Key packages by dependents. Full list in `packages/`.
 
 | Package | Purpose | Dependents |
 |---------|---------|------------|
-| vibetech-shared | Core shared utilities and types | 15 |
+| shared | Core shared utilities and types | 15 |
 | shared-utils | Helper functions and common logic | 7 |
 | shared-ipc | Inter-process communication protocol | 6 |
 | logger | Structured logging | 6 |
@@ -129,10 +127,10 @@ Never run bare `pnpm install` from inside a project directory. Always use `--fil
 
 ## Architecture
 
-Source code lives on `C:\dev`. All runtime data (databases, logs, learning system) lives on `D:\`. See `docs/PATHS_POLICY.md` and `AI.md` for the full policy.
+Source code lives on `V:\monorepo`. All runtime data (databases, logs, learning system) lives on `D:\`. See `AI.md` and `docs/WORKSPACE_STRUCTURE.md` for the workspace policy.
 
 ```
-C:\dev\              source code (git-tracked)
+V:\monorepo\              source code (git-tracked)
 D:\databases\        SQLite databases
 D:\logs\             application logs
 D:\data\             datasets

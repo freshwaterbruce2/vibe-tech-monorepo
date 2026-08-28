@@ -1,13 +1,11 @@
 /**
  * Super Coding Agent - General purpose coding specialist with advanced capabilities
  */
-import type { DeepSeekService } from '../DeepSeekService';
-
 import type { AgentContext, AgentResponse, CodeChange } from './BaseSpecializedAgent';
 import { AgentCapability, BaseSpecializedAgent } from './BaseSpecializedAgent';
 
 export class SuperCodingAgent extends BaseSpecializedAgent {
-  constructor(deepSeekService: DeepSeekService) {
+  constructor() {
     super('Super Coding Agent', [
       AgentCapability.CODE_GENERATION,
       AgentCapability.REFACTORING,
@@ -17,7 +15,7 @@ export class SuperCodingAgent extends BaseSpecializedAgent {
       AgentCapability.CODE_REVIEW,
       AgentCapability.BEST_PRACTICES,
       AgentCapability.ERROR_HANDLING
-    ], deepSeekService);
+    ]);
   }
 
   getRole(): string {

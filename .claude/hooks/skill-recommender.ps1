@@ -9,7 +9,7 @@ param(
 )
 
 $ErrorActionPreference = "SilentlyContinue"
-$SkillMappingFile = "C:\dev\.claude\skill-mapping.json"
+$SkillMappingFile = "V:\monorepo\.claude\skill-mapping.json"
 
 function Get-SkillRecommendations {
     param($project, $prompt, $intent)

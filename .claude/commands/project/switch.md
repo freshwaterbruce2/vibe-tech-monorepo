@@ -17,11 +17,10 @@ Available projects:
 
 - web (root web application)
 - crypto (cryptocurrency trading)
-- vibe-tutor (mobile app)
-- digital-content (digital-content-builder)
+- vibe-tutor (Electron + Capacitor tutor app)
+- shipping (shipping-pwa)
 - business-booking (business-booking-platform)
-- taskmaster (desktop task manager)
-- deepcode (deepcode-editor)
+- vibe-code-studio (desktop editor)
 
 If no project specified, show usage:
 
@@ -35,11 +34,10 @@ Usage: /project:switch <project-name>
 Available Projects:
   web              - Root web application (React 19 + Nx)
   crypto           - Crypto trading system (Python)
-  vibe-tutor       - Mobile app (Capacitor)
-  digital-content  - Digital content builder
+  vibe-tutor       - Electron + Capacitor tutor app
+  shipping         - Shipping PWA
   business-booking - Business booking platform
-  taskmaster       - Desktop task manager
-  deepcode         - DeepCode editor
+  vibe-code-studio - Vibe Code Studio editor
 
 Examples:
   /project:switch crypto
@@ -58,43 +56,37 @@ Based on project selection, execute appropriate cd command:
 **web:**
 
 ```bash
-cd C:\dev && pwd
+cd V:\monorepo && pwd
 ```
 
 **crypto:**
 
 ```bash
-cd C:\dev\projects\crypto-enhanced && pwd
+cd V:\monorepo\apps\crypto-enhanced && pwd
 ```
 
 **vibe-tutor:**
 
 ```bash
-cd C:\dev\Vibe-Tutor && pwd
+cd V:\monorepo\apps\vibe-tutor && pwd
 ```
 
-**digital-content:**
+**shipping:**
 
 ```bash
-cd C:\dev\projects\active\web-apps\digital-content-builder && pwd
+cd V:\monorepo\apps\shipping-pwa && pwd
 ```
 
 **business-booking:**
 
 ```bash
-cd C:\dev\projects\active\web-apps\business-booking-platform && pwd
+cd V:\monorepo\apps\business-booking-platform && pwd
 ```
 
-**taskmaster:**
+**vibe-code-studio:**
 
 ```bash
-cd C:\dev\projects\active\desktop-apps\taskmaster && pwd
-```
-
-**deepcode:**
-
-```bash
-cd C:\dev\projects\active\desktop-apps\deepcode-editor && pwd
+cd V:\monorepo\apps\vibe-code-studio && pwd
 ```
 
 Present with header:
@@ -225,9 +217,9 @@ Tech Stack:
 - Android native
 
 Quick Commands:
-- Build web: npm run build
-- Sync: /mobile:sync-capacitor
-- Build APK: /mobile:build-android
+- Build web: pnpm nx build vibe-tutor
+- Sync native assets: pnpm nx run vibe-tutor:android:sync
+- Android build: pnpm nx run vibe-tutor:android:build
 - Run on device: npx cap run android
 
 Important:
@@ -313,5 +305,5 @@ $ARGUMENTS
 - Automatically navigates to project directory
 - Provides context-specific quick start info
 - Shows git status and recent activity
-- All paths are absolute from C:\dev
+- All paths are absolute from V:\monorepo
 - Helps quickly resume work on any project

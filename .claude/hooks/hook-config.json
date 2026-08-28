@@ -16,7 +16,7 @@
   "settings": {
     "autoMemory": true,
     "silentExecution": true,
-    "memoryPath": "C:\\dev\\apps\\memory-mcp",
+    "memoryPath": "V:\\monorepo\\apps\\memory-mcp",
     "enableMemoryInjection": true
   }
 }

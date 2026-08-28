@@ -1,6 +1,6 @@
 # Claude Desktop Project Knowledge
 
-This directory contains comprehensive documentation for the C:\dev monorepo, specifically designed for use with Claude Desktop's project knowledge feature.
+This directory contains comprehensive documentation for the V:\monorepo monorepo, specifically designed for use with Claude Desktop's project knowledge feature.
 
 ## 📚 Documentation Overview
 
@@ -63,7 +63,7 @@ These files are designed to be used with Claude Desktop's project knowledge feat
 
 1. **Add this directory to your project**:
    - Open Claude Desktop
-   - Add the C:\dev directory as a project
+   - Add the V:\monorepo directory as a project
    - Claude will automatically have access to these guides
 
 2. **Claude will automatically reference these files**:
@@ -91,10 +91,12 @@ Even without Claude Desktop, these guides are valuable:
 
 ### Trading Bot Safety
 
-The trading bot in `projects/crypto-enhanced/` trades with REAL MONEY:
+The trading bot in `apps/crypto-enhanced/` can trade with REAL MONEY when a
+human operator starts it:
 
-- Current balance: ~$98.82 USD
-- Actively trading: XLM/USD
+- Do not start, restart, or auto-confirm live trading from an agent workflow
+- Use status, logs, and tests for review work unless the user explicitly takes over
+- Verify balance and open positions from the runtime before quoting values
 - Read TRADING_BOT_GUIDE.md BEFORE making ANY changes
 - When in doubt, ASK FIRST
 
@@ -119,10 +121,10 @@ pnpm run dev              # Start dev server
 pnpm run quality          # Run all quality checks
 
 # Trading Bot (CAUTION)
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .venv\Scripts\activate
-python simple_status.py  # Check status
-python start_live_trading.py  # Start bot
+python scripts\check_status.py  # Check status
+# Human operator only: live start/restart commands are intentionally omitted
 
 # Monorepo Management
 pnpm install             # Install dependencies
@@ -240,4 +242,4 @@ For questions not covered in these guides:
 ---
 
 **Last Updated**: October 12, 2025
-**Monorepo Version**: C:\dev (React 19.2, TypeScript 5.7+, Python 3.12+)
+**Monorepo Version**: V:\monorepo (React 19.2.4, TypeScript 5.9.3, Python 3.12+)

@@ -24,6 +24,17 @@ export interface ExportOptions {
   limit?: number;
 }
 
+// Raw row shape returned by SELECT ... FROM semantic_memory
+interface SemanticRow {
+  id: number;
+  text: string;
+  category: string | null;
+  importance: number;
+  created: number;
+  access_count: number;
+  metadata: string | null;
+}
+
 export class MarkdownExporter {
   constructor(
     private memory: MemoryManager,
@@ -131,16 +142,18 @@ export class MarkdownExporter {
       ORDER BY importance DESC, created DESC
     `);
 
-    const rows = category ? stmt.all(category) : stmt.all();
+    const rows = (category ? stmt.all(category) : stmt.all()) as SemanticRow[];
 
     // Group by category
-    const byCategory = new Map<string, any[]>();
-    for (const row of rows as any[]) {
-      const cat = row.category || 'uncategorized';
-      if (!byCategory.has(cat)) {
-        byCategory.set(cat, []);
+    const byCategory = new Map<string, SemanticRow[]>();
+    for (const row of rows) {
+      const cat = row.category ?? 'uncategorized';
+      let bucket = byCategory.get(cat);
+      if (!bucket) {
+        bucket = [];
+        byCategory.set(cat, bucket);
       }
-      byCategory.get(cat)!.push(row);
+      bucket.push(row);
     }
 
     // Generate sections per category
@@ -235,9 +248,9 @@ export class MarkdownExporter {
       LIMIT ?
     `);
 
-    const rows = category
-      ? (stmt.all(category, limit) as any[])
-      : (stmt.all(limit) as any[]);
+    const rows = (category
+      ? stmt.all(category, limit)
+      : stmt.all(limit)) as SemanticRow[];
 
     const lines = ['## Semantic Memories (Knowledge)', ''];
 
@@ -245,7 +258,7 @@ export class MarkdownExporter {
       const date = new Date(row.created).toLocaleDateString();
       const stars = '⭐'.repeat(Math.min(row.importance, 5));
 
-      lines.push(`- **[${row.category || 'general'}]** ${stars}`);
+      lines.push(`- **[${row.category ?? 'general'}]** ${stars}`);
       lines.push(`  ${row.text}`);
       lines.push(`  *${date}*`);
       lines.push('');

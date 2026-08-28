@@ -17,6 +17,6 @@ Your D:\ drive contains critical data:
 **Use D:\ snapshot system instead for version control:**
 
 ```powershell
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Save-Snapshot.ps1 -Description "Before changes"
 ```

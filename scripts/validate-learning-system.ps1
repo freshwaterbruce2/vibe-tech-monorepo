@@ -5,6 +5,12 @@ param()
 $ErrorActionPreference = 'Stop'
 $learningRoot = 'D:\learning-system'
 $workspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$envInitializer = Join-Path $PSScriptRoot 'Initialize-DevProcessEnvironment.ps1'
+
+if (Test-Path -LiteralPath $envInitializer) {
+    . $envInitializer
+    Initialize-DevProcessEnvironment | Out-Null
+}
 
 $script:issues = New-Object System.Collections.Generic.List[string]
 $script:warnings = New-Object System.Collections.Generic.List[string]
@@ -34,32 +40,18 @@ function Test-RequiredPath {
 function Get-ReferenceCount {
     param([string]$Literal)
 
-    $rg = Get-Command rg -ErrorAction SilentlyContinue
-    if ($rg) {
-        $result = & $rg.Source -n --hidden -F `
-            --glob '!**/.git/**' `
-            --glob '!**/node_modules/**' `
-            --glob '!**/dist/**' `
-            --glob '!**/.nx/**' `
-            $Literal `
-            $workspaceRoot 2>$null
-
-        if (-not $result) {
-            return 0
-        }
-
-        return @($result).Count
-    }
-
     $git = Get-Command git -ErrorAction SilentlyContinue
     if ($git) {
-        $origPwd = (Get-Location).Path
-        Set-Location $workspaceRoot
-        $raw = & $git.Source grep -n -I -F $Literal 2>$null
-        Set-Location $origPwd
+        Push-Location $workspaceRoot
+        try {
+            $raw = & $git.Source grep -n -I -F -- $Literal 2>$null
+        }
+        finally {
+            Pop-Location
+        }
 
         if (-not $raw) { return 0 }
-        
+
         $lines = if ($raw -is [System.Array]) { $raw } else { @($raw) }
         $count = 0
         foreach ($line in $lines) {
@@ -74,7 +66,27 @@ function Get-ReferenceCount {
         return $count
     }
 
-    throw "Neither rg nor git grep are available. Searching falls back to slow mechanism. Install ripgrep or use git bash."
+    $files = Get-ChildItem -Path $workspaceRoot -Recurse -File -Force -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Extension -ne '.md' -and
+            $_.FullName -notlike "$workspaceRoot\.git\*" -and
+            $_.FullName -notlike "$workspaceRoot\node_modules\*" -and
+            $_.FullName -notlike "$workspaceRoot\dist\*" -and
+            $_.FullName -notlike "$workspaceRoot\.nx\*" -and
+            $_.FullName -notlike "$workspaceRoot\scripts\*" -and
+            $_.FullName -notlike "$workspaceRoot\tools\*"
+        }
+
+    if (-not $files) {
+        return 0
+    }
+
+    $matches = $files | Select-String -SimpleMatch -Pattern $Literal -ErrorAction SilentlyContinue
+    if (-not $matches) {
+        return 0
+    }
+
+    return @($matches).Count
 }
 
 Write-Host "Learning System Validation" -ForegroundColor Cyan
@@ -83,43 +95,54 @@ Write-Host "  Root: $learningRoot"
 Write-Host "`n[1/5] Checking required directories..." -ForegroundColor Yellow
 foreach ($path in @(
         @{ Path = $learningRoot; Label = 'learning-system root' },
-        @{ Path = 'D:\learning-system\logs'; Label = 'logs' },
-        @{ Path = 'D:\learning-system\scripts'; Label = 'scripts' },
-        @{ Path = 'D:\learning-system\backups'; Label = 'backups' }
+        @{ Path = (Join-Path $learningRoot 'logs'); Label = 'logs' },
+        @{ Path = (Join-Path $learningRoot 'scripts'); Label = 'scripts' },
+        @{ Path = (Join-Path $learningRoot 'backups'); Label = 'backups' }
     )) {
     Test-RequiredPath -Path $path.Path -Label $path.Label
 }
 
 Write-Host "`n[2/5] Checking runtime databases (D:\databases)..." -ForegroundColor Yellow
 foreach ($path in @(
-        @{ Path = 'D:\databases\agent_learning.db'; Label = 'learning-system agent DB' },
-        @{ Path = 'D:\databases\learning.db'; Label = 'learning.db' },
-        @{ Path = 'D:\databases\monitoring.db'; Label = 'monitoring.db' },
-        @{ Path = 'D:\databases\events.db'; Label = 'events.db' }
+        @{ Path = 'D:\databases\agent_learning.db'; Label = 'learning-system agent DB' }
     )) {
     Test-RequiredPath -Path $path.Path -Label $path.Label
 }
 
 Write-Host "`n[3/5] Checking canonical documentation..." -ForegroundColor Yellow
+# Current vs historical expectations:
+# - Present authoritative files under D:\learning-system: README.md, D_DRIVE_OVERVIEW.md,
+#   COMPLETE_GUIDE.md, DOCUMENTATION_INDEX.md, enhanced_agent_guidelines.md
+# - DB inventory is canonical under D:\databases\DB_INVENTORY.md
+# - DATABASE_INVENTORY.md under learning-system is a retired/historical name (still on disk but not required)
 foreach ($path in @(
-        @{ Path = 'D:\learning-system\README.md'; Label = 'README' },
-        @{ Path = 'D:\learning-system\COMPLETE_GUIDE.md'; Label = 'COMPLETE_GUIDE' },
-        @{ Path = 'D:\learning-system\DOCUMENTATION_INDEX.md'; Label = 'DOCUMENTATION_INDEX' },
-        @{ Path = 'D:\learning-system\enhanced_agent_guidelines.md'; Label = 'enhanced_agent_guidelines' }
+        @{ Path = (Join-Path $learningRoot 'README.md'); Label = 'README' },
+        @{ Path = (Join-Path $learningRoot 'D_DRIVE_OVERVIEW.md'); Label = 'D_DRIVE_OVERVIEW' },
+        @{ Path = (Join-Path $learningRoot 'COMPLETE_GUIDE.md'); Label = 'COMPLETE_GUIDE' },
+        @{ Path = (Join-Path $learningRoot 'DOCUMENTATION_INDEX.md'); Label = 'DOCUMENTATION_INDEX' },
+        @{ Path = (Join-Path $learningRoot 'enhanced_agent_guidelines.md'); Label = 'enhanced_agent_guidelines' },
+        @{ Path = 'D:\databases\DB_INVENTORY.md'; Label = 'D:\databases DB_INVENTORY' }
     )) {
     Test-RequiredPath -Path $path.Path -Label $path.Label
 }
+# Historical/retired under learning-system (tolerated, not blocking)
+$histDbInv = Join-Path $learningRoot 'DATABASE_INVENTORY.md'
+if (Test-Path -LiteralPath $histDbInv) {
+    Write-Host "  OK  (historical) DATABASE_INVENTORY.md (retired name; prefer databases/DB_INVENTORY)" -ForegroundColor DarkGray
+} else {
+    Write-Host "  (absent historical DATABASE_INVENTORY.md - acceptable)" -ForegroundColor DarkGray
+}
 
 Write-Host "`n[4/5] Checking environment and hooks..." -ForegroundColor Yellow
-if (-not (Test-Path -LiteralPath 'D:\learning-system\.venv')) {
-    Add-Warning 'No D:\learning-system\.venv directory found.'
+if (-not (Test-Path -LiteralPath (Join-Path $learningRoot '.venv'))) {
+    Add-Warning "No (Join-Path `$learningRoot '.venv') directory found."
     Write-Host '  WARN Python virtual environment missing' -ForegroundColor Yellow
 } else {
     Write-Host '  OK  Python virtual environment found' -ForegroundColor Green
 }
 
-if (-not (Test-Path -LiteralPath 'C:\dev\.claude\hooks')) {
-    Add-Warning 'C:\dev\.claude\hooks is missing.'
+if (-not (Test-Path -LiteralPath 'V:\monorepo\.claude\hooks')) {
+    Add-Warning 'V:\monorepo\.claude\hooks is missing.'
     Write-Host '  WARN Hook directory missing' -ForegroundColor Yellow
 } else {
     Write-Host '  OK  Hook directory found' -ForegroundColor Green
@@ -127,13 +150,27 @@ if (-not (Test-Path -LiteralPath 'C:\dev\.claude\hooks')) {
 
 Write-Host "`n[5/5] Checking split authority..." -ForegroundColor Yellow
 $learningDbRefs = Get-ReferenceCount -Literal 'D:\learning-system\agent_learning.db'
+$deprecatedPathRef = Join-Path $learningRoot 'agent_learning.db'
+$learningDbRefsWithRoot = Get-ReferenceCount -Literal $deprecatedPathRef
 $databaseDbRefs = Get-ReferenceCount -Literal 'D:\databases\agent_learning.db'
 
-if ($learningDbRefs -gt 0) {
-    Add-Warning "Deprecated references to D:\learning-system\agent_learning.db exist ($learningDbRefs refs). Update these to D:\databases\agent_learning.db."
-    Write-Host "  WARN Split authority: found $learningDbRefs references to deprecated learning-system path." -ForegroundColor Yellow
+if ($learningDbRefs -gt 0 -or $learningDbRefsWithRoot -gt 0) {
+    $totalDeprecatedRefs = $learningDbRefs + $learningDbRefsWithRoot
+    Add-Warning "Deprecated references to agent_learning.db in the learning-system directory exist ($totalDeprecatedRefs refs). Update these to D:\databases\agent_learning.db."
+    Write-Host "  WARN Split authority: found $totalDeprecatedRefs references to deprecated learning-system path." -ForegroundColor Yellow
 } else {
     Write-Host '  OK  No deprecated split authority references detected for agent_learning.db' -ForegroundColor Green
+}
+
+foreach ($retiredDb in @(
+        @{ Path = 'D:\databases\learning.db'; Label = 'learning.db' },
+        @{ Path = 'D:\databases\monitoring.db'; Label = 'monitoring.db' },
+        @{ Path = 'D:\databases\events.db'; Label = 'events.db' }
+    )) {
+    if (Test-Path -LiteralPath $retiredDb.Path) {
+        Add-Warning "Retired database placeholder still exists: $($retiredDb.Label) ($($retiredDb.Path)). Remove it if no workflow still depends on it."
+        Write-Host "  WARN Retired placeholder present: $($retiredDb.Label)" -ForegroundColor Yellow
+    }
 }
 
 $rootDocFiles = Get-ChildItem -Path $learningRoot -File -ErrorAction SilentlyContinue
@@ -170,3 +207,5 @@ if ($script:issues.Count -gt 0) {
 }
 
 Write-Host "`nLearning system validation passed." -ForegroundColor Green
+$global:LASTEXITCODE = 0
+

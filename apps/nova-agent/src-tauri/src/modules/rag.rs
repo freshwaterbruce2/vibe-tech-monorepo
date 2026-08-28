@@ -8,7 +8,7 @@ use lancedb::query::{ExecutableQuery, QueryBase};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, warn};
 
-use crate::modules::state::Config;
+use crate::modules::{path_policy, state::Config};
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -17,9 +17,11 @@ const TABLE_NAME: &str = "nova_codebase";
 const EMBED_MODEL: &str = "openai/text-embedding-3-small";
 const MAX_CHUNK_CHARS: usize = 1_000;
 const MAX_FILE_BYTES: u64 = 500_000;
+const MAX_SEARCH_RESULTS: usize = 25;
 
-/// Directories skipped during recursive indexing.
-const SKIP_DIRS: &[&str] = &["node_modules", ".git", "target", "dist", ".nx", ".cache"];
+#[path = "rag_collect.rs"]
+mod rag_collect;
+use rag_collect::collect_files;
 
 // ─── Public types (must match RAGService.ts) ────────────────────────────────
 
@@ -254,10 +256,7 @@ pub async fn rag_index_file(
 
         // Remove stale chunks for this file before re-indexing
         let escaped = file_path.replace('\'', "''");
-        if let Err(e) = table
-            .delete(&format!("file_path = '{escaped}'"))
-            .await
-        {
+        if let Err(e) = table.delete(&format!("file_path = '{escaped}'")).await {
             warn!("RAG: failed to delete old chunks for {file_path}: {e}");
         }
 
@@ -278,10 +277,8 @@ pub async fn rag_index_file(
 }
 
 #[tauri::command]
-pub async fn rag_search(
-    query: String,
-    top_k: usize,
-) -> Result<Vec<RagSearchResult>, String> {
+pub async fn rag_search(query: String, top_k: usize) -> Result<Vec<RagSearchResult>, String> {
+    let top_k = top_k.clamp(1, MAX_SEARCH_RESULTS);
     debug!("RAG search: '{query}' (top_k={top_k})");
 
     let config = Config::from_env();
@@ -323,14 +320,8 @@ pub async fn rag_search(
         let meta_idx = schema.index_of("metadata").unwrap_or(3);
         let dist_idx = schema.index_of("_distance").ok();
 
-        let ids = batch
-            .column(id_idx)
-            .as_any()
-            .downcast_ref::<StringArray>();
-        let docs = batch
-            .column(doc_idx)
-            .as_any()
-            .downcast_ref::<StringArray>();
+        let ids = batch.column(id_idx).as_any().downcast_ref::<StringArray>();
+        let docs = batch.column(doc_idx).as_any().downcast_ref::<StringArray>();
         let metas = batch
             .column(meta_idx)
             .as_any()
@@ -376,12 +367,9 @@ pub async fn rag_index_directory(
         dir_path, file_extensions
     );
 
-    let root = std::path::Path::new(&dir_path);
-    if !root.exists() {
-        return Err(format!("Directory does not exist: {dir_path}"));
-    }
+    let root = path_policy::validate_directory_path(&dir_path)?;
 
-    let files = collect_files(root, &file_extensions)?;
+    let files = collect_files(&root, &file_extensions)?;
     let total = files.len();
     let mut indexed = 0usize;
 
@@ -395,7 +383,11 @@ pub async fn rag_index_directory(
         };
 
         if file_meta.len() > MAX_FILE_BYTES {
-            debug!("RAG: skipping large file {:?} ({} bytes)", path, file_meta.len());
+            debug!(
+                "RAG: skipping large file {:?} ({} bytes)",
+                path,
+                file_meta.len()
+            );
             continue;
         }
 
@@ -442,41 +434,4 @@ pub async fn rag_clear_index() -> Result<(), String> {
     }
 
     Ok(())
-}
-
-// ─── Private helpers ─────────────────────────────────────────────────────────
-
-fn collect_files(
-    dir: &std::path::Path,
-    extensions: &[String],
-) -> Result<Vec<std::path::PathBuf>, String> {
-    let mut files = Vec::new();
-
-    let entries = std::fs::read_dir(dir)
-        .map_err(|e| format!("Failed to read directory {:?}: {e}", dir))?;
-
-    for entry in entries {
-        let entry = entry.map_err(|e| format!("Failed to read entry: {e}"))?;
-        let path = entry.path();
-
-        if path.is_dir() {
-            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                if SKIP_DIRS.contains(&name) {
-                    continue;
-                }
-            }
-            files.extend(collect_files(&path, extensions)?);
-        } else if path.is_file() {
-            let ext = path
-                .extension()
-                .and_then(|e| e.to_str())
-                .unwrap_or("")
-                .to_string();
-            if extensions.is_empty() || extensions.contains(&ext) {
-                files.push(path);
-            }
-        }
-    }
-
-    Ok(files)
 }

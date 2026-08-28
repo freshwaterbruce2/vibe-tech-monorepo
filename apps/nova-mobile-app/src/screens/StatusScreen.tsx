@@ -1,8 +1,9 @@
 import * as Haptics from 'expo-haptics';
-import { Activity, RefreshCw, Wifi, WifiOff } from 'lucide-react-native';
+import { Activity, RefreshCw, Wifi, WifiOff, Play } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -18,6 +19,7 @@ export function StatusScreen() {
   const { adapter, isConnected, agentStatus, checkConnection } = useConnectionStore();
   const [health, setHealth] = useState<{ ok: boolean; uptime: number } | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!adapter) return;
@@ -37,6 +39,29 @@ export function StatusScreen() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  const handleLaunchAgent = async () => {
+    setIsLaunching(true);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const serverUrl = useConnectionStore.getState().serverUrl;
+      const bridgeUrl = serverUrl.replace(':3000', ':5004'); // route to ipc-bridge port
+      const response = await fetch(`${bridgeUrl}/api/launch-nova`, {
+        method: 'POST',
+      });
+      if (response.ok) {
+        Alert.alert('Success', 'Launch command sent to desktop. Starting Nova Agent...');
+      } else {
+        Alert.alert('Error', 'Failed to send launch signal to desktop.');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Unable to reach desktop bridge: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsLaunching(false);
+      // Wait a bit and refresh connection status
+      setTimeout(() => void refresh(), 4000);
+    }
+  };
 
   const formatUptime = (seconds: number): string => {
     const h = Math.floor(seconds / 3600);
@@ -84,6 +109,23 @@ export function StatusScreen() {
           >
             {isConnected ? 'Connected' : 'Disconnected'}
           </Text>
+
+          {!isConnected && (
+            <TouchableOpacity
+              style={[styles.launchBtn, isLaunching && styles.launchBtnDisabled]}
+              onPress={() => void handleLaunchAgent()}
+              disabled={isLaunching}
+            >
+              {isLaunching ? (
+                <ActivityIndicator color="#0a0a0f" size="small" />
+              ) : (
+                <>
+                  <Play size={14} color="#0a0a0f" fill="#0a0a0f" />
+                  <Text style={styles.launchBtnText}>Launch Desktop Agent</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Agent status */}
@@ -147,4 +189,23 @@ const styles = StyleSheet.create({
   cardValue: { color: T.TEXT_PRIMARY, fontSize: 20, fontWeight: '700' },
   cardSub: { color: T.TEXT_MUTED, fontSize: 13, marginTop: 4 },
   cardMono: { color: T.ACCENT_CYAN, fontSize: 14, fontFamily: 'monospace', marginTop: 2 },
+  launchBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: T.ACCENT_CYAN,
+    borderRadius: 8,
+    paddingVertical: 10,
+    marginTop: 14,
+    gap: 6,
+    minHeight: 40,
+  },
+  launchBtnDisabled: {
+    backgroundColor: T.TEXT_MUTED,
+  },
+  launchBtnText: {
+    color: '#0a0a0f',
+    fontSize: 14,
+    fontWeight: '700',
+  },
 });

@@ -4,10 +4,10 @@ use crate::modules::state::Config;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use tauri::State;
-use tracing::{debug, error, info};
 use std::sync::Arc;
+use tauri::State;
 use tokio::sync::Mutex as AsyncMutex;
+use tracing::{debug, error, info};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectTemplate {
@@ -74,7 +74,11 @@ fn get_project_templates() -> Vec<ProjectTemplate> {
             description: "Create a new React application using Nx".to_string(),
             project_type: "typescript".to_string(),
             command: "pnpm".to_string(),
-            args: vec!["nx".to_string(), "g".to_string(), "@nx/react:app".to_string()],
+            args: vec![
+                "nx".to_string(),
+                "g".to_string(),
+                "@nx/react:app".to_string(),
+            ],
         },
         ProjectTemplate {
             id: "nx-node".to_string(),
@@ -82,7 +86,11 @@ fn get_project_templates() -> Vec<ProjectTemplate> {
             description: "Create a new Node.js application using Nx".to_string(),
             project_type: "typescript".to_string(),
             command: "pnpm".to_string(),
-            args: vec!["nx".to_string(), "g".to_string(), "@nx/node:app".to_string()],
+            args: vec![
+                "nx".to_string(),
+                "g".to_string(),
+                "@nx/node:app".to_string(),
+            ],
         },
         ProjectTemplate {
             id: "rust-bin".to_string(),
@@ -109,9 +117,7 @@ pub async fn get_available_templates() -> Result<Vec<ProjectTemplate>, String> {
 }
 
 #[tauri::command]
-pub async fn get_project_state(
-    project_path: String,
-) -> Result<ProjectStateFile, String> {
+pub async fn get_project_state(project_path: String) -> Result<ProjectStateFile, String> {
     let path = path_policy::validate_directory_path(&project_path)?;
     let state_path = path.join("project_state.json");
 
@@ -119,8 +125,7 @@ pub async fn get_project_state(
         .await
         .map_err(|e| format!("Failed to read state file: {}", e))?;
 
-    serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse state file: {}", e))
+    serde_json::from_str(&content).map_err(|e| format!("Failed to parse state file: {}", e))
 }
 
 #[tauri::command]
@@ -147,7 +152,10 @@ pub async fn create_project(
     let project_path = base_path.join(&safe_name);
 
     if project_path.exists() {
-        return Err(format!("Project already exists at {}", project_path.display()));
+        return Err(format!(
+            "Project already exists at {}",
+            project_path.display()
+        ));
     }
 
     std::fs::create_dir_all(&project_path)
@@ -198,8 +206,11 @@ pub async fn create_project(
     let db_guard = db.lock().await;
     if let Some(service) = db_guard.as_ref() {
         let task_id = format!("project-{}-{}", safe_name, Utc::now().timestamp());
-        if let Err(e) = service.log_task(&task_id, &format!("Create project: {}", safe_name), "completed")
-        {
+        if let Err(e) = service.log_task(
+            &task_id,
+            &format!("Create project: {}", safe_name),
+            "completed",
+        ) {
             debug!("Failed to log project creation to DB: {}", e);
         }
         if let Err(e) = service.log_activity(
@@ -230,7 +241,9 @@ fn detect_project_type(dir: &Path) -> String {
     if dir.join("electron").exists() || dir.join("electron.vite.config.ts").exists() {
         return "electron".to_string();
     }
-    if dir.join("capacitor.config.ts").exists() || dir.join("android").exists() || dir.join("ios").exists()
+    if dir.join("capacitor.config.ts").exists()
+        || dir.join("android").exists()
+        || dir.join("ios").exists()
     {
         return "capacitor".to_string();
     }
@@ -241,9 +254,7 @@ fn detect_project_type(dir: &Path) -> String {
 }
 
 #[tauri::command]
-pub async fn list_projects(
-    config: State<'_, Config>,
-) -> Result<Vec<ProjectInfo>, String> {
+pub async fn list_projects(config: State<'_, Config>) -> Result<Vec<ProjectInfo>, String> {
     list_projects_in_root(&config.workspace_root)
 }
 

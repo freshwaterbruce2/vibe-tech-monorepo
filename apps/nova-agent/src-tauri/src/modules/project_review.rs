@@ -61,7 +61,11 @@ fn parse_review_artifact_file(path: &Path) -> Result<ProjectReviewSummary, Strin
         artifact.artifact_path
     };
 
-    let evidence_paths = artifact.evidence.into_iter().map(|item| item.path).collect::<Vec<_>>();
+    let evidence_paths = artifact
+        .evidence
+        .into_iter()
+        .map(|item| item.path)
+        .collect::<Vec<_>>();
     let evidence_count = if artifact.evidence_count > 0 {
         artifact.evidence_count
     } else {
@@ -78,7 +82,9 @@ fn parse_review_artifact_file(path: &Path) -> Result<ProjectReviewSummary, Strin
     })
 }
 
-pub fn find_latest_review_for_project(project_path: &str) -> Result<Option<ProjectReviewSummary>, String> {
+pub fn find_latest_review_for_project(
+    project_path: &str,
+) -> Result<Option<ProjectReviewSummary>, String> {
     let review_dir = review_artifact_dir();
     if !review_dir.exists() {
         return Ok(None);
@@ -87,9 +93,13 @@ pub fn find_latest_review_for_project(project_path: &str) -> Result<Option<Proje
     let normalized_target = normalize_path(project_path);
     let mut best_match: Option<(std::time::SystemTime, ProjectReviewSummary)> = None;
 
-    for entry in fs::read_dir(&review_dir)
-        .map_err(|e| format!("Failed to read review artifact directory {}: {}", review_dir.display(), e))?
-    {
+    for entry in fs::read_dir(&review_dir).map_err(|e| {
+        format!(
+            "Failed to read review artifact directory {}: {}",
+            review_dir.display(),
+            e
+        )
+    })? {
         let entry = match entry {
             Ok(entry) => entry,
             Err(_) => continue,
@@ -128,7 +138,10 @@ pub fn validate_review_for_project(
     let review = if let Some(path) = artifact_path {
         let candidate = PathBuf::from(path);
         if !candidate.exists() {
-            return Err(format!("Review artifact is missing: {}", candidate.display()));
+            return Err(format!(
+                "Review artifact is missing: {}",
+                candidate.display()
+            ));
         }
         parse_review_artifact_file(&candidate)?
     } else {
@@ -155,7 +168,9 @@ pub fn collect_missing_path_references(text: &str) -> Vec<String> {
     let mut missing = Vec::new();
 
     for capture in path_regex.find_iter(text) {
-        let candidate = capture.as_str().trim_matches(|ch: char| ch == '"' || ch == '\'' || ch == ',' || ch == ')');
+        let candidate = capture
+            .as_str()
+            .trim_matches(|ch: char| ch == '"' || ch == '\'' || ch == ',' || ch == ')');
         if candidate.is_empty() {
             continue;
         }
@@ -183,11 +198,11 @@ mod tests {
         fs::write(
             &older,
             r#"{
-                "reviewed_path": "C:\\dev\\apps\\nova-agent",
+                "reviewed_path": "V:\\monorepo\\apps\\nova-agent",
                 "reviewed_at": "2026-03-09T10:00:00Z",
                 "review_version": "v1",
                 "evidence_count": 1,
-                "evidence": [{ "path": "C:\\dev\\apps\\nova-agent\\package.json" }]
+                "evidence": [{ "path": "V:\\monorepo\\apps\\nova-agent\\package.json" }]
             }"#,
         )
         .unwrap();
@@ -197,19 +212,19 @@ mod tests {
         fs::write(
             &newer,
             r#"{
-                "reviewed_path": "C:\\dev\\apps\\nova-agent",
+                "reviewed_path": "V:\\monorepo\\apps\\nova-agent",
                 "reviewed_at": "2026-03-09T11:00:00Z",
                 "review_version": "v1",
                 "evidence_count": 2,
                 "evidence": [
-                    { "path": "C:\\dev\\apps\\nova-agent\\package.json" },
-                    { "path": "C:\\dev\\apps\\nova-agent\\project.json" }
+                    { "path": "V:\\monorepo\\apps\\nova-agent\\package.json" },
+                    { "path": "V:\\monorepo\\apps\\nova-agent\\project.json" }
                 ]
             }"#,
         )
         .unwrap();
 
-        let review = find_latest_review_for_project(r"C:\dev\apps\nova-agent")
+        let review = find_latest_review_for_project(r"V:\monorepo\apps\nova-agent")
             .unwrap()
             .unwrap();
 
@@ -220,10 +235,12 @@ mod tests {
     #[test]
     fn collects_missing_windows_paths_from_text() {
         let missing = collect_missing_path_references(
-            r"Review C:\dev\docs\architecture-improvement\AGENT_ASSIGNMENTS.md and C:\definitely-missing\plan.md",
+            r"Review V:\monorepo\docs\architecture-improvement\AGENT_ASSIGNMENTS.md and C:\definitely-missing\plan.md",
         );
 
         assert!(!missing.is_empty());
-        assert!(missing.iter().any(|value| value.contains("architecture-improvement")));
+        assert!(missing
+            .iter()
+            .any(|value| value.contains("architecture-improvement")));
     }
 }

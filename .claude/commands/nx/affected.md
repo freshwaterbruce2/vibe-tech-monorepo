@@ -207,4 +207,4 @@ $ARGUMENTS
 - Uses Nx dependency graph for impact analysis
 - Supports parallel execution with --parallel flag
 - Cache is shared across affected runs
-- All commands run from C:\dev as base directory
+- All commands run from V:\monorepo as base directory

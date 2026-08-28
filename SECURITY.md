@@ -6,39 +6,38 @@ This monorepo contains multiple projects with different version support:
 
 ### Web Applications
 
-| Project | Version | Supported          |
-| ------- | ------- | ------------------ |
-| business-booking-platform | 2.0.x | :white_check_mark: |
-| digital-content-builder | 1.0.x | :white_check_mark: |
-| iconforge | 1.0.x | :white_check_mark: |
-| shipping-pwa | 1.x.x | :white_check_mark: |
-| vibe-tech-lovable | 1.x.x | :white_check_mark: |
+| Project                   | Version | Supported          |
+| ------------------------- | ------- | ------------------ |
+| business-booking-platform | 2.0.x   | :white_check_mark: |
+| invoice-automation-saas   | 0.1.x   | :white_check_mark: |
+| shipping-pwa              | 1.x.x   | :white_check_mark: |
+| vibe-tech-lovable         | 1.x.x   | :white_check_mark: |
 
 ### Desktop Applications
 
-| Project | Version | Supported          |
-| ------- | ------- | ------------------ |
-| nova-agent | 1.6.x | :white_check_mark: |
-| deepcode-editor | 1.0.x | :white_check_mark: |
+| Project         | Version | Supported          |
+| --------------- | ------- | ------------------ |
+| nova-agent      | 1.6.x   | :white_check_mark: |
+| deepcode-editor | 1.0.x   | :white_check_mark: |
 
 ### Mobile Applications
 
-| Project | Version | Supported          |
-| ------- | ------- | ------------------ |
-| Vibe-Tutor | 1.0.x | :white_check_mark: |
+| Project    | Version | Supported          |
+| ---------- | ------- | ------------------ |
+| Vibe-Tutor | 1.0.x   | :white_check_mark: |
 
 ### Backend & Services
 
-| Project | Version | Supported          |
-| ------- | ------- | ------------------ |
-| vibe-tech-backend | 1.x.x | :white_check_mark: |
-| crypto-enhanced | 1.x.x | :white_check_mark: |
+| Project           | Version | Supported          |
+| ----------------- | ------- | ------------------ |
+| vibe-tech-backend | 1.x.x   | :white_check_mark: |
+| crypto-enhanced   | 1.x.x   | :white_check_mark: |
 
 ### Workspace
 
-| Project | Version | Supported          |
-| ------- | ------- | ------------------ |
-| Workspace Root | 0.0.0 | :white_check_mark: |
+| Project        | Version | Supported          |
+| -------------- | ------- | ------------------ |
+| Workspace Root | 0.0.0   | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
@@ -102,7 +101,7 @@ This repository follows these security practices:
 ### Dependency Management
 
 - Regular `pnpm audit` checks in CI/CD
-- Automated Dependabot updates
+- Automated Renovate updates
 - Lockfile (`pnpm-lock.yaml`) committed to repository
 
 ### Secrets Management & API Key Best Practices
@@ -166,11 +165,11 @@ git commit --no-verify  # Only use for false positives, never for real secrets
 
 **Crypto Trading (crypto-enhanced):**
 
-- Kraken API keys in `projects/crypto-enhanced/.env`
+- Kraken API keys in `apps/crypto-enhanced/.env`
 - Require separate keys for read (monitoring) and write (trading)
 - Never use master API keys (generate sub-keys with limited permissions)
 
-**AI Services (nova-agent, deepcode-editor, digital-content-builder):**
+**AI Services (nova-agent, vibe-code-studio, shipping-pwa):**
 
 - DeepSeek API keys: `DEEPSEEK_API_KEY` in `.env`
 - OpenAI API keys: `OPENAI_API_KEY` in `.env`
@@ -189,7 +188,7 @@ Each project should validate required environment variables at startup:
 ```typescript
 // Example validation (TypeScript)
 const requiredEnvVars = ['DEEPSEEK_API_KEY', 'DATABASE_URL'];
-const missing = requiredEnvVars.filter(key => !process.env[key]);
+const missing = requiredEnvVars.filter((key) => !process.env[key]);
 if (missing.length > 0) {
   throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
 }
@@ -216,19 +215,19 @@ For sensitive operations:
 - **Max Position Size:** $10 USD per trade (hardcoded safety limit)
 - **Max Total Exposure:** $10 USD (maximum 1 concurrent position)
 - **Trading Pair:** XLM/USD only (no unauthorized pairs)
-- **Account Balance:** ~$135 USD (verify with `python check_status.py`)
+- **Account Balance:** ~$135 USD (verify with `python scripts\check_status.py`)
 
 #### API Key Security
 
-- **Storage:** Stored in `projects/crypto-enhanced/.env` (never committed to git)
+- **Storage:** Stored in `apps/crypto-enhanced/.env` (never committed to git)
 - **Permissions:** Read-only keys recommended for monitoring, write-only for trading
 - **Rotation:** Rotate API keys every 90 days or if compromise suspected
 - **Environment:** Separate keys for development and production (never reuse)
 
 #### Monitoring Requirements
 
-- **Daily Health Checks:** Run `python check_status.py` to verify system health
-- **Weekly Performance:** Run `python performance_monitor.py weekly` for detailed metrics
+- **Daily Health Checks:** Run `python scripts\check_status.py` to verify system health
+- **Weekly Performance:** Run `python scripts\performance_monitor.py weekly` for detailed metrics
 - **Log Reviews:** Monitor `logs/trading.log` for errors and anomalies
 - **Pre-commit Validation:** Git hooks automatically check trading system health before commits
 
@@ -267,7 +266,7 @@ pkill -f start_live_trading.py  # Kill running process
 **Check Readiness:**
 
 ```bash
-python performance_monitor.py monthly  # Review 30-day validation report
+python scripts\performance_monitor.py monthly  # Review 30-day validation report
 ```
 
 **System Status Indicators:**
@@ -324,7 +323,7 @@ git commit --no-verify -m "emergency fix"  # Use with extreme caution
 
 ### Database Security (D:\databases\)
 
-**MANDATORY POLICY:** All databases, logs, and large datasets MUST be stored on D:\ drive, never in C:\dev\ or project directories.
+**MANDATORY POLICY:** All databases, logs, and large datasets MUST be stored on D:\ drive, never in V:\monorepo\ or project directories.
 
 #### Database Storage Structure
 
@@ -347,9 +346,11 @@ D:\
 
 ```powershell
 # Restrict database access to current user only
-icacls "D:\databases\trading.db" /inheritance:r
-icacls "D:\databases\trading.db" /grant:r "$env:USERNAME:(F)"
-icacls "D:\databases\trading.db" /remove "Users"
+$dbPath = (Select-String -Path apps\crypto-enhanced\.env -Pattern '^DB_PATH=' |
+    Select-Object -First 1).Line -replace '^DB_PATH=', ''
+icacls $dbPath /inheritance:r
+icacls $dbPath /grant:r "$env:USERNAME:(F)"
+icacls $dbPath /remove "Users"
 
 # Apply to all databases
 Get-ChildItem D:\databases\*.db | ForEach-Object {
@@ -362,7 +363,9 @@ Get-ChildItem D:\databases\*.db | ForEach-Object {
 **Verification:**
 
 ```powershell
-icacls "D:\databases\trading.db"  # Should show only your username with Full Control
+$dbPath = (Select-String -Path apps\crypto-enhanced\.env -Pattern '^DB_PATH=' |
+    Select-Object -First 1).Line -replace '^DB_PATH=', ''
+icacls $dbPath  # Should show only your username with Full Control
 ```
 
 #### Backup Strategy
@@ -379,7 +382,9 @@ icacls "D:\databases\trading.db"  # Should show only your username with Full Con
 
 ```powershell
 # Backup trading database
-Copy-Item "D:\databases\trading.db" "D:\databases\backups\trading_$(Get-Date -Format 'yyyyMMdd_HHmmss').db"
+$dbPath = (Select-String -Path apps\crypto-enhanced\.env -Pattern '^DB_PATH=' |
+    Select-Object -First 1).Line -replace '^DB_PATH=', ''
+Copy-Item $dbPath "D:\databases\backups\trading_$(Get-Date -Format 'yyyyMMdd_HHmmss').db"
 
 # Backup all databases
 Get-ChildItem D:\databases\*.db | ForEach-Object {
@@ -391,7 +396,9 @@ Get-ChildItem D:\databases\*.db | ForEach-Object {
 
 ```powershell
 # Restore from backup (stop application first!)
-Copy-Item "D:\databases\backups\trading_20251125.db" "D:\databases\trading.db" -Force
+$dbPath = (Select-String -Path apps\crypto-enhanced\.env -Pattern '^DB_PATH=' |
+    Select-Object -First 1).Line -replace '^DB_PATH=', ''
+Copy-Item "D:\databases\backups\trading_20251125.db" $dbPath -Force
 ```
 
 #### Encryption Considerations
@@ -431,7 +438,11 @@ Enable-BitLocker -MountPoint "D:" -EncryptionMethod Aes256 -UsedSpaceOnly
 
 ```typescript
 // Example: Secure database connection (TypeScript)
-const dbPath = process.env.DATABASE_PATH || 'D:\\databases\\database.db';
+const dbPath = process.env.DB_PATH || process.env.DATABASE_PATH;
+
+if (!dbPath) {
+  throw new Error('Database path must be provided by DB_PATH or DATABASE_PATH');
+}
 
 // Validate path is on D:\ drive
 if (!dbPath.startsWith('D:\\databases\\')) {
@@ -446,12 +457,14 @@ const db = new Database(dbPath, { readonly: true, fileMustExist: true });
 
 **Regular Validation:**
 
-```bash
+```powershell
 # SQLite integrity check
-sqlite3 D:\databases\trading.db "PRAGMA integrity_check;"
+$dbPath = (Select-String -Path apps\crypto-enhanced\.env -Pattern '^DB_PATH=' |
+    Select-Object -First 1).Line -replace '^DB_PATH=', ''
+sqlite3 $dbPath "PRAGMA integrity_check;"
 
 # Quick check (faster)
-sqlite3 D:\databases\trading.db "PRAGMA quick_check;"
+sqlite3 $dbPath "PRAGMA quick_check;"
 ```
 
 **Automated Monitoring:**
@@ -492,19 +505,21 @@ sqlite3 D:\databases\trading.db "PRAGMA quick_check;"
 
 **Migration Example:**
 
-```bash
+```powershell
 # 1. Backup
-cp D:\databases\trading.db D:\databases\backups\trading_pre_migration_$(date +%Y%m%d).db
+$dbPath = (Select-String -Path apps\crypto-enhanced\.env -Pattern '^DB_PATH=' |
+    Select-Object -First 1).Line -replace '^DB_PATH=', ''
+Copy-Item $dbPath "D:\databases\backups\trading_pre_migration_$(Get-Date -Format 'yyyyMMdd').db"
 
 # 2. Test on copy
-cp D:\databases\trading.db D:\databases\trading_test.db
+Copy-Item $dbPath D:\databases\trading_test.db
 sqlite3 D:\databases\trading_test.db < migration.sql
 
 # 3. Verify test
 sqlite3 D:\databases\trading_test.db "PRAGMA integrity_check;"
 
 # 4. Apply to production
-sqlite3 D:\databases\trading.db < migration.sql
+sqlite3 $dbPath < migration.sql
 ```
 
 #### Performance & Security Trade-offs
@@ -531,7 +546,7 @@ PRAGMA cache_size = -64000;          -- 64MB cache (negative = KB)
 ### Development Environment
 
 - D:\ drive used for all persistent data (databases, logs, datasets)
-- C:\dev\ for code only (no data storage)
+- V:\monorepo\ for code only (no data storage)
 - Local development uses `localhost` only
 - Production builds must set proper `CORS` origins
 - PowerShell execution policy: `RemoteSigned` or `Bypass` for development scripts
@@ -608,18 +623,12 @@ pnpm prune
 - Use `pnpm install --frozen-lockfile` in CI/CD
 - Never manually edit `pnpm-lock.yaml`
 
-**Dependabot Configuration:**
+**Dependency Update Automation:**
 
-```yaml
-# .github/dependabot.yml
-version: 2
-updates:
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-```
+Renovate is the version-update bot for npm and GitHub Actions dependencies.
+Keep GitHub dependency graph and Dependabot alerts enabled in repository
+settings, but do not reintroduce `.github/dependabot.yml` unless duplicate
+version-update PRs are intentionally accepted.
 
 ### CI/CD Security (GitHub Actions)
 
@@ -697,10 +706,10 @@ module.exports = {
   win: {
     certificateFile: process.env.WINDOWS_CERT_FILE,
     certificatePassword: process.env.WINDOWS_CERT_PASSWORD,
-    sign: './sign.js',  // Custom signing script
-    signingHashAlgorithms: ['sha256']
-  }
-}
+    sign: './sign.js', // Custom signing script
+    signingHashAlgorithms: ['sha256'],
+  },
+};
 ```
 
 **Certificate Management:**
@@ -726,7 +735,7 @@ autoUpdater.setFeedURL({
   provider: 'github',
   owner: 'yourusername',
   repo: 'yourrepo',
-  token: process.env.GITHUB_TOKEN  // Private repo access
+  token: process.env.GITHUB_TOKEN, // Private repo access
 });
 
 // Verify signature before installing
@@ -802,7 +811,7 @@ android {
 // Allow localhost during development
 const corsOptions = {
   origin: ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true
+  credentials: true,
 };
 ```
 
@@ -813,7 +822,7 @@ const corsOptions = {
 const corsOptions = {
   origin: process.env.ALLOWED_ORIGINS?.split(',') || [],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 ```
 
@@ -826,10 +835,10 @@ app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-    "style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data: https:; " +
-    "connect-src 'self' https://api.deepseek.com https://api.kraken.com"
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+      "style-src 'self' 'unsafe-inline'; " +
+      "img-src 'self' data: https:; " +
+      "connect-src 'self' https://api.deepseek.com https://api.kraken.com",
   );
   next();
 });
@@ -885,7 +894,7 @@ app.use((req, res, next) => {
 
 #### Dependency Update Strategy
 
-**Automated Updates (Dependabot):**
+**Automated Updates (Renovate):**
 
 - Security patches: Auto-merge if tests pass
 - Minor version bumps: Weekly review and merge
@@ -914,8 +923,8 @@ pnpm run crypto:test    # Crypto trading system tests
 
 **Trading System Monitoring:**
 
-- Daily automated health checks (`python check_status.py`)
-- Weekly performance reviews (`python performance_monitor.py weekly`)
+- Daily automated health checks (`python scripts\check_status.py`)
+- Weekly performance reviews (`python scripts\performance_monitor.py weekly`)
 - Real-time alerting on failed trades or errors
 - P&L tracking and anomaly detection
 

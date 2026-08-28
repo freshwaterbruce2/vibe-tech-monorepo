@@ -1,6 +1,6 @@
 {
   "name": "@vibetech/backend",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -15,10 +15,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@vibetech/logger": "workspace:^1.0.0",
-    "@vibetech/shared-ipc": "workspace:^1.0.0",
-    "@vibetech/shared-utils": "workspace:^1.0.0",
-    "@xenova/transformers": "^2.17.2",
+    "@huggingface/transformers": "^3.8.1",
+    "@vibetech/core": "workspace:*",
+    "@vibetech/logger": "workspace:*",
+    "@vibetech/shared-ipc": "workspace:*",
     "better-sqlite3": "12.6.2",
     "electron-log": "^5.4.3",
     "sqlite-vec": "0.1.7",

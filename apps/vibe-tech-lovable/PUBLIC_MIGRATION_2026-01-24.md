@@ -2,7 +2,7 @@
 
 ## Changes Made
 
-**Moved:** `C:\dev\public` → `C:\dev\apps\vibe-tech-lovable\public`
+**Moved:** `V:\monorepo\public` → `V:\monorepo\apps\vibe-tech-lovable\public`
 
 ## Reason
 
@@ -31,7 +31,7 @@ All image references in components continue to work:
 ## Testing
 
 ```bash
-cd C:\dev\apps\vibe-tech-lovable
+cd V:\monorepo\apps\vibe-tech-lovable
 pnpm dev
 # Visit http://localhost:8080
 # Verify all images load correctly

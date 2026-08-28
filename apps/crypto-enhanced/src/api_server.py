@@ -5,8 +5,10 @@ Exposes trading data from the database via HTTP endpoints
 """
 
 import sys
+import os
 import asyncio
 import logging
+import uuid
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from pathlib import Path
@@ -15,8 +17,9 @@ from contextlib import asynccontextmanager
 # Add current directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Security, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 import uvicorn
 
@@ -35,6 +38,27 @@ logger = logging.getLogger(__name__)
 db: Optional[Database] = None
 config: Optional[Config] = None
 kraken_client: Optional[KrakenClient] = None
+
+# Local API authentication
+API_KEY = os.environ.get("CRYPTO_API_KEY")
+
+security = HTTPBearer(auto_error=False)
+
+async def verify_local_key(credentials: HTTPAuthorizationCredentials = Security(security)):
+    if not API_KEY:
+        return
+    if not credentials or credentials.credentials != API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+def handle_server_error(e: Exception) -> HTTPException:
+    error_id = str(uuid.uuid4())[:8]
+    logger.error(f"Internal error [{error_id}]: {e}", exc_info=True)
+    return HTTPException(status_code=500, detail=f"Internal server error (ref: {error_id})")
 
 
 # Pydantic models for API responses
@@ -131,9 +155,21 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:8080"],  # Vite dev server
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "HEAD"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
+def _extract_last_price(ticker: Dict[str, Any]) -> Optional[float]:
+    """Extract the last traded price from a Kraken ticker response."""
+    for pair_data in ticker.values():
+        if not isinstance(pair_data, dict):
+            continue
+        close_value = pair_data.get("c", [None])
+        if isinstance(close_value, list) and close_value:
+            close_value = close_value[0]
+        if close_value is not None:
+            return float(close_value)
+    return None
 
 
 @app.get("/")
@@ -159,7 +195,7 @@ async def health_check():
     }
 
 
-@app.get("/api/balances", response_model=List[BalanceResponse])
+@app.get("/api/balances", response_model=List[BalanceResponse], dependencies=[Security(verify_local_key)])
 async def get_balances():
     """Get current account balances"""
     try:
@@ -167,18 +203,17 @@ async def get_balances():
             raise HTTPException(status_code=503, detail="Kraken client not available")
 
         # Get balance from Kraken API with timeout
-        balance_data = {}
         try:
             balance_data = await asyncio.wait_for(
                 kraken_client.get_account_balance(),
                 timeout=3.0
             )
-        except asyncio.TimeoutError:
-            logger.warning("Balance fetch timed out, using fallback values")
-            balance_data = {'ZUSD': '98.82', 'XXLM': '0'}
+        except asyncio.TimeoutError as e:
+            logger.error(f"Balance fetch timed out: {e}")
+            raise HTTPException(status_code=503, detail="Live market data temporarily unavailable")
         except Exception as e:
-            logger.warning(f"Balance fetch failed: {e}, using fallback values")
-            balance_data = {'ZUSD': '98.82', 'XXLM': '0'}
+            logger.error(f"Balance fetch failed: {e}")
+            raise HTTPException(status_code=503, detail="Live market data temporarily unavailable")
 
         balances = []
 
@@ -199,14 +234,14 @@ async def get_balances():
             # Get current XLM price with timeout
             try:
                 ticker = await asyncio.wait_for(
-                    kraken_client.get_ticker_information('XLMUSD'),
+                    kraken_client.get_ticker('XLMUSD'),
                     timeout=3.0
                 )
                 xlm_price = float(ticker.get('XXLMZUSD', {}).get('c', [0])[0])
                 xlm_usd_value = xlm_balance * xlm_price
-            except:
-                xlm_price = 0.38  # Fallback price
-                xlm_usd_value = xlm_balance * xlm_price
+            except Exception as e:
+                logger.error(f"XLM price fetch failed: {e}")
+                raise HTTPException(status_code=503, detail="Live market data temporarily unavailable")
 
             balances.append(BalanceResponse(
                 asset='XLM',
@@ -218,12 +253,13 @@ async def get_balances():
 
         return balances
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error fetching balances: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_server_error(e)
 
 
-@app.get("/api/positions", response_model=List[PositionResponse])
+@app.get("/api/positions", response_model=List[PositionResponse], dependencies=[Security(verify_local_key)])
 async def get_positions(
     status: Optional[str] = Query(None, description="Filter by status (open, closed)")
 ):
@@ -250,23 +286,25 @@ async def get_positions(
 
         return positions
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error fetching positions: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_server_error(e)
 
 
-@app.get("/api/orders")
+@app.get("/api/orders", dependencies=[Security(verify_local_key)])
 async def get_orders(limit: int = Query(100, ge=1, le=500)):
     """Get recent orders"""
     try:
         orders = await db.get_orders(limit=limit)
         return {"data": orders, "count": len(orders)}
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error fetching orders: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_server_error(e)
 
 
-@app.get("/api/trades")
+@app.get("/api/trades", dependencies=[Security(verify_local_key)])
 async def get_trades(
     pair: Optional[str] = Query(None, description="Filter by trading pair"),
     limit: int = Query(100, ge=1, le=500)
@@ -275,41 +313,41 @@ async def get_trades(
     try:
         trades = await db.get_trades(pair=pair, limit=limit)
         return {"data": trades, "count": len(trades)}
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error fetching trades: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_server_error(e)
 
 
-@app.get("/api/dashboard/summary", response_model=DashboardSummaryResponse)
+@app.get("/api/dashboard/summary", response_model=DashboardSummaryResponse, dependencies=[Security(verify_local_key)])
 async def get_dashboard_summary():
     """Get aggregated dashboard summary"""
     try:
         # Get balances with timeout
-        usd_balance = 98.82
-        xlm_balance = 0
-        xlm_price = 0.38
-
         try:
             balance_data = await asyncio.wait_for(
                 kraken_client.get_account_balance() if kraken_client else {},
                 timeout=3.0
             )
-            usd_balance = float(balance_data.get('ZUSD', 98.82))
-            xlm_balance = float(balance_data.get('XXLM', 0))
-        except asyncio.TimeoutError:
-            logger.warning("Balance fetch timed out, using fallback values")
+            usd_balance = float(balance_data.get('ZUSD', 0.0))
+            xlm_balance = float(balance_data.get('XXLM', 0.0))
+        except asyncio.TimeoutError as e:
+            logger.error(f"Dashboard balance fetch timed out: {e}")
+            raise HTTPException(status_code=503, detail="Live market data temporarily unavailable")
         except Exception as e:
-            logger.warning(f"Balance fetch failed: {e}, using fallback values")
+            logger.error(f"Dashboard balance fetch failed: {e}")
+            raise HTTPException(status_code=503, detail="Live market data temporarily unavailable")
 
         # Get XLM price with timeout
         try:
             ticker = await asyncio.wait_for(
-                kraken_client.get_ticker_information('XLMUSD'),
+                kraken_client.get_ticker('XLMUSD'),
                 timeout=3.0
             )
             xlm_price = float(ticker.get('XXLMZUSD', {}).get('c', [0])[0])
-        except:
-            xlm_price = 0.38
+        except Exception as e:
+            logger.error(f"Dashboard XLM price fetch failed: {e}")
+            raise HTTPException(status_code=503, detail="Live market data temporarily unavailable")
 
         total_portfolio_value = usd_balance + (xlm_balance * xlm_price)
 
@@ -361,41 +399,41 @@ async def get_dashboard_summary():
             last_updated=datetime.now().isoformat()
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error fetching dashboard summary: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_server_error(e)
 
 
-@app.get("/api/risk-metrics", response_model=RiskMetricsResponse)
+@app.get("/api/risk-metrics", response_model=RiskMetricsResponse, dependencies=[Security(verify_local_key)])
 async def get_risk_metrics():
     """Get current risk metrics"""
     try:
         # Get balances with timeout
-        usd_balance = 98.82
-        xlm_balance = 0
-        xlm_price = 0.38
-
         try:
             balance_data = await asyncio.wait_for(
                 kraken_client.get_account_balance() if kraken_client else {},
                 timeout=3.0
             )
-            usd_balance = float(balance_data.get('ZUSD', 98.82))
-            xlm_balance = float(balance_data.get('XXLM', 0))
-        except asyncio.TimeoutError:
-            logger.warning("Risk metrics balance fetch timed out, using fallback values")
+            usd_balance = float(balance_data.get('ZUSD', 0.0))
+            xlm_balance = float(balance_data.get('XXLM', 0.0))
+        except asyncio.TimeoutError as e:
+            logger.error(f"Risk metrics balance fetch timed out: {e}")
+            raise HTTPException(status_code=503, detail="Live market data temporarily unavailable")
         except Exception as e:
-            logger.warning(f"Risk metrics balance fetch failed: {e}, using fallback values")
+            logger.error(f"Risk metrics balance fetch failed: {e}")
+            raise HTTPException(status_code=503, detail="Live market data temporarily unavailable")
 
         # Get XLM price with timeout
         try:
             ticker = await asyncio.wait_for(
-                kraken_client.get_ticker_information('XLMUSD'),
+                kraken_client.get_ticker('XLMUSD'),
                 timeout=3.0
             )
             xlm_price = float(ticker.get('XXLMZUSD', {}).get('c', [0])[0])
-        except:
-            xlm_price = 0.38
+        except Exception as e:
+            logger.error(f"Risk metrics XLM price fetch failed: {e}")
+            raise HTTPException(status_code=503, detail="Live market data temporarily unavailable")
 
         portfolio_value = usd_balance + (xlm_balance * xlm_price)
 
@@ -430,27 +468,29 @@ async def get_risk_metrics():
             margin_available=portfolio_value - total_exposure
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error fetching risk metrics: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_server_error(e)
 
 
-@app.get("/api/market-data/{pair}")
+@app.get("/api/market-data/{pair}", dependencies=[Security(verify_local_key)])
 async def get_market_data(pair: str):
     """Get current market data for a trading pair"""
     try:
         if not kraken_client:
             raise HTTPException(status_code=503, detail="Kraken client not available")
 
-        ticker = await kraken_client.get_ticker_information(pair)
-        return {"data": ticker, "timestamp": datetime.now().isoformat()}
+        ticker = await kraken_client.get_ticker(pair)
+        return {"status": "live", "data": ticker, "timestamp": datetime.now().isoformat()}
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error fetching market data: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_server_error(e)
 
 
-@app.get("/api/activity")
+@app.get("/api/activity", dependencies=[Security(verify_local_key)])
 async def get_recent_activity(limit: int = Query(50, ge=1, le=200)):
     """Get recent trading activity (orders, trades, events)"""
     try:
@@ -502,9 +542,10 @@ async def get_recent_activity(limit: int = Query(50, ge=1, le=200)):
 
         return {"data": activities[:limit], "count": len(activities)}
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error fetching activity: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_server_error(e)
 
 
 def main():

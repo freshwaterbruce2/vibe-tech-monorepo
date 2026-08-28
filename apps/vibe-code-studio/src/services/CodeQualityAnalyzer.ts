@@ -10,6 +10,8 @@
  */
 import { logger } from '../services/Logger';
 
+import type { FileSystemItem } from '../types';
+
 import type { FileSystemService } from './FileSystemService';
 
 export interface QualityIssue {
@@ -378,10 +380,10 @@ export class CodeQualityAnalyzer {
   /**
    * Flatten file tree to array of file paths
    */
-  private flattenFileTree(tree: any): string[] {
+  private flattenFileTree(tree: FileSystemItem): string[] {
     const files: string[] = [];
 
-    const traverse = (node: any) => {
+    const traverse = (node: FileSystemItem) => {
       if (node.type === 'file') {
         files.push(node.path);
       } else if (node.type === 'directory' && node.children) {

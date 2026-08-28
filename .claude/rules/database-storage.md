@@ -4,7 +4,7 @@ description: SQLite database storage patterns for D:\ drive. Use when creating o
 
 # Database Storage Pattern
 
-**CRITICAL RULE:** ALL databases MUST be stored on `D:\databases\`, NEVER in `C:\dev`.
+**CRITICAL RULE:** ALL databases MUST be stored on `D:\databases\`, NEVER in `V:\monorepo`.
 
 ## Path Structure
 

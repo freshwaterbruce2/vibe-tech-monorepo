@@ -1,0 +1,25 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "apps/discharge-ez/Dockerfile",
+    "watchPatterns": [
+      "apps/discharge-ez/**",
+      "packages/auth/**",
+      "packages/analytics/**",
+      "packages/ai/**",
+      "packages/billing/**",
+      "packages/email/**",
+      "packages/emails/**",
+      "packages/feature-flags/core/**",
+      "packages/landing/**",
+      "packages/monetization/**",
+      "packages/payments/**"
+    ]
+  },
+  "deploy": {
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 120,
+    "restartPolicyType": "ON_FAILURE"
+  }
+}

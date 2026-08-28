@@ -1,8 +1,8 @@
 # Auto-Generate Skills & Agents System
 
-**Last Updated:** 2026-01-18
-**Status:** Production Ready
-**Based on:** META-SKILL research (January 2026)
+**Last Updated:** 2026-06-27
+**Status:** Production Ready (Analyze + Generate + Monitor flow; Deploy step manual)
+**Based on:** META-SKILL research (January 2026); .agent/ is generated output location
 
 ---
 
@@ -12,7 +12,7 @@ This is a **self-improving AI system** that automatically generates new skills a
 
 **What It Does:**
 
-- 📊 Analyzes learning system data (`D:\learning-system\agent_learning.db`)
+- 📊 Analyzes learning system data (`D:\databases\agent_learning.db`)
 - 🔍 Identifies repeated workflows and high-success patterns
 - 🤖 Auto-generates skills/agents using Gemini 3 Pro
 - ✅ Presents candidates for user approval
@@ -28,9 +28,9 @@ This is a **self-improving AI system** that automatically generates new skills a
 ### Prerequisites
 
 1. **Learning System Database**
-   - Location: `D:\learning-system\agent_learning.db`
+   - Location: `D:\databases\agent_learning.db`
    - Must have >30 days of data
-   - Status: Check with `Test-Path "D:\learning-system\agent_learning.db"`
+   - Status: Check with `Test-Path "D:\databases\agent_learning.db"`
 
 2. **Gemini API Key**
 
@@ -50,7 +50,7 @@ This is a **self-improving AI system** that automatically generates new skills a
 
 ```powershell
 # Navigate to scripts directory
-cd C:\dev\scripts\auto-generate-skills
+cd V:\monorepo\scripts\auto-generate-skills
 
 # 1. Analyze patterns
 .\Analyze-Patterns.ps1
@@ -202,11 +202,10 @@ The `/generate-skills` workflow is located at:
 
 1. Analyze learning data
 2. Display candidates to user
-3. Generate selected skills
+3. Generate selected skills (output under `.agent\skills\`)
 4. User review & approval
-5. Deploy approved skills
-6. Track deployment
-7. Monitor performance
+5. Activate (restart IDE; no separate Deploy-Skill yet)
+6. Track/monitor performance (Monitor-GeneratedSkills.ps1)
 
 ### Manual Workflow
 
@@ -214,7 +213,7 @@ The `/generate-skills` workflow is located at:
 # Weekly manual workflow (recommended)
 
 # 1. Monday: Analyze patterns
-cd C:\dev\scripts\auto-generate-skills
+cd V:\monorepo\scripts\auto-generate-skills
 .\Analyze-Patterns.ps1
 
 # 2. Review candidates
@@ -277,14 +276,14 @@ Minimum confidence: 0.75 (75%)
 1. **Create Safety Snapshot**
 
    ```powershell
-   cd C:\dev\scripts\version-control
+   cd V:\monorepo\scripts\version-control
    .\Save-Snapshot.ps1 -Description "Before skill generation"
    ```
 
 2. **Verify Database Integrity**
 
    ```powershell
-   sqlite3 D:\learning-system\agent_learning.db "PRAGMA integrity_check;"
+   sqlite3 D:\databases\agent_learning.db "PRAGMA integrity_check;"
    ```
 
 3. **Check Data Sufficiency**
@@ -313,11 +312,11 @@ If generated skill causes issues:
 
 ```powershell
 # 1. Restore pre-generation snapshot
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Restore-Snapshot.ps1 -Tag "before-skill-generation"
 
 # 2. Mark skill as deprecated
-sqlite3 D:\learning-system\agent_learning.db @"
+sqlite3 D:\databases\agent_learning.db @"
 UPDATE generated_skills
 SET deprecation_candidate = 1,
     notes = 'Caused issues - see logs'
@@ -370,7 +369,7 @@ Remove-Item -Path ".agent\skills\problematic-skill" -Recurse -Force
 .\Monitor-GeneratedSkills.ps1 -Report Monthly
 
 # Analyze failures
-sqlite3 D:\learning-system\agent_learning.db @"
+sqlite3 D:\databases\agent_learning.db @"
 SELECT tool_name, error_message, COUNT(*) as failures
 FROM agent_executions
 WHERE tool_name IN (SELECT name FROM generated_skills)
@@ -433,7 +432,7 @@ ORDER BY s.success_rate DESC;
 
 ```powershell
 # 1. Check database size
-sqlite3 D:\learning-system\agent_learning.db @"
+sqlite3 D:\databases\agent_learning.db @"
 SELECT
     COUNT(*) as total_executions,
     COUNT(DISTINCT tool_name) as unique_tools,
@@ -490,10 +489,10 @@ code .agent\skills\<skill-name>\SKILL.md
 # Run the workflow steps manually to verify
 
 # 3. Check for monorepo-specific paths
-# Ensure C:\dev\ and D:\ paths are correct
+# Ensure V:\monorepo\ and D:\ paths are correct
 
 # 4. Mark for review
-sqlite3 D:\learning-system\agent_learning.db @"
+sqlite3 D:\databases\agent_learning.db @"
 UPDATE generated_skills
 SET notes = 'Needs manual review - low initial success'
 WHERE name = '<skill-name>';
@@ -534,13 +533,14 @@ CREATE INDEX idx_generated_skills_deprecated ON generated_skills(deprecation_can
 ## File Structure
 
 ```
-C:\dev\
+V:\monorepo\
 ├── scripts\
 │   └── auto-generate-skills\
 │       ├── README.md (this file)
 │       ├── Analyze-Patterns.ps1
 │       ├── Generate-Skill.ps1
-│       └── Monitor-GeneratedSkills.ps1
+│       ├── Monitor-GeneratedSkills.ps1
+│       └── Deploy-Skill.ps1 (stub: not yet implemented)
 ├── .agent\
 │   ├── workflows\
 │   │   └── generate-skills.md
@@ -557,8 +557,10 @@ C:\dev\
 │       │       └── deployment-log.json
 │       └── <generated-skills>\ (auto-generated)
 └── D:\
+    ├── databases\
+    │   └── agent_learning.db (primary data source)
     └── learning-system\
-        └── agent_learning.db (primary data source)
+        └── learning_engine.py
 ```
 
 ---
@@ -567,7 +569,7 @@ C:\dev\
 
 - **META-SKILL Spec**: `.agent/skills/auto-skill-creator/SKILL.md`
 - **Workflow**: `.agent/workflows/generate-skills.md`
-- **Learning System**: `C:\dev\docs\LEARNING_SYSTEM.md`
+- **Learning System**: `V:\monorepo\docs\LEARNING_SYSTEM.md`
 - **Antigravity README**: `.antigravity/README.md`
 
 ---

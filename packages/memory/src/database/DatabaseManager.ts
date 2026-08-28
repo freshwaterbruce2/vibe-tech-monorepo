@@ -149,6 +149,34 @@ export class DatabaseManager {
       `CREATE INDEX IF NOT EXISTS idx_procedural_last_used ON procedural_memory (last_used)`,
     );
 
+    // Cognitive memory table (task outcomes and anti-patterns with retrieval-time scoring)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS cognitive_memory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        kind TEXT NOT NULL CHECK (kind IN ('outcome', 'anti_pattern')),
+        task TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        context TEXT,
+        recommendation TEXT,
+        embedding BLOB,
+        embedding_model TEXT,
+        created_at INTEGER NOT NULL,
+        last_accessed INTEGER,
+        access_count INTEGER DEFAULT 0,
+        success_count INTEGER DEFAULT 0,
+        failure_count INTEGER DEFAULT 0,
+        confidence REAL DEFAULT 0.7,
+        metadata TEXT
+      )
+    `);
+    this.db.exec(`CREATE INDEX IF NOT EXISTS idx_cognitive_kind ON cognitive_memory (kind)`);
+    this.db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_cognitive_created ON cognitive_memory (created_at DESC)`,
+    );
+    this.db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_cognitive_accessed ON cognitive_memory (last_accessed)`,
+    );
+
     // Health metrics table (system health tracking)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS health_metrics (
@@ -214,8 +242,11 @@ export class DatabaseManager {
    */
   private runMigrations(): void {
     if (!this.db) throw new Error('Database not initialized');
+    // Capture into a local so migration closures (below) get a narrowed
+    // non-nullable reference without needing `this.db!`.
+    const db = this.db;
 
-    this.db.exec(`
+    db.exec(`
       CREATE TABLE IF NOT EXISTS schema_version (
         version INTEGER PRIMARY KEY,
         applied_at INTEGER NOT NULL
@@ -224,7 +255,7 @@ export class DatabaseManager {
 
     const currentVersion =
       (
-        this.db.prepare('SELECT MAX(version) as v FROM schema_version').get() as {
+        db.prepare('SELECT MAX(version) as v FROM schema_version').get() as {
           v: number | null;
         }
       ).v ?? 0;
@@ -233,29 +264,39 @@ export class DatabaseManager {
       // Migration 1: Add created_at alias to semantic_memory (M5)
       () => {
         try {
-          this.db!.exec('ALTER TABLE semantic_memory ADD COLUMN created_at INTEGER');
+          db.exec('ALTER TABLE semantic_memory ADD COLUMN created_at INTEGER');
         } catch {
           /* column already exists */
         }
-        this.db!.exec('UPDATE semantic_memory SET created_at = created WHERE created_at IS NULL');
+        db.exec('UPDATE semantic_memory SET created_at = created WHERE created_at IS NULL');
       },
       // Migration 2: Add embedding_model column to semantic_memory (Phase 2 — embedding versioning)
       () => {
         try {
-          this.db!.exec(
+          db.exec(
             `ALTER TABLE semantic_memory ADD COLUMN embedding_model TEXT DEFAULT 'text-embedding-3-small'`,
           );
         } catch {
           /* column already exists */
         }
+        try {
+          db.exec(
+            `CREATE INDEX IF NOT EXISTS idx_semantic_embedding_model ON semantic_memory (embedding_model)`,
+          );
+        } catch {
+          /* index may already exist */
+        }
       },
     ];
 
     for (let i = currentVersion; i < migrations.length; i++) {
-      migrations[i]();
-      this.db
-        .prepare('INSERT INTO schema_version (version, applied_at) VALUES (?, ?)')
-        .run(i + 1, Date.now());
+      const migration = migrations[i];
+      if (!migration) continue; // unreachable: loop bound < migrations.length
+      migration();
+      db.prepare('INSERT INTO schema_version (version, applied_at) VALUES (?, ?)').run(
+        i + 1,
+        Date.now(),
+      );
     }
   }
 

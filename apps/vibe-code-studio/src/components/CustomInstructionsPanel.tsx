@@ -41,8 +41,6 @@ export const CustomInstructionsPanel = ({
     currentRules ?? null
   );
   const [activeTab, setActiveTab] = useState<'global' | 'patterns' | 'templates' | 'ai'>('global');
-  const [_isEditing, _setIsEditing] = useState(false);
-  const [_editedContent, _setEditedContent] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
   const loadRules = useCallback(async () => {
@@ -61,7 +59,6 @@ export const CustomInstructionsPanel = ({
   const handleSave = async () => {
     if (rules) {
       await onSaveRules(rules);
-      _setIsEditing(false);
     }
   };
 
@@ -366,21 +363,21 @@ export const CustomInstructionsPanel = ({
     </TabContent>
   );
 
-  const updateNestedValue = (path: string, value: any) => {
+  const updateNestedValue = (path: string, value: unknown) => {
     if (!rules) {return;}
 
     const parts = path.split('.');
     if (parts.length === 0) return;
-    
+
     const newRules = { ...rules };
-    let current: any = newRules;
+    let current: Record<string, unknown> = newRules as unknown as Record<string, unknown>;
 
     for (let i = 0; i < parts.length - 1; i++) {
       const key = parts[i]!;
       if (!current[key]) {
         current[key] = {};
       }
-      current = current[key];
+      current = current[key] as Record<string, unknown>;
     }
 
     current[parts[parts.length - 1]!] = value;
@@ -420,10 +417,10 @@ export const CustomInstructionsPanel = ({
             style={{ display: 'none' }}
             id="import-rules"
           />
-          <IconButton onClick={() => document.getElementById('import-rules')?.click()}>
+          <IconButton onClick={() => document.getElementById('import-rules')?.click()} aria-label="Import rules">
             <Upload size={16} />
           </IconButton>
-          <IconButton onClick={handleExport}>
+          <IconButton onClick={handleExport} aria-label="Export rules">
             <Download size={16} />
           </IconButton>
           <SaveButton onClick={handleSave}>

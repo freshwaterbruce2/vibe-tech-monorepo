@@ -1,0 +1,39 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "rootDir": "src",
+    "baseUrl": ".",
+    "paths": {
+      "@vibetech/auth": [
+        "../../../packages/auth/dist/src/index.d.ts",
+        "../../../packages/auth/dist/index.d.ts"
+      ],
+      "@vibetech/billing": [
+        "../../../packages/billing/dist/src/index.d.ts",
+        "../../../packages/billing/dist/index.d.ts"
+      ],
+      "@vibetech/emails": [
+        "../../../packages/emails/dist/src/index.d.ts",
+        "../../../packages/emails/dist/index.d.ts"
+      ],
+      "@vibetech/entitlements": [
+        "../../../packages/entitlements/dist/src/index.d.ts",
+        "../../../packages/entitlements/dist/index.d.ts"
+      ],
+      "@vibetech/feature-flags-core": [
+        "../../../packages/feature-flags/core/dist/index.d.ts"
+      ]
+    },
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"]
+}

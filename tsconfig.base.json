@@ -1,68 +1,69 @@
 {
-	"compilerOptions": {
-		// Language and Environment
-		"target": "ES2022",
-		"lib": ["ES2022", "DOM", "DOM.Iterable"],
-		"jsx": "react-jsx",
-		"module": "ESNext",
-		"moduleResolution": "bundler",
-
-		// Type Checking
-		"strict": true,
-		"noImplicitAny": true,
-		"strictNullChecks": true,
-		"strictFunctionTypes": true,
-		"strictBindCallApply": true,
-		"strictPropertyInitialization": true,
-		"noImplicitThis": true,
-		"alwaysStrict": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"noImplicitReturns": true,
-		"noFallthroughCasesInSwitch": true,
-		"noUncheckedIndexedAccess": true,
-
-		// Module Resolution
-		"baseUrl": ".",
-		"paths": {
-			"@/*": ["./src/*"],
-			"@vibetech/*": ["./packages/*/src", "./packages/feature-flags/*/src"],
-			"@nova/*": ["./packages/*/src"]
-		},
-		"resolveJsonModule": true,
-		"allowJs": true,
-		"checkJs": false,
-
-		// Emit
-		"declaration": true,
-		"declarationMap": true,
-		"sourceMap": true,
-		"outDir": "./dist",
-		"removeComments": false,
-
-		// Interop Constraints
-		"esModuleInterop": true,
-		"allowSyntheticDefaultImports": true,
-		"forceConsistentCasingInFileNames": true,
-		"isolatedModules": true,
-
-		// Completeness
-		"skipLibCheck": true,
-		"skipDefaultLibCheck": true,
-
-		// Project References (for monorepo)
-		"composite": false,
-		"incremental": true
-	},
-	"exclude": [
-		"node_modules",
-		"dist",
-		"build",
-		".nx",
-		"coverage",
-		"**/*.spec.ts",
-		"**/*.test.ts",
-		"**/*.spec.tsx",
-		"**/*.test.tsx"
-	]
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@vibetech/games": ["./packages/games/src/index.ts"],
+      "@vibetech/games/*": ["./packages/games/src/*/index.ts"],
+      "@vibetech/*": ["./packages/*/src", "./packages/feature-flags/*/src"],
+      "@vibetech/hooks": ["./packages/hooks/src/index.ts"],
+      "@vibetech/core": ["./packages/core/src/index.ts"],
+      "@vibetech/types": ["./packages/types/src/index.ts"],
+      "@nova/*": ["./packages/nova-*/src"],
+      "vibe-booking-backend": ["apps/vibe-booking-backend/server/src/index.ts"],
+      "@vibetech/monetization": ["./packages/monetization/src/index.ts"],
+      "@vibetech/payments": ["./packages/payments/src/index.ts"],
+      "@vibetech/email": ["./packages/email/src/index.ts"],
+      "@vibetech/ai": ["./packages/ai/src/index.ts"],
+      "@vibetech/avatar-render-engine": ["./packages/avatar-render-engine/src/index.ts"],
+      "@vibetech/avatar-render-engine/constants": ["./packages/avatar-render-engine/src/compositions/constants.ts"]
+    },
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "removeComments": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "composite": false,
+    "incremental": true
+  },
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "dist",
+    "build",
+    ".nx",
+    "coverage",
+    "**/coverage",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.spec.tsx",
+    "**/*.test.tsx"
+  ]
 }

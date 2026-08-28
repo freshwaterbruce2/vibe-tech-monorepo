@@ -1,5 +1,5 @@
 import type { ErrorInfo} from 'react';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   FallbackProps} from 'react-error-boundary';
 import {
@@ -197,6 +197,7 @@ const logErrorToService = (error: Error, errorInfo: ErrorInfo) => {
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   const [copied, setCopied] = useState(false);
   const [reportSent, setReportSent] = useState(false);
+  const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Type guard: React Error Boundary error is unknown in React 19+
   const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -211,7 +212,13 @@ URL: ${window.location.href}
 
     navigator.clipboard.writeText(errorText).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+      copiedTimeoutRef.current = setTimeout(() => {
+        copiedTimeoutRef.current = undefined;
+        setCopied(false);
+      }, 2000);
     });
   }, [errorObj]);
 
@@ -234,6 +241,15 @@ URL: ${window.location.href}
     return () => clearTimeout(timer);
   }, [sendReport, reportSent]);
 
+  // Cleanup copied timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <ErrorContainer>
       <ErrorCard>
@@ -244,7 +260,7 @@ URL: ${window.location.href}
         <ErrorTitle>Oops! Something went wrong</ErrorTitle>
 
         <ErrorMessage>
-          DeepCode Editor encountered an unexpected error. Don&apos;t worry, your work is saved. You
+          Vibe Code Studio encountered an unexpected error. Don&apos;t worry, your work is saved. You
           can try refreshing the page or return to the home screen.
         </ErrorMessage>
 

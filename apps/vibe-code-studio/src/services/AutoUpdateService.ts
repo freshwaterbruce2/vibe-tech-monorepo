@@ -17,13 +17,20 @@ export class AutoUpdateService {
   private enabled: boolean;
   private currentVersion: string;
   private checkInterval = 3_600_000; // 1 hour
-  private updateCheckTimer?: ReturnType<typeof setInterval> | undefined;
+  private updateCheckTimer?: ReturnType<typeof setInterval>;
+  private initialCheckTimer?: ReturnType<typeof setTimeout>;
   private isTauri: boolean;
 
   private constructor() {
     this.isTauri =
       typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-    this.enabled = this.isTauri; // auto-enable in Tauri builds
+    // Auto-updates are disabled until release-artifact signing is configured.
+    // Re-enable by generating a key pair (`tauri signer generate`), setting
+    // `plugins.updater.pubkey` in `src-tauri/tauri.conf.json`, registering
+    // `tauri_plugin_updater` in `src-tauri/src/lib.rs`, restoring the
+    // `updater:*` permissions in `src-tauri/capabilities/main.json`, and
+    // flipping this flag back to `this.isTauri`.
+    this.enabled = false;
     this.currentVersion = import.meta.env['VITE_APP_VERSION'] ?? '1.1.0';
 
     if (this.enabled) {
@@ -105,15 +112,22 @@ export class AutoUpdateService {
 
   /** Start periodic update checks (initial check after 30 s). */
   private startUpdateCheck(): void {
-    setTimeout(() => this.checkForUpdates(), 30_000);
+    this.initialCheckTimer = setTimeout(() => {
+      this.initialCheckTimer = undefined;
+      void this.checkForUpdates();
+    }, 30_000);
     this.updateCheckTimer = setInterval(
-      () => this.checkForUpdates(),
+      () => void this.checkForUpdates(),
       this.checkInterval
     );
   }
 
   /** Stop periodic update checks. */
   stopUpdateCheck(): void {
+    if (this.initialCheckTimer) {
+      clearTimeout(this.initialCheckTimer);
+      this.initialCheckTimer = undefined;
+    }
     if (this.updateCheckTimer) {
       clearInterval(this.updateCheckTimer);
       this.updateCheckTimer = undefined;

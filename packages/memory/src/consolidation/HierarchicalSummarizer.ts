@@ -285,13 +285,15 @@ export class HierarchicalSummarizer {
 
   /** Persist summary levels as semantic memories */
   private async persistSummaries(db: Database.Database, summaries: SummaryLevel[]): Promise<void> {
-    const hasEmbedder = !!this.embedder;
+    // Capture the embedder so TS narrows it to non-nullable inside the loop.
+    const embedder = this.embedder;
+    const hasEmbedder = embedder !== undefined && embedder !== null;
 
     // Pre-compute embeddings if service available
     const embeddings: Buffer[] = [];
     if (hasEmbedder) {
       for (const summary of summaries) {
-        const vec = await this.embedder!.embed(summary.text);
+        const vec = await embedder.embed(summary.text);
         const buf = Buffer.alloc(vec.length * 4);
         vec.forEach((v, i) => buf.writeFloatLE(v, i * 4));
         embeddings.push(buf);

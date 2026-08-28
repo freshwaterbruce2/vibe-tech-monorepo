@@ -14,7 +14,7 @@ Run comprehensive quality checks on the Invoice Automation SaaS codebase.
 1. Navigate to Invoice Automation directory:
 
    ```bash
-   cd C:\dev\apps\invoice-automation-saas
+   cd V:\monorepo\apps\invoice-automation-saas
    ```
 
 2. Run ESLint:

@@ -45,7 +45,12 @@ export class GoogleGenerativeAIService implements IAIService {
     const systemMessage = request.messages.find(m => m.role === 'system');
     const chatMessages = request.messages.filter(m => m.role !== 'system');
 
-    const body: any = {
+    interface GeminiRequestBody {
+      contents: { role: string; parts: { text: string }[] }[];
+      generationConfig: { temperature: number; maxOutputTokens: number };
+      system_instruction?: { parts: { text: string }[] };
+    }
+    const body: GeminiRequestBody = {
       contents: this.mapMessages(chatMessages),
       generationConfig: {
         temperature: request.temperature ?? 0.7,
@@ -93,7 +98,12 @@ export class GoogleGenerativeAIService implements IAIService {
     const systemMessage = messages.find(m => m.role === 'system');
     const chatMessages = messages.filter(m => m.role !== 'system');
 
-    const body: any = {
+    interface GeminiStreamBody {
+      contents: { role: string; parts: { text: string }[] }[];
+      generationConfig: { temperature: number; maxOutputTokens: number };
+      system_instruction?: { parts: { text: string }[] };
+    }
+    const body: GeminiStreamBody = {
       contents: this.mapMessages(chatMessages),
       generationConfig: {
         temperature: options?.temperature ?? 0.7,

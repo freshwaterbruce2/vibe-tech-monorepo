@@ -8,6 +8,8 @@ import fs from "fs";
 import path from "path";
 import { promisify } from "util";
 import { validatePath } from "./PathValidator.js";
+import { getErrorMessage } from "./utils/errors.js";
+import { timestampFilename } from "./utils/files.js";
 
 const execAsync = promisify(exec);
 
@@ -29,9 +31,7 @@ export async function takeScreenshot(
 	// Ensure directory exists
 	await fs.promises.mkdir(dir, { recursive: true });
 
-	// Generate filename if not provided
-	const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-	const name = filename ?? `screenshot-${timestamp}.png`;
+	const name = filename ?? `screenshot-${timestampFilename("png")}`;
 	const outputPath = path.join(dir, name);
 
 	// Validate the full output path
@@ -61,15 +61,13 @@ Write-Output "${outputPath.replace(/\\/g, "\\\\")}"
 
 	try {
 		const { stdout } = await execAsync(
-			`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psScript.replace(/\n/g, " ")}"`,
+			`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psScript.replace(/\n/g, " ").replace(/"/g, '\\"')}"`,
 			{ maxBuffer: 10 * 1024 * 1024 },
 		);
 
 		return stdout.trim() || outputPath;
 	} catch (error) {
-		throw new Error(
-			`Failed to take screenshot: ${error instanceof Error ? error.message : "Unknown error"}`,
-		);
+		throw new Error(`Failed to take screenshot: ${getErrorMessage(error)}`);
 	}
 }
 
@@ -86,8 +84,7 @@ export async function screenshotWindow(
 	validatePath(dir, "write");
 	await fs.promises.mkdir(dir, { recursive: true });
 
-	const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-	const name = filename ?? `window-${timestamp}.png`;
+	const name = filename ?? `window-${timestampFilename("png")}`;
 	const outputPath = path.join(dir, name);
 
 	validatePath(outputPath, "write");
@@ -142,8 +139,6 @@ Write-Output "${outputPath.replace(/\\/g, "\\\\")}"
 
 		return stdout.trim() || outputPath;
 	} catch (error) {
-		throw new Error(
-			`Failed to screenshot window: ${error instanceof Error ? error.message : "Unknown error"}`,
-		);
+		throw new Error(`Failed to screenshot window: ${getErrorMessage(error)}`);
 	}
 }

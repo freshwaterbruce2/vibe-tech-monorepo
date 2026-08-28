@@ -21,7 +21,7 @@ describe('TestComponent', () => {
     it('should render the main heading', () => {
       render(<TestComponent />)
 
-      expect(screen.getByText('🎉 DeepCode Editor Test')).toBeInTheDocument()
+      expect(screen.getByText('🎉 Vibe Code Studio Test')).toBeInTheDocument()
     })
 
     it('should render the status message', () => {
@@ -41,7 +41,7 @@ describe('TestComponent', () => {
     it('should apply correct container styles', () => {
       render(<TestComponent />)
 
-      const container = screen.getByText('🎉 DeepCode Editor Test').parentElement
+      const container = screen.getByText('🎉 Vibe Code Studio Test').parentElement
 
       expect(container).toHaveStyle({
         padding: '20px',
@@ -58,7 +58,7 @@ describe('TestComponent', () => {
     it('should render as a full-height centered container', () => {
       render(<TestComponent />)
 
-      const container = screen.getByText('🎉 DeepCode Editor Test').parentElement
+      const container = screen.getByText('🎉 Vibe Code Studio Test').parentElement
 
       expect(container).toHaveStyle({
         height: '100vh',
@@ -74,14 +74,14 @@ describe('TestComponent', () => {
       render(<TestComponent />)
 
       const heading = screen.getByRole('heading', { level: 1 })
-      expect(heading).toHaveTextContent('🎉 DeepCode Editor Test')
+      expect(heading).toHaveTextContent('🎉 Vibe Code Studio Test')
     })
 
     it('should render all text elements', () => {
       render(<TestComponent />)
 
       // Check all text content is present
-      expect(screen.getByText(/DeepCode Editor Test/)).toBeInTheDocument()
+      expect(screen.getByText(/Vibe Code Studio Test/)).toBeInTheDocument()
       expect(screen.getByText(/React app is working/)).toBeInTheDocument()
       expect(screen.getByText(/Time:/)).toBeInTheDocument()
     })
@@ -89,11 +89,11 @@ describe('TestComponent', () => {
     it('should render elements in correct order', () => {
       render(<TestComponent />)
 
-      const container = screen.getByText('🎉 DeepCode Editor Test').parentElement
+      const container = screen.getByText('🎉 Vibe Code Studio Test').parentElement
       const children = container?.children
 
       expect(children).toHaveLength(3)
-      expect(children?.[0]).toHaveTextContent('🎉 DeepCode Editor Test')
+      expect(children?.[0]).toHaveTextContent('🎉 Vibe Code Studio Test')
       expect(children?.[1]).toHaveTextContent('If you can see this, the React app is working!')
       expect(children?.[2].textContent).toMatch(/Time:/)
     })
@@ -138,7 +138,7 @@ describe('TestComponent', () => {
     it('should have sufficient color contrast', () => {
       render(<TestComponent />)
 
-      const container = screen.getByText('🎉 DeepCode Editor Test').parentElement
+      const container = screen.getByText('🎉 Vibe Code Studio Test').parentElement
 
       // Dark theme with light text should have good contrast
       expect(container).toHaveStyle({
@@ -151,7 +151,7 @@ describe('TestComponent', () => {
       render(<TestComponent />)
 
       // Component doesn't have interactive elements, but should be readable
-      expect(screen.getByText('🎉 DeepCode Editor Test')).toBeInTheDocument()
+      expect(screen.getByText('🎉 Vibe Code Studio Test')).toBeInTheDocument()
     })
   })
 
@@ -164,22 +164,22 @@ describe('TestComponent', () => {
       const { rerender } = render(<TestComponent />)
 
       // Component should render consistently
-      expect(screen.getByText('🎉 DeepCode Editor Test')).toBeInTheDocument()
+      expect(screen.getByText('🎉 Vibe Code Studio Test')).toBeInTheDocument()
 
       rerender(<TestComponent />)
-      expect(screen.getByText('🎉 DeepCode Editor Test')).toBeInTheDocument()
+      expect(screen.getByText('🎉 Vibe Code Studio Test')).toBeInTheDocument()
     })
 
     it('should handle multiple renders', () => {
       const { unmount } = render(<TestComponent />)
 
-      expect(screen.getByText('🎉 DeepCode Editor Test')).toBeInTheDocument()
+      expect(screen.getByText('🎉 Vibe Code Studio Test')).toBeInTheDocument()
 
       unmount()
 
       // Re-render in a new container
       render(<TestComponent />)
-      expect(screen.getByText('🎉 DeepCode Editor Test')).toBeInTheDocument()
+      expect(screen.getByText('🎉 Vibe Code Studio Test')).toBeInTheDocument()
     })
   })
 
@@ -187,12 +187,12 @@ describe('TestComponent', () => {
     it('should always render the same static content', () => {
       const { rerender } = render(<TestComponent />)
 
-      const initialHeading = screen.getByText('🎉 DeepCode Editor Test')
+      const initialHeading = screen.getByText('🎉 Vibe Code Studio Test')
       const initialMessage = screen.getByText('If you can see this, the React app is working!')
 
       rerender(<TestComponent />)
 
-      expect(screen.getByText('🎉 DeepCode Editor Test')).toBe(initialHeading)
+      expect(screen.getByText('🎉 Vibe Code Studio Test')).toBe(initialHeading)
       expect(screen.getByText('If you can see this, the React app is working!')).toBe(initialMessage)
     })
 
@@ -207,7 +207,7 @@ describe('TestComponent', () => {
     it('should create a flex container', () => {
       render(<TestComponent />)
 
-      const container = screen.getByText('🎉 DeepCode Editor Test').parentElement
+      const container = screen.getByText('🎉 Vibe Code Studio Test').parentElement
 
       expect(container).toHaveStyle({
         display: 'flex',
@@ -218,7 +218,7 @@ describe('TestComponent', () => {
     it('should center content both horizontally and vertically', () => {
       render(<TestComponent />)
 
-      const container = screen.getByText('🎉 DeepCode Editor Test').parentElement
+      const container = screen.getByText('🎉 Vibe Code Studio Test').parentElement
 
       expect(container).toHaveStyle({
         alignItems: 'center',

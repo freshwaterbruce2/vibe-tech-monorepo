@@ -27,7 +27,7 @@ Jamendo provides access to 600,000+ Creative Commons licensed tracks. This guide
 
 ### For Web Development (.env.local)
 
-Create or update `C:\dev\Vibe-Tutor\.env.local`:
+Create or update `V:\monorepo\Vibe-Tutor\.env.local`:
 
 ```bash
 # Jamendo Music API
@@ -45,7 +45,7 @@ The `.env.local` file is automatically used by Vite, so no additional configurat
 Run the test command:
 
 ```bash
-cd C:\dev\Vibe-Tutor
+cd V:\monorepo\Vibe-Tutor
 pnpm run test:jamendo
 ```
 
@@ -106,7 +106,7 @@ Usage is automatically tracked in localStorage.
 
 **Solution:**
 
-1. Check that `.env.local` exists in `C:\dev\Vibe-Tutor\`
+1. Check that `.env.local` exists in `V:\monorepo\Vibe-Tutor\`
 2. Verify the Client ID is correct (no extra spaces)
 3. Restart the development server (`pnpm run dev`)
 

@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { FlameIcon } from '../components/ui/icons/FlameIcon';
 import { TrophyIcon } from '../components/ui/icons/TrophyIcon';
 import type { NormalizedGameCompletion, WorksheetCompletionPayload } from './gameProgression';
@@ -306,7 +307,7 @@ const loadAchievements = async (): Promise<void> => {
       });
     }
   } catch (e) {
-    console.error('Failed to load achievements from dataStore', e);
+    logger.error('Failed to load achievements from dataStore', e);
   }
 };
 
@@ -314,12 +315,12 @@ const saveAchievements = async (): Promise<void> => {
   try {
     await dataStore.saveAchievements(achievements);
   } catch (e) {
-    console.error('Failed to save achievements to dataStore', e);
+    logger.error('Failed to save achievements to dataStore', e);
   }
 };
 
 // Initialize achievements on module load
-loadAchievements().catch((e) => console.error('Failed to initialize achievements:', e));
+loadAchievements().catch((e) => logger.error('Failed to initialize achievements:', e));
 
 export const getAchievements = async (): Promise<Achievement[]> => {
   // Update progress before returning

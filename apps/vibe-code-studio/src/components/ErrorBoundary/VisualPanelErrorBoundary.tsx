@@ -157,12 +157,15 @@ export class VisualPanelErrorBoundary extends Component<Props, State> {
 
     // Report to telemetry/analytics if available
     try {
-      if ((window as any).telemetry) {
-        (window as any).telemetry.reportError({
+      const telemetry = (window as unknown as Record<string, unknown>).telemetry as
+        | { reportError: (payload: { component: string; error: string; stack?: string; componentStack: string | null }) => void }
+        | undefined;
+      if (telemetry) {
+        telemetry.reportError({
           component: this.props.componentName,
           error: error.toString(),
           stack: error.stack,
-          componentStack: errorInfo.componentStack,
+          componentStack: errorInfo.componentStack ?? null,
         });
       }
     } catch (telemetryError) {

@@ -56,9 +56,11 @@ try {
     $toolName = $hookData.tool_name
     if ($toolName -ne 'Agent') { exit 0 }
 
-    # Extract subagent details from tool_input
+    # Extract subagent details from tool_input.
+    # Agent tool's subagent_type is optional; when omitted Claude Code routes
+    # to general-purpose. Mirror that default so we don't invent a fake agent.
     $subagentType = $hookData.tool_input.subagent_type
-    if ([string]::IsNullOrWhiteSpace($subagentType)) { $subagentType = 'unknown-agent' }
+    if ([string]::IsNullOrWhiteSpace($subagentType)) { $subagentType = 'general-purpose' }
 
     $description = $hookData.tool_input.description
     if ([string]::IsNullOrWhiteSpace($description)) { $description = 'subagent-task' }
@@ -86,9 +88,9 @@ try {
 
     # Infer project from cwd
     $project = $null
-    if ($hookData.cwd -match 'C:\\dev\\apps\\([^\\]+)') { $project = $matches[1] }
-    elseif ($hookData.cwd -match 'C:\\dev\\packages\\([^\\]+)') { $project = $matches[1] }
-    elseif ($hookData.cwd -match 'C:\\dev\\backend\\([^\\]+)') { $project = $matches[1] }
+    if ($hookData.cwd -match 'V:\\monorepo\\apps\\([^\\]+)') { $project = $matches[1] }
+    elseif ($hookData.cwd -match 'V:\\monorepo\\packages\\([^\\]+)') { $project = $matches[1] }
+    elseif ($hookData.cwd -match 'V:\\monorepo\\backend\\([^\\]+)') { $project = $matches[1] }
 
     # Build MCP payload
     $args = @{
@@ -139,18 +141,18 @@ exit 0
 
 **Step 2: Verify file was created**
 
-Run: `Test-Path C:\dev\.claude\hooks\record-agent-execution.ps1`
+Run: `Test-Path V:\monorepo\.claude\hooks\record-agent-execution.ps1`
 Expected: `True`
 
 **Step 3: Verify syntax**
 
-Run: `powershell -NoProfile -Command "[System.Management.Automation.Language.Parser]::ParseFile('C:\dev\.claude\hooks\record-agent-execution.ps1', [ref]$null, [ref]$null) | Out-Null; echo 'OK'"`
+Run: `powershell -NoProfile -Command "[System.Management.Automation.Language.Parser]::ParseFile('V:\monorepo\.claude\hooks\record-agent-execution.ps1', [ref]$null, [ref]$null) | Out-Null; echo 'OK'"`
 Expected: `OK`
 
 **Step 4: Commit**
 
 ```bash
-cd C:/dev
+cd V:/monorepo
 git add .claude/hooks/record-agent-execution.ps1
 git commit -m "feat(hooks): add PostToolUse hook for agent execution recording"
 ```
@@ -160,7 +162,7 @@ git commit -m "feat(hooks): add PostToolUse hook for agent execution recording"
 ## Task 2: Register the Hook in settings.json
 
 **Files:**
-- Modify: `C:\dev\.claude\settings.json:101`
+- Modify: `V:\monorepo\.claude\settings.json:101`
 
 **Step 1: Update the empty `"hooks": {}` block**
 
@@ -190,13 +192,13 @@ With:
 
 **Step 2: Validate JSON**
 
-Run: `powershell -NoProfile -Command "Get-Content C:\dev\.claude\settings.json | ConvertFrom-Json | Out-Null; echo 'Valid JSON'"`
+Run: `powershell -NoProfile -Command "Get-Content V:\monorepo\.claude\settings.json | ConvertFrom-Json | Out-Null; echo 'Valid JSON'"`
 Expected: `Valid JSON`
 
 **Step 3: Commit**
 
 ```bash
-cd C:/dev
+cd V:/monorepo
 git add .claude/settings.json
 git commit -m "feat(hooks): wire record-agent-execution hook to PostToolUse(Agent)"
 ```
@@ -229,12 +231,12 @@ $hookPayload = @{
     tool_response = @{
         is_error = $false
     }
-    cwd = 'C:\dev\apps\memory-mcp'
+    cwd = 'V:\monorepo\apps\memory-mcp'
     duration_ms = 1234
 } | ConvertTo-Json -Depth 5 -Compress
 
 Write-Host "Sending synthetic Agent PostToolUse payload to hook..."
-$hookPayload | & powershell -NoProfile -ExecutionPolicy Bypass -File C:\dev\.claude\hooks\record-agent-execution.ps1
+$hookPayload | & powershell -NoProfile -ExecutionPolicy Bypass -File V:\monorepo\.claude\hooks\record-agent-execution.ps1
 
 Write-Host "Waiting 1s for HTTP write to complete..."
 Start-Sleep -Seconds 1
@@ -259,7 +261,7 @@ exit 0
 
 **Step 2: Run the test**
 
-Run: `powershell -NoProfile -ExecutionPolicy Bypass -File C:\dev\tools\hook-tests\test-record-agent-execution.ps1`
+Run: `powershell -NoProfile -ExecutionPolicy Bypass -File V:\monorepo\tools\hook-tests\test-record-agent-execution.ps1`
 Expected: `PASS` in green, with row details printed
 
 **Step 3: If test fails, debug**
@@ -272,7 +274,7 @@ Check in order:
 **Step 4: Commit**
 
 ```bash
-cd C:/dev
+cd V:/monorepo
 git add tools/hook-tests/test-record-agent-execution.ps1
 git commit -m "test(hooks): add dry-run test for agent execution recording"
 ```
@@ -290,7 +292,7 @@ git commit -m "test(hooks): add dry-run test for agent execution recording"
 **Recommended: Option B.** The new Agent-specific hook captures the useful signal (specialist agent executions). Per-tool-call logging of every Bash/Read/Edit is high-volume noise. Keep only the log-file output.
 
 **Files:**
-- Modify: `C:\dev\.claude\hooks\post-tool-use-stdin.ps1:91-127`
+- Modify: `V:\monorepo\.claude\hooks\post-tool-use-stdin.ps1:91-127`
 
 **Step 1: Remove the Python block**
 
@@ -298,13 +300,13 @@ Delete lines 91-127 (the entire `# Write to learning database via Python` block 
 
 **Step 2: Verify the hook still parses**
 
-Run: `powershell -NoProfile -Command "[System.Management.Automation.Language.Parser]::ParseFile('C:\dev\.claude\hooks\post-tool-use-stdin.ps1', [ref]$null, [ref]$null) | Out-Null; echo 'OK'"`
+Run: `powershell -NoProfile -Command "[System.Management.Automation.Language.Parser]::ParseFile('V:\monorepo\.claude\hooks\post-tool-use-stdin.ps1', [ref]$null, [ref]$null) | Out-Null; echo 'OK'"`
 Expected: `OK`
 
 **Step 3: Commit**
 
 ```bash
-cd C:/dev
+cd V:/monorepo
 git add .claude/hooks/post-tool-use-stdin.ps1
 git commit -m "refactor(hooks): remove dead Python learning call from post-tool-use hook"
 ```
@@ -352,7 +354,7 @@ Expected: A recent line with the agent name and success=True.
 ## Task 6: Documentation Update
 
 **Files:**
-- Modify: `C:\dev\.claude\rules\memory-system.md`
+- Modify: `V:\monorepo\.claude\rules\memory-system.md`
 
 **Step 1: Add section about agent execution recording**
 
@@ -377,7 +379,7 @@ Disable: set `"hooks": {}` in `.claude/settings.json` and restart Claude Code.
 **Step 2: Commit**
 
 ```bash
-cd C:/dev
+cd V:/monorepo
 git add .claude/rules/memory-system.md
 git commit -m "docs: explain automated agent execution recording"
 ```
@@ -413,4 +415,4 @@ git commit -m "docs: explain automated agent execution recording"
 - Capturing tool sequences used *inside* the subagent (would require MCP-level instrumentation)
 - Recording which MCP tools the subagent called (available via per-tool PostToolUse, but high volume)
 - Auto-suggesting agents based on task description (future feature using `success_patterns`)
-- Closing the learning loop back to Claude's decision-making during task execution
+- Closing

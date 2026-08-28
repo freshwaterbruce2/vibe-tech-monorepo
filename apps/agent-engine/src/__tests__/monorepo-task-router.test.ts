@@ -2,6 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { MonorepoTaskRouter } from '../services/monorepo-task-router.js';
 import type { ProjectMetadata } from '../services/project-classifier.js';
 
+// Prevent real nx subprocess from blocking unit tests
+vi.mock('../tools/process-tools.js', () => ({
+  runCommand: vi.fn(() => ({ success: false, stdout: '', stderr: 'mocked in test' })),
+}));
+
 function makeProject(name: string, type: ProjectMetadata['type'] = 'typescript'): ProjectMetadata {
   return { name, root: `apps/${name}`, type, tags: [] };
 }

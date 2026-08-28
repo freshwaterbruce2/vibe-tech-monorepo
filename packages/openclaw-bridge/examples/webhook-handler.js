@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @nx/enforce-module-boundaries */
 /**
  * OpenClaw Webhook Handler for MCP Bridge
  *
@@ -71,12 +72,10 @@ function formatHelp() {
 
 **Examples**:
 • \`/mcp filesystem list_directory {"path":"./"}\`
-• \`/mcp codeberg codeberg_search_repos {"query":"vibetech"}\`
 • \`/mcp desktop-commander dc_get_system_info {}\`
 
 **Available Servers**:
 • filesystem - File operations
-• codeberg - GitHub repository search
 • desktop-commander - Desktop automation
 • sequential-thinking - AI reasoning`;
 }

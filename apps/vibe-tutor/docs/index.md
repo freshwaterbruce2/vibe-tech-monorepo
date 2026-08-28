@@ -17,6 +17,6 @@ Welcome to Vibe-Tutor's documentation portal.
 
 Vibe-Tutor is an AI-powered homework management and tutoring app designed for students aged 13-17 with ADHD and autism support features.
 
-**Download**: [Google Play Store](#) (coming soon)
+**Download**: Google Play Store listing coming soon
 **Contact**: [GitHub Issues](https://github.com/freshwaterbruce2/vibetech/issues)
 **Version**: 1.4.0 "ASD Companion"

@@ -47,13 +47,13 @@ const DashboardContent = ({
   return (
     <>
       <motion.div variants={itemVariants}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" data-testid="metrics-grid">
           <NewLeadsMetric />
           <DashboardMetrics metrics={metrics} />
         </div>
       </motion.div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4" data-testid="dashboard-content">
         <motion.div 
           variants={itemVariants}
           className="lg:col-span-2"

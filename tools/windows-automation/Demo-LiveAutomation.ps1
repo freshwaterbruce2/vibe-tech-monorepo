@@ -99,7 +99,7 @@ Start-Sleep -Seconds 2
 Write-Host "`n[DEMO 4] Visual Documentation" -ForegroundColor Yellow
 Write-Host "----------------------------------------" -ForegroundColor Gray
 
-$screenshotPath = "C:\dev\demo-screenshot-$(Get-Date -Format 'yyyyMMdd-HHmmss').png"
+$screenshotPath = "V:\monorepo\demo-screenshot-$(Get-Date -Format 'yyyyMMdd-HHmmss').png"
 Write-Host "  Capturing screen..." -ForegroundColor Gray
 $capture = Capture-Screen -Path $screenshotPath -Width 1920 -Height 1080
 Write-Host "  Screenshot saved: $screenshotPath" -ForegroundColor Green
@@ -183,7 +183,7 @@ Write-Host ""
 
 # Cleanup old screenshots
 Write-Host "Cleaning up old demo screenshots..." -ForegroundColor Gray
-Get-ChildItem "C:\dev\demo-screenshot-*.png" -File | 
+Get-ChildItem "V:\monorepo\demo-screenshot-*.png" -File | 
     Where-Object {$_.CreationTime -lt (Get-Date).AddHours(-1)} | 
     Remove-Item -Force
 Write-Host "Cleanup complete." -ForegroundColor Green

@@ -1,13 +1,11 @@
 /**
  * Frontend Engineer Agent - UI/UX and client-side development specialist
  */
-import type { DeepSeekService } from '../DeepSeekService';
-
 import type { AgentContext, AgentResponse, CodeChange } from './BaseSpecializedAgent';
 import { AgentCapability, BaseSpecializedAgent } from './BaseSpecializedAgent';
 
 export class FrontendEngineerAgent extends BaseSpecializedAgent {
-  constructor(deepSeekService: DeepSeekService) {
+  constructor() {
     super('Frontend Engineer Agent', [
       AgentCapability.UI_DESIGN,
       AgentCapability.CODE_GENERATION,
@@ -16,7 +14,7 @@ export class FrontendEngineerAgent extends BaseSpecializedAgent {
       AgentCapability.PERFORMANCE_PROFILING,
       AgentCapability.SEO,
       AgentCapability.INTERNATIONALIZATION
-    ], deepSeekService);
+    ]);
   }
 
   getRole(): string {
@@ -111,7 +109,7 @@ Focus on creating maintainable, performant, and accessible user interfaces.`;
     }
 
     if (context.userPreferences?.['previousSuggestions']) {
-      info += `Previous Suggestions: ${context.userPreferences['previousSuggestions'].slice(0, 3).join(', ')}\n`;
+      info += `Previous Suggestions: ${(context.userPreferences['previousSuggestions'] as string[]).slice(0, 3).join(', ')}\n`;
     }
 
     return info || 'No specific frontend context provided';

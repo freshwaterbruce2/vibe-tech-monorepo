@@ -1,8 +1,8 @@
-# DeepCode Editor Architecture
+# Vibe Code Studio Architecture
 
 ## Overview
 
-DeepCode Editor is built with a modular, scalable architecture that emphasizes performance, maintainability, and extensibility. The application follows modern React patterns and TypeScript best practices while integrating advanced AI capabilities through a multi-agent system.
+Vibe Code Studio is built with a modular, scalable architecture that emphasizes performance, maintainability, and extensibility. The application follows modern React patterns and TypeScript best practices while integrating advanced AI capabilities through a multi-agent system.
 
 ## Table of Contents
 

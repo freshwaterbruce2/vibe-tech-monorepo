@@ -49,7 +49,8 @@ export function ndcgAtK(
   // DCG: sum of (2^rel - 1) / log2(rank + 1)
   let dcg = 0;
   for (let i = 0; i < topK.length; i++) {
-    const rel = relevanceGrades[topK[i]!] ?? 0;
+    const item = topK[i];
+    const rel = item !== undefined ? (relevanceGrades[item] ?? 0) : 0;
     dcg += (Math.pow(2, rel) - 1) / Math.log2(i + 2); // i+2 because rank is 1-based
   }
 
@@ -61,7 +62,7 @@ export function ndcgAtK(
 
   let idcg = 0;
   for (let i = 0; i < idealGrades.length; i++) {
-    idcg += (Math.pow(2, idealGrades[i]!) - 1) / Math.log2(i + 2);
+    idcg += (Math.pow(2, idealGrades[i] ?? 0) - 1) / Math.log2(i + 2);
   }
 
   if (idcg === 0) return 0;
@@ -73,7 +74,8 @@ export function ndcgAtK(
  */
 export function mrr(retrieved: string[], relevant: Set<string>): number {
   for (let i = 0; i < retrieved.length; i++) {
-    if (relevant.has(retrieved[i]!)) {
+    const r = retrieved[i];
+    if (r !== undefined && relevant.has(r)) {
       return 1 / (i + 1);
     }
   }
@@ -143,5 +145,5 @@ export function p95Latency(latencies: number[]): number {
   if (latencies.length === 0) return 0;
   const sorted = [...latencies].sort((a, b) => a - b);
   const idx = Math.ceil(0.95 * sorted.length) - 1;
-  return sorted[Math.max(0, idx)]!;
+  return sorted[Math.max(0, idx)] ?? 0;
 }

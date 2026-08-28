@@ -13,7 +13,7 @@ try {
         # Only run tsc on TS/TSX files
         if ($filePath -and ($filePath -match '\.(ts|tsx)$')) {
             # Run type check in the project root
-            $projectRoot = "C:\dev"
+            $projectRoot = "V:\monorepo"
             Push-Location $projectRoot -ErrorAction SilentlyContinue
             npx tsc --noEmit 2>$null | Out-Null
             Pop-Location -ErrorAction SilentlyContinue

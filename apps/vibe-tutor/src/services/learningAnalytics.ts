@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Learning Analytics Service for Vibe Tutor
  * Tracks, analyzes, and stores learning patterns on D: drive
  * Provides adaptive difficulty and personalized recommendations
@@ -9,6 +9,7 @@ import { CapacitorHttp } from '@capacitor/core';
 import { databaseService } from './databaseService';
 
 import { appStore } from '../utils/electronStore';
+import { logger } from '../utils/logger';
 
 // Learning analytics data path on D: drive
 const ANALYTICS_PATH = 'D:\\learning-system\\vibe-tutor';
@@ -48,6 +49,7 @@ export interface AdaptiveRecommendation {
 }
 
 export class LearningAnalyticsService {
+  private static readonly ANALYTICS_KEY_CAP = 100;
   private currentSession: LearningMetrics | null = null;
   private sessionStartTime: number = 0;
   private analytics: Map<string, LearningMetrics> = new Map();
@@ -63,9 +65,8 @@ export class LearningAnalyticsService {
       // Load existing analytics data
       await this.loadAnalyticsData();
 
-      console.debug('Learning analytics initialized at', ANALYTICS_PATH);
     } catch (error) {
-      console.error('Failed to initialize learning analytics:', error);
+      logger.error('Failed to initialize learning analytics:', error);
     }
   }
 
@@ -75,7 +76,6 @@ export class LearningAnalyticsService {
   private async ensureAnalyticsDirectory(): Promise<void> {
     // In a real implementation, we'd use Node.js fs module
     // For browser environment, we'll store in database
-    console.debug('Analytics directory checked:', ANALYTICS_PATH);
   }
 
   /**
@@ -92,10 +92,42 @@ export class LearningAnalyticsService {
     `);
 
     if (result.values) {
-      result.values.forEach((session: Record<string, unknown>) => {
-        this.analytics.set(session.id as string, session as unknown as LearningMetrics);
+      result.values.forEach((row: Record<string, unknown>) => {
+        const metrics = this.mapSessionRowToMetrics(row);
+        if (metrics) this.analytics.set(metrics.sessionId, metrics);
       });
     }
+  }
+
+  /**
+   * Map a raw `learning_sessions` DB row into a validated LearningMetrics.
+   * The table only stores a subset of columns, so build a complete object with
+   * safe defaults instead of blindly casting. Returns null for rows without a
+   * usable id so callers can skip malformed data.
+   */
+  private mapSessionRowToMetrics(row: Record<string, unknown>): LearningMetrics | null {
+    if (!row || typeof row !== 'object') return null;
+    const id = row.id != null ? String(row.id) : '';
+    if (!id) return null;
+
+    const durationMinutes = Number(row.duration_minutes ?? 0);
+    const focusScore = Number(row.focus_score ?? 0);
+    const tasksCompleted = Number(row.tasks_completed ?? 0);
+    const activity = typeof row.session_type === 'string' ? row.session_type : 'session';
+    const timestamp =
+      typeof row.session_date === 'string' ? new Date(row.session_date) : new Date();
+
+    return {
+      sessionId: id,
+      timestamp,
+      activity,
+      subject: activity,
+      duration: Number.isFinite(durationMinutes) ? durationMinutes : 0,
+      performance: { correct: 0, incorrect: 0, accuracy: 0 },
+      focusLevel: Number.isFinite(focusScore) ? focusScore : 0,
+      difficulty: 'medium',
+      completionRate: Number.isFinite(tasksCompleted) ? Math.min(1, tasksCompleted / 10) : 0,
+    };
   }
 
   /**
@@ -141,7 +173,7 @@ export class LearningAnalyticsService {
         data: { event, data },
       });
     } catch (error) {
-      console.error('[Analytics] Failed to log event to backend:', error);
+      logger.error('[Analytics] Failed to log event to backend:', error);
     }
   }
 
@@ -236,13 +268,33 @@ export class LearningAnalyticsService {
         path: `${ANALYTICS_PATH}\\sessions\\${metrics.sessionId}.json`,
       };
 
-      // Store in browser storage as backup
+      // Store in browser storage as backup, capping retained keys so the
+      // per-session analytics entries can't grow unbounded.
       if (appStore) {
         appStore.set(`analytics_${metrics.sessionId}`, JSON.stringify(analyticsData));
+        this.pruneAnalyticsKeys(metrics.sessionId);
       }
     } catch (error) {
-      console.error('Failed to save analytics to file:', error);
+      logger.error('Failed to save analytics to file:', error);
     }
+  }
+
+  /**
+   * Track persisted analytics keys in a bounded index and evict the oldest
+   * `analytics_<uuid>` entries once the cap is exceeded, preventing unbounded
+   * localStorage growth.
+   */
+  private pruneAnalyticsKeys(sessionId: string): void {
+    const INDEX_KEY = 'analytics_index';
+    const index = appStore.get<string[]>(INDEX_KEY) ?? [];
+    if (!index.includes(sessionId)) index.push(sessionId);
+
+    while (index.length > LearningAnalyticsService.ANALYTICS_KEY_CAP) {
+      const evicted = index.shift();
+      if (evicted) appStore.remove(`analytics_${evicted}`);
+    }
+
+    appStore.set(INDEX_KEY, index);
   }
 
   /**

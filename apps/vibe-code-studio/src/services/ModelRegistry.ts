@@ -243,7 +243,7 @@ export class ModelRegistry {
 
     if (models.length === 0) {
       // Fallback to general-purpose model
-      const fallback = this.getModel('deepseek/deepseek-v3.2');
+      const fallback = this.getModel('moonshot/kimi-2.5-pro');
       if (fallback) return fallback;
       throw new Error(`No models available for task type: ${taskType}`);
     }

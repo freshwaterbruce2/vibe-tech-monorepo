@@ -16,12 +16,14 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     product: {
       count: vi.fn(),
-      aggregate: vi.fn(),
     },
     trendingKeyword: {
       count: vi.fn(),
     },
     category: {
+      count: vi.fn(),
+    },
+    click: {
       count: vi.fn(),
     },
   },
@@ -52,13 +54,7 @@ describe('StatsCards', () => {
       vi.mocked(prisma.product.count).mockResolvedValue(150);
       vi.mocked(prisma.trendingKeyword.count).mockResolvedValue(25);
       vi.mocked(prisma.category.count).mockResolvedValue(8);
-      vi.mocked(prisma.product.aggregate).mockResolvedValue({
-        _avg: { trendScore: 75.5 },
-        _count: {},
-        _sum: {},
-        _min: {},
-        _max: {},
-      });
+      vi.mocked(prisma.click.count).mockResolvedValue(42);
 
       // Dynamic import to get fresh module with mocks
       const { StatsCards } = await import('./stats-cards');
@@ -71,20 +67,14 @@ describe('StatsCards', () => {
       expect(screen.getByText('Active Products')).toBeInTheDocument();
       expect(screen.getByText('Trending Keywords')).toBeInTheDocument();
       expect(screen.getByText('Categories')).toBeInTheDocument();
-      expect(screen.getByText('Avg Trend Score')).toBeInTheDocument();
+      expect(screen.getByText('Total Clicks')).toBeInTheDocument();
     });
 
     it('should display correct product count', async () => {
       vi.mocked(prisma.product.count).mockResolvedValue(42);
       vi.mocked(prisma.trendingKeyword.count).mockResolvedValue(10);
       vi.mocked(prisma.category.count).mockResolvedValue(5);
-      vi.mocked(prisma.product.aggregate).mockResolvedValue({
-        _avg: { trendScore: 80 },
-        _count: {},
-        _sum: {},
-        _min: {},
-        _max: {},
-      });
+      vi.mocked(prisma.click.count).mockResolvedValue(99);
 
       const { StatsCards } = await import('./stats-cards');
       const Component = await StatsCards();
@@ -97,13 +87,7 @@ describe('StatsCards', () => {
       vi.mocked(prisma.product.count).mockResolvedValue(100);
       vi.mocked(prisma.trendingKeyword.count).mockResolvedValue(33);
       vi.mocked(prisma.category.count).mockResolvedValue(7);
-      vi.mocked(prisma.product.aggregate).mockResolvedValue({
-        _avg: { trendScore: 65 },
-        _count: {},
-        _sum: {},
-        _min: {},
-        _max: {},
-      });
+      vi.mocked(prisma.click.count).mockResolvedValue(50);
 
       const { StatsCards } = await import('./stats-cards');
       const Component = await StatsCards();
@@ -116,13 +100,7 @@ describe('StatsCards', () => {
       vi.mocked(prisma.product.count).mockResolvedValue(50);
       vi.mocked(prisma.trendingKeyword.count).mockResolvedValue(15);
       vi.mocked(prisma.category.count).mockResolvedValue(12);
-      vi.mocked(prisma.product.aggregate).mockResolvedValue({
-        _avg: { trendScore: 70 },
-        _count: {},
-        _sum: {},
-        _min: {},
-        _max: {},
-      });
+      vi.mocked(prisma.click.count).mockResolvedValue(200);
 
       const { StatsCards } = await import('./stats-cards');
       const Component = await StatsCards();
@@ -131,23 +109,16 @@ describe('StatsCards', () => {
       expect(screen.getByText('12')).toBeInTheDocument();
     });
 
-    it('should display rounded average trend score', async () => {
+    it('should display correct click count', async () => {
       vi.mocked(prisma.product.count).mockResolvedValue(100);
       vi.mocked(prisma.trendingKeyword.count).mockResolvedValue(20);
       vi.mocked(prisma.category.count).mockResolvedValue(6);
-      vi.mocked(prisma.product.aggregate).mockResolvedValue({
-        _avg: { trendScore: 82.7 },
-        _count: {},
-        _sum: {},
-        _min: {},
-        _max: {},
-      });
+      vi.mocked(prisma.click.count).mockResolvedValue(83);
 
       const { StatsCards } = await import('./stats-cards');
       const Component = await StatsCards();
       render(Component);
 
-      // 82.7 rounds to 83
       expect(screen.getByText('83')).toBeInTheDocument();
     });
 
@@ -155,13 +126,7 @@ describe('StatsCards', () => {
       vi.mocked(prisma.product.count).mockResolvedValue(10);
       vi.mocked(prisma.trendingKeyword.count).mockResolvedValue(5);
       vi.mocked(prisma.category.count).mockResolvedValue(3);
-      vi.mocked(prisma.product.aggregate).mockResolvedValue({
-        _avg: { trendScore: 50 },
-        _count: {},
-        _sum: {},
-        _min: {},
-        _max: {},
-      });
+      vi.mocked(prisma.click.count).mockResolvedValue(7);
 
       const { StatsCards } = await import('./stats-cards');
       const Component = await StatsCards();
@@ -170,7 +135,7 @@ describe('StatsCards', () => {
       expect(screen.getByText('Live in store')).toBeInTheDocument();
       expect(screen.getByText('Tracked daily')).toBeInTheDocument();
       expect(screen.getByText('Active categories')).toBeInTheDocument();
-      expect(screen.getByText('Product heat')).toBeInTheDocument();
+      expect(screen.getByText('Affiliate clicks')).toBeInTheDocument();
     });
   });
 
@@ -182,13 +147,7 @@ describe('StatsCards', () => {
       vi.mocked(prisma.product.count).mockResolvedValue(0);
       vi.mocked(prisma.trendingKeyword.count).mockResolvedValue(0);
       vi.mocked(prisma.category.count).mockResolvedValue(0);
-      vi.mocked(prisma.product.aggregate).mockResolvedValue({
-        _avg: { trendScore: null },
-        _count: {},
-        _sum: {},
-        _min: {},
-        _max: {},
-      });
+      vi.mocked(prisma.click.count).mockResolvedValue(0);
 
       const { StatsCards } = await import('./stats-cards');
       const Component = await StatsCards();
@@ -196,42 +155,29 @@ describe('StatsCards', () => {
 
       // Should display "0" for all counts
       const zeros = screen.getAllByText('0');
-      expect(zeros.length).toBeGreaterThanOrEqual(3);
+      expect(zeros.length).toBeGreaterThanOrEqual(4);
     });
 
-    it('should handle null trend score', async () => {
+    it('should display Total Clicks card', async () => {
       vi.mocked(prisma.product.count).mockResolvedValue(10);
       vi.mocked(prisma.trendingKeyword.count).mockResolvedValue(5);
       vi.mocked(prisma.category.count).mockResolvedValue(3);
-      vi.mocked(prisma.product.aggregate).mockResolvedValue({
-        _avg: { trendScore: null },
-        _count: {},
-        _sum: {},
-        _min: {},
-        _max: {},
-      });
+      vi.mocked(prisma.click.count).mockResolvedValue(127);
 
       const { StatsCards } = await import('./stats-cards');
       const Component = await StatsCards();
       render(Component);
 
-      // null || 0 = 0, Math.round(0) = 0
-      // Find the "0" in the Avg Trend Score card
-      const avgCard = screen.getByText('Avg Trend Score').closest('div');
-      expect(avgCard).toBeInTheDocument();
+      const clicksCard = screen.getByText('Total Clicks').closest('div');
+      expect(clicksCard).toBeInTheDocument();
+      expect(screen.getByText('127')).toBeInTheDocument();
     });
 
     it('should handle large numbers', async () => {
       vi.mocked(prisma.product.count).mockResolvedValue(999999);
       vi.mocked(prisma.trendingKeyword.count).mockResolvedValue(50000);
       vi.mocked(prisma.category.count).mockResolvedValue(100);
-      vi.mocked(prisma.product.aggregate).mockResolvedValue({
-        _avg: { trendScore: 99.9 },
-        _count: {},
-        _sum: {},
-        _min: {},
-        _max: {},
-      });
+      vi.mocked(prisma.click.count).mockResolvedValue(12345);
 
       const { StatsCards } = await import('./stats-cards');
       const Component = await StatsCards();
@@ -247,13 +193,7 @@ describe('StatsCards', () => {
       vi.mocked(prisma.product.count).mockResolvedValue(1);
       vi.mocked(prisma.trendingKeyword.count).mockResolvedValue(1);
       vi.mocked(prisma.category.count).mockResolvedValue(1);
-      vi.mocked(prisma.product.aggregate).mockResolvedValue({
-        _avg: { trendScore: 50 },
-        _count: {},
-        _sum: {},
-        _min: {},
-        _max: {},
-      });
+      vi.mocked(prisma.click.count).mockResolvedValue(1);
 
       const { StatsCards } = await import('./stats-cards');
       const Component = await StatsCards();
@@ -268,13 +208,7 @@ describe('StatsCards', () => {
       vi.mocked(prisma.product.count).mockResolvedValue(75);
       vi.mocked(prisma.trendingKeyword.count).mockResolvedValue(20);
       vi.mocked(prisma.category.count).mockResolvedValue(8);
-      vi.mocked(prisma.product.aggregate).mockResolvedValue({
-        _avg: { trendScore: 60 },
-        _count: {},
-        _sum: {},
-        _min: {},
-        _max: {},
-      });
+      vi.mocked(prisma.click.count).mockResolvedValue(300);
 
       const { StatsCards } = await import('./stats-cards');
       await StatsCards();
@@ -299,35 +233,28 @@ describe('StatsCards', () => {
       await expect(StatsCards()).rejects.toThrow('Database connection failed');
     });
 
-    it('should handle aggregate errors', async () => {
+    it('should handle click count errors', async () => {
       vi.mocked(prisma.product.count).mockResolvedValue(10);
       vi.mocked(prisma.trendingKeyword.count).mockResolvedValue(5);
       vi.mocked(prisma.category.count).mockResolvedValue(3);
-      vi.mocked(prisma.product.aggregate).mockRejectedValue(new Error('Aggregate failed'));
+      vi.mocked(prisma.click.count).mockRejectedValue(new Error('Click count failed'));
 
       const { StatsCards } = await import('./stats-cards');
 
-      await expect(StatsCards()).rejects.toThrow('Aggregate failed');
+      await expect(StatsCards()).rejects.toThrow('Click count failed');
     });
 
-    it('should handle undefined aggregate result', async () => {
+    it('should display Total Clicks title', async () => {
       vi.mocked(prisma.product.count).mockResolvedValue(10);
       vi.mocked(prisma.trendingKeyword.count).mockResolvedValue(5);
       vi.mocked(prisma.category.count).mockResolvedValue(3);
-      vi.mocked(prisma.product.aggregate).mockResolvedValue({
-        _avg: { trendScore: undefined },
-        _count: {},
-        _sum: {},
-        _min: {},
-        _max: {},
-      });
+      vi.mocked(prisma.click.count).mockResolvedValue(0);
 
       const { StatsCards } = await import('./stats-cards');
       const Component = await StatsCards();
       render(Component);
 
-      // undefined || 0 = 0
-      expect(screen.getByText('Avg Trend Score')).toBeInTheDocument();
+      expect(screen.getByText('Total Clicks')).toBeInTheDocument();
     });
   });
 });

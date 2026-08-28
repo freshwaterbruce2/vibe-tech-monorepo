@@ -2,7 +2,7 @@
 //! Exposes REST API endpoints for mobile app communication
 
 use axum::{
-    extract::{Request, State, Query, Path},
+    extract::{Path, Query, Request, State},
     http::{header, Method, StatusCode},
     middleware::{self, Next},
     response::Response,
@@ -11,14 +11,14 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::time::{Duration as StdDuration, Instant};
 use std::sync::Arc;
+use std::time::{Duration as StdDuration, Instant};
 use tokio::sync::Mutex as AsyncMutex;
 use tower_http::cors::CorsLayer;
 
+use crate::database::DatabaseService;
 use crate::modules::llm;
 use crate::modules::state::Config;
-use crate::database::DatabaseService;
 
 /// Shared application state for Axum
 pub struct AppState {
@@ -64,6 +64,21 @@ pub struct ErrorResponse {
 
 const MAX_ORIGIN_COUNT: usize = 64;
 const MAX_QUERY_LENGTH: usize = 1024;
+const DEFAULT_MOBILE_BRIDGE_PORT: u16 = 3000;
+
+fn mobile_lan_enabled() -> bool {
+    env::var("NOVA_MOBILE_LAN_ENABLED")
+        .map(|value| matches!(value.to_ascii_lowercase().as_str(), "1" | "true" | "yes"))
+        .unwrap_or(false)
+}
+
+pub fn bridge_port_from_env() -> u16 {
+    env::var("NOVA_MOBILE_BRIDGE_PORT")
+        .ok()
+        .and_then(|value| value.parse::<u16>().ok())
+        .filter(|port| *port > 0)
+        .unwrap_or(DEFAULT_MOBILE_BRIDGE_PORT)
+}
 
 /// Detect local network IP addresses for LAN mobile access
 fn local_ip_addresses() -> std::io::Result<Vec<String>> {
@@ -102,11 +117,13 @@ fn load_allowed_origins() -> Vec<String> {
                 "http://127.0.0.1:5173".to_string(),
                 "http://localhost:5173".to_string(),
             ];
-            // Auto-detect LAN IPs so mobile devices on the same network can connect
-            if let Ok(addrs) = local_ip_addresses() {
-                for addr in addrs {
-                    origins.push(format!("http://{}:3000", addr));
-                    origins.push(format!("http://{}:1420", addr));
+            if mobile_lan_enabled() {
+                let port = bridge_port_from_env();
+                if let Ok(addrs) = local_ip_addresses() {
+                    for addr in addrs {
+                        origins.push(format!("http://{}:{}", addr, port));
+                        origins.push(format!("http://{}:1420", addr));
+                    }
                 }
             }
             origins
@@ -126,13 +143,12 @@ async fn chat_handler(
     // We clone the config for each request as it's required by process_chat
     // If Config is heavy, we might want to refactor process_chat to take &Config
 
-
     // Placeholder values for history, system_prompt, and active_model
     // These would typically be derived from the payload or application state
     let history = vec![]; // Example: empty history
     let system_prompt = "You are a helpful assistant.".to_string(); // Example: default system prompt
-    let active_model = std::env::var("NOVA_DEFAULT_MODEL")
-        .unwrap_or_else(|_| "kimi-k2.5".to_string());
+    let active_model =
+        std::env::var("NOVA_DEFAULT_MODEL").unwrap_or_else(|_| "kimi-k2.5".to_string());
 
     match llm::dispatch_model_request(
         &payload.message,
@@ -142,7 +158,8 @@ async fn chat_handler(
         &state.config,
         &state.db,
     )
-    .await {
+    .await
+    {
         Ok(response) => {
             tracing::info!("Mobile bridge: chat response sent");
             Ok(Json(ChatResponse { content: response }))
@@ -160,9 +177,7 @@ async fn chat_handler(
 }
 
 /// GET /status - Get Nova agent status (matches mobile AgentState type)
-async fn status_handler(
-    State(state): State<Arc<AppState>>,
-) -> Json<StatusResponse> {
+async fn status_handler(State(state): State<Arc<AppState>>) -> Json<StatusResponse> {
     let db_guard = state.db.lock().await;
     let ready = db_guard.is_some();
 
@@ -209,7 +224,9 @@ async fn memories_search_handler(
         }
         Err(e) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse { error: format!("Memory search failed: {}", e) }),
+            Json(ErrorResponse {
+                error: format!("Memory search failed: {}", e),
+            }),
         )),
     }
 }
@@ -222,7 +239,9 @@ async fn projects_handler(
         Ok(projects) => Ok(Json(projects)),
         Err(e) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse { error: format!("Failed to list projects: {}", e) }),
+            Json(ErrorResponse {
+                error: format!("Failed to list projects: {}", e),
+            }),
         )),
     }
 }
@@ -245,19 +264,28 @@ async fn project_detail_handler(
             if let Some(project) = projects.into_iter().find(|p| p.id == id) {
                 let mut state = None;
                 if project.has_state {
-                    state = crate::modules::project::get_project_state(project.path.clone()).await.ok();
+                    state = crate::modules::project::get_project_state(project.path.clone())
+                        .await
+                        .ok();
                 }
-                Ok(Json(ProjectDetailResponse { info: project, state }))
+                Ok(Json(ProjectDetailResponse {
+                    info: project,
+                    state,
+                }))
             } else {
                 Err((
                     StatusCode::NOT_FOUND,
-                    Json(ErrorResponse { error: format!("Project '{}' not found", id) }),
+                    Json(ErrorResponse {
+                        error: format!("Project '{}' not found", id),
+                    }),
                 ))
             }
         }
         Err(e) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse { error: format!("Failed to get project: {}", e) }),
+            Json(ErrorResponse {
+                error: format!("Failed to get project: {}", e),
+            }),
         )),
     }
 }
@@ -277,7 +305,10 @@ async fn devices_register_handler(
         // We shouldn't really reach here if we use standard validation, but just return success true for now
         tracing::warn!("Empty push token received");
     } else {
-        tracing::info!("[Nova Server] Registered push token: {}", payload.push_token);
+        tracing::info!(
+            "[Nova Server] Registered push token ({} chars)",
+            payload.push_token.chars().count()
+        );
     }
     Json(serde_json::json!({ "success": true, "message": "Device registered" }))
 }
@@ -290,9 +321,7 @@ pub struct HealthResponse {
 }
 
 /// GET /health - Health check with uptime
-async fn health_handler(
-    State(state): State<Arc<AppState>>,
-) -> Json<HealthResponse> {
+async fn health_handler(State(state): State<Arc<AppState>>) -> Json<HealthResponse> {
     Json(HealthResponse {
         ok: true,
         uptime: state.started_at.elapsed().as_secs(),
@@ -354,7 +383,10 @@ pub fn create_router(state: Arc<AppState>) -> Router {
         .route("/projects", get(projects_handler))
         .route("/projects/:id", get(project_detail_handler))
         .route("/devices/register", post(devices_register_handler))
-        .route_layer(middleware::from_fn_with_state(state.clone(), auth_middleware));
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth_middleware,
+        ));
 
     // Public endpoints (health with state for uptime) and combine
     Router::new()
@@ -369,6 +401,16 @@ pub fn create_router(state: Arc<AppState>) -> Router {
 pub async fn get_bridge_info(
     config: tauri::State<'_, Config>,
 ) -> Result<serde_json::Value, String> {
+    let port = bridge_port_from_env();
+    let host = if mobile_lan_enabled() {
+        local_ip_addresses()
+            .ok()
+            .and_then(|addrs| addrs.into_iter().next())
+            .unwrap_or_else(|| "127.0.0.1".to_string())
+    } else {
+        "127.0.0.1".to_string()
+    };
+
     let lan_ip = local_ip_addresses()
         .ok()
         .and_then(|addrs| addrs.into_iter().next())
@@ -376,9 +418,10 @@ pub async fn get_bridge_info(
 
     Ok(serde_json::json!({
         "token": config.mobile_bridge_token,
-        "url": format!("http://{}:3000", lan_ip),
+        "url": format!("http://{}:{}", host, port),
         "lanIp": lan_ip,
-        "port": 3000
+        "lanEnabled": mobile_lan_enabled(),
+        "port": port
     }))
 }
 
@@ -389,12 +432,13 @@ pub async fn start_server(state: Arc<AppState>, port: u16) -> anyhow::Result<()>
     }
 
     let app = create_router(state);
-    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));
+    let addr = if mobile_lan_enabled() {
+        std::net::SocketAddr::from(([0, 0, 0, 0], port))
+    } else {
+        std::net::SocketAddr::from(([127, 0, 0, 1], port))
+    };
 
-    tracing::info!(
-        "Nova Mobile Bridge starting on http://0.0.0.0:{}",
-        port
-    );
+    tracing::info!("Nova Mobile Bridge starting on http://{}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
@@ -403,73 +447,5 @@ pub async fn start_server(state: Arc<AppState>, port: u16) -> anyhow::Result<()>
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use axum::body::Body;
-    use axum::http::Request;
-    use tower::util::ServiceExt;
-
-    fn test_config() -> Config {
-        Config {
-            deepseek_api_key: String::new(),
-            deepseek_base_url: "https://api.deepseek.com/v1".to_string(),
-            deepseek_model: "deepseek-v3.2".to_string(),
-            groq_api_key: String::new(),
-            openrouter_api_key: String::new(),
-            huggingface_api_key: String::new(),
-            huggingface_base_url: "https://api-inference.huggingface.co/v1".to_string(),
-            kimi_api_key: String::new(),
-            database_path: "D:\\databases".to_string(),
-            workspace_root: "C:\\dev".to_string(),
-            deepcode_ws_url: "ws://127.0.0.1:5004".to_string(),
-            deepcode_ipc_enabled: false,
-            trading_data_dir: "D:\\trading_data".to_string(),
-            trading_logs_dir: "D:\\trading_logs".to_string(),
-            chroma_url: "http://localhost:8000".to_string(),
-            mobile_bridge_token: "test-token".to_string(),
-        }
-    }
-
-    fn test_state() -> Arc<AppState> {
-        Arc::new(AppState {
-            app_state: Arc::new(AsyncMutex::new(crate::modules::state::AgentState::default())),
-            config: test_config(),
-            db: Arc::new(AsyncMutex::new(None)),
-            started_at: Instant::now(),
-        })
-    }
-
-    #[tokio::test]
-    async fn protected_route_requires_authorization() {
-        let app = create_router(test_state());
-        let request = Request::builder()
-            .uri("/status")
-            .method(Method::GET)
-            .body(Body::empty())
-            .unwrap();
-
-        let response = app.oneshot(request).await.unwrap();
-        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
-    }
-
-    #[tokio::test]
-    async fn cors_allows_configured_origin_on_preflight() {
-        std::env::set_var("NOVA_MOBILE_ALLOWED_ORIGINS", "http://127.0.0.1:1420");
-
-        let app = create_router(test_state());
-        let request = Request::builder()
-            .uri("/status")
-            .method(Method::OPTIONS)
-            .header(header::ORIGIN, "http://127.0.0.1:1420")
-            .header(header::ACCESS_CONTROL_REQUEST_METHOD, "GET")
-            .body(Body::empty())
-            .unwrap();
-
-        let response = app.oneshot(request).await.unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(
-            response.headers().get(header::ACCESS_CONTROL_ALLOW_ORIGIN).unwrap(),
-            "http://127.0.0.1:1420"
-        );
-    }
-}
+#[path = "http_server_tests.rs"]
+mod tests;

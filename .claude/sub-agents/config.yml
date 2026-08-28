@@ -15,7 +15,7 @@ defaults:
     sub_agent: 5000 # Task-specific sub-agents (default)
 
   model_selection:
-    orchestrator: claude-opus-4-6 # Strategic decisions
+    orchestrator: claude-opus-4-8 # Strategic decisions
     specialist: claude-sonnet-4-6 # Balanced reasoning
     sub_agent_fast: claude-haiku-4-5-20251001 # Fast, cheap, deterministic
     sub_agent_balanced: claude-sonnet-4-6 # Requires reasoning
@@ -724,7 +724,7 @@ sub_agents:
       database_location: "D:\\databases"
       sqlite_path_pattern: "D:\\databases\\{app_name}\\{db_name}.db"
       backup_location: "D:\\databases\\_backups"
-      never_store_in: "C:\\dev"
+      never_store_in: "V:\\monorepo"
 
     database_patterns:
       sqlite:
@@ -1668,7 +1668,7 @@ sub_agents:
       nx_targets: []
 
     context_includes:
-      - C:\dev\.claude\mcp-servers\
+      - V:\monorepo\.claude\mcp-servers\
       - .mcp.json
       - apps/desktop-commander-v3/dist/mcp.js
       - apps/mcp-skills-server/dist/index.js
@@ -1859,7 +1859,7 @@ sub_agents:
         - dev
 
     context_includes:
-      - C:\dev\.claude\mcp-servers\
+      - V:\monorepo\.claude\mcp-servers\
       - apps/mcp-*/src/**/*.ts
       - apps/mcp-*/package.json
       - .mcp.json
@@ -2395,7 +2395,7 @@ integration:
     # Phase 5 new agents
     desktop-mcp-specialist:
       success: 'MCP validated - ${tools_registered} tools registered, connection verified'
-      failure: "MCP setup failed - ${error_message}. Check C:\\dev\\.claude\\mcp-servers\\"
+      failure: "MCP setup failed - ${error_message}. Check V:\\monorepo\\.claude\\mcp-servers\\"
     desktop-rag-specialist:
       success: 'RAG pipeline ready - ${documents_indexed} docs indexed, ${retrieval_score} accuracy'
       failure: "RAG issues - ${error_message}. Check D:\\rag\\pipeline.config.json"
@@ -2407,7 +2407,7 @@ integration:
       failure: 'Pipeline failed at ${stage} - ${error_message}'
     mcp-server-specialist:
       success: 'MCP server built - ${tools_count} tools, ${resources_count} resources registered'
-      failure: "MCP server issues - ${error_message}. See C:\\dev\\.claude\\mcp-servers\\"
+      failure: "MCP server issues - ${error_message}. See V:\\monorepo\\.claude\\mcp-servers\\"
     nx-workspace-specialist:
       success: 'Workspace healthy - ${projects_count} projects, ${affected_count} affected, cache ${cache_status}'
       failure: 'Workspace issues - ${error_message}. Run: pnpm nx reset'

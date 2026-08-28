@@ -211,7 +211,7 @@ Test task message flow:
 
 ```powershell
 # Start IPC Bridge
-cd C:\dev\backend\ipc-bridge
+cd V:\monorepo\backend\ipc-bridge
 npm start
 
 # In another terminal, test with wscat

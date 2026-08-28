@@ -2,19 +2,19 @@
  * BackgroundWorker - Web Worker wrapper for CPU-intensive tasks
  * Provides a clean API for offloading work to background threads
  */
-import type { TaskProgress,TaskResult } from '@vibetech/types/tasks';
+import type { TaskProgress, TaskResult } from '@vibetech/types';
 
 import { logger } from '../services/Logger';
 
 export interface WorkerMessage {
   type: 'execute' | 'progress' | 'result' | 'error' | 'terminate';
-  payload?: any;
+  payload?: unknown;
 }
 
 export interface WorkerTask {
   id: string;
   type: string;
-  data: any;
+  data: unknown;
 }
 
 export class BackgroundWorker {
@@ -35,9 +35,9 @@ export class BackgroundWorker {
   /**
    * Execute a task in the background worker
    */
-  async execute<_T = any>(
+  async execute(
     taskType: string,
-    data: any,
+    data: unknown,
     onProgress?: (progress: TaskProgress) => void
   ): Promise<TaskResult> {
     if (this.isTerminated) {
@@ -52,12 +52,13 @@ export class BackgroundWorker {
         switch (message.type) {
           case 'progress':
             if (onProgress && message.payload) {
-              onProgress(message.payload);
+              onProgress(message.payload as TaskProgress);
             }
             break;
 
           case 'result':
             this.messageHandlers.delete(taskId);
+            clearTimeout(timeoutId);
             resolve({
               success: true,
               data: message.payload,
@@ -66,9 +67,10 @@ export class BackgroundWorker {
 
           case 'error':
             this.messageHandlers.delete(taskId);
+            clearTimeout(timeoutId);
             resolve({
               success: false,
-              error: message.payload ?? 'Unknown worker error',
+              error: typeof message.payload === 'string' ? message.payload : 'Unknown worker error',
             });
             break;
         }
@@ -81,12 +83,15 @@ export class BackgroundWorker {
       this.postMessage({ type: 'execute', payload: task });
 
       // Timeout after 5 minutes
-      setTimeout(() => {
-        if (this.messageHandlers.has(taskId)) {
-          this.messageHandlers.delete(taskId);
-          reject(new Error('Task execution timeout'));
-        }
-      }, 5 * 60 * 1000);
+      const timeoutId = setTimeout(
+        () => {
+          if (this.messageHandlers.has(taskId)) {
+            this.messageHandlers.delete(taskId);
+            reject(new Error('Task execution timeout'));
+          }
+        },
+        5 * 60 * 1000
+      );
     });
   }
 
@@ -112,14 +117,17 @@ export class BackgroundWorker {
   // --- Private Methods ---
 
   private setupMessageHandler(): void {
-    if (!this.worker) {return;}
+    if (!this.worker) {
+      return;
+    }
 
     this.worker.onmessage = (event: MessageEvent<WorkerMessage>) => {
       const message = event.data;
 
       // Find handler by task ID (if available)
-      if (message.payload?.id) {
-        const handler = this.messageHandlers.get(message.payload.id);
+      const payloadWithId = message.payload as Record<string, unknown> | undefined;
+      if (payloadWithId?.['id']) {
+        const handler = this.messageHandlers.get(payloadWithId['id'] as string);
         if (handler) {
           handler(message);
         }
@@ -130,7 +138,7 @@ export class BackgroundWorker {
       logger.error('Worker error:', error);
 
       // Notify all pending handlers
-      this.messageHandlers.forEach((handler) => {
+      this.messageHandlers.forEach(handler => {
         handler({
           type: 'error',
           payload: error.message || 'Worker error',
@@ -148,7 +156,7 @@ export class BackgroundWorker {
   }
 
   private generateId(): string {
-    return `worker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `worker_${crypto.randomUUID()}`;
   }
 }
 
@@ -170,15 +178,15 @@ export class BackgroundWorkerPool {
   /**
    * Execute a task using an available worker from the pool
    */
-  async execute<T = any>(
+  async execute(
     taskType: string,
-    data: any,
+    data: unknown,
     onProgress?: (progress: TaskProgress) => void
   ): Promise<TaskResult> {
     const worker = await this.getAvailableWorker();
 
     try {
-      const result = await worker.execute<T>(taskType, data, onProgress);
+      const result = await worker.execute(taskType, data, onProgress);
       this.releaseWorker(worker);
       return result;
     } catch (error) {
@@ -191,7 +199,7 @@ export class BackgroundWorkerPool {
    * Terminate all workers in the pool
    */
   terminate(): void {
-    this.workers.forEach((worker) => worker.terminate());
+    this.workers.forEach(worker => worker.terminate());
     this.workers = [];
     this.availableWorkers = [];
   }
@@ -224,7 +232,7 @@ export class BackgroundWorkerPool {
   private async getAvailableWorker(): Promise<BackgroundWorker> {
     // Wait for an available worker
     while (this.availableWorkers.length === 0) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     const worker = this.availableWorkers.shift();

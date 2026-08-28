@@ -67,7 +67,7 @@ describe('benchmark scoring', () => {
         durationMs: 1,
       });
 
-    const suites = new BenchmarkService().runRegressionPackSuites('C:\\dev');
+    const suites = new BenchmarkService().runRegressionPackSuites('V:\\monorepo');
     const reviewSuite = suites.find(
       (suite) => suite.suite === 'regression-review-affected-changes',
     );

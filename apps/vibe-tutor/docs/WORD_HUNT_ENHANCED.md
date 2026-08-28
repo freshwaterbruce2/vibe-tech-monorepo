@@ -222,7 +222,7 @@
 
 ```powershell
 # APK is ready at:
-C:\dev\Vibe-Tutor\android\app\build\outputs\apk\debug\app-debug.apk
+V:\monorepo\Vibe-Tutor\android\app\build\outputs\apk\debug\app-debug.apk
 
 # When A54 is reconnected:
 adb install -r android\app\build\outputs\apk\debug\app-debug.apk

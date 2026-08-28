@@ -2,20 +2,29 @@
 
 /**
  * File Size Validation Script
- * Enforces the 360-line maximum rule for all code files
+ *
+ * Enforces the workspace line-count cap (500 +/- 100):
+ *   - WARNING_THRESHOLD (500): file is approaching the limit, split soon.
+ *   - MAX_LINES (1000): hard cap, commit/build is rejected.
+ *
+ * Covers code that ESLint cannot lint (.py / .rs) and acts as a backstop for
+ * JS/TS. Excluded paths (tests, generated code, vendored code) are never
+ * subject to the cap — see EXCLUDE_PATTERNS.
+ *
+ * Usage:
+ *   node scripts/validate-file-size.js                 # walk the whole tree
+ *   node scripts/validate-file-size.js <file> [<file>] # check only the given files
+ *                                                      # (used by the pre-commit hook
+ *                                                      #  with the staged file list)
  */
 
 import fs from "fs";
-import path, { dirname } from "path";
-import { fileURLToPath } from "url";
+import path from "path";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const MAX_LINES = 1000;
+const WARNING_THRESHOLD = 500;
 
-const MAX_LINES = 360;
-const WARNING_THRESHOLD = 300;
-
-// File extensions to check
+// File extensions to check (code only — JSON/YAML/MD are never counted).
 const CODE_EXTENSIONS = [
 	".js",
 	".jsx",
@@ -36,21 +45,48 @@ const CODE_EXTENSIONS = [
 	".php",
 ];
 
-// Directories to ignore
+// Directories never walked.
 const IGNORE_DIRS = [
 	"node_modules",
 	".git",
 	"dist",
 	"build",
 	".turbo",
+	".nx",
 	"coverage",
 	".next",
 	"out",
+	"vendor",
+];
+
+// Paths excluded from the cap. An excluded file may be any length.
+// Matched against the forward-slash relative path.
+const EXCLUDE_PATTERNS = [
+	/\.(test|spec)\.(ts|tsx|js|jsx|mjs|cjs)$/i, // unit/integration tests
+	/(^|\/)(__tests__|tests|e2e)\//i, // test directories
+	/(^|\/)migrations\//i, // generated DB migrations
+	/(^|\/)generated\//i, // generated output dirs (e.g. prisma/generated)
+	/(^|\/)\.prisma\//i, // prisma client output
+	/\.d\.ts$/i, // type declarations
+	/\.gen\.ts$/i, // generated code
+	/\.generated\./i, // generated code
+	/\.snap$/i, // test snapshots
+	/(^|\/)vendor\//i, // vendored third-party code
+	/(^|\/)eslint(\.base)?\.config\.[cm]?js$/i, // flat ESLint config (per-project overrides)
+	/^plugins\/factory\/src\/generators\/.+\/files\//i, // scaffolding templates
 ];
 
 const violations = [];
 const warnings = [];
 let checkedFiles = 0;
+
+function toRelPosix(filePath) {
+	return path.relative(process.cwd(), filePath).split(path.sep).join("/");
+}
+
+function isExcluded(relativePosixPath) {
+	return EXCLUDE_PATTERNS.some((pattern) => pattern.test(relativePosixPath));
+}
 
 function shouldCheckFile(filePath) {
 	const ext = path.extname(filePath).toLowerCase();
@@ -75,9 +111,11 @@ function countLines(filePath) {
 function checkFile(filePath) {
 	if (!shouldCheckFile(filePath)) return;
 
+	const relativePath = toRelPosix(filePath);
+	if (isExcluded(relativePath)) return;
+
 	checkedFiles++;
 	const lines = countLines(filePath);
-	const relativePath = path.relative(process.cwd(), filePath);
 
 	if (lines > MAX_LINES) {
 		violations.push({
@@ -116,14 +154,44 @@ function walkDirectory(dirPath) {
 
 // Main execution
 console.log("🔍 Validating file sizes...\n");
-console.log(`📏 Maximum allowed lines: ${MAX_LINES}`);
-console.log(`⚠️  Warning threshold: ${WARNING_THRESHOLD}\n`);
+console.log(`📏 Hard limit: ${MAX_LINES} lines | ⚠️  Warning at: ${WARNING_THRESHOLD} lines\n`);
 
-const startPath = process.cwd();
-walkDirectory(startPath);
+const rawArgs = process.argv.slice(2);
+let topN = 0;
+const fileArgs = [];
+
+for (const arg of rawArgs) {
+  if (arg === '--top') {
+    topN = Infinity; // will be refined by next numeric arg
+  } else if (topN === Infinity && /^\d+$/.test(arg)) {
+    topN = parseInt(arg, 10);
+  } else {
+    fileArgs.push(arg);
+  }
+}
+
+if (fileArgs.length > 0) {
+  // Scoped mode (pre-commit hook or explicit paths)
+  for (const arg of fileArgs) {
+    const fullPath = path.resolve(process.cwd(), arg);
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+      checkFile(fullPath);
+    }
+  }
+} else {
+  walkDirectory(process.cwd());
+}
+
+// If user asked for --top N, trim results to the largest N
+if (topN > 0) {
+  violations.sort((a, b) => b.lines - a.lines);
+  warnings.sort((a, b) => b.lines - a.lines);
+  if (violations.length > topN) violations.length = topN;
+  if (warnings.length > topN) warnings.length = topN;
+}
 
 // Report results
-console.log(`\n✅ Checked ${checkedFiles} files\n`);
+console.log(`\n✅ Checked ${checkedFiles} file(s)\n`);
 
 if (warnings.length > 0) {
 	console.log("⚠️  FILES APPROACHING LIMIT:");
@@ -140,15 +208,15 @@ if (violations.length > 0) {
 	console.log("═".repeat(60));
 	violations.forEach((v) => {
 		console.log(`  ${v.file}`);
-		console.log(`    Lines: ${v.lines} (${v.excess} over limit)`);
+		console.log(`    Lines: ${v.lines} (${v.excess} over the ${MAX_LINES}-line limit)`);
 		console.log(`    Action Required: Split into modules`);
 	});
 	console.log("");
-	console.log(`🚫 ${violations.length} file(s) violate the 360-line rule!`);
+	console.log(`🚫 ${violations.length} file(s) exceed the ${MAX_LINES}-line limit!`);
 	console.log("   These MUST be split into smaller modules.\n");
 
 	process.exit(1);
 } else {
-	console.log("✨ All files comply with the 360-line limit!\n");
+	console.log(`✨ All files comply with the ${MAX_LINES}-line limit!\n`);
 	process.exit(0);
 }

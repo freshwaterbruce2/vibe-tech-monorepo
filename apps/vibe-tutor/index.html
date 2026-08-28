@@ -2,10 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' 'unsafe-eval' 'unsafe-inline' http://localhost:5173; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http:; media-src 'self' blob: data: https: http:; connect-src 'self' https: http: ws: wss: http://localhost:3001 http://localhost:5173 ws://localhost:5173 ws://localhost:3001"
-    />
+    <!-- Content-Security-Policy is delivered via Cloud Run response headers; -->
+    <!-- see CSP_DIRECTIVES in apps/vibe-tutor/render-backend/server.mjs for the policy source. -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -14,10 +12,10 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <meta name="version" content="1.5.9" />
+    <meta name="version" content="1.5.12" />
     <title>Vibe Tutor</title>
     <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
     <meta name="color-scheme" content="dark light" />
     <!-- Optional Windows tiles fallback -->
     <meta name="msapplication-TileColor" content="#06131F" />

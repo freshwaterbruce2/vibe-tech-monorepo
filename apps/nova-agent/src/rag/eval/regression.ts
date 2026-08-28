@@ -3,13 +3,19 @@
  * Compares a benchmark run against baseline and fails if quality drops below thresholds.
  *
  * Usage:
- *   pnpm --filter nova-agent exec tsx src/rag/eval/regression.ts [--baseline <name>] [--run <runId>]
+ *   pnpm --filter nova-agent exec tsx src/rag/eval/regression.ts \
+ *     [--baseline <name>] [--run <runId>]
  *
  * Exit code 0 = passed, 1 = regression detected.
  */
 
 import { loadBaseline, loadRun, listRuns } from './results-store.js';
-import type { BenchmarkRun, RegressionCheck, RegressionResult, RegressionThresholds } from './types.js';
+import type {
+  BenchmarkRun,
+  RegressionCheck,
+  RegressionResult,
+  RegressionThresholds,
+} from './types.js';
 import { DEFAULT_REGRESSION_THRESHOLDS } from './types.js';
 
 export function checkRegression(
@@ -20,7 +26,11 @@ export function checkRegression(
   const regressions: RegressionResult[] = [];
 
   // Check metrics at key K values
-  const checks: Array<{ metric: 'ndcg' | 'precision' | 'recall' | 'mrr'; k: number; threshold: number }> = [
+  const checks: Array<{
+    metric: 'ndcg' | 'precision' | 'recall' | 'mrr';
+    k: number;
+    threshold: number;
+  }> = [
     { metric: 'ndcg', k: 5, threshold: thresholds.ndcg5 },
     { metric: 'precision', k: 5, threshold: thresholds.precision5 },
     { metric: 'mrr', k: 5, threshold: thresholds.mrr },
@@ -92,7 +102,7 @@ async function main(): Promise<void> {
   let runId: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--baseline') baselineName = args[++i]!;
+    if (args[i] === '--baseline') baselineName = args[++i] ?? baselineName;
     if (args[i] === '--run') runId = args[++i];
   }
 
@@ -108,7 +118,7 @@ async function main(): Promise<void> {
       console.error('No runs found. Run benchmark-runner first.');
       process.exit(1);
     }
-    current = loadRun(runs[0]!.runId);
+    current = loadRun(runs[0]?.runId ?? '');
   }
 
   const check = checkRegression(baseline, current);

@@ -5,7 +5,7 @@
 ### 1. Start Dev Server
 
 ```powershell
-cd C:\dev\Vibe-Tutor
+cd V:\monorepo\Vibe-Tutor
 npm run dev
 ```
 

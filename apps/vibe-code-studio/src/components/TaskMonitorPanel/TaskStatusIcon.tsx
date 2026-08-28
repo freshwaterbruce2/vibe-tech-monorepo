@@ -2,7 +2,7 @@
  * TaskStatusIcon Component
  * Displays status icon for tasks based on their current state
  */
-import { TaskStatus } from '@vibetech/types/tasks';
+import { TaskStatus } from '@vibetech/types';
 import {
   AlertCircle,
   CheckCircle2,

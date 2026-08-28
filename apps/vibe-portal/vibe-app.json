@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:saas",
+  "projectName": "client-portal",
+  "displayName": "Vibe-Tech",
+  "archetype": "web-saas",
+  "monetization": {
+    "stripeConnected": true,
+    "firstRevenueAt": null,
+    "mrrCents": 0,
+    "currency": "usd"
+  }
+}

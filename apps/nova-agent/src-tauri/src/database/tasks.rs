@@ -1,6 +1,6 @@
 use crate::database::connection::DatabaseService;
 use crate::database::errors::DatabaseError;
-use crate::database::types::{Task, with_retry};
+use crate::database::types::{with_retry, Task};
 use rusqlite::params;
 
 impl DatabaseService {
@@ -69,7 +69,8 @@ impl DatabaseService {
 
         let mut stmt = self.tasks_db.prepare(&query)?;
 
-        let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+        let params_refs: Vec<&dyn rusqlite::ToSql> =
+            params_vec.iter().map(|p| p.as_ref()).collect();
 
         let task_iter = stmt.query_map(params_refs.as_slice(), |row| {
             Ok(Task {
@@ -150,7 +151,7 @@ impl DatabaseService {
 
         let task_id = uuid::Uuid::new_v4().to_string();
         let _tags_json = tags.map(|t| serde_json::to_string(t).ok()).flatten();
-        
+
         let mut metadata = serde_json::json!({
             "parent_task_id": parent_task_id,
             "estimated_minutes": estimated_minutes,
@@ -190,7 +191,7 @@ impl DatabaseService {
              FROM task_tasks 
              WHERE status NOT IN ('completed', 'archived')
              ORDER BY created_at DESC 
-             LIMIT 100"
+             LIMIT 100",
         )?;
 
         let task_iter = stmt.query_map([], |row| {
@@ -210,12 +211,17 @@ impl DatabaseService {
         for task_result in task_iter {
             let task = task_result?;
             let existing_lower = task.title.to_lowercase();
-            let existing_words: std::collections::HashSet<_> = existing_lower.split_whitespace().collect();
+            let existing_words: std::collections::HashSet<_> =
+                existing_lower.split_whitespace().collect();
 
             // Calculate Jaccard similarity
             let intersection = title_words.intersection(&existing_words).count();
             let union = title_words.union(&existing_words).count();
-            let similarity = if union > 0 { intersection as f32 / union as f32 } else { 0.0 };
+            let similarity = if union > 0 {
+                intersection as f32 / union as f32
+            } else {
+                0.0
+            };
 
             if similarity >= 0.8 {
                 return Ok(Some(task));
@@ -319,7 +325,7 @@ mod tests {
                 None,
                 Some(30),
                 Some(serde_json::json!({
-                    "project_path": "C:\\dev\\apps\\nova-agent",
+                    "project_path": "V:\\monorepo\\apps\\nova-agent",
                     "auto_execute": false,
                     "requires_approval": true,
                 })),
@@ -330,7 +336,7 @@ mod tests {
         let metadata: serde_json::Value =
             serde_json::from_str(task.metadata.as_deref().unwrap()).unwrap();
 
-        assert_eq!(metadata["project_path"], "C:\\dev\\apps\\nova-agent");
+        assert_eq!(metadata["project_path"], "V:\\monorepo\\apps\\nova-agent");
         assert_eq!(metadata["auto_execute"], false);
         assert_eq!(metadata["requires_approval"], true);
         assert_eq!(metadata["estimated_minutes"], 30);

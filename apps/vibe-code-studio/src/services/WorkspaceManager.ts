@@ -41,9 +41,9 @@ export class WorkspaceManager {
       // Load current workspace
       let current: string | null = null;
       if (typeof window !== 'undefined' && window.electron?.store) {
-        current = await window.electron.store.get(STORAGE_CURRENT) ?? null;
-      } else if (typeof localStorage !== 'undefined') {
-        current = window.electronAPI.store.get(STORAGE_CURRENT);
+        current = (await window.electron.store.get(STORAGE_CURRENT)) ?? null;
+      } else {
+        current = localStorage.getItem(STORAGE_CURRENT);
       }
 
       if (current) {
@@ -56,8 +56,8 @@ export class WorkspaceManager {
           logger.warn('[WorkspaceManager] Clearing invalid workspace path:', current);
           if (typeof window !== 'undefined' && window.electron?.store) {
             await window.electron.store.delete(STORAGE_CURRENT);
-          } else if (typeof localStorage !== 'undefined') {
-            window.electronAPI.store.delete(STORAGE_CURRENT);
+          } else {
+            localStorage.removeItem(STORAGE_CURRENT);
           }
         }
       }
@@ -65,16 +65,16 @@ export class WorkspaceManager {
       // Load recent workspaces
       let recent: string | null = null;
       if (typeof window !== 'undefined' && window.electron?.store) {
-        recent = await window.electron.store.get(STORAGE_RECENT) ?? null;
-      } else if (typeof localStorage !== 'undefined') {
-        recent = window.electronAPI.store.get(STORAGE_RECENT);
+        recent = (await window.electron.store.get(STORAGE_RECENT)) ?? null;
+      } else {
+        recent = localStorage.getItem(STORAGE_RECENT);
       }
 
       if (recent) {
         const parsed = JSON.parse(recent);
         // Filter out invalid paths
         this.recentWorkspaces = parsed.filter((p: string) =>
-          /^[A-Za-z]:[\\/]|^\/|^demo:\/\//.test(p)
+          /^[A-Za-z]:[\\/]|^\/|^demo:\/\//.test(p),
         );
       }
     } catch (error) {
@@ -95,21 +95,21 @@ export class WorkspaceManager {
       if (this.currentWorkspace) {
         if (store) {
           await store.set(STORAGE_CURRENT, this.currentWorkspace);
-        } else if (typeof localStorage !== 'undefined') {
-          window.electronAPI.store.set(STORAGE_CURRENT, this.currentWorkspace);
+        } else {
+          localStorage.setItem(STORAGE_CURRENT, this.currentWorkspace);
         }
       } else {
         if (store) {
-           await store.delete(STORAGE_CURRENT);
-        } else if (typeof localStorage !== 'undefined') {
-          window.electronAPI.store.delete(STORAGE_CURRENT);
+          await store.delete(STORAGE_CURRENT);
+        } else {
+          localStorage.removeItem(STORAGE_CURRENT);
         }
       }
 
       if (store) {
         await store.set(STORAGE_RECENT, JSON.stringify(this.recentWorkspaces));
-      } else if (typeof localStorage !== 'undefined') {
-         window.electronAPI.store.set(STORAGE_RECENT, JSON.stringify(this.recentWorkspaces));
+      } else {
+        localStorage.setItem(STORAGE_RECENT, JSON.stringify(this.recentWorkspaces));
       }
     } catch (error) {
       logger.error('[WorkspaceManager] Failed to save to storage:', error);
@@ -224,7 +224,9 @@ export class WorkspaceManager {
    * @returns Workspace folder name or null
    */
   getWorkspaceName(): string | null {
-    if (!this.currentWorkspace) {return null;}
+    if (!this.currentWorkspace) {
+      return null;
+    }
 
     // Extract folder name from path
     const parts = this.currentWorkspace.split(/[/\\]/);

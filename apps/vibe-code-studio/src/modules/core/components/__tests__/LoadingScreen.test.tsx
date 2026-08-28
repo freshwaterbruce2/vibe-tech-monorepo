@@ -5,6 +5,6 @@ import { LoadingScreen } from '../LoadingScreen';
 describe('LoadingScreen', () => {
   it('renders the loading logo', () => {
     render(<LoadingScreen />);
-    expect(screen.getByText('⚡ DeepCode')).toBeInTheDocument();
+    expect(screen.getByText('⚡ Vibe Code Studio')).toBeInTheDocument();
   });
 });

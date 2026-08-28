@@ -55,11 +55,9 @@ export class RAGChunker {
 
     try {
       // Create a virtual source file for parsing
-      const sourceFile = this.tsProject.createSourceFile(
-        `virtual-${Date.now()}.tsx`,
-        content,
-        { overwrite: true },
-      );
+      const sourceFile = this.tsProject.createSourceFile(`virtual-${Date.now()}.tsx`, content, {
+        overwrite: true,
+      });
 
       // Extract import block as context (shared across chunks)
       const imports = this.extractImports(sourceFile);
@@ -76,7 +74,10 @@ export class RAGChunker {
       sourceFile.delete();
     } catch (error) {
       // AST parse failed — fall back to sliding window
-      console.error(`[RAGChunker] AST parse failed for ${filePath}, using sliding window:`, (error as Error).message);
+      console.error(
+        `[RAGChunker] AST parse failed for ${filePath}, using sliding window:`,
+        (error as Error).message,
+      );
       return this.chunkSlidingWindow(filePath, content, language);
     }
 
@@ -120,10 +121,7 @@ export class RAGChunker {
     const kind = node.getKind();
 
     // Skip import/export declarations (they're metadata, not content)
-    if (
-      kind === SyntaxKind.ImportDeclaration ||
-      kind === SyntaxKind.ImportEqualsDeclaration
-    ) {
+    if (kind === SyntaxKind.ImportDeclaration || kind === SyntaxKind.ImportEqualsDeclaration) {
       return null;
     }
 
@@ -145,7 +143,7 @@ export class RAGChunker {
       type: chunkType,
       startLine,
       endLine,
-      symbolName: symbolName || undefined,
+      symbolName: symbolName ?? undefined,
       imports: imports.length > 0 ? imports : undefined,
       language,
       tokenCount,
@@ -157,9 +155,7 @@ export class RAGChunker {
    * Extract import statements from source file
    */
   private extractImports(sourceFile: SourceFile): string[] {
-    return sourceFile
-      .getImportDeclarations()
-      .map((imp) => imp.getText().trim());
+    return sourceFile.getImportDeclarations().map((imp) => imp.getText().trim());
   }
 
   /**
@@ -171,7 +167,7 @@ export class RAGChunker {
     language: Chunk['language'],
   ): Chunk[] {
     const chunks: Chunk[] = [];
-    const lines = content.split('\n');
+    const _lines = content.split('\n');
 
     const maxChars = this.maxTokens * CHARS_PER_TOKEN;
     const overlapChars = this.overlapTokens * CHARS_PER_TOKEN;
@@ -277,15 +273,23 @@ function extractSymbolName(node: Node): string | null {
     kind === SyntaxKind.EnumDeclaration
   ) {
     // These node types have a getName() method via their specific interfaces
-    const name = (node as any).getName?.();
+    const name = (node as { getName?: () => string }).getName?.();
     if (name) return name;
   }
 
   if (kind === SyntaxKind.VariableStatement) {
     // Extract variable name(s) from the declaration
-    const declarations = (node as any).getDeclarationList?.()?.getDeclarations?.();
-    if (declarations?.length > 0) {
-      return declarations.map((d: { getName?: () => string }) => d.getName?.()).filter(Boolean).join(', ');
+    interface DeclNode {
+      getDeclarationList?: () => {
+        getDeclarations?: () => Array<{ getName?: () => string }>;
+      };
+    }
+    const declarations = (node as DeclNode).getDeclarationList?.()?.getDeclarations?.();
+    if (declarations && declarations.length > 0) {
+      return declarations
+        .map((d: { getName?: () => string }) => d.getName?.())
+        .filter(Boolean)
+        .join(', ');
     }
   }
 

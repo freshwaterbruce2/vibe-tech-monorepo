@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:saas",
+  "projectName": "proposal-review-saas",
+  "displayName": "Proposal Review",
+  "archetype": "web-saas",
+  "monetization": {
+    "stripeConnected": true,
+    "firstRevenueAt": "2026-05-21",
+    "mrrCents": 2900,
+    "currency": "usd"
+  }
+}

@@ -1,12 +1,21 @@
 import matter from 'gray-matter';
 import { readFile, readdir, stat } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Skill, SkillMeta, SkillSearchResult } from './types.js';
 
-/** Skill source directories */
+/**
+ * Skill source directories.
+ *
+ * Skills are consolidated into one canonical aggregate at `~/.claude/skills`
+ * (every CLI tool junctions to it). Authored, git-tracked skills live in
+ * `V:\monorepo\skills` and are also junctioned into the aggregate — so we scan
+ * the authored dir first as `monorepo`, then the aggregate as `community`, and
+ * dedupe by id (first source wins) to avoid double-counting the junctions.
+ */
 const SKILL_SOURCES = [
-  { path: 'C:\\dev\\.agent\\skills', source: 'monorepo' as const },
-  { path: 'C:\\dev\\antigravity-awesome-skills\\skills', source: 'community' as const },
+  { path: 'V:\\monorepo\\skills', source: 'monorepo' as const },
+  { path: join(homedir(), '.claude', 'skills'), source: 'community' as const },
 ];
 
 /** Cached skill index */
@@ -19,6 +28,7 @@ const CACHE_TTL_MS = 60_000; // 1 minute
  */
 async function scanSkills(): Promise<SkillMeta[]> {
   const skills: SkillMeta[] = [];
+  const seen = new Set<string>();
 
   for (const { path: sourceDir, source } of SKILL_SOURCES) {
     try {
@@ -33,6 +43,7 @@ async function scanSkills(): Promise<SkillMeta[]> {
 
       for (const entry of entries) {
         if (!entry.isDirectory()) continue;
+        if (seen.has(entry.name)) continue; // first source wins (authored over aggregate)
 
         const skillDir = join(sourceDir, entry.name);
         const skillFile = join(skillDir, 'SKILL.md');
@@ -44,6 +55,7 @@ async function scanSkills(): Promise<SkillMeta[]> {
           const raw = await readFile(skillFile, 'utf-8');
           const { data } = matter(raw);
 
+          seen.add(entry.name);
           skills.push({
             id: entry.name,
             name: String(data.name ?? entry.name),

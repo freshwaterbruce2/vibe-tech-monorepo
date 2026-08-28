@@ -169,4 +169,3 @@ export const useRoutePerformance = (routeName: string) => {
 
 	return { loadTime };
 };
-// @ts-nocheck

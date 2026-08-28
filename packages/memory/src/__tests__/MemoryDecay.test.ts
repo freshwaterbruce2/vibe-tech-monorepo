@@ -40,14 +40,18 @@ describe('MemoryDecay', () => {
     });
 
     it('decays to ~0.5 base after one half-life', () => {
+      // Explicit half-life avoids coupling to the dual-layer default (semantic=11d)
       const halfLife = 7 * 24 * 60 * 60 * 1000;
-      const score = decay.calculateScore(halfLife, 0, 0);
+      const tunedDecay = new MemoryDecay({ halfLifeMs: halfLife });
+      const score = tunedDecay.calculateScore(halfLife, 0, 0);
       expect(score).toBeCloseTo(0.5, 1);
     });
 
     it('decays to ~0.25 base after two half-lives', () => {
+      const halfLife = 7 * 24 * 60 * 60 * 1000;
       const twoHalfLives = 14 * 24 * 60 * 60 * 1000;
-      const score = decay.calculateScore(twoHalfLives, 0, 0);
+      const tunedDecay = new MemoryDecay({ halfLifeMs: halfLife });
+      const score = tunedDecay.calculateScore(twoHalfLives, 0, 0);
       expect(score).toBeCloseTo(0.25, 1);
     });
 
@@ -71,8 +75,12 @@ describe('MemoryDecay', () => {
         importanceWeight: 0.5,
       });
       const score = customDecay.calculateScore(0, 4, 10);
-      // base=1, boost=sqrt(4)*0.5=1.0, importanceBonus=1*0.5=0.5 → 2.5
-      expect(score).toBeCloseTo(2.5, 1);
+      // Phase 4 formula (linear boost with 0.5 cap — replaced earlier sqrt):
+      //   base = 2^0 = 1
+      //   boost = min(4 * 0.5, 0.5) = 0.5
+      //   importanceBonus = (10/10) * 0.5 = 0.5
+      //   total = 2.0
+      expect(score).toBeCloseTo(2.0, 1);
     });
   });
 

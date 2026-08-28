@@ -6,7 +6,8 @@ import { motion } from 'framer-motion';
 import styled, { keyframes } from 'styled-components';
 
 import { vibeTheme } from '../../styles/theme';
-import type { StepStatus } from '../../types';
+import { shouldForwardMotionProp } from '../../utils/motionProps';
+import type { AIResponseState, StepStatus } from '../../types';
 
 import type { ChatMode } from './types';
 
@@ -146,7 +147,9 @@ export const ModeSwitcher = styled.div`
   border: 1px solid rgba(139, 92, 246, 0.2);
 `;
 
-export const ModeButton = styled(motion.button) <{ $active: boolean }>`
+export const ModeButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ $active: boolean }>`
   padding: 6px 12px;
   border: none;
   border-radius: 6px;
@@ -164,7 +167,9 @@ export const ModeButton = styled(motion.button) <{ $active: boolean }>`
   }
 `;
 
-export const ModeDescription = styled(motion.div)`
+export const ModeDescription = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   padding: ${vibeTheme.spacing.sm};
   margin: ${vibeTheme.spacing.sm} ${vibeTheme.spacing.md};
   background: rgba(139, 92, 246, 0.1);
@@ -181,7 +186,9 @@ export const ModeDescription = styled(motion.div)`
   }
 `;
 
-export const AgentEmptyState = styled(motion.div)`
+export const AgentEmptyState = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   padding: ${vibeTheme.spacing.md};
   border: 1px solid rgba(139, 92, 246, 0.2);
   border-radius: ${vibeTheme.borderRadius.medium};
@@ -196,7 +203,9 @@ export const AgentEmptyState = styled(motion.div)`
   }
 `;
 
-export const CloseButton = styled(motion.button)`
+export const CloseButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   background: transparent;
   border: none;
   color: ${vibeTheme.colors.textSecondary};
@@ -243,7 +252,9 @@ export const MessagesContainer = styled.div`
   }
 `;
 
-export const Message = styled(motion.div) <{ role: 'user' | 'assistant' }>`
+export const Message = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ role: 'user' | 'assistant' }>`
   display: flex;
   align-items: flex-start;
   gap: ${vibeTheme.spacing.sm};
@@ -295,7 +306,9 @@ export const MessageActions = styled.div`
   }
 `;
 
-export const ActionButton = styled(motion.button)`
+export const ActionButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   background: transparent;
   border: none;
   color: ${vibeTheme.colors.textMuted};
@@ -411,7 +424,9 @@ export const TextInput = styled.textarea`
   }
 `;
 
-export const SendButton = styled(motion.button) <{ disabled: boolean }>`
+export const SendButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ disabled: boolean }>`
   background: ${(props) =>
         props.disabled ? 'rgba(139, 92, 246, 0.2)' : vibeTheme.gradients.primary};
   border: 2px solid ${(props) => (props.disabled ? 'rgba(139, 92, 246, 0.1)' : 'transparent')};
@@ -437,6 +452,53 @@ export const SendButton = styled(motion.button) <{ disabled: boolean }>`
   &:active:not(:disabled) {
     transform: scale(0.95);
   }
+`;
+
+export const CancelButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
+  background: rgba(239, 68, 68, 0.16);
+  border: 2px solid rgba(239, 68, 68, 0.45);
+  color: ${vibeTheme.colors.error};
+  padding: ${vibeTheme.spacing.sm};
+  border-radius: ${vibeTheme.borderRadius.medium};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  transition: all ${vibeTheme.animation.duration.normal} ease;
+
+  &:hover {
+    transform: scale(1.05);
+    background: rgba(239, 68, 68, 0.24);
+    box-shadow: ${vibeTheme.shadows.small};
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+export const ResponseStatus = styled.div<{ $state: AIResponseState }>`
+  margin-top: ${vibeTheme.spacing.xs};
+  font-size: ${vibeTheme.typography.fontSize.xs};
+  color: ${(props) => {
+    switch (props.$state) {
+      case 'streaming':
+        return vibeTheme.colors.cyan;
+      case 'cancelling':
+        return vibeTheme.colors.warning;
+      case 'cancelled':
+        return vibeTheme.colors.textSecondary;
+      case 'error':
+        return vibeTheme.colors.error;
+      case 'idle':
+      default:
+        return vibeTheme.colors.textMuted;
+    }
+  }};
 `;
 
 export const TypingIndicator = styled.div`
@@ -471,7 +533,9 @@ export const QuickActions = styled.div`
   margin-bottom: ${vibeTheme.spacing.sm};
 `;
 
-export const QuickActionButton = styled(motion.button)`
+export const QuickActionButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   background: rgba(139, 92, 246, 0.1);
   border: 1px solid rgba(139, 92, 246, 0.3);
   color: ${vibeTheme.colors.textSecondary};
@@ -503,7 +567,9 @@ export const AgentStepsList = styled.div`
   gap: ${vibeTheme.spacing.xs};
 `;
 
-export const CompactStepCard = styled(motion.div) <{ $status: StepStatus }>`
+export const CompactStepCard = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ $status: StepStatus }>`
   padding: ${vibeTheme.spacing.sm};
   border-radius: ${vibeTheme.borderRadius.small};
   background: ${props => {
@@ -573,7 +639,9 @@ export const TaskProgressBar = styled.div`
   overflow: hidden;
 `;
 
-export const TaskProgressFill = styled(motion.div) <{ $progress: number }>`
+export const TaskProgressFill = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ $progress: number }>`
   height: 100%;
   background: ${vibeTheme.gradients.primary};
   width: ${props => props.$progress}%;
@@ -655,7 +723,9 @@ export const AgentWarningList = styled.ul`
 // Approval Components
 // ============================================================================
 
-export const ApprovalPromptCompact = styled(motion.div)`
+export const ApprovalPromptCompact = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   margin-top: ${vibeTheme.spacing.xs};
   padding: ${vibeTheme.spacing.sm};
   background: rgba(251, 191, 36, 0.15);
@@ -663,7 +733,9 @@ export const ApprovalPromptCompact = styled(motion.div)`
   border-radius: ${vibeTheme.borderRadius.small};
 `;
 
-export const ApprovalButton = styled(motion.button) <{ $variant: 'approve' | 'reject' }>`
+export const ApprovalButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ $variant: 'approve' | 'reject' }>`
   flex: 1;
   padding: 6px 12px;
   border: none;

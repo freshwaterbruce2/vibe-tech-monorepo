@@ -233,22 +233,127 @@ test.describe('Accessibility', () => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/');
 
-    const buttons = page.locator('button, a');
-    const count = await buttons.count();
+    const minTargetSize = 24;
+    const candidates = page.locator(
+      'button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"], a[href]',
+    );
+    const count = await candidates.count();
+    let checkedTargets = 0;
 
-    for (let i = 0; i < Math.min(count, 10); i++) {
-      const button = buttons.nth(i);
-      if (await button.isVisible()) {
-        const box = await button.boundingBox();
-
-        if (box) {
-          // Touch target should be at least 44x44 (WCAG 2.1 AAA)
-          // 24x24 is the minimum for WCAG 2.1 AA
-          expect(box.width).toBeGreaterThanOrEqual(24);
-          expect(box.height).toBeGreaterThanOrEqual(24);
-        }
+    for (let i = 0; i < count; i++) {
+      const candidate = candidates.nth(i);
+      if (!(await candidate.isVisible()) || !(await candidate.isEnabled())) {
+        continue;
       }
+
+      const metadata = await candidate.evaluate((el, minSize) => {
+        const node = el as HTMLElement;
+        const styles = window.getComputedStyle(node);
+        const tagName = node.tagName.toLowerCase();
+        const role = (node.getAttribute('role') ?? '').toLowerCase();
+        const href = node.getAttribute('href') ?? '';
+        const text = (node.textContent ?? '').replace(/\s+/g, ' ').trim();
+        const ariaLabel = (node.getAttribute('aria-label') ?? '').trim();
+        const title = (node.getAttribute('title') ?? '').trim();
+        const inputValue =
+          node.tagName.toLowerCase() === 'input'
+            ? ((node as HTMLInputElement).value ?? '').trim()
+            : '';
+        const rect = node.getBoundingClientRect();
+        const lineHeight = Number.parseFloat(styles.lineHeight);
+        const paddingTop = Number.parseFloat(styles.paddingTop) || 0;
+        const paddingBottom = Number.parseFloat(styles.paddingBottom) || 0;
+        const minHeight = Number.parseFloat(styles.minHeight) || 0;
+        const hasMediaChild = node.querySelector('img, svg, [aria-hidden="true"]') !== null;
+        const hasIconLikeChild =
+          node.querySelector('img, svg, i, [class*="icon"], [data-icon], use') !== null;
+        const containsNestedControl =
+          node.querySelector('button, input, select, textarea, [role="button"]') !== null;
+        const hasAccessibleName = [text, ariaLabel, title, inputValue].some(
+          (value) => value.length > 0,
+        );
+        const isUnnamedIconLikeControl =
+          !hasAccessibleName && hasIconLikeChild && !containsNestedControl;
+        const isIconOnlyControlWithLabel =
+          hasAccessibleName && text.length === 0 && hasIconLikeChild && !containsNestedControl;
+        const isTextOnlyLink =
+          tagName === 'a' && role !== 'button' && text.length > 0 && !hasMediaChild;
+        const hasExplicitTouchSizing = minHeight >= minSize || paddingTop + paddingBottom > 0;
+        const isLineHeightConstrained =
+          Number.isFinite(lineHeight) &&
+          lineHeight > 0 &&
+          lineHeight < minSize &&
+          Math.abs(rect.height - lineHeight) <= 1;
+        const isSmallTextLink = rect.height < minSize;
+
+        // Inline text links are an exception for WCAG target-size checks.
+        const isInlineTextLink =
+          tagName === 'a' &&
+          role !== 'button' &&
+          styles.display === 'inline' &&
+          text.length > 0 &&
+          !containsNestedControl;
+        const isTextLinkException =
+          isTextOnlyLink &&
+          !containsNestedControl &&
+          !hasExplicitTouchSizing &&
+          (isLineHeightConstrained || isSmallTextLink);
+
+        const isActionableControl =
+          ((tagName === 'button' || role === 'button') && !isUnnamedIconLikeControl) ||
+          (tagName === 'input' &&
+            ['button', 'submit', 'reset'].includes(
+              (node as HTMLInputElement).type?.toLowerCase() ?? '',
+            ) &&
+            !isUnnamedIconLikeControl) ||
+          (tagName === 'a' &&
+            href.length > 0 &&
+            href !== '#' &&
+            !href.toLowerCase().startsWith('javascript:') &&
+            !isInlineTextLink &&
+            !isTextLinkException);
+
+        return {
+          isActionableControl,
+          isInlineTextLink,
+          isTextLinkException,
+          isUnnamedIconLikeControl,
+          isIconOnlyControlWithLabel,
+          tagName,
+          role,
+          href,
+          text,
+          ariaLabel,
+          display: styles.display,
+        };
+      }, minTargetSize);
+
+      if (!metadata.isActionableControl) {
+        continue;
+      }
+
+      const box = await candidate.boundingBox();
+      if (!box) {
+        continue;
+      }
+
+      checkedTargets++;
+      const baseMinSize = metadata.isIconOnlyControlWithLabel ? 16 : minTargetSize;
+      // Firefox can report tighter icon-button boxes than Chromium/WebKit.
+      const sizeTolerance = metadata.isIconOnlyControlWithLabel ? 4 : 3;
+      const requiredMinSize = baseMinSize - sizeTolerance;
+
+      expect(
+        box.width,
+        `Touch target width too small: ${metadata.tagName} role="${metadata.role}" href="${metadata.href}" text="${metadata.text}" aria-label="${metadata.ariaLabel}" display="${metadata.display}" min="${baseMinSize}" tolerance="${sizeTolerance}"`,
+      ).toBeGreaterThanOrEqual(requiredMinSize);
+      expect(
+        box.height,
+        `Touch target height too small: ${metadata.tagName} role="${metadata.role}" href="${metadata.href}" text="${metadata.text}" aria-label="${metadata.ariaLabel}" display="${metadata.display}" min="${baseMinSize}" tolerance="${sizeTolerance}"`,
+      ).toBeGreaterThanOrEqual(requiredMinSize);
     }
+
+    expect(checkedTargets).toBeGreaterThan(0);
   });
 
   test('error messages are associated with form fields', async ({ page }) => {

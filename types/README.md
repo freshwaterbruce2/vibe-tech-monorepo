@@ -1,6 +1,6 @@
 # Database Schema Types
 
-**Location:** `C:\dev\types\database-schemas.ts`
+**Location:** `V:\monorepo\types\database-schemas.ts`
 **Purpose:** TypeScript definitions for all SQLite databases in D:\databases\
 **For:** Augment Code, Copilot, Claude, and all AI coding assistants
 
@@ -96,7 +96,7 @@ const getStudentDashboard = (studentId: number): StudentWithAssignments => {
 
 ## Database Locations
 
-All databases are stored on **D:\ drive** (NOT in C:\dev):
+All databases are stored on **D:\ drive** (NOT in V:\monorepo):
 
 ```typescript
 const DATABASE_PATHS = {
@@ -117,7 +117,7 @@ const DATABASE_PATHS = {
 When you add new tables or columns:
 
 1. **Update Python/TypeScript schema files** in your project
-2. **Update this file** (`C:\dev\types\database-schemas.ts`)
+2. **Update this file** (`V:\monorepo\types\database-schemas.ts`)
 3. **Augment auto-reindexes** - changes are picked up automatically
 
 Example:
@@ -137,9 +137,11 @@ export interface Order {
 ## Related Files
 
 - **Database Documentation**: `D:\databases\DATABASE_COMPLETE_SCHEMAS.md`
-- **Database Storage Rules**: `C:\dev\.claude\rules\database-storage.md`
-- **Path Policy**: `C:\dev\.claude\rules\paths-policy.md`
-- **Crypto Trading Schema**: `C:\dev\apps\crypto-enhanced\src\database.py`
+- **Database Storage Rules**: `V:\monorepo\.claude
+ules\database-storage.md`
+- **Path Policy**: `V:\monorepo\.claude
+ules\paths-policy.md`
+- **Crypto Trading Schema**: `V:\monorepo\apps\crypto-enhanced\src\database.py`
 
 ## Best Practices
 
@@ -151,7 +153,7 @@ export interface Order {
 
 ❌ **DON'T:**
 
-- Store databases in C:\dev (use D:\databases)
+- Store databases in V:\monorepo (use D:\databases)
 - Query databases without type annotations
 - Modify database schemas without updating this file
 

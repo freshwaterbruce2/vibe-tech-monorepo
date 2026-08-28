@@ -1,6 +1,7 @@
 {
   "name": "@vibetech/feature-flags-sdk-node",
   "version": "0.1.0",
+  "type": "module",
   "description": "Node.js SDK for feature flags (NOVA Agent, DeepCode Editor, backend services)",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -20,7 +21,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@vibetech/feature-flags-core": "workspace:^0.1.0",
+    "@vibetech/feature-flags-core": "workspace:*",
     "ws": "^8.20.0"
   },
   "devDependencies": {

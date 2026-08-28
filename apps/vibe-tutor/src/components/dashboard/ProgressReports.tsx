@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useTransition } from 'react';
 import type { HomeworkItem } from '../../types';
 import { generateProgressReport } from '../../services/reportGeneratorService';
 import { dataStore } from '../../services/dataStore';
+import { logger } from '../../utils/logger';
 
 interface ProgressReportsProps {
   items: HomeworkItem[];
@@ -29,7 +30,7 @@ const ProgressReports = ({ items }: ProgressReportsProps) => {
           setFocusSessions(sessionsCount);
         });
       } catch (error) {
-        console.error('[ProgressReports] Failed to load stats:', error);
+        logger.error('[ProgressReports] Failed to load stats:', error);
       }
     };
     void loadStats();

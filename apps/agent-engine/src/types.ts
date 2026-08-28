@@ -196,7 +196,7 @@ export interface PromotionDecision {
 
 export interface PolicyBundle {
   name: string;
-  runtimeProvider: 'anthropic';
+  runtimeProvider: 'moonshot';
   roles: Record<string, string>;
   allowedSelfModificationPaths: string[];
   forbiddenGlobs: string[];
@@ -269,7 +269,7 @@ export interface LlmProvider {
   generateText(prompt: ProviderPrompt): Promise<ProviderGenerateResult>;
 }
 
-export type BehavioralProviderMode = 'auto' | 'anthropic' | 'scripted';
+export type BehavioralProviderMode = 'auto' | 'moonshot' | 'scripted';
 
 export interface CommandResult {
   command: string;

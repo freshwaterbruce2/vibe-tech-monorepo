@@ -8,12 +8,13 @@ import {
   TrendingUp,
   Zap,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
+import { useCountUp } from '../../hooks/useCountUp';
+import { useTokenEconomy } from '../../hooks/useTokenEconomy';
 import {
   getRecentTransactions,
   getTodayEarnings,
   getTodaySpending,
-  getTokenBalance,
   getTokenStats,
   type TokenTransaction,
 } from '../../services/tokenService';
@@ -25,32 +26,10 @@ interface TokenWalletProps {
   compact?: boolean;
 }
 
-/** Animates a number counting up from 0 to target */
-function useCountUp(target: number, durationMs = 800) {
-  const [value, setValue] = useState(0);
-  const animRef = useRef<number>(0);
-
-  useEffect(() => {
-    const start = performance.now();
-    const animate = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / durationMs, 1);
-      // Ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(target * eased));
-      if (progress < 1) animRef.current = requestAnimationFrame(animate);
-    };
-    animRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-    };
-  }, [target, durationMs]);
-
-  return value;
-}
-
 const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps) => {
-  const balance = getTokenBalance();
+  // Subscribe to the canonical ledger so the wallet re-renders on every
+  // earn/spend (the stats/transactions reads below are then always fresh).
+  const { userTokens: balance } = useTokenEconomy();
   const stats = getTokenStats();
   const transactions = getRecentTransactions(20);
   const todayEarnings = getTodayEarnings();
@@ -238,7 +217,9 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
             className="w-full glass-card p-4 flex items-center justify-center gap-3 bg-gradient-to-r from-violet-600/20 to-violet-600/20 border border-[var(--secondary-accent)]/30 hover:border-[var(--secondary-accent)]/50 transition-all active:scale-[0.98] group"
           >
             <ShoppingBag className="w-6 h-6 text-[var(--secondary-accent)] group-hover:scale-110 transition-transform" />
-            <span className="text-lg font-bold text-[var(--secondary-accent)]">Visit the Reward Shop</span>
+            <span className="text-lg font-bold text-[var(--secondary-accent)]">
+              Visit the Reward Shop
+            </span>
             <span className="text-white/50 text-sm ml-1">Spend your tokens!</span>
           </button>
         )}
@@ -325,7 +306,9 @@ function TransactionRow({
       </div>
 
       {/* Amount */}
-      <div className={`text-lg font-bold shrink-0 ${isEarn ? 'text-[var(--secondary-accent)]' : 'text-[var(--error-accent)]'}`}>
+      <div
+        className={`text-lg font-bold shrink-0 ${isEarn ? 'text-[var(--secondary-accent)]' : 'text-[var(--error-accent)]'}`}
+      >
         {isEarn ? '+' : '-'}
         {transaction.amount}
       </div>

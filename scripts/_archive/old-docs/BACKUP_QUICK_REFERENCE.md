@@ -4,7 +4,7 @@
 
 ```powershell
 # Run as Administrator
-cd C:\dev\scripts
+cd V:\monorepo\scripts
 .\setup-backup-schedule.ps1
 ```
 
@@ -133,12 +133,12 @@ $latest = Get-ChildItem D:\backups\database-backups -Directory | Sort-Object -De
 
 ## 📍 Key Locations
 
-- **Backup Scripts:** `C:\dev\scripts\database-backup.ps1`
-- **Restore Script:** `C:\dev\scripts\database-restore.ps1`
-- **Monitor Script:** `C:\dev\scripts\monitor-backups.ps1`
+- **Backup Scripts:** `V:\monorepo\scripts\database-backup.ps1`
+- **Restore Script:** `V:\monorepo\scripts\database-restore.ps1`
+- **Monitor Script:** `V:\monorepo\scripts\monitor-backups.ps1`
 - **Backups:** `D:\backups\database-backups\`
 - **Logs:** `D:\backups\database-backups\backup_log_*.txt`
-- **Full Guide:** `C:\dev\docs\DATABASE_BACKUP_GUIDE.md`
+- **Full Guide:** `V:\monorepo\docs\DATABASE_BACKUP_GUIDE.md`
 
 ---
 
@@ -153,4 +153,4 @@ $latest = Get-ChildItem D:\backups\database-backups -Directory | Sort-Object -De
 
 ---
 
-**Need Help?** See full documentation: `C:\dev\docs\DATABASE_BACKUP_GUIDE.md`
+**Need Help?** See full documentation: `V:\monorepo\docs\DATABASE_BACKUP_GUIDE.md`

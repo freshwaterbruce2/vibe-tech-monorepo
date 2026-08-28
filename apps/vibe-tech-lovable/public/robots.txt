@@ -1,11 +1,12 @@
 
 # Vibe Tech - robots.txt
-# Updated: 2025-05-14
+# Updated: 2026-05-18
 
 # Allow all web crawlers
 User-agent: *
 Allow: /
 Disallow: /dashboard # Exclude dashboard pages from indexing
+Disallow: /blog-editor # Exclude admin/editor pages
 Disallow: /palette-preview # Exclude dev/preview pages
 Disallow: /futuristic-demo # Exclude dev/preview pages
 
@@ -30,4 +31,4 @@ User-agent: LinkedInBot
 Allow: /
 
 # Sitemap location
-Sitemap: https://vibetech.com/sitemap.xml
+Sitemap: https://vibe-tech.org/sitemap.xml

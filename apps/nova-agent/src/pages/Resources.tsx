@@ -66,7 +66,7 @@ const Resources = () => {
 							key={index}
 							title={tool.title}
 							description={tool.description}
-							affiliateLinks={tool.affiliateLinks!}
+							affiliateLinks={tool.affiliateLinks ?? []}
 							variant={tool.variant}
 						/>
 					))}

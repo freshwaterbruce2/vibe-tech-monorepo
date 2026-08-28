@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:saas",
+  "projectName": "dental-scheduler",
+  "displayName": "Vibe-Tech",
+  "archetype": "web-saas",
+  "monetization": {
+    "stripeConnected": true,
+    "firstRevenueAt": null,
+    "mrrCents": 0,
+    "currency": "usd"
+  }
+}

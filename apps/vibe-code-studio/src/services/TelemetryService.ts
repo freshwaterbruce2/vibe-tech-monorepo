@@ -3,17 +3,27 @@
  */
 import { logger } from '../services/Logger';
 
+type TelemetryPrimitive = string | number | boolean | null;
+type TelemetryProperties = Record<string, TelemetryPrimitive>;
+
+const SENSITIVE_KEY_PATTERN =
+  /(api[_-]?key|authorization|cookie|password|secret|token|prompt|content|query|message|stack|selected|code)/i;
+const MAX_PROPERTY_STRING_LENGTH = 160;
+
 interface TelemetryEvent {
   event: string;
-  properties?: Record<string, any>;
+  properties?: TelemetryProperties;
   timestamp: number;
   sessionId: string;
-  userId?: string;
+  userIdHash?: string;
 }
 
 interface ErrorEvent {
-  error: Error;
-  context?: Record<string, any> | undefined;
+  error: {
+    name: string;
+    message: string;
+  };
+  context?: TelemetryProperties | undefined;
   severity: 'low' | 'medium' | 'high' | 'critical';
   timestamp: number;
   sessionId: string;
@@ -22,16 +32,17 @@ interface ErrorEvent {
 export class TelemetryService {
   private static instance: TelemetryService;
   private sessionId: string;
-  private userId?: string;
+  private userIdHash?: string;
   private eventQueue: TelemetryEvent[] = [];
   private errorQueue: ErrorEvent[] = [];
   private flushInterval: number = 30000; // 30 seconds
   private maxQueueSize: number = 100;
   private enabled: boolean;
+  private flushTimer: ReturnType<typeof setInterval> | null = null;
 
   private constructor() {
     this.sessionId = this.generateSessionId();
-    this.enabled = false; // Disabled - no telemetry server configured
+    this.enabled = import.meta.env['VITE_ENABLE_TELEMETRY'] === 'true';
 
     if (this.enabled) {
       this.startFlushInterval();
@@ -49,17 +60,18 @@ export class TelemetryService {
   /**
    * Track a custom event
    */
-  trackEvent(event: string, properties?: Record<string, any>): void {
+  trackEvent(event: string, properties?: Record<string, unknown>): void {
     if (!this.enabled) {
       return;
     }
 
+    const sanitizedProperties = this.sanitizeProperties(properties);
     const telemetryEvent: TelemetryEvent = {
       event,
-      ...(properties !== undefined ? { properties } : {}),
+      ...(Object.keys(sanitizedProperties).length > 0 ? { properties: sanitizedProperties } : {}),
       timestamp: Date.now(),
       sessionId: this.sessionId,
-      ...(this.userId !== undefined ? { userId: this.userId } : {}),
+      ...(this.userIdHash !== undefined ? { userIdHash: this.userIdHash } : {}),
     };
 
     this.eventQueue.push(telemetryEvent);
@@ -74,20 +86,20 @@ export class TelemetryService {
    */
   trackError(
     error: Error,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     severity: ErrorEvent['severity'] = 'medium'
   ): void {
     if (!this.enabled) {
       return;
     }
 
+    const sanitizedContext = this.sanitizeProperties(context);
     const errorEvent: ErrorEvent = {
       error: {
         name: error.name,
-        message: error.message,
-        stack: error.stack,
-      } as Error,
-      context,
+        message: this.sanitizeString(error.message),
+      },
+      ...(Object.keys(sanitizedContext).length > 0 ? { context: sanitizedContext } : {}),
       severity,
       timestamp: Date.now(),
       sessionId: this.sessionId,
@@ -105,8 +117,8 @@ export class TelemetryService {
    * Set user ID for tracking
    */
   setUserId(userId: string): void {
-    this.userId = userId;
-    this.trackEvent('user_identified', { userId });
+    this.userIdHash = this.hashIdentifier(userId);
+    this.trackEvent('user_identified', { user_id_present: true });
   }
 
   /**
@@ -205,7 +217,7 @@ export class TelemetryService {
    */
   private setupErrorHandlers(): void {
     // Handle unhandled errors
-    window.addEventListener('error', (event) => {
+    window.addEventListener('error', event => {
       this.trackError(
         new Error(event.message),
         {
@@ -218,12 +230,15 @@ export class TelemetryService {
     });
 
     // Handle unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
+    window.addEventListener('unhandledrejection', event => {
+      const reason =
+        event.reason instanceof Error
+          ? event.reason.message
+          : this.sanitizeString(String(event.reason));
       this.trackError(
-        new Error(`Unhandled Promise Rejection: ${event.reason}`),
+        new Error('Unhandled Promise Rejection'),
         {
-          reason: event.reason,
-          promise: event.promise,
+          reason,
         },
         'high'
       );
@@ -234,7 +249,10 @@ export class TelemetryService {
    * Start interval to flush events
    */
   private startFlushInterval(): void {
-    setInterval(() => {
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer);
+    }
+    this.flushTimer = setInterval(() => {
       this.flush();
       this.flushErrors();
     }, this.flushInterval);
@@ -250,7 +268,7 @@ export class TelemetryService {
    * Generate unique session ID
    */
   private generateSessionId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return crypto.randomUUID();
   }
 
   /**
@@ -265,6 +283,10 @@ export class TelemetryService {
    */
   disable(): void {
     this.enabled = false;
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer);
+      this.flushTimer = null;
+    }
     this.eventQueue = [];
     this.errorQueue = [];
   }
@@ -276,6 +298,80 @@ export class TelemetryService {
     this.enabled = true;
     this.startFlushInterval();
     this.setupErrorHandlers();
+  }
+
+  private sanitizeProperties(properties?: Record<string, unknown>): TelemetryProperties {
+    if (!properties) {
+      return {};
+    }
+
+    const sanitized: TelemetryProperties = {};
+
+    Object.entries(properties).forEach(([key, value]) => {
+      if (SENSITIVE_KEY_PATTERN.test(key)) {
+        return;
+      }
+
+      if (value === null) {
+        sanitized[key] = null;
+        return;
+      }
+
+      if (typeof value === 'boolean') {
+        sanitized[key] = value;
+        return;
+      }
+
+      if (typeof value === 'number') {
+        if (Number.isFinite(value)) {
+          sanitized[key] = value;
+        }
+        return;
+      }
+
+      if (typeof value === 'string') {
+        sanitized[key] = this.sanitizeString(value);
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        sanitized[`${key}_count`] = value.length;
+        return;
+      }
+
+      if (value instanceof Error) {
+        sanitized[`${key}_name`] = value.name;
+        sanitized[`${key}_message`] = this.sanitizeString(value.message);
+        return;
+      }
+
+      if (typeof value === 'object') {
+        sanitized[`${key}_type`] = 'object';
+      }
+    });
+
+    return sanitized;
+  }
+
+  private sanitizeString(value: string): string {
+    const normalized = value.trim();
+    if (normalized.length === 0) {
+      return normalized;
+    }
+
+    if (normalized.length > MAX_PROPERTY_STRING_LENGTH) {
+      return `${normalized.slice(0, MAX_PROPERTY_STRING_LENGTH)}...`;
+    }
+
+    return normalized;
+  }
+
+  private hashIdentifier(value: string): string {
+    let hash = 5381;
+    for (let i = 0; i < value.length; i += 1) {
+      hash = (hash * 33) ^ value.charCodeAt(i);
+    }
+    return `u_${(hash >>> 0).toString(16)}`;
   }
 }
 

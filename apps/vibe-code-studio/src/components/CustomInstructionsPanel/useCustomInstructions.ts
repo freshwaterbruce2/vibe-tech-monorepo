@@ -61,12 +61,12 @@ export function useCustomInstructions(options: UseCustomInstructionsOptions) {
     }
   }, [onImportRules, loadRules]);
 
-  const updateNestedValue = useCallback((path: string, value: any) => {
+  const updateNestedValue = useCallback((path: string, value: unknown) => {
     if (!rules) {return;}
 
     const parts = path.split('.');
     const newRules = { ...rules };
-    let current: any = newRules;
+    let current: Record<string, unknown> = newRules as unknown as Record<string, unknown>;
 
     for (let i = 0; i < parts.length - 1; i++) {
       const part = parts[i];
@@ -74,7 +74,7 @@ export function useCustomInstructions(options: UseCustomInstructionsOptions) {
         current[part] = {};
       }
       if (part) {
-        current = current[part];
+        current = current[part] as Record<string, unknown>;
       }
     }
 

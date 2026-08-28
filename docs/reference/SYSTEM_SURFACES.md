@@ -6,14 +6,16 @@ Canonical review map for the workspace and the `D:\` operational surfaces.
 
 | Surface | Path | Purpose |
 | --- | --- | --- |
-| Source code | `C:\dev` | Versioned monorepo, scripts, docs, Nx config |
+| Source code | `V:\monorepo` | Versioned monorepo, scripts, docs, Nx config |
 | Databases | `D:\databases` | Durable SQLite databases and WAL/SHM sidecars |
 | Learning system | `D:\learning-system` | Learning runtime, logs, docs, Python helpers |
 | Logs | `D:\logs` | Application and maintenance logs |
 | Data | `D:\data` | Non-database datasets and exports |
-| Backups | `D:\backups` | Database/system backups and retention outputs |
+| Backups | `D:\backups` | Canonical root for database/system backups and retention outputs |
 
-`C:\dev\data`, `C:\dev\logs`, `C:\dev\databases`, and `D:\learning` remain deprecated.
+`V:\monorepo\data`, `V:\monorepo\logs`, `V:\monorepo\databases`, and `D:\learning` remain deprecated.
+
+Legacy snapshot archives may still exist under `D:\_backups` (for example, pre-cleanup ZIPs referenced in `D:\databases\DB_INVENTORY.md`). Treat `D:\_backups` as historical storage, and write new backups to `D:\backups`.
 
 ## Canonical databases
 
@@ -21,15 +23,18 @@ Canonical review map for the workspace and the `D:\` operational surfaces.
 | --- | --- | --- |
 | Unified workspace DB | `D:\databases\database.db` | Shared backend and tooling data store |
 | Memory DB | `D:\databases\memory.db` | Primary memory-system database; watch WAL growth |
-| Agent learning DB | `D:\databases\agent_learning.db` | Canonical target in policy docs, but legacy references still exist |
+| Agent learning DB | `D:\databases\agent_learning.db` | Canonical learning-system database |
 | Nova activity DB | `D:\databases\nova_activity.db` | Nova activity/event database |
 
 ## Known drift to review before migration
 
-- `D:\learning-system\agent_learning.db` and `D:\databases\agent_learning.db` both exist and are referenced by different scripts.
-- `D:\databases\vibe-tutor.db` and `D:\databases\vibe_tutor.db` both exist; treat as a naming collision until ownership is confirmed.
-- Root-level reports, screenshots, and scratch files are treated as cleanup candidates, not source-of-truth artifacts.
-- `.gitmodules` includes first-party app submodules and `.claude/skills`; keep submodule ownership explicit before cleanup.
+- Retired database references can remain in older plans and archives. Check
+  `D:\databases\DB_INVENTORY.md` before restoring or recreating any database.
+- Root-level reports, screenshots, and scratch files are treated as cleanup
+  candidates, not source-of-truth artifacts.
+- `apps/gravity-claw` is a local-only nested WIP repo excluded from
+  `pnpm-workspace.yaml`; keep nested ownership explicit before cleanup and do
+  not treat its package version as a shipped workspace release.
 
 ## Supported review commands
 

@@ -13,7 +13,7 @@ export interface Suggestion {
   confidence: number; // 0-1
   evidence: string[];
   actionable: boolean;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface PatternInsight {
@@ -74,10 +74,12 @@ export class PatternAnalyzer {
 
     for (const memory of memories) {
       const hour = new Date(memory.timestamp).getHours();
-      if (!timePatterns.has(hour)) {
-        timePatterns.set(hour, []);
+      let bucket = timePatterns.get(hour);
+      if (!bucket) {
+        bucket = [];
+        timePatterns.set(hour, bucket);
       }
-      timePatterns.get(hour)!.push(memory.query);
+      bucket.push(memory.query);
     }
 
     // If current hour has historical patterns
@@ -142,10 +144,12 @@ export class PatternAnalyzer {
 
       if (current && next) {
         const key = current;
-        if (!sequences.has(key)) {
-          sequences.set(key, []);
+        let bucket = sequences.get(key);
+        if (!bucket) {
+          bucket = [];
+          sequences.set(key, bucket);
         }
-        sequences.get(key)!.push(next);
+        bucket.push(next);
       }
     }
 
@@ -184,7 +188,7 @@ export class PatternAnalyzer {
 
     for (const query of queries) {
       const normalized = this.normalizeQuery(query);
-      queryCounts.set(normalized, (queryCounts.get(normalized) || 0) + 1);
+      queryCounts.set(normalized, (queryCounts.get(normalized) ?? 0) + 1);
     }
 
     // Queries asked 3+ times might indicate knowledge gaps
@@ -228,7 +232,7 @@ export class PatternAnalyzer {
       pattern: pattern.pattern,
       frequency: pattern.frequency,
       successRate: pattern.successRate,
-      lastUsed: pattern.lastUsed || Date.now(),
+      lastUsed: pattern.lastUsed ?? Date.now(),
       relatedPatterns,
     };
   }
@@ -266,7 +270,7 @@ export class PatternAnalyzer {
   private findMostCommon(items: string[]): string {
     const counts = new Map<string, number>();
     for (const item of items) {
-      counts.set(item, (counts.get(item) || 0) + 1);
+      counts.set(item, (counts.get(item) ?? 0) + 1);
     }
     let max = 0;
     let mostCommon = '';
@@ -281,7 +285,7 @@ export class PatternAnalyzer {
 
   private extractCommand(text: string): string | null {
     // Extract command from query (e.g., "Tool used: memory_add_semantic" -> "memory_add_semantic")
-    const match = text.match(/Tool used: (\S+)/i) || text.match(/^(\S+)/);
+    const match = text.match(/Tool used: (\S+)/i) ?? text.match(/^(\S+)/);
     return match ? match[1] : null;
   }
 
@@ -308,7 +312,7 @@ export class PatternAnalyzer {
         for (const nearby of sessionMemories) {
           for (const pattern of allPatterns) {
             if (nearby.query.includes(pattern.pattern) && pattern.pattern !== targetPattern) {
-              related.set(pattern.pattern, (related.get(pattern.pattern) || 0) + 1);
+              related.set(pattern.pattern, (related.get(pattern.pattern) ?? 0) + 1);
             }
           }
         }

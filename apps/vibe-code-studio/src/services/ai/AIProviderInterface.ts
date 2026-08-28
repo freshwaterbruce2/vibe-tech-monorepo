@@ -52,43 +52,125 @@ export enum ModelCapability {
   MULTI_FILE_EDIT = 'multi_file_edit',
 }
 
-// Model Registry with January 2026 OpenRouter tiers (Updated 2026-02-01)
+// Model Registry with July 2026 OpenRouter tiers (Updated 2026-07-02, verified
+// against the live openrouter.ai/api/v1/models catalog)
 export const MODELS_ARRAY: AIModel[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   // BEST FOR CODING TIER
   // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'anthropic/claude-opus-4.8',
+    name: 'Claude Opus 4.8 (Frontier Coding)',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 1000000,
+    maxOutput: 32768,
+    costPerMillionInput: 5.0,
+    costPerMillionOutput: 25.0,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+      ModelCapability.MULTI_FILE_EDIT,
+      ModelCapability.VISION,
+      ModelCapability.EXTENDED_THINKING,
+    ],
+    recommended: true,
+  },
+  {
+    id: 'deepseek/deepseek-v4-pro',
+    name: 'DeepSeek V4 Pro (Best Value Coding)',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 1048576,
+    maxOutput: 16384,
+    costPerMillionInput: 0.43,
+    costPerMillionOutput: 0.87,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+      ModelCapability.MULTI_FILE_EDIT,
+      ModelCapability.EXTENDED_THINKING,
+    ],
+    recommended: true,
+  },
   {
     id: 'openai/gpt-5.3-codex',
     name: 'GPT-5.3 Codex',
     provider: AIProvider.OPENROUTER,
     contextWindow: 200000,
     maxOutput: 32768,
-    costPerMillionInput: 2.00,
-    costPerMillionOutput: 8.00,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.CODE_COMPLETION, ModelCapability.MULTI_FILE_EDIT],
+    costPerMillionInput: 2.0,
+    costPerMillionOutput: 8.0,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+      ModelCapability.MULTI_FILE_EDIT,
+    ],
+    recommended: true,
+  },
+  {
+    id: 'openai/gpt-5.2-codex',
+    name: 'GPT-5.2 Codex',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 400000,
+    // OpenRouter's published max_completion_tokens for openai/gpt-5.2-codex is 128000.
+    maxOutput: 128000,
+    costPerMillionInput: 1.75,
+    costPerMillionOutput: 14.0,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+      ModelCapability.MULTI_FILE_EDIT,
+    ],
     recommended: true,
   },
   {
     id: 'anthropic/claude-sonnet-4.6',
     name: 'Claude 4.6 Sonnet (Best for Coding)',
     provider: AIProvider.OPENROUTER,
-    contextWindow: 250000,
+    contextWindow: 1000000,
     maxOutput: 16384,
-    costPerMillionInput: 3.00,
-    costPerMillionOutput: 15.00,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.CODE_COMPLETION, ModelCapability.MULTI_FILE_EDIT],
+    costPerMillionInput: 3.0,
+    costPerMillionOutput: 15.0,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+      ModelCapability.MULTI_FILE_EDIT,
+    ],
+    recommended: true,
+  },
+  {
+    id: 'qwen/qwen3.7-plus',
+    name: 'Qwen 3.7 Plus',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 1000000,
+    maxOutput: 16384,
+    costPerMillionInput: 0.32,
+    costPerMillionOutput: 1.28,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+    ],
     recommended: true,
   },
   {
     id: 'qwen/qwen-2.5-coder-32b-instruct',
-    name: 'Qwen 2.5 Coder 32B',
+    name: 'Qwen 2.5 Coder 32B (Legacy)',
     provider: AIProvider.OPENROUTER,
     contextWindow: 32768,
     maxOutput: 8192,
     costPerMillionInput: 0.35,
-    costPerMillionOutput: 0.40,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.CODE_COMPLETION],
-    recommended: true,
+    costPerMillionOutput: 0.4,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+    ],
+    recommended: false,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -124,7 +206,11 @@ export const MODELS_ARRAY: AIModel[] = [
     maxOutput: 8192,
     costPerMillionInput: 0.55,
     costPerMillionOutput: 2.19,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.EXTENDED_THINKING],
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.EXTENDED_THINKING,
+    ],
     recommended: true,
   },
   {
@@ -135,7 +221,26 @@ export const MODELS_ARRAY: AIModel[] = [
     maxOutput: 8192,
     costPerMillionInput: 0,
     costPerMillionOutput: 0,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.EXTENDED_THINKING],
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.EXTENDED_THINKING,
+    ],
+    recommended: true,
+  },
+  {
+    id: 'nvidia/nemotron-3-ultra-550b-a55b:free',
+    name: 'Nemotron 3 Ultra 550B (Free)',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 1000000,
+    maxOutput: 8192,
+    costPerMillionInput: 0,
+    costPerMillionOutput: 0,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.EXTENDED_THINKING,
+    ],
     recommended: true,
   },
 
@@ -148,10 +253,40 @@ export const MODELS_ARRAY: AIModel[] = [
     provider: AIProvider.OPENROUTER,
     contextWindow: 1048576,
     maxOutput: 8192,
-    costPerMillionInput: 0.10,
-    costPerMillionOutput: 0.40,
+    costPerMillionInput: 0.1,
+    costPerMillionOutput: 0.4,
     capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.VISION],
     recommended: true,
+  },
+  {
+    id: 'deepseek/deepseek-v4-flash',
+    name: 'DeepSeek V4 Flash',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 1048576,
+    maxOutput: 8192,
+    costPerMillionInput: 0.09,
+    costPerMillionOutput: 0.18,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+    ],
+    recommended: true,
+  },
+  {
+    id: 'deepseek/deepseek-v3',
+    name: 'DeepSeek V3 (Legacy)',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 65536,
+    maxOutput: 8192,
+    costPerMillionInput: 0.2,
+    costPerMillionOutput: 0.77,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+    ],
+    recommended: false,
   },
   {
     id: 'deepseek/deepseek-v3.2',
@@ -161,7 +296,11 @@ export const MODELS_ARRAY: AIModel[] = [
     maxOutput: 8192,
     costPerMillionInput: 0.14,
     costPerMillionOutput: 0.28,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.CODE_COMPLETION],
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+    ],
     recommended: true,
   },
   {
@@ -171,7 +310,7 @@ export const MODELS_ARRAY: AIModel[] = [
     contextWindow: 128000,
     maxOutput: 16384,
     costPerMillionInput: 0.15,
-    costPerMillionOutput: 0.60,
+    costPerMillionOutput: 0.6,
     capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION],
     recommended: true,
   },
@@ -182,8 +321,24 @@ export const MODELS_ARRAY: AIModel[] = [
     contextWindow: 128000,
     maxOutput: 16384,
     costPerMillionInput: 0.15,
-    costPerMillionOutput: 0.60,
+    costPerMillionOutput: 0.6,
     capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.VISION],
+    recommended: true,
+  },
+  {
+    id: 'moonshotai/kimi-k2.7-code',
+    name: 'Kimi K2.7 Code (Best for Coding)',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 262144,
+    maxOutput: 8192,
+    costPerMillionInput: 0.61,
+    costPerMillionOutput: 3.07,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+      ModelCapability.MULTI_FILE_EDIT,
+    ],
     recommended: true,
   },
   {
@@ -192,8 +347,34 @@ export const MODELS_ARRAY: AIModel[] = [
     provider: AIProvider.MOONSHOT,
     contextWindow: 200000,
     maxOutput: 8192,
-    costPerMillionInput: 0.20,
-    costPerMillionOutput: 0.80,
+    costPerMillionInput: 0.2,
+    costPerMillionOutput: 0.8,
+    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION],
+    recommended: true,
+  },
+  {
+    id: 'cohere/north-mini-code:free',
+    name: 'Cohere North Mini Code (Free)',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 256000,
+    maxOutput: 8192,
+    costPerMillionInput: 0,
+    costPerMillionOutput: 0,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+    ],
+    recommended: true,
+  },
+  {
+    id: 'z-ai/glm-5.2',
+    name: 'GLM 5.2 (Reasoning)',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 1048576,
+    maxOutput: 8192,
+    costPerMillionInput: 1.0,
+    costPerMillionOutput: 4.0,
     capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION],
     recommended: true,
   },
@@ -204,8 +385,12 @@ export const MODELS_ARRAY: AIModel[] = [
     contextWindow: 128000,
     maxOutput: 8192,
     costPerMillionInput: 0.15,
-    costPerMillionOutput: 0.50,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.EXTENDED_THINKING],
+    costPerMillionOutput: 0.5,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.EXTENDED_THINKING,
+    ],
     recommended: true,
   },
 
@@ -213,14 +398,41 @@ export const MODELS_ARRAY: AIModel[] = [
   // MEDIUM COST TIER
   // ═══════════════════════════════════════════════════════════════════════════
   {
+    id: 'google/gemini-3.5-flash',
+    name: 'Gemini 3.5 Flash',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 1048576,
+    maxOutput: 16384,
+    costPerMillionInput: 1.5,
+    costPerMillionOutput: 9.0,
+    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.VISION],
+    recommended: true,
+  },
+  {
+    id: 'x-ai/grok-4.3',
+    name: 'Grok 4.3',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 1000000,
+    maxOutput: 16384,
+    costPerMillionInput: 1.25,
+    costPerMillionOutput: 2.5,
+    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION],
+    recommended: true,
+  },
+  {
     id: 'google/gemini-3.1-pro',
     name: 'Gemini 3.1 Pro',
     provider: AIProvider.OPENROUTER,
     contextWindow: 2000000,
     maxOutput: 8192,
     costPerMillionInput: 1.25,
-    costPerMillionOutput: 5.00,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.VISION, ModelCapability.EXTENDED_THINKING],
+    costPerMillionOutput: 5.0,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.VISION,
+      ModelCapability.EXTENDED_THINKING,
+    ],
     recommended: true,
   },
   {
@@ -229,8 +441,8 @@ export const MODELS_ARRAY: AIModel[] = [
     provider: AIProvider.OPENROUTER,
     contextWindow: 128000,
     maxOutput: 16384,
-    costPerMillionInput: 2.50,
-    costPerMillionOutput: 10.00,
+    costPerMillionInput: 2.5,
+    costPerMillionOutput: 10.0,
     capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.VISION],
     recommended: true,
   },
@@ -239,26 +451,64 @@ export const MODELS_ARRAY: AIModel[] = [
   // HIGH COST TIER
   // ═══════════════════════════════════════════════════════════════════════════
   {
-    id: 'openai/gpt-5.2-pro',
-    name: 'GPT-5.2 Pro',
+    id: 'openai/gpt-5.5',
+    name: 'GPT-5.5',
     provider: AIProvider.OPENROUTER,
-    contextWindow: 128000,
-    maxOutput: 16384,
-    costPerMillionInput: 10.00,
-    costPerMillionOutput: 40.00,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.VISION, ModelCapability.FUNCTION_CALLING],
+    contextWindow: 1050000,
+    maxOutput: 32768,
+    costPerMillionInput: 5.0,
+    costPerMillionOutput: 30.0,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.VISION,
+      ModelCapability.FUNCTION_CALLING,
+      ModelCapability.EXTENDED_THINKING,
+    ],
     recommended: true,
   },
   {
+    id: 'anthropic/claude-fable-5',
+    name: 'Claude Fable 5 (Frontier)',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 1000000,
+    maxOutput: 32768,
+    costPerMillionInput: 10.0,
+    costPerMillionOutput: 50.0,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.VISION,
+      ModelCapability.EXTENDED_THINKING,
+    ],
+    recommended: true,
+  },
+  {
+    id: 'openai/gpt-5.2-pro',
+    name: 'GPT-5.2 Pro (Legacy)',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 128000,
+    maxOutput: 16384,
+    costPerMillionInput: 10.0,
+    costPerMillionOutput: 40.0,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.VISION,
+      ModelCapability.FUNCTION_CALLING,
+    ],
+    recommended: false,
+  },
+  {
     id: 'anthropic/claude-opus-4.6',
-    name: 'Claude 4.6 Opus',
+    name: 'Claude 4.6 Opus (Legacy)',
     provider: AIProvider.OPENROUTER,
     contextWindow: 250000,
     maxOutput: 8192,
-    costPerMillionInput: 15.00,
-    costPerMillionOutput: 75.00,
+    costPerMillionInput: 15.0,
+    costPerMillionOutput: 75.0,
     capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.VISION],
-    recommended: true,
+    recommended: false,
   },
   {
     id: 'openai/o1-preview',
@@ -266,11 +516,15 @@ export const MODELS_ARRAY: AIModel[] = [
     provider: AIProvider.OPENROUTER,
     contextWindow: 200000,
     maxOutput: 100000,
-    costPerMillionInput: 15.00,
-    costPerMillionOutput: 60.00,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.EXTENDED_THINKING],
+    costPerMillionInput: 15.0,
+    costPerMillionOutput: 60.0,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.EXTENDED_THINKING,
+    ],
     recommended: false,
-  }
+  },
 ];
 
 // Convert to Record for easy lookup
@@ -286,6 +540,7 @@ export interface CompletionOptions {
   temperature?: number;
   maxTokens?: number;
   stream?: boolean;
+  signal?: AbortSignal;
 }
 
 export interface CompletionResponse {
@@ -322,7 +577,10 @@ export interface StreamCompletionResponse {
 export interface IAIProvider {
   initialize(config: AIProviderConfig): Promise<void>;
   complete(model: string, options: CompletionOptions): Promise<CompletionResponse>;
-  streamComplete(model: string, options: CompletionOptions): AsyncGenerator<StreamCompletionResponse>;
+  streamComplete(
+    model: string,
+    options: CompletionOptions
+  ): AsyncGenerator<StreamCompletionResponse>;
   getAvailableModels(): Promise<AIModel[]>;
   validateConnection(): Promise<boolean>;
   getUsageStats(): Promise<{ tokensUsed: number; estimatedCost: number; requestCount: number }>;

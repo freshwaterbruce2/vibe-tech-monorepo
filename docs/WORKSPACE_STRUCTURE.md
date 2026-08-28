@@ -1,6 +1,6 @@
 # Workspace Structure
 
-`C:\dev` is the local workspace root for source code. It is not a storage location for live databases, generated releases, or machine-specific tool state.
+`V:\monorepo` is the local workspace root for source code. It is not a storage location for live databases, generated releases, or machine-specific tool state.
 
 ## Keep In Git
 
@@ -9,7 +9,6 @@
 - `docs/`
 - `packages/`
 - `plugins/`
-- `projects/`
 - `scripts/`
 - `tests/`
 - `tools/`
@@ -23,11 +22,14 @@
 - `.env*` files other than examples/templates
 - `node_modules/`, `dist/`, `build/`, `release/`, `target/`
 - `_backups/`, `output/`, screenshots, logs, and test artifacts
+- VectorShift generated SVG output under `D:\VectorShift_Outputs\` until selected assets
+  are copied into a shipping app's `public/` or source asset folder
 - local AI/tool state such as `.agent/`, `.agents/`, `.codex-home/`, `.pnpm/`, `.serena/`
 
 ## Repo Rules
 
-- Do not use submodules for active monorepo projects.
+- Do not add new submodules for active monorepo projects. Existing nested repos must be
+  verified against `.gitmodules` and reported separately from the root working tree.
 - If a nested project has its own historical `.git` directory, archive that metadata and track the folder contents from the root repo instead.
 - Do not commit live databases, packaged binaries, or generated media.
 - Use `.env.example` or templates for configuration samples.

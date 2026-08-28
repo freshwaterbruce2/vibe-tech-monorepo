@@ -9,6 +9,7 @@
 import { BLAKE_CONFIG } from '@/config';
 import { sessionStore } from '@/utils/electronStore';
 import { CapacitorHttp } from '@capacitor/core';
+import { logger } from '../utils/logger';
 
 export interface DeepSeekMessage {
   role: 'system' | 'user' | 'assistant';
@@ -33,6 +34,13 @@ export interface ChatCompletionResponse {
   }>;
 }
 
+export interface ReportMessagePayload {
+  role: 'user' | 'model';
+  content: string;
+  timestamp: number;
+  chatType: 'tutor' | 'friend';
+}
+
 class SecureAPIClient {
   private baseURL: string;
   private sessionToken: string | null = null;
@@ -42,7 +50,7 @@ class SecureAPIClient {
   constructor() {
     // ALWAYS use proxy for mobile apps - server handles API keys securely
     this.baseURL = BLAKE_CONFIG.apiEndpoint;
-    console.error(`[SecureClient] baseURL resolved to ${this.baseURL}`);
+    logger.error(`[SecureClient] baseURL resolved to ${this.baseURL}`);
   }
 
   /**
@@ -50,14 +58,14 @@ class SecureAPIClient {
    */
   private async initSession(): Promise<void> {
     const targetUrl = `${this.baseURL}${BLAKE_CONFIG.endpoints.session}`;
-    console.error(`[SecureClient] initSession → POST ${targetUrl}`);
+    logger.error(`[SecureClient] initSession → POST ${targetUrl}`);
     try {
       const response = await CapacitorHttp.post({
         url: targetUrl,
         headers: { 'Content-Type': 'application/json' },
         data: {},
       });
-      console.error(`[SecureClient] initSession response status: ${response.status}`);
+      logger.error(`[SecureClient] initSession response status: ${response.status}`);
 
       if (response.status !== 200) {
         throw new Error(`Session init failed: ${response.status}`);
@@ -71,7 +79,7 @@ class SecureAPIClient {
       sessionStore.set('vibetutor_session', this.sessionToken);
       sessionStore.set('vibetutor_expiry', String(this.tokenExpiry));
     } catch (error) {
-      console.error('[SecureClient] Session initialization failed:', error);
+      logger.error('[SecureClient] Session initialization failed:', error);
       throw error;
     }
   }
@@ -154,7 +162,7 @@ class SecureAPIClient {
         if (response.status === 429) {
           // Rate limited
           const retryAfter = response.data?.retryAfter ?? 60;
-          console.warn(`[SecureClient] Rate limited, retry after ${retryAfter}s`);
+          logger.warn(`[SecureClient] Rate limited, retry after ${retryAfter}s`);
 
           if (attempt < maxRetries) {
             await new Promise((r) => setTimeout(r, retryAfter * 1000));
@@ -168,7 +176,7 @@ class SecureAPIClient {
           (forcedModel ?? options.model) !== SecureAPIClient.FREE_FALLBACK_MODEL
         ) {
           forcedModel = SecureAPIClient.FREE_FALLBACK_MODEL;
-          console.warn(
+          logger.warn(
             '[SecureClient] Retrying chat with free fallback model after paid-model failure',
           );
           continue;
@@ -182,7 +190,7 @@ class SecureAPIClient {
         return response.data;
       } catch (error) {
         lastError = error as Error;
-        console.error(`[SecureClient] Attempt ${attempt} failed:`, error);
+        logger.error(`[SecureClient] Attempt ${attempt} failed:`, error);
 
         if (attempt < maxRetries) {
           const backoff = Math.min(Math.pow(2, attempt - 1) * 1000, 10000);
@@ -192,6 +200,43 @@ class SecureAPIClient {
     }
 
     throw lastError ?? new Error('Request failed after all retries');
+  }
+
+  /**
+   * Report an AI-generated (or user) message as inappropriate, for Play Store
+   * content-moderation compliance. Logged server-side via /api/analytics/log.
+   */
+  async reportMessage(payload: ReportMessagePayload): Promise<void> {
+    await this.ensureValidSession();
+
+    const post = async () =>
+      CapacitorHttp.post({
+        url: `${this.baseURL}${BLAKE_CONFIG.endpoints.logAnalytics}`,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.sessionToken}`,
+        },
+        data: {
+          event: 'report',
+          data: {
+            chatType: payload.chatType,
+            role: payload.role,
+            content: payload.content,
+            messageTimestamp: payload.timestamp,
+          },
+        },
+      });
+
+    let response = await post();
+
+    if (response.status === 401) {
+      await this.initSession();
+      response = await post();
+    }
+
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error(`Report failed: ${response.status}`);
+    }
   }
 
   /**
@@ -229,8 +274,8 @@ export async function createChatCompletion(
 
     return content;
   } catch (error) {
-    console.error('[SecureClient] Chat completion error:', error);
-    console.error('[SecureClient] Chat completion error details:', error);
+    logger.error('[SecureClient] Chat completion error:', error);
+    logger.error('[SecureClient] Chat completion error details:', error);
     return (
       options.fallbackMessage ??
       "I'm having trouble connecting right now. Please try again in a moment! 🔄"

@@ -1,9 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -18,15 +18,20 @@
     "paths": {
       "@/*": ["./src/*"],
       "@vibetech/shared-ipc": ["../../packages/shared-ipc/src/index.ts"],
-      "@vibetech/shared-utils": ["../../packages/shared-utils/src/index.ts"],
+      "@vibetech/db-app": ["../../packages/db-app/src/index.ts"],
+      "@vibetech/core": ["../../packages/core/src/index.ts"],
       "@vibetech/ui": ["../../packages/ui/src/index.ts"],
+      "@vibetech/inngest-client": ["../../packages/inngest-client/src/index.ts"],
       "@vibetech/openrouter-client": ["../../packages/openrouter-client/src/index.ts"],
-      "@vibetech/shared": ["../../packages/vibetech-shared/src/index.ts"],
       "@vibetech/shared-config": ["../../packages/shared-config/src/index.ts"],
       "@vibetech/logger": ["../../packages/logger/src/index.ts"]
     }
   },
   "include": ["src"],
   "exclude": ["node_modules"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
 }

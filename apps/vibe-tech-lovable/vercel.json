@@ -1,8 +1,15 @@
 {
+  "installCommand": "cd ../.. && pnpm install --force --frozen-lockfile --filter ./apps/vibe-tech-lovable...",
+  "buildCommand": "cd ../.. && pnpm nx build vibe-tech-lovable",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
+    },
+    {
+      "source": "/tutor/privacy-policy",
+      "destination": "/tutor/privacy-policy/index.html"
     },
     {
       "source": "/(.*)",

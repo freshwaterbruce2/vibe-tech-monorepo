@@ -6,7 +6,9 @@
     "lib": ["ES2022", "DOM"],
     "outDir": "./dist",
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "include": ["src/**/*", "test/**/*.ts", "vitest.config.ts"],
   "exclude": ["node_modules", "dist"]

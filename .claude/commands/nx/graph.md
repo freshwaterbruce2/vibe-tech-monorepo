@@ -163,5 +163,5 @@ Recommendations:
 - The graph opens in default browser automatically
 - Static graph can be shared with team members
 - Graph is generated from actual project structure
-- All commands run from C:\dev as base directory
+- All commands run from V:\monorepo as base directory
 - Graph updates automatically when dependencies change

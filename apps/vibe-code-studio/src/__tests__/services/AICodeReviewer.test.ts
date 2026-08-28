@@ -8,8 +8,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock AIService
 vi.mock('../../services/ai/UnifiedAIService', () => ({
   UnifiedAIService: vi.fn().mockImplementation(() => ({
-    sendContextualMessage: vi.fn().mockResolvedValue('AI review feedback')
-  }))
+    sendContextualMessage: vi.fn().mockResolvedValue('AI review feedback'),
+  })),
 }));
 
 const mockDiff = `
@@ -30,7 +30,7 @@ describe('AICodeReviewer', () => {
 
   beforeEach(async () => {
     mockAIService = {
-      sendContextualMessage: vi.fn().mockResolvedValue('Review comment')
+      sendContextualMessage: vi.fn().mockResolvedValue('Review comment'),
     };
 
     try {
@@ -82,6 +82,35 @@ describe('AICodeReviewer', () => {
 
       expect(parsed.files[0].path).toBe('src/test.ts');
     });
+
+    it('attributes chunks to the correct file in multi-file diffs (regression)', () => {
+      if (!AICodeReviewer) return;
+
+      const multiDiff = [
+        'diff --git a/src/one.ts b/src/one.ts',
+        '--- a/src/one.ts',
+        '+++ b/src/one.ts',
+        '@@ -1,1 +1,2 @@',
+        ' first',
+        '+added one',
+        'diff --git a/src/two.ts b/src/two.ts',
+        '--- a/src/two.ts',
+        '+++ b/src/two.ts',
+        '@@ -5,1 +5,2 @@',
+        ' fifth',
+        '+added two',
+        '',
+      ].join('\n');
+
+      const reviewer = new AICodeReviewer(mockAIService);
+      const parsed = reviewer.parseDiff(multiDiff);
+
+      expect(parsed.files).toHaveLength(2);
+      expect(parsed.files[0].chunks).toHaveLength(1);
+      expect(parsed.files[1].chunks).toHaveLength(1);
+      expect(parsed.files[0].chunks[0].lines.map((l: any) => l.lineNumber)).toEqual([1, 2]);
+      expect(parsed.files[1].chunks[0].lines.map((l: any) => l.lineNumber)).toEqual([5, 6]);
+    });
   });
 
   describe('Code Review', () => {
@@ -103,8 +132,8 @@ describe('AICodeReviewer', () => {
       const review = await reviewer.reviewChanges(mockDiff);
 
       // Should detect null reference issue
-      const hasIssue = review.comments.some((c: any) =>
-        c.severity === 'error' || c.severity === 'warning'
+      const hasIssue = review.comments.some(
+        (c: any) => c.severity === 'error' || c.severity === 'warning'
       );
 
       expect(hasIssue).toBe(true);
@@ -128,7 +157,9 @@ describe('AICodeReviewer', () => {
 
       const comment = review.comments[0];
       expect(comment.category).toBeDefined();
-      expect(['bug', 'style', 'performance', 'security', 'best-practice']).toContain(comment.category);
+      expect(['bug', 'style', 'performance', 'security', 'best-practice']).toContain(
+        comment.category
+      );
     });
 
     it('should provide suggestions', async () => {
@@ -236,6 +267,71 @@ describe('AICodeReviewer', () => {
       const review2 = await reviewer.reviewChanges(mockDiff);
 
       expect(review2.cached).toBe(true);
+    });
+  });
+
+  describe('AI comment provider hook (spec 15)', () => {
+    const aiFinding = {
+      file: 'src/test.ts',
+      line: 11,
+      severity: 'error',
+      category: 'security',
+      type: 'issue',
+      message: 'Injected AI finding',
+    };
+
+    it('merges provider findings into the review and affects counts', async () => {
+      if (!AICodeReviewer) return;
+
+      const provider = vi.fn().mockResolvedValue([aiFinding]);
+      const reviewer = new AICodeReviewer(mockAIService);
+      const review = await reviewer.reviewChanges(mockDiff, { aiCommentProvider: provider });
+
+      expect(provider).toHaveBeenCalledTimes(1);
+      // Provider receives the parsed diff + raw diff
+      expect(provider.mock.calls[0][0].files[0].path).toBe('src/test.ts');
+      expect(provider.mock.calls[0][1]).toBe(mockDiff);
+      expect(review.comments.some((c: any) => c.message === 'Injected AI finding')).toBe(true);
+      expect(review.issueCount.errors).toBeGreaterThanOrEqual(1);
+    });
+
+    it('without a provider behavior is unchanged (no AI findings)', async () => {
+      if (!AICodeReviewer) return;
+
+      const reviewer = new AICodeReviewer(mockAIService);
+      const review = await reviewer.reviewChanges(mockDiff);
+      expect(review.comments.some((c: any) => c.message === 'Injected AI finding')).toBe(false);
+    });
+
+    it('bypasses the cache in both directions when a provider is passed', async () => {
+      if (!AICodeReviewer) return;
+
+      const provider = vi.fn().mockResolvedValue([aiFinding]);
+      const reviewer = new AICodeReviewer(mockAIService);
+
+      // Warm the cache with a heuristics-only pass...
+      await reviewer.reviewChanges(mockDiff);
+      // ...an AI pass must not return the stale cached entry
+      const aiReview = await reviewer.reviewChanges(mockDiff, { aiCommentProvider: provider });
+      expect(aiReview.cached).toBeUndefined();
+      expect(aiReview.comments.some((c: any) => c.message === 'Injected AI finding')).toBe(true);
+
+      // ...and the AI pass must not poison the cache for local callers
+      const localReview = await reviewer.reviewChanges(mockDiff);
+      expect(localReview.comments.some((c: any) => c.message === 'Injected AI finding')).toBe(
+        false
+      );
+    });
+
+    it('a throwing provider degrades to heuristics-only, not a rejection', async () => {
+      if (!AICodeReviewer) return;
+
+      const provider = vi.fn().mockRejectedValue(new Error('AI down'));
+      const reviewer = new AICodeReviewer(mockAIService);
+      const review = await reviewer.reviewChanges(mockDiff, { aiCommentProvider: provider });
+
+      expect(review.comments.length).toBeGreaterThan(0); // heuristics still present
+      expect(review.comments.some((c: any) => c.message === 'Injected AI finding')).toBe(false);
     });
   });
 });

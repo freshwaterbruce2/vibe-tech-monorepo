@@ -5,7 +5,7 @@ $results = @()
 
 Write-Host "Scanning for files exceeding $maxLines lines..." -ForegroundColor Cyan
 
-Get-ChildItem -Path "C:\dev" -Recurse -Include "*.ts", "*.tsx", "*.js", "*.jsx" -File -ErrorAction SilentlyContinue |
+Get-ChildItem -Path "V:\monorepo" -Recurse -Include "*.ts", "*.tsx", "*.js", "*.jsx" -File -ErrorAction SilentlyContinue |
   Where-Object {
     $_.FullName -notmatch 'node_modules|dist|build|\.nx|coverage|\.pnpm|\.vscode|\.git'
   } |
@@ -14,7 +14,7 @@ Get-ChildItem -Path "C:\dev" -Recurse -Include "*.ts", "*.tsx", "*.js", "*.jsx" 
       $lineCount = @(Get-Content $_.FullName -ErrorAction Stop).Count
       if ($lineCount -gt $maxLines) {
         $results += [PSCustomObject]@{
-          Path = $_.FullName.Replace("C:\dev\", "")
+          Path = $_.FullName.Replace("V:\monorepo\", "")
           Lines = $lineCount
           Violation = $lineCount - $maxLines
         }
@@ -30,5 +30,5 @@ $results | Sort-Object -Property Lines -Descending | Format-Table -AutoSize
 Write-Host "`nTotal violations: $($results.Count)" -ForegroundColor $(if ($results.Count -gt 0) { 'Red' } else { 'Green' })
 
 # Export to JSON for further analysis
-$results | ConvertTo-Json | Out-File "C:\dev\large-files-report.json" -Encoding UTF8
-Write-Host "Report exported to: C:\dev\large-files-report.json" -ForegroundColor Cyan
+$results | ConvertTo-Json | Out-File "V:\monorepo\large-files-report.json" -Encoding UTF8
+Write-Host "Report exported to: V:\monorepo\large-files-report.json" -ForegroundColor Cyan

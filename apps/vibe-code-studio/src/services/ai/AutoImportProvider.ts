@@ -1,5 +1,6 @@
 import type * as Monaco from 'monaco-editor';
 import type { UnifiedAIService } from './UnifiedAIService';
+import { logger } from '../Logger';
 
 export class AutoImportProvider {
   constructor(private readonly aiService: UnifiedAIService) {}
@@ -30,7 +31,7 @@ export class AutoImportProvider {
         ],
         {
           temperature: 0.1,
-          model: 'deepseek/deepseek-v3.2'
+          model: 'moonshot/kimi-2.5-pro'
         }
       );
 
@@ -40,7 +41,8 @@ export class AutoImportProvider {
 
       // Map to Monaco Code Actions
       const monaco = await import('monaco-editor');
-      return imports.map((imp: any) => ({
+      interface ImportSuggestion { symbol: string; module: string; }
+      return imports.map((imp: ImportSuggestion) => ({
         title: `Import ${imp.symbol} from ${imp.module}`,
         kind: 'quickfix',
         edit: {
@@ -55,7 +57,7 @@ export class AutoImportProvider {
       }));
 
     } catch (error) {
-      console.warn('AutoImportProvider: Failed to resolve imports', error);
+      logger.warn('AutoImportProvider: Failed to resolve imports', error);
       return [];
     }
   }

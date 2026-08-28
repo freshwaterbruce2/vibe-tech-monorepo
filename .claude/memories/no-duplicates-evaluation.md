@@ -68,14 +68,14 @@ Complete evaluation framework for testing agents that follow the No Duplicates R
 
 ```powershell
 # Run full evaluation suite (80 tests)
-cd C:\dev\tests\agent-evaluation
+cd V:\monorepo\tests\agent-evaluation
 .\run-no-duplicates-tests.ps1 -TestCategory "all"
 
 # Run adversarial tests only
 .\run-no-duplicates-tests.ps1 -TestCategory "adversarial"
 
 # View behavioral contract
-cat C:\dev\.claude\rules\no-duplicates-behavioral-contract.md
+cat V:\monorepo\.claude\rules\no-duplicates-behavioral-contract.md
 ```
 
 ---

@@ -46,6 +46,82 @@ function toSystemActivity(a: BackendActivity): SystemActivity {
   };
 }
 
+/** Fetch raw dashboard data from the Tauri backend in parallel */
+async function fetchDashboardData(): Promise<{
+  rawActivities: BackendActivity[];
+  taskStats: TaskStats;
+  todayCount: number;
+}> {
+  const [rawActivities, taskStats, todayCount] = await Promise.all([
+    invoke<BackendActivity[]>('get_recent_activities', {
+      limit: 20,
+      activityTypeFilter: null,
+    }),
+    invoke<TaskStats>('get_task_stats').catch(() => ({}) as TaskStats),
+    invoke<number>('get_today_activity_count').catch(() => 0),
+  ]);
+  return { rawActivities, taskStats, todayCount };
+}
+
+/** Compute uptime string from the earliest activity timestamp */
+function computeUptime(rawActivities: BackendActivity[]): string {
+  if (rawActivities.length === 0) return '0h';
+  const earliest = rawActivities[rawActivities.length - 1];
+  if (!earliest) return '0h';
+  const nowSec = Math.floor(Date.now() / 1000);
+  const diffSec = nowSec - earliest.timestamp;
+  const days = Math.floor(diffSec / 86400);
+  const hours = Math.floor((diffSec % 86400) / 3600);
+  return days > 0 ? `${days}d ${hours}h` : `${hours}h`;
+}
+
+/** Build UI metrics from raw backend data */
+function buildMetrics(
+  rawActivities: BackendActivity[],
+  taskStats: TaskStats,
+  todayCount: number,
+): SystemMetrics {
+  const completedCount = (taskStats['completed'] ?? 0) + (taskStats['done'] ?? 0);
+  return {
+    activeContexts: todayCount,
+    tasksCompleted: completedCount,
+    uptime: computeUptime(rawActivities),
+    memoryUsage: '--',
+    cpuUsage: '--',
+  };
+}
+
+type AddNotification = ReturnType<typeof useNotifications>['addNotification'];
+
+/** Notify the user that a manual dashboard refresh succeeded */
+function notifyRefreshSuccess(addNotification: AddNotification): void {
+  addNotification({
+    title: 'Dashboard Updated',
+    message: 'Your dashboard data has been refreshed from the backend',
+    type: 'success',
+  });
+
+  toast({
+    title: 'Dashboard refreshed',
+    description: 'Your dashboard data has been updated successfully.',
+  });
+}
+
+/** Notify the user that a manual dashboard refresh failed */
+function notifyRefreshError(addNotification: AddNotification): void {
+  toast({
+    variant: 'destructive',
+    title: 'Error loading dashboard',
+    description: 'Could not load your dashboard data. Please try again.',
+  });
+
+  addNotification({
+    title: 'Dashboard Error',
+    message: 'Failed to load dashboard data. Please try again.',
+    type: 'error',
+  });
+}
+
 export const useDashboardRefresh = (
   setActivities: React.Dispatch<React.SetStateAction<SystemActivity[]>>,
   setMetrics: React.Dispatch<React.SetStateAction<SystemMetrics>>,
@@ -70,60 +146,20 @@ export const useDashboardRefresh = (
 
     try {
       // Fetch real data from Tauri backend in parallel
-      const [rawActivities, taskStats, todayCount] = await Promise.all([
-        invoke<BackendActivity[]>('get_recent_activities', {
-          limit: 20,
-          activityTypeFilter: null,
-        }),
-        invoke<TaskStats>('get_task_stats').catch(() => ({}) as TaskStats),
-        invoke<number>('get_today_activity_count').catch(() => 0),
-      ]);
+      const { rawActivities, taskStats, todayCount } = await fetchDashboardData();
 
       // Transform backend activities to UI shape
-      const activities = rawActivities.map(toSystemActivity);
-      setActivities(activities);
+      setActivities(rawActivities.map(toSystemActivity));
 
       // Build metrics from real task stats
-      const completedCount = (taskStats['completed'] ?? 0) + (taskStats['done'] ?? 0);
-      const activeContexts = todayCount;
-
-      // Compute uptime from earliest activity timestamp
-      let uptimeStr = '0h';
-      if (rawActivities.length > 0) {
-        const earliest = rawActivities[rawActivities.length - 1];
-        if (earliest) {
-          const nowSec = Math.floor(Date.now() / 1000);
-          const diffSec = nowSec - earliest.timestamp;
-          const days = Math.floor(diffSec / 86400);
-          const hours = Math.floor((diffSec % 86400) / 3600);
-          uptimeStr = days > 0 ? `${days}d ${hours}h` : `${hours}h`;
-        }
-      }
-
-      setMetrics({
-        activeContexts,
-        tasksCompleted: completedCount,
-        uptime: uptimeStr,
-        memoryUsage: '--',
-        cpuUsage: '--',
-      });
+      setMetrics(buildMetrics(rawActivities, taskStats, todayCount));
 
       // Mark data as loaded
       dataLoadedRef.current = true;
 
       // Only show notifications if it's a manual refresh (not the initial load)
       if (!isInitialLoadRef.current && isManualRefreshRef.current) {
-        addNotification({
-          title: 'Dashboard Updated',
-          message: 'Your dashboard data has been refreshed from the backend',
-          type: 'success',
-        });
-
-        toast({
-          title: 'Dashboard refreshed',
-          description: 'Your dashboard data has been updated successfully.',
-        });
-
+        notifyRefreshSuccess(addNotification);
         isManualRefreshRef.current = false;
       }
 
@@ -134,18 +170,7 @@ export const useDashboardRefresh = (
       setError(`Failed to load dashboard data: ${message}`);
 
       if (!isInitialLoadRef.current && isManualRefreshRef.current) {
-        toast({
-          variant: 'destructive',
-          title: 'Error loading dashboard',
-          description: 'Could not load your dashboard data. Please try again.',
-        });
-
-        addNotification({
-          title: 'Dashboard Error',
-          message: 'Failed to load dashboard data. Please try again.',
-          type: 'error',
-        });
-
+        notifyRefreshError(addNotification);
         isManualRefreshRef.current = false;
       }
 

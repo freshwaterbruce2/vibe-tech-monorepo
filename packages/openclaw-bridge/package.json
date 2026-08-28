@@ -44,8 +44,8 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@vibetech/logger": "workspace:^1.0.0",
-    "@vibetech/shared-ipc": "workspace:^1.0.0",
+    "@vibetech/logger": "workspace:*",
+    "@vibetech/shared-ipc": "workspace:*",
     "ws": "^8.20.0"
   },
   "devDependencies": {
@@ -53,6 +53,6 @@
     "@types/ws": "^8.18.1",
     "tsx": "^4.21.0",
     "typescript": "5.9.3",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.9"
   }
 }

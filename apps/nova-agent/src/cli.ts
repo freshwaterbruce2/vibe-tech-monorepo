@@ -69,7 +69,7 @@ program
 	.option("--json-only", "Print only the structured review artifact", false)
 	.action(async (options) => {
 		try {
-			const targetPath = options.path || process.cwd();
+			const targetPath = options.path ?? process.cwd();
 			const review = await analysisManager.reviewProject(targetPath);
 			const deps = await buildManager.analyzeDeps(targetPath);
 

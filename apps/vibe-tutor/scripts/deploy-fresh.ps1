@@ -1,6 +1,6 @@
 # Vibe-Tutor: Clean Build & Deploy to Android A54
 # This script performs a complete clean build and deployment
-# Run from C:\dev\Vibe-Tutor directory
+# Run from V:\monorepo\Vibe-Tutor directory
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Vibe-Tutor Fresh Deployment Script" -ForegroundColor Cyan
@@ -10,11 +10,11 @@ Write-Host ""
 # Ensure we're in the correct directory
 $currentDir = Get-Location
 if ($currentDir.Path -notlike "*Vibe-Tutor") {
-    Write-Host "ERROR: Must run from C:\dev\Vibe-Tutor directory" -ForegroundColor Red
+    Write-Host "ERROR: Must run from V:\monorepo\Vibe-Tutor directory" -ForegroundColor Red
     Write-Host "Current directory: $currentDir" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Run this command first:" -ForegroundColor Yellow
-    Write-Host "  cd C:\dev\Vibe-Tutor" -ForegroundColor White
+    Write-Host "  cd V:\monorepo\Vibe-Tutor" -ForegroundColor White
     exit 1
 }
 

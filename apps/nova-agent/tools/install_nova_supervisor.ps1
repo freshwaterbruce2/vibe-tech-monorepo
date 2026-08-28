@@ -1,6 +1,6 @@
 param(
     [string]$PythonPath = "python",
-    [string]$NovaRoot = "C:\\dev\\apps\\nova-agent",
+    [string]$NovaRoot = "V:\\monorepo\\apps\\nova-agent",
     [string]$LogDir = "D:\\logs\\nova-agent",
     [string]$TaskName = "NovaAgentSupervisor"
 )

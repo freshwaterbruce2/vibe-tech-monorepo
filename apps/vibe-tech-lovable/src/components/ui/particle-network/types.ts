@@ -13,14 +13,10 @@ export interface ParticleProps {
 }
 
 export interface ConnectionLineProps {
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
-  opacity: number;
   color: string;
-  startPos: { current: THREE.Mesh };
-  endPos: { current: THREE.Mesh };
+  particlesRef: { current: Array<THREE.Mesh | undefined> };
+  startIndex: number;
+  endIndex: number;
   threshold: number;
 }
 

@@ -12,7 +12,7 @@ import type { AIMessage } from '../types';
  * 2025 Pattern: Separate stores for different domains
  */
 
-const DEFAULT_MODEL = 'deepseek/deepseek-v3.2';
+const DEFAULT_MODEL = 'moonshot/kimi-2.5-pro';
 const LOCAL_MODEL_IDS = ['local/vibe-completion'] as const;
 const VALID_MODEL_IDS = new Set<string>([
   ...Object.keys(MODEL_REGISTRY),
@@ -234,15 +234,16 @@ export const useAIStore = create<AIState>()(
         },
       })),
       {
-        name: 'deepcode-ai-store',
+        name: 'vibe-code-studio-ai-store',
         partialize: (state) => ({
           currentModel: state.currentModel,
           showReasoningProcess: state.showReasoningProcess,
           completionEnabled: state.completionEnabled,
           conversationHistory: state.conversationHistory,
         }),
-        merge: (persistedState: any, currentState: AIState) => {
-          const persistedModel = persistedState?.currentModel;
+        merge: (persistedState: unknown, currentState: AIState) => {
+          const typed = persistedState as Partial<AIState> | undefined;
+          const persistedModel = typed?.currentModel;
           const fallbackModel = currentState.currentModel || DEFAULT_MODEL;
           let resolvedModel = resolveModelId(persistedModel ?? fallbackModel);
 
@@ -255,14 +256,14 @@ export const useAIStore = create<AIState>()(
 
           return {
             ...currentState,
-            ...persistedState,
+            ...typed,
             currentModel: resolvedModel,
           };
         },
       }
     ),
     {
-      name: 'DeepCode AI Store',
+      name: 'Vibe Code Studio AI Store',
     }
   )
 );

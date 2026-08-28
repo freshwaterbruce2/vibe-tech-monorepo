@@ -20,6 +20,7 @@ export interface AICompletionRequest {
   temperature?: number;
   maxTokens?: number;
   stream?: boolean;
+  signal?: AbortSignal;
 }
 
 export interface AICompletionResponse {

@@ -9,7 +9,7 @@ export class AgentSynthesizer {
   synthesizeResponse(
     _request: string,
     agentResponses: Record<string, AgentResponse>,
-    coordination: any
+    coordination: { strategy: string; reasoning: string; confidence: number; parallelism?: number }
   ): { content: string; recommendations: string[] } {
     const agentKeys = Object.keys(agentResponses);
     

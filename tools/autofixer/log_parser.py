@@ -125,7 +125,7 @@ class LogParser:
 if __name__ == "__main__":
     test_log = """
     src/App.tsx(10,5): error TS2304: Cannot find name 'React'.
-    C:\\dev\\utils.ts
+    V:\\monorepo\\utils.ts
       12:5  warning  Unexpected any  @typescript-eslint/no-explicit-any
     """
     print(json.dumps([e.to_dict() for e in LogParser.parse(test_log)], indent=2))

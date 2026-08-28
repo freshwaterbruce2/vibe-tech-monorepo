@@ -1,7 +1,7 @@
 # Learning System WhatsApp Commands
-# To be called from OpenClaw/Clawdbot when user sends /learning-* commands
+# To be called from OpenClaw when user sends /learning-* commands
 
-Import-Module C:\dev\scripts\LearningSystem.psm1
+Import-Module V:\monorepo\scripts\LearningSystem.psm1
 
 function Invoke-LearningCommand {
     <#

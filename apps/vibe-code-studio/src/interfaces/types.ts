@@ -3,9 +3,6 @@
  * Interfaces for the multi-agent system and specialized agents
  */
 
-// Re-export types from existing modules to maintain compatibility (disabled for now)
-// export type { AgentTask as Task, TaskContext, TaskResult } from '../services/AutonomousAgent';
-
 // Fallback type definitions
 export interface Task {
   id: string;
@@ -14,13 +11,13 @@ export interface Task {
 }
 
 export interface TaskContext {
-  workspaceContext?: any;
-  currentFile?: any;
+  workspaceContext?: unknown;
+  currentFile?: string;
 }
 
 export interface TaskResult {
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
 }
 
@@ -33,7 +30,7 @@ export interface AgentContext {
   selectedText?: string;
   workspaceRoot?: string;
   projectContext?: string;
-  userPreferences?: Record<string, any>;
+  userPreferences?: Record<string, unknown>;
 }
 
 /**
@@ -43,7 +40,7 @@ export interface AgentResponse {
   content: string;
   confidence: number;
   suggestions?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

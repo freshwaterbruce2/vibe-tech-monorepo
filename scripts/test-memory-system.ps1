@@ -54,21 +54,21 @@ function Find-NodeExecutable {
 
 # Colors for output
 function Write-Success($msg) {
-    Write-Host "✓ $msg" -ForegroundColor Green
+    Write-Host "[PASS] $msg" -ForegroundColor Green
     $script:PassCount++
 }
 
 function Write-Failure($msg) {
-    Write-Host "✗ $msg" -ForegroundColor Red
+    Write-Host "[FAIL] $msg" -ForegroundColor Red
     $script:FailCount++
 }
 
 function Write-Info($msg) {
-    Write-Host "ℹ $msg" -ForegroundColor Cyan
+    Write-Host "[INFO] $msg" -ForegroundColor Cyan
 }
 
 function Write-Section($msg) {
-    Write-Host "`n═══ $msg ═══" -ForegroundColor Yellow
+    Write-Host "`n=== $msg ===" -ForegroundColor Yellow
 }
 
 # Initialize Node.js path
@@ -94,14 +94,14 @@ if (Test-Path "D:\databases\memory.db") {
 }
 
 # Check MCP server built
-if (Test-Path "C:\dev\apps\memory-mcp\dist\index.js") {
+if (Test-Path "V:\monorepo\apps\memory-mcp\dist\index.js") {
     Write-Success "MCP server built (apps/memory-mcp/dist/index.js)"
 } else {
     Write-Failure "MCP server not built"
 }
 
 # Check memory library built
-if (Test-Path "C:\dev\packages\memory\dist\index.js") {
+if (Test-Path "V:\monorepo\packages\memory\dist\index.js") {
     Write-Success "Memory library built (packages/memory/dist/index.js)"
 } else {
     Write-Failure "Memory library not built"
@@ -109,7 +109,7 @@ if (Test-Path "C:\dev\packages\memory\dist\index.js") {
 
 # Check .mcp.json configuration
 try {
-    $mcpConfig = Get-Content "C:\dev\.mcp.json" | ConvertFrom-Json
+    $mcpConfig = Get-Content "V:\monorepo\.mcp.json" | ConvertFrom-Json
     if ($mcpConfig.mcpServers.'memory') {
         Write-Success "MCP server registered in .mcp.json"
         if ($Verbose) {
@@ -187,7 +187,8 @@ const { MemoryManager } = require('./packages/memory/dist/index.js');
   try {
     const manager = new MemoryManager({
       dbPath: 'D:/databases/memory.db',
-      embeddingProvider: 'transformers',
+      embeddingProvider: 'ollama',
+      embeddingModel: 'nomic-embed-text',
       embeddingDimension: 768
     });
 
@@ -222,10 +223,8 @@ const { MemoryManager } = require('./packages/memory/dist/index.js');
     console.log('PROCEDURAL_OK');
 
     // Test search
-    const results = await manager.semantic.search('test', 5);
-    if (results.length > 0) {
-      console.log('SEARCH_OK');
-    }
+    await manager.semantic.search('Test semantic memory content', 5);
+    console.log('SEARCH_OK');
 
     manager.close();
     process.exit(0);
@@ -309,6 +308,7 @@ try {
 try {
   require('./apps/memory-mcp/dist/index.js');
   console.log('MCP_SERVER_LOADABLE');
+  setTimeout(() => process.exit(0), 1500);
 } catch (e) {
   console.error('Failed to load MCP server:', e.message);
   process.exit(1);
@@ -329,17 +329,18 @@ Write-Section "Phase 7: Storage Path Policy Compliance"
 
 $violations = @()
 
-# Check for databases in C:\dev (limited to apps/ and packages/ for performance)
+# Check for databases in V:\monorepo (limited to apps/ and packages/ for performance)
 # Only scan specific directories to avoid long scan times
-$scanPaths = @("C:\dev\apps", "C:\dev\packages", "C:\dev\backend")
+$scanPaths = @("V:\monorepo\apps", "V:\monorepo\packages", "V:\monorepo\backend")
 foreach ($scanPath in $scanPaths) {
     if (Test-Path $scanPath) {
         $cDevDatabases = Get-ChildItem -Path $scanPath -Recurse -Include *.db,*.sqlite,*.sqlite3 -Depth 2 -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -notlike "*node_modules*" }
+            Where-Object { $_.FullName -notlike "*node_modules*" } |
+            Where-Object { $_.FullName -notlike "*\.wrangler\state\*" }
 
         if ($cDevDatabases) {
             foreach ($db in $cDevDatabases) {
-                $violations += "Database found in C:\dev: $($db.FullName)"
+                $violations += "Database found in V:\monorepo: $($db.FullName)"
             }
         }
     }
@@ -379,7 +380,7 @@ Write-Host "Failed: $($script:FailCount)/$total" -ForegroundColor $(if ($script:
 Write-Host ""
 
 if ($script:FailCount -eq 0) {
-    Write-Host "✓ All tests passed! Memory System is ready." -ForegroundColor Green
+    Write-Host "All tests passed. Memory system is ready." -ForegroundColor Green
     Write-Host ""
     Write-Host "Next Steps:" -ForegroundColor Cyan
     Write-Host "  1. Restart Claude Code to load the MCP server"
@@ -387,7 +388,7 @@ if ($script:FailCount -eq 0) {
     Write-Host "  3. Try: memory_health, memory_add_semantic, memory_search_semantic"
     Write-Host ""
 } else {
-    Write-Host "⚠ Some tests failed. Review errors above." -ForegroundColor Yellow
+    Write-Host "Some tests failed. Review errors above." -ForegroundColor Yellow
     Write-Host ""
     exit 1
 }

@@ -62,7 +62,7 @@ impl Config {
                 .or_else(|_| env::var("VITE_KIMI_API_KEY"))
                 .unwrap_or_else(|_| "".to_string()),
             database_path,
-            workspace_root: env::var("WORKSPACE_ROOT").unwrap_or_else(|_| "C:\\dev".to_string()),
+            workspace_root: env::var("WORKSPACE_ROOT").unwrap_or_else(|_| "V:\\monorepo".to_string()),
             deepcode_ws_url: env::var("DEEPCODE_WS_URL")
                 .unwrap_or_else(|_| "ws://127.0.0.1:5004".to_string()),
             deepcode_ipc_enabled: env::var("DEEPCODE_IPC_ENABLED")
@@ -79,8 +79,7 @@ impl Config {
             mobile_bridge_token: env::var("MOBILE_BRIDGE_TOKEN").unwrap_or_else(|_| {
                 let token = uuid::Uuid::new_v4().to_string();
                 tracing::warn!(
-                    "MOBILE_BRIDGE_TOKEN not set. Generated token: {}. Set this in .env or Settings.",
-                    token
+                    "MOBILE_BRIDGE_TOKEN not set. Generated an in-memory bridge token. Set this in .env or Settings."
                 );
                 token
             }),

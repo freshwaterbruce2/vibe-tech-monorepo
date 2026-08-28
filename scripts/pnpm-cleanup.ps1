@@ -3,7 +3,11 @@
 
 param([switch]$DryRun)
 
-$RootDir = "C:\dev"
+$RootDir = "V:\monorepo"
+$environmentScript = Join-Path $PSScriptRoot 'Initialize-DevProcessEnvironment.ps1'
+
+. $environmentScript
+$null = Initialize-DevProcessEnvironment
 
 Write-Host "=== pnpm Cleanup ===" -ForegroundColor Cyan
 
@@ -30,8 +34,9 @@ Write-Host "Calculating size..." -ForegroundColor Yellow
 $totalSize = 0
 foreach ($dir in $dirs) {
     if (Test-Path $dir) {
-        $size = (Get-ChildItem -Path $dir -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
-        if ($size) { $totalSize += $size }
+        $measure = Get-ChildItem -Path $dir -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum
+        $size = if ($null -ne $measure -and $null -ne $measure.Sum) { $measure.Sum } else { 0 }
+        $totalSize += $size
     }
 }
 $sizeGB = [math]::Round($totalSize / 1GB, 2)
@@ -50,8 +55,9 @@ if ($DryRun) {
     }
     Write-Host "Removed $sizeGB GB" -ForegroundColor Green
 
-    Write-Host "`nPruning pnpm store..." -ForegroundColor Yellow
-    pnpm store prune
+    # Skip store prune if it hangs
+    # Write-Host "`nPruning pnpm store..." -ForegroundColor Yellow
+    # pnpm store prune
 
     Write-Host "`nReinstalling..." -ForegroundColor Yellow
     Set-Location $RootDir

@@ -9,6 +9,7 @@
 import { Capacitor } from '@capacitor/core';
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { CapacitorSQLite, SQLiteConnection, type SQLiteDBConnection } from '@capacitor-community/sqlite';
+import { logger } from '../utils/logger';
 
 export interface LocalMemoryEvent {
   id: string;
@@ -99,7 +100,7 @@ class SyncService {
       await this.createTables();
       this.initialized = true;
     } catch (error) {
-      console.error('SyncService initialization failed:', error);
+      logger.error('SyncService initialization failed:', error);
       throw error;
     }
   }
@@ -152,7 +153,7 @@ class SyncService {
 
       return event;
     } catch (error) {
-      console.error('Failed to log event:', error);
+      logger.error('Failed to log event:', error);
       throw error;
     }
   }
@@ -227,7 +228,7 @@ class SyncService {
         uri,
       };
     } catch (error) {
-      console.error('Export for hub failed:', error);
+      logger.error('Export for hub failed:', error);
       throw error;
     }
   }
@@ -237,7 +238,7 @@ class SyncService {
     try {
       await Filesystem.requestPermissions();
     } catch (error) {
-      console.warn('Filesystem permission request failed or not supported:', error);
+      logger.warn('Filesystem permission request failed or not supported:', error);
     }
 
     const directoryCandidates: Directory[] = [Directory.ExternalStorage, Directory.Documents];
@@ -290,7 +291,7 @@ class SyncService {
     try {
       await this.db.run(sql, ids);
     } catch (error) {
-      console.error('Failed to mark exported rows:', error);
+      logger.error('Failed to mark exported rows:', error);
       throw error;
     }
   }

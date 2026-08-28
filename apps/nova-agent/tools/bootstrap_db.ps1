@@ -1,6 +1,6 @@
 param(
   [string]$DbPath = "D:\\databases\\nova_shared.db",
-  [string]$SeedDir = "C:\\dev\\apps\\nova-agent\\prompts",
+  [string]$SeedDir = "V:\\monorepo\\apps\\nova-agent\\prompts",
   [string[]]$PromptNames = @("nova-core-v1", "nova-architect-v1", "nova-engineer-v1")
 )
 

@@ -1,0 +1,12 @@
+{
+  "server/src/index.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/App.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  }
+}

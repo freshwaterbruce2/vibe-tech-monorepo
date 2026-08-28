@@ -9,7 +9,7 @@ export interface BridgeMessage {
   type: string;
   source: 'deepcode' | 'vibe' | 'nova';
   target?: string;
-  payload: any;
+  payload: unknown;
   timestamp: number;
   messageId: string;
 }

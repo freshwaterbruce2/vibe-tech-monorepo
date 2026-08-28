@@ -10,37 +10,46 @@
   ],
   "targets": {
     "lint": {
+      "dependsOn": [
+        "install"
+      ],
       "executor": "nx:run-commands",
       "options": {
-        "command": ".venv\\Scripts\\python.exe -m pylint src scripts start_live_trading.py run_tests.py test_credentials.py test_env_keys.py test_nonce_fix.py test_reversal_theory.py --fail-under=7.0",
+        "command": "node -e \"const cp=require('node:child_process');const py=process.platform==='win32'?'.venv\\\\Scripts\\\\python.exe':'.venv/bin/python';const r=cp.spawnSync(py,process.argv.slice(1),{stdio:'inherit'});process.exit(r.status ?? 1);\" -- -m pylint src scripts start_live_trading.py run_tests.py test_credentials.py test_env_keys.py test_nonce_fix.py test_reversal_theory.py --fail-under=7.0",
         "cwd": "apps/crypto-enhanced"
       }
     },
     "typecheck": {
+      "dependsOn": [
+        "install"
+      ],
       "executor": "nx:run-commands",
       "options": {
-        "command": ".venv\\Scripts\\python.exe -m mypy --config-file mypy.ini",
+        "command": "node -e \"const cp=require('node:child_process');const py=process.platform==='win32'?'.venv\\\\Scripts\\\\python.exe':'.venv/bin/python';const r=cp.spawnSync(py,process.argv.slice(1),{stdio:'inherit'});process.exit(r.status ?? 1);\" -- -m mypy --config-file mypy.ini",
         "cwd": "apps/crypto-enhanced"
       }
     },
     "install": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "powershell -NoProfile -Command \"if (Get-Command py -ErrorAction SilentlyContinue) { py -3 -m venv .venv } elseif (Get-Command python -ErrorAction SilentlyContinue) { python -m venv .venv } else { throw 'Python launcher not found on PATH' }; .\\.venv\\Scripts\\python.exe -m pip install -r requirements.txt\"",
+        "command": "node -e \"const cp=require('node:child_process');const fs=require('node:fs');const py=process.platform==='win32'?'.venv\\\\Scripts\\\\python.exe':'.venv/bin/python';const launchers=process.platform==='win32'?[['py',['-3']],['python',[]]]:[['python3',[]],['python',[]]];if(!fs.existsSync(py)){const launcher=launchers.find(([cmd,args])=>cp.spawnSync(cmd,[...args,'--version'],{stdio:'ignore'}).status===0);if(!launcher){throw new Error('Python launcher not found on PATH');}cp.execFileSync(launcher[0],[...launcher[1],'-m','venv','.venv'],{stdio:'inherit'});}cp.execFileSync(py,['-m','pip','install','-r','requirements.txt'],{stdio:'inherit'});\"",
         "cwd": "apps/crypto-enhanced"
       }
     },
     "start": {
       "executor": "nx:run-commands",
       "options": {
-        "command": ".venv\\Scripts\\python.exe start_live_trading.py",
+        "command": "node -e \"const cp=require('node:child_process');const py=process.platform==='win32'?'.venv\\\\Scripts\\\\python.exe':'.venv/bin/python';const r=cp.spawnSync(py,process.argv.slice(1),{stdio:'inherit'});process.exit(r.status ?? 1);\" -- start_live_trading.py",
         "cwd": "apps/crypto-enhanced"
       }
     },
     "test": {
+      "dependsOn": [
+        "install"
+      ],
       "executor": "nx:run-commands",
       "options": {
-        "command": ".venv\\Scripts\\python.exe run_tests.py",
+        "command": "node -e \"const cp=require('node:child_process');const py=process.platform==='win32'?'.venv\\\\Scripts\\\\python.exe':'.venv/bin/python';const r=cp.spawnSync(py,process.argv.slice(1),{stdio:'inherit'});process.exit(r.status ?? 1);\" -- run_tests.py",
         "cwd": "apps/crypto-enhanced"
       }
     },

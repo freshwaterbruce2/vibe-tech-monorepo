@@ -9,27 +9,27 @@ import CtaSection from "@/components/home/CtaSection";
 
 const Index = () => {
   useEffect(() => {
-    document.title = "Vibe Tech | Home";
+    document.title = "Vibe Tech | Project Front Door";
   }, []);
 
   return (
-    <PageLayout 
-      title="Home" 
-      description="Vibe Tech - Creating innovative digital solutions with a focus on design and functionality. Expert web development, UI/UX design, and software solutions."
-      keywords="vibe tech, digital solutions, web development, UI/UX design, software development, Bruce Freshwater"
+      <PageLayout
+        title="Home"
+      description="Vibe-Tech.org is the front door for the Vibe-Tech project suite, including Vibe Tutor, Chessmaster Academy, Proposal Review, Clinic Autopilot, Invoice Automation, and new AI business tools."
+      keywords="vibe tech, vibe tutor, chessmaster academy, proposal review, clinic automation, invoice automation, micro saas, AI business tools, Bruce Freshwater"
     >
       {/* Hero Section */}
       <HeroSection />
-      
+
       {/* Services Section */}
       <ServicesSection />
-      
+
       {/* Portfolio Highlights */}
       <PortfolioSection />
-      
+
       {/* Latest Blog Posts */}
       <BlogSection />
-      
+
       {/* CTA Section */}
       <CtaSection />
     </PageLayout>

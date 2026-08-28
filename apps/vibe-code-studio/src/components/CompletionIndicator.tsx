@@ -147,7 +147,7 @@ interface CompletionIndicatorProps {
 
 const CompletionIndicator = ({
   isActive,
-  model = 'deepseek/deepseek-v3.2',
+  model = 'moonshot/kimi-2.5-pro',
   strategy = 'fast',
   hasCompletion,
   onDismiss

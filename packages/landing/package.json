@@ -1,0 +1,35 @@
+{
+  "name": "@vibetech/landing",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Shared landing page sections for VibeTech monetized apps",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src tests --ext .ts,.tsx --max-warnings 0",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.9"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.28.2"
+  }
+}

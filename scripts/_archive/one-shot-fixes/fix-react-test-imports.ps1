@@ -35,7 +35,7 @@ $fixedCount = 0
 $skippedCount = 0
 
 foreach ($file in $files) {
-    $fullPath = Join-Path 'C:\dev' $file
+    $fullPath = Join-Path 'V:\monorepo' $file
 
     if (-not (Test-Path $fullPath)) {
         Write-Host "⚠️  Skipped (not found): $file" -ForegroundColor Yellow

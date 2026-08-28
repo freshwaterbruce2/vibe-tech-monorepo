@@ -4,6 +4,7 @@
  * Falls back to HTML5 Audio on web for compatibility
  */
 
+import { logger } from '../utils/logger';
 import { BLAKE_CONFIG } from '@/config';
 import { Capacitor } from '@capacitor/core';
 import type { RadioStation } from '../types';
@@ -70,7 +71,6 @@ class AudioStreamService {
     this.audio.preload = 'auto';
     this.audio.crossOrigin = 'anonymous';
     this.setupListeners();
-    console.debug('[AudioStream] HTML5 Audio initialized synchronously');
 
     // Try native audio async (non-blocking)
     void this.init();
@@ -88,9 +88,8 @@ class AudioStreamService {
         const module = await import('@mediagrid/capacitor-native-audio');
         NativeAudio = module.AudioPlayer as unknown as MediaGridAudioPlugin;
         this.isNativeMode = true;
-        console.debug('[AudioStream] Native audio plugin loaded (@mediagrid)');
       } catch (error) {
-        console.warn('[AudioStream] Native audio not available, using HTML5:', error);
+        logger.warn('[AudioStream] Native audio not available, using HTML5:', error);
         this.isNativeMode = false;
       }
     }
@@ -156,15 +155,13 @@ class AudioStreamService {
 
       this.lastError = errorMessage;
       this.notifyStatusChange();
-      console.error('[AudioStream] HTML5 Audio error:', errorMessage, error);
+      logger.error('[AudioStream] HTML5 Audio error:', errorMessage, error);
     });
 
     this.audio.addEventListener('waiting', () => {
-      console.debug('[AudioStream] Buffering...');
     });
 
     this.audio.addEventListener('canplay', () => {
-      console.debug('[AudioStream] Ready to play');
     });
   }
 
@@ -238,9 +235,8 @@ class AudioStreamService {
         await this.playHTML5Fallback(station, proxiedUrls);
       }
 
-      console.debug(`[AudioStream] Playing: ${station.name} (${station.streamUrl})`);
     } catch (error) {
-      console.error('[AudioStream] Failed to play radio:', error);
+      logger.error('[AudioStream] Failed to play radio:', error);
 
       const errorMsg = getErrorMessage(error);
       const errorName = error instanceof Error ? error.name : '';
@@ -278,8 +274,6 @@ class AudioStreamService {
     for (let i = 0; i < urlsToTry.length; i++) {
       const url = urlsToTry[i]!;
       try {
-        console.debug(`[AudioStream] Native attempt ${i + 1}/${urlsToTry.length}: ${url}`);
-
         // Destroy previous audio source if it exists
         if (this.nativeCreated) {
           try {
@@ -309,10 +303,9 @@ class AudioStreamService {
 
         this._isPlaying = true;
         this.notifyStatusChange();
-        console.debug(`[AudioStream] Native success: ${station.name} via ${url}`);
         return;
       } catch (error) {
-        console.error(`[AudioStream] Native fail ${i + 1}: ${getErrorMessage(error)}`);
+        logger.error(`[AudioStream] Native fail ${i + 1}: ${getErrorMessage(error)}`);
 
         // Cleanup failed source
         if (this.nativeCreated) {
@@ -326,25 +319,23 @@ class AudioStreamService {
 
         // Retry delay before next URL
         if (i < urlsToTry.length - 1) {
-          console.debug('[AudioStream] Retrying fallback in 1s...');
           await new Promise((r) => setTimeout(r, 1000));
         }
       }
     }
 
     // All native URLs failed — fallback to HTML5 with proxied URLs
-    console.warn('[AudioStream] All native URLs failed, trying HTML5 fallback');
+    logger.warn('[AudioStream] All native URLs failed, trying HTML5 fallback');
     const proxiedUrls = this.getProxiedUrls(urlsToTry);
     await this.playHTML5Fallback(station, proxiedUrls);
   }
 
-  private async playHTML5Fallback(station: RadioStation, urlsToTry: string[]): Promise<void> {
+  private async playHTML5Fallback(_station: RadioStation, urlsToTry: string[]): Promise<void> {
     if (!this.audio) {
       this.audio = new Audio();
       this.audio.preload = 'auto';
       this.audio.crossOrigin = 'anonymous';
       this.setupListeners();
-      console.debug('[AudioStream] HTML5 Audio reinitialized');
     }
 
     let lastError: Error | null = null;
@@ -352,8 +343,6 @@ class AudioStreamService {
     for (let i = 0; i < urlsToTry.length; i++) {
       const url = urlsToTry[i]!;
       try {
-        console.debug(`[AudioStream] HTML5 attempt ${i + 1}/${urlsToTry.length}: ${url}`);
-
         this.audio.src = url;
         this.audio.load();
 
@@ -361,7 +350,6 @@ class AudioStreamService {
 
         this._isPlaying = true;
         this.notifyStatusChange();
-        console.debug(`[AudioStream] HTML5 success: ${station.name}`);
         return;
       } catch (error) {
         const audioError = this.audio?.error;
@@ -390,12 +378,11 @@ class AudioStreamService {
         this._isPlaying = false;
         this.notifyStatusChange();
 
-        console.error('[AudioStream] HTML5 Audio error:', errorMessage, audioError);
+        logger.error('[AudioStream] HTML5 Audio error:', errorMessage, audioError);
         lastError = error instanceof Error ? error : new Error(String(error));
 
         // Try next URL
         if (i < urlsToTry.length - 1) {
-          console.debug('[AudioStream] Trying next fallback...');
           await new Promise((r) => setTimeout(r, 500));
         }
       }
@@ -423,7 +410,7 @@ class AudioStreamService {
       this.lastError = null;
       this.notifyStatusChange();
     } catch (error) {
-      console.error('[AudioStream] Stop failed:', error);
+      logger.error('[AudioStream] Stop failed:', error);
       this.currentStation = null;
       this._isPlaying = false;
       this.nativeCreated = false;
@@ -444,7 +431,7 @@ class AudioStreamService {
       this._isPlaying = false;
       this.notifyStatusChange();
     } catch (error) {
-      console.error('[AudioStream] Pause failed:', error);
+      logger.error('[AudioStream] Pause failed:', error);
     }
   }
 
@@ -461,7 +448,7 @@ class AudioStreamService {
       this._isPlaying = true;
       this.notifyStatusChange();
     } catch (error) {
-      console.error('[AudioStream] Resume failed:', error);
+      logger.error('[AudioStream] Resume failed:', error);
       this.lastError = 'Failed to resume playback';
       this._isPlaying = false;
       this.notifyStatusChange();
@@ -485,7 +472,7 @@ class AudioStreamService {
         this.audio.volume = normalizedVolume;
       }
     } catch (error) {
-      console.error('[AudioStream] Set volume failed:', error);
+      logger.error('[AudioStream] Set volume failed:', error);
     }
   }
 

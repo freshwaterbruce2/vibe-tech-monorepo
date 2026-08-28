@@ -1,3 +1,5 @@
+import { logger } from './logger';
+
 interface CapacitorRuntime {
   Capacitor?: {
     isNativePlatform?: () => boolean;
@@ -35,19 +37,19 @@ export function registerServiceWorker(runtime: CapacitorRuntime = globalThis): v
   }
 
   if (!shouldRegisterServiceWorker(runtime)) {
-    console.log('[Capacitor] Service worker disabled for native app - no caching');
+    logger.info('[Capacitor] Service worker disabled for native app - no caching');
     return;
   }
 
   const register = () => {
     runtime.navigator?.serviceWorker
-      ?.register('/service-worker.js?v=6')
+      ?.register('/service-worker.js?v=7')
       .then(
         () => {
-          console.log('[PWA] Service Worker registered successfully');
+          logger.info('[PWA] Service Worker registered successfully');
         },
         (error) => {
-          console.log('[PWA] ServiceWorker registration failed: ', error);
+          logger.info('[PWA] ServiceWorker registration failed: ', error);
         },
       );
   };

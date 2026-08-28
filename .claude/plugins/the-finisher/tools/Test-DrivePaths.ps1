@@ -13,7 +13,7 @@
     Path to project root directory. Defaults to current directory.
 
 .EXAMPLE
-    .\Test-DrivePaths.ps1 -ProjectRoot "C:\dev\apps\nova-agent"
+    .\Test-DrivePaths.ps1 -ProjectRoot "V:\monorepo\apps\nova-agent"
 #>
 
 param(

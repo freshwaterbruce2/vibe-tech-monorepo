@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 /**
  * VectorStore Diagnostic Script (Standalone - No Electron Dependencies)
  *
@@ -7,7 +8,7 @@
  * 3. Database initialization (without full VectorStore due to Electron dependency)
  */
 
-import { env, pipeline } from '@xenova/transformers';
+import { env, pipeline } from '@huggingface/transformers';
 import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
@@ -197,6 +198,8 @@ async function runDiagnostic() {
     }
 
     const db = new Database(testDbPath);
+    db.pragma('journal_mode = WAL');
+    db.pragma('busy_timeout = 5000');
     logger.info(`      Database connection established`);
 
     // Create test schema (same as VectorStore)

@@ -43,6 +43,25 @@ vi.mock('child_process', () => ({
   }),
 }));
 
+// Mock Tauri APIs so the PTY code paths can run under jsdom
+const { tauriInvoke, tauriEventHandlers, tauriUnlisten } = vi.hoisted(() => {
+  const handlers = new Map<string, (event: { payload: unknown }) => void>();
+  const unlisten = vi.fn();
+  const invoke = vi.fn();
+  return { tauriInvoke: invoke, tauriEventHandlers: handlers, tauriUnlisten: unlisten };
+});
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: tauriInvoke,
+}));
+
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: vi.fn(async (name: string, handler: (event: { payload: unknown }) => void) => {
+    tauriEventHandlers.set(name, handler);
+    return tauriUnlisten;
+  }),
+}));
+
 describe('TerminalService - Real Tests', () => {
   let terminalService: TerminalService;
   let mockProcess: ChildProcess;
@@ -78,7 +97,7 @@ describe('TerminalService - Real Tests', () => {
       expect(sessionId1).toBeTruthy();
       expect(sessionId2).toBeTruthy();
       expect(sessionId1).not.toBe(sessionId2);
-      expect(sessionId1).toMatch(/^terminal-\d+-[a-z0-9]+$/);
+      expect(sessionId1).toMatch(/^terminal-[0-9a-f-]{36}$/);
     });
 
     it('should create session with default cwd when not provided', () => {
@@ -139,9 +158,9 @@ describe('TerminalService - Real Tests', () => {
       const onExit = vi.fn();
 
       // startShell is async, so error becomes rejected Promise
-      await expect(
-        terminalService.startShell('non-existent-id', onData, onExit)
-      ).rejects.toThrow('Session non-existent-id not found');
+      await expect(terminalService.startShell('non-existent-id', onData, onExit)).rejects.toThrow(
+        'Session non-existent-id not found'
+      );
     });
 
     it('should handle shell output via onData callback', async () => {
@@ -197,9 +216,7 @@ describe('TerminalService - Real Tests', () => {
         session.process.emit('error', new Error('Shell spawn failed'));
         // Should call onData with error message (next tick)
         await new Promise(resolve => setTimeout(resolve, 20));
-        const errorCalls = onData.mock.calls.filter(call =>
-          call[0].includes('Error:')
-        );
+        const errorCalls = onData.mock.calls.filter(call => call[0].includes('Error:'));
         expect(errorCalls.length).toBeGreaterThan(0);
       }
     });
@@ -348,10 +365,7 @@ describe('TerminalService - Real Tests', () => {
     });
 
     it('should execute command with custom cwd', async () => {
-      const result = await terminalService.executeCommand(
-        'pwd',
-        '/custom/path'
-      );
+      const result = await terminalService.executeCommand('pwd', '/custom/path');
 
       expect(result).toBeDefined();
       expect(typeof result.exitCode).toBe('number');
@@ -499,9 +513,7 @@ describe('TerminalService - Real Tests', () => {
 
   describe('Error Handling & Edge Cases', () => {
     it('should handle rapid session creation', () => {
-      const sessions = Array.from({ length: 10 }, () =>
-        terminalService.createSession('/test')
-      );
+      const sessions = Array.from({ length: 10 }, () => terminalService.createSession('/test'));
 
       expect(sessions.length).toBe(10);
       expect(new Set(sessions).size).toBe(10); // All unique
@@ -582,5 +594,187 @@ describe('TerminalService - Real Tests', () => {
         terminalService.closeSession(sessionId);
       }).not.toThrow();
     });
+  });
+});
+
+describe('TerminalService - Tauri PTY Mode', () => {
+  let service: TerminalService;
+
+  const flushMicrotasks = () => new Promise(resolve => setTimeout(resolve, 0));
+
+  beforeEach(() => {
+    tauriEventHandlers.clear();
+    tauriInvoke.mockReset();
+    tauriInvoke.mockResolvedValue(undefined);
+    tauriUnlisten.mockClear();
+    (global as any).window = { __TAURI_INTERNALS__: {} };
+    service = new TerminalService();
+  });
+
+  it('spawns a PTY with the platform shell and wires event listeners', async () => {
+    const sessionId = service.createSession('V:/monorepo');
+    const onData = vi.fn();
+    const onExit = vi.fn();
+
+    await service.startShell(sessionId, onData, onExit);
+
+    expect(tauriInvoke).toHaveBeenCalledWith(
+      'pty_spawn',
+      expect.objectContaining({
+        id: sessionId,
+        cols: 120,
+        rows: 30,
+        cwd: 'V:/monorepo',
+        env: expect.objectContaining({ TERM: 'xterm-256color' }),
+      })
+    );
+    const spawnArgs = tauriInvoke.mock.calls[0][1] as { shell: string; args: string[] };
+    expect(spawnArgs.shell).toBeTruthy();
+    expect(Array.isArray(spawnArgs.args)).toBe(true);
+    expect(tauriEventHandlers.has('terminal:data')).toBe(true);
+    expect(tauriEventHandlers.has('terminal:exit')).toBe(true);
+    expect(onExit).not.toHaveBeenCalled();
+  });
+
+  it('routes terminal:data events to the matching session only', async () => {
+    const sessionId = service.createSession('/w');
+    const onData = vi.fn();
+    await service.startShell(sessionId, onData, vi.fn());
+
+    const dataHandler = tauriEventHandlers.get('terminal:data')!;
+    dataHandler({ payload: { id: 'terminal-someone-else', data: 'not mine' } });
+    expect(onData).not.toHaveBeenCalled();
+
+    dataHandler({ payload: { id: sessionId, data: 'hello from pty' } });
+    expect(onData).toHaveBeenCalledWith('hello from pty');
+  });
+
+  it('routes terminal:exit events to the matching session only', async () => {
+    const sessionId = service.createSession('/w');
+    const onExit = vi.fn();
+    await service.startShell(sessionId, vi.fn(), onExit);
+
+    const exitHandler = tauriEventHandlers.get('terminal:exit')!;
+    exitHandler({ payload: { id: 'terminal-other', exit_code: 1 } });
+    expect(onExit).not.toHaveBeenCalled();
+
+    exitHandler({ payload: { id: sessionId, exit_code: 0 } });
+    expect(onExit).toHaveBeenCalledWith(0);
+  });
+
+  it('reports spawn failures through onData and exits with code 1', async () => {
+    tauriInvoke.mockRejectedValueOnce(new Error('pty backend missing'));
+    const sessionId = service.createSession('/w');
+    const onData = vi.fn();
+    const onExit = vi.fn();
+
+    await service.startShell(sessionId, onData, onExit);
+
+    const messages = onData.mock.calls.map(call => call[0]).join('');
+    expect(messages).toContain('Error spawning terminal');
+    expect(onExit).toHaveBeenCalledWith(1);
+  });
+
+  it('writes input through pty_write', async () => {
+    const sessionId = service.createSession('/w');
+
+    service.writeInput(sessionId, 'dir\r');
+    await flushMicrotasks();
+
+    expect(tauriInvoke).toHaveBeenCalledWith('pty_write', { id: sessionId, data: 'dir\r' });
+  });
+
+  it('resizes through pty_resize', async () => {
+    const sessionId = service.createSession('/w');
+
+    service.resize(sessionId, 132, 43);
+    await flushMicrotasks();
+
+    expect(tauriInvoke).toHaveBeenCalledWith('pty_resize', { id: sessionId, cols: 132, rows: 43 });
+  });
+
+  it('disposes the PTY and unlistens on closeSession', async () => {
+    const sessionId = service.createSession('/w');
+    await service.startShell(sessionId, vi.fn(), vi.fn());
+
+    service.closeSession(sessionId);
+    await flushMicrotasks();
+
+    expect(tauriUnlisten).toHaveBeenCalledTimes(2);
+    expect(tauriInvoke).toHaveBeenCalledWith('pty_dispose', { id: sessionId });
+    expect(service.getSessions()).toHaveLength(0);
+  });
+});
+
+describe('TerminalService - Electron stdout resize', () => {
+  it('calls resize on the process stdout when supported', () => {
+    (global as any).window = { electron: { isElectron: true } };
+    const service = new TerminalService();
+    const sessionId = service.createSession('/test');
+    const session = service.getSessions().find(s => s.id === sessionId)!;
+    const resizeFn = vi.fn();
+    session.process = { stdout: { resize: resizeFn } } as unknown as ChildProcess;
+
+    service.resize(sessionId, 100, 40);
+
+    expect(resizeFn).toHaveBeenCalledWith({ columns: 100, rows: 40 });
+  });
+
+  it('ignores resize when the process stdout cannot resize', () => {
+    (global as any).window = { electron: { isElectron: true } };
+    const service = new TerminalService();
+    const sessionId = service.createSession('/test');
+    const session = service.getSessions().find(s => s.id === sessionId)!;
+    session.process = { stdout: {} } as unknown as ChildProcess;
+
+    expect(() => service.resize(sessionId, 80, 24)).not.toThrow();
+  });
+});
+
+const { shellExecute, shellCreate } = vi.hoisted(() => {
+  const execute = vi.fn();
+  const create = vi.fn(() => ({ execute }));
+  return { shellExecute: execute, shellCreate: create };
+});
+
+vi.mock('@tauri-apps/plugin-shell', () => ({
+  Command: { create: shellCreate },
+}));
+
+describe('TerminalService - executeCommand (Tauri)', () => {
+  beforeEach(() => {
+    shellExecute.mockReset();
+    shellCreate.mockClear();
+    (global as any).window = { __TAURI_INTERNALS__: {} };
+  });
+
+  it('runs one-shot commands through tauri-plugin-shell', async () => {
+    shellExecute.mockResolvedValue({ stdout: 'ok', stderr: '', code: null });
+    const service = new TerminalService();
+
+    const result = await service.executeCommand('echo hi', 'V:/ws');
+
+    expect(shellCreate).toHaveBeenCalledWith('exec-cmd', ['-c', 'echo hi'], { cwd: 'V:/ws' });
+    expect(result).toEqual({ stdout: 'ok', stderr: '', exitCode: 0 });
+  });
+
+  it('defaults the cwd and passes through non-zero exit codes', async () => {
+    shellExecute.mockResolvedValue({ stdout: '', stderr: 'warn', code: 2 });
+    const service = new TerminalService();
+
+    const result = await service.executeCommand('ls');
+
+    expect(shellCreate.mock.calls[0]![2]).toHaveProperty('cwd');
+    expect(result).toEqual({ stdout: '', stderr: 'warn', exitCode: 2 });
+  });
+
+  it('returns exit code 1 when the shell plugin fails', async () => {
+    shellExecute.mockRejectedValue(new Error('no shell'));
+    const service = new TerminalService();
+
+    const result = await service.executeCommand('boom');
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('Tauri command execution failed');
   });
 });

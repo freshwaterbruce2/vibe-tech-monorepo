@@ -6,6 +6,11 @@
 **Author**: Claude Code (Opus 4.6)
 **Stakeholder**: Bruce (solo developer)
 
+> Current reality note (2026-04-25): this PRD is historical planning context.
+> `D:\learning-system\learning_engine.py` and `D:\databases\agent_learning.db`
+> are active surfaces. Do not archive or migrate them based on this document
+> without first checking `D:\databases\DB_INVENTORY.md`.
+
 ---
 
 ## 1. Executive Summary
@@ -32,11 +37,11 @@ The system replaces the defunct Python-based learning system on D:\learning-syst
 | agent_learning.db | D:\databases\agent_learning.db | 22MB, last written 2026-02-09 by scheduled task |
 | knowledge_pool.db | D:\databases\knowledge_pool.db | 12KB, barely used |
 | ChromaDB directory | D:\databases\chromadb\ | Old vector store, unused |
-| Memory bank app | C:\dev\apps\memory-bank\ | Deleted from git (shows as `D` in status) |
-| MCP server memory | C:\dev\apps\mcp-server\ | Has MCP_ENABLE_MEMORY_BANK env but disabled |
+| Memory bank app | V:\monorepo\apps\memory-bank\ | Deleted from git (shows as `D` in status) |
+| MCP server memory | V:\monorepo\apps\mcp-server\ | Has MCP_ENABLE_MEMORY_BANK env but disabled |
 | Hook system | .claude/hooks/ | PowerShell hooks exist but learning capture is broken |
-| Skills server | C:\dev\apps\mcp-skills-server\ | Active, keyword-only search (no vector) |
-| Serena memories | C:\dev\.serena\memories\ | Active, markdown-based, no programmatic access |
+| Skills server | V:\monorepo\apps\mcp-skills-server\ | Active, keyword-only search (no vector) |
+| Serena memories | V:\monorepo\.serena\memories\ | Active, markdown-based, no programmatic access |
 | 30+ SQLite databases | D:\databases\ | Scattered, many dormant/duplicate |
 
 ### Pain Points
@@ -398,7 +403,7 @@ The new memory-mcp-server registers alongside existing servers in `.mcp.json`:
   "memory-system": {
     "type": "stdio",
     "command": "node",
-    "args": ["C:\\dev\\apps\\memory-mcp\\dist\\index.js"],
+    "args": ["V:\\monorepo\\apps\\memory-mcp\\dist\\index.js"],
     "env": {
       "MEMORY_DB_PATH": "D:\\databases\\memory.db",
       "OLLAMA_BASE_URL": "http://localhost:11434",
@@ -485,4 +490,4 @@ Both new packages register as Nx projects:
 - [nomic-embed-text](https://ollama.com/library/nomic-embed-text) - Embedding model
 - [LanceDB](https://docs.lancedb.com) - Embedded vector database (evaluated, not selected)
 - [SimpleMem](https://github.com/aiming-lab/SimpleMem) - Efficient lifelong memory (Feb 2026)
-- [ICLR 2026 MemAgents Workshop](https://openreview.net/pdf?id=U51WxL382H) - Academic memory research
+- [ICLR 2026 MemAgents Workshop](https://openreview.net/pdf?id=U51WxL382H) - Academ

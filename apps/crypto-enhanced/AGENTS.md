@@ -4,26 +4,27 @@ This file extends the root AGENTS.md with specific instructions for the cryptocu
 
 ## Project Overview
 
-Advanced cryptocurrency trading system with Kraken API integration, real-time WebSocket data feeds, and automated trading strategies. Currently managing $98.82 USD with live trading capabilities.
+Advanced cryptocurrency trading system with Kraken API integration, real-time WebSocket data feeds, and automated trading strategies. Runtime balance and exposure are live values; verify them from the configured status/database path before making any claim.
 
 ## Critical Production Requirements
 
 ### 🚨 LIVE TRADING SAFETY PROTOCOLS
 
-- **NEVER bypass the YES confirmation** in live trading operations
+- **Agents are observation-only**: never start, stop, buy, sell, or trade
+- **NEVER bypass live-trading confirmations** in any automation
 - **ALWAYS implement circuit breakers** for strategy activation
 - **MANDATORY position size validation** before any trade execution
 - **Real-time balance verification** before opening positions
 - **Immediate halt on anomalous behavior** (unusual latency, unexpected responses)
 
-### 📊 Current System Status
+### 📊 Runtime Status
 
-- **Account Balance**: $98.82 USD (as of last check)
+- **Account Balance**: verify live with read-only status tooling
 - **Max Position Size**: $10 per trade (ENFORCED limit)
 - **Max Total Exposure**: $10 (single position limit)
 - **Active Pairs**: XLM/USD only
 - **Strategies**: Configured but require explicit activation
-- **Database**: SQLite with automatic backups
+- **Database**: SQLite path is controlled by runtime config / `DB_PATH`; verify before use
 
 ## Development Workflow
 
@@ -31,7 +32,8 @@ Advanced cryptocurrency trading system with Kraken API integration, real-time We
 
 1. **Environment Check**: Verify .venv activation and dependencies
 2. **API Status**: Run `python test_credentials.py` to validate API connectivity
-3. **Database State**: Check `sqlite3 trading.db "SELECT COUNT(*) FROM positions WHERE status='open';"` for open positions
+3. **Database State**: Verify `DB_PATH`, then check open positions read-only
+   against that resolved path
 4. **System Health**: Verify WebSocket connections and nonce synchronization
 
 ### Implementation Patterns
@@ -104,10 +106,14 @@ class Strategy:
 # Full test suite
 python run_tests.py
 
-# Specific test categories
-python -m pytest tests/test_kraken_client.py -v
-python -m pytest tests/test_websocket.py -v
-python -m pytest tests/test_strategies.py -v
+# Read-only runtime/account status
+python kraken_status.py
+python scripts\check_status.py
+
+# Maintained focused tests
+python -m pytest tests/test_safety_features.py -v
+python -m pytest tests/test_position_sizing_bounds.py -v
+python -m pytest tests/test_ohlc_timestamp_safety.py -v
 ```
 
 ### Integration Testing
@@ -116,11 +122,9 @@ python -m pytest tests/test_strategies.py -v
 # API connectivity (uses real API, no trades)
 python test_credentials.py
 
-# WebSocket connectivity
-python test_websocket_connection.py
-
-# Database operations
-python test_database_integrity.py
+# WebSocket/API/database readiness checks
+python scripts\final_system_check.py
+python scripts\verify_deployment.py
 ```
 
 ### Pre-Production Validation

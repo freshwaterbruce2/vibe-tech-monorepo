@@ -1,13 +1,11 @@
 /**
  * Technical Lead Agent - Architecture and system design specialist
  */
-import type { DeepSeekService } from '../DeepSeekService';
-
 import type { AgentContext, AgentResponse} from './BaseSpecializedAgent';
 import { AgentCapability, BaseSpecializedAgent } from './BaseSpecializedAgent';
 
 export class TechnicalLeadAgent extends BaseSpecializedAgent {
-  constructor(deepSeekService: DeepSeekService) {
+  constructor() {
     super('Technical Lead Agent', [
       AgentCapability.ARCHITECTURE_DESIGN,
       AgentCapability.CODE_ANALYSIS,
@@ -15,7 +13,7 @@ export class TechnicalLeadAgent extends BaseSpecializedAgent {
       AgentCapability.CODE_REVIEW,
       AgentCapability.DESIGN_PATTERNS,
       AgentCapability.SYSTEM_DESIGN
-    ], deepSeekService);
+    ]);
   }
 
   getRole(): string {
@@ -91,7 +89,7 @@ Focus on high-level strategy while being practical and implementable.`;
     }
 
     if (context.userPreferences?.['technicalGuidance']) {
-      info += `Previous Guidance: ${context.userPreferences['technicalGuidance'].slice(0, 200)}...\n`;
+      info += `Previous Guidance: ${String(context.userPreferences['technicalGuidance']).slice(0, 200)}...\n`;
     }
 
     if (context.sessionHistory && context.sessionHistory.length > 0) {

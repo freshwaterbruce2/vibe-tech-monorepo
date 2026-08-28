@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-serif: "Georgia", serif;
+}
+
+:root {
+  --background: #f0f9ff;
+  --foreground: #1c3d5a;
+  --accent: #38bdf8;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--background);
+  color: var(--foreground);
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.serif {
+  font-family: var(--font-serif);
+  font-style: italic;
+}
+
+/* Atmospheric effects */
+.glass {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 1);
+  box-shadow: 0 8px 32px rgba(56, 189, 248, 0.12);
+}
+
+@keyframes flap-left {
+  0%, 100% { transform: perspective(400px) rotateY(0deg); }
+  50% { transform: perspective(400px) rotateY(20deg); }
+}
+
+@keyframes flap-right {
+  0%, 100% { transform: perspective(400px) rotateY(0deg); }
+  50% { transform: perspective(400px) rotateY(-20deg); }
+}
+
+.wing-left {
+  transform-origin: 100px 100px;
+  animation: flap-left 6s ease-in-out infinite;
+}
+
+.wing-right {
+  transform-origin: 100px 100px;
+  animation: flap-right 6s ease-in-out infinite;
+}
+
+/* Faster flap on hover in the preview card */
+.group:hover .wing-left {
+  animation: flap-left 2s ease-in-out infinite;
+}
+.group:hover .wing-right {
+  animation: flap-right 2s ease-in-out infinite;
+}
+
+.accent-gradient {
+  background: radial-gradient(circle at center, #e0f2fe 0%, #f0f9ff 100%);
+}
+
+.glow-dot {
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+}
+
+.atmospheric-bg {
+  background:
+    radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
+    #f0f9ff;
+}
+
+@keyframes shimmer {
+  0% { opacity: 0.3; stroke-width: 1px; }
+  50% { opacity: 1; stroke-width: 3px; }
+  100% { opacity: 0.3; stroke-width: 1px; }
+}
+
+.cosmic-shimmer {
+  animation: shimmer 4s ease-in-out infinite;
+}
+
+.cosmic-shimmer-layer2 {
+  animation: shimmer 5s ease-in-out infinite alternate-reverse;
+  animation-delay: -2s;
+}

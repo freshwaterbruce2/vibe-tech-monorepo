@@ -1,0 +1,17 @@
+{
+  "buildCommand": "pnpm run build:shared:api && pnpm run build",
+  "installCommand": "cd ../.. && pnpm install --force --frozen-lockfile --filter ./apps/vibe-booking-backend...",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "experimentalServices": {
+    "web": {
+      "routePrefix": "/",
+      "framework": "vite"
+    }
+  }
+}

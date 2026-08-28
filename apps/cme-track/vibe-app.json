@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:saas",
+  "projectName": "cme-track",
+  "displayName": "CME Track",
+  "archetype": "web-saas",
+  "monetization": {
+    "stripeConnected": true,
+    "firstRevenueAt": null,
+    "mrrCents": 0,
+    "currency": "usd"
+  }
+}

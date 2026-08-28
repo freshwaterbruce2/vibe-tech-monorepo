@@ -55,7 +55,7 @@ This directory contains the complete specification and usage guides for the memo
 
 1. **Run Integration Test:**
    ```powershell
-   C:\dev\scripts\test-memory-system.ps1
+   V:\monorepo\scripts\test-memory-system.ps1
    ```
    Expected: All tests passing ✓
 
@@ -263,7 +263,7 @@ Issues? See **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** for diagnostics and s
 ### Immediate Actions
 1. ✅ **Review this README** and all linked documents
 2. ✅ **Phase 0 & Phase 1** - Complete!
-3. ✅ **Integration test script** created at `C:\dev\scripts\test-memory-system.ps1`
+3. ✅ **Integration test script** created at `V:\monorepo\scripts\test-memory-system.ps1`
 4. ✅ **Documentation** - Quick Start and Troubleshooting guides written
 5. ⏳ **Restart Claude Code** to load the MCP server
 6. ⏳ **Run integration test** to verify everything works
@@ -272,7 +272,7 @@ Issues? See **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** for diagnostics and s
 ### After Claude Code Restart
 ```powershell
 # 1. Run integration test
-C:\dev\scripts\test-memory-system.ps1
+V:\monorepo\scripts\test-memory-system.ps1
 
 # 2. Verify MCP tools available
 # Check for: memory_health, memory_add_semantic, memory_search_semantic, etc.

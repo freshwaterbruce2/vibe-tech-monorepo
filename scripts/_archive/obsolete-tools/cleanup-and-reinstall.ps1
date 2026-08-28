@@ -11,7 +11,7 @@ Write-Host "=== pnpm Monorepo Cleanup and Reinstall ===" -ForegroundColor Cyan
 Write-Host ""
 
 # Configuration
-$RootDir = "C:\dev"
+$RootDir = "V:\monorepo"
 
 # Step 1: Create backup snapshot (unless skipped)
 if (-not $SkipBackup) {

@@ -1,24 +1,25 @@
 {
-	"name": "@vibetech/openrouter-client",
-	"version": "1.0.0",
-	"description": "TypeScript client library for VibeTech OpenRouter proxy",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"scripts": {
-		"build": "tsc",
-		"test": "vitest run",
-		"typecheck": "tsc --noEmit"
-	},
-	"dependencies": {
-		"axios": "^1.13.6"
-	},
-	"devDependencies": {
-		"@types/node": "^25.5.0",
-		"typescript": "5.9.3",
-		"vitest": "^4.1.2"
-	},
-	"engines": {
-		"node": ">=22.0.0",
-		"pnpm": ">=9.0.0"
-	}
+  "name": "@vibetech/openrouter-client",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "TypeScript client library for VibeTech OpenRouter proxy",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "axios": "^1.13.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.9"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  }
 }

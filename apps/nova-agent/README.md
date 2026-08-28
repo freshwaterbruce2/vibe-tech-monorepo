@@ -5,7 +5,7 @@ Tauri app with a Rust backend and a React frontend.
 
 ## Windows 11 workflow
 
-Run these commands from `C:\dev`:
+Run these commands from `V:\monorepo`:
 
 ```powershell
 pnpm nx run nova-agent:typecheck

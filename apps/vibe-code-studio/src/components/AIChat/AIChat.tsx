@@ -1,45 +1,124 @@
 /**
  * AIChat Component - Main AI chat interface with chat and agent modes
  */
-import { Play, Send, X, Zap } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react';
+import { Play, Send, Square, Trash2, X, Zap } from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
 
 import { logger } from '../../services/Logger';
+import { handleScheduleChatCommand } from '../../services/scheduling/scheduleChatCommand';
+import { useAIActions } from '../../stores/useAIStore';
 import type { AIMessage, AgentStep, AgentTask, ApprovalRequest } from '../../types';
 
 import { MessageItem, TypingMessage } from './MessageItem';
 import { MemoizedStepCard, getStepIcon } from './StepCard';
 import {
-    AgentEmptyState, AgentStatusBadge, AgentStatusCard, AgentStatusHeader, AgentStatusText,
-    AgentStepsList, AgentWarningList, ChatContainer, ChatHeader, CloseButton, InputContainer,
-    InputWrapper, MessagesContainer, ModeButton, ModeDescription, ModeSwitcher, QuickActionButton,
-    QuickActions, ResizeHandle, SendButton, TaskProgressBar, TaskProgressFill, TextInput,
+  AgentEmptyState,
+  AgentStatusBadge,
+  AgentStatusCard,
+  AgentStatusHeader,
+  AgentStatusText,
+  AgentStepsList,
+  AgentWarningList,
+  CancelButton,
+  ChatContainer,
+  ChatHeader,
+  CloseButton,
+  InputContainer,
+  InputWrapper,
+  MessagesContainer,
+  ModeButton,
+  ModeDescription,
+  ModeSwitcher,
+  QuickActionButton,
+  QuickActions,
+  ResizeHandle,
+  ResponseStatus,
+  SendButton,
+  TaskProgressBar,
+  TaskProgressFill,
+  TextInput,
 } from './styled';
 import type { AIChatProps, ChatMode, ModeInfo } from './types';
 import { DEFAULT_WIDTH, MAX_WIDTH, MIN_WIDTH } from './types';
 
 const MODE_DESCRIPTIONS: Record<ChatMode, ModeInfo> = {
-  chat: { title: 'Chat Mode', description: 'Have conversations with AI, ask questions, get code explanations.' },
-  agent: { title: 'Agent Mode', description: 'Let AI autonomously plan and execute complex multi-step tasks.' },
+  chat: {
+    title: 'Chat Mode',
+    description: 'Have conversations with AI, ask questions, get code explanations.',
+  },
+  agent: {
+    title: 'Agent Mode',
+    description: 'Let AI autonomously plan and execute complex multi-step tasks.',
+  },
 };
 
 const MODE_QUICK_ACTIONS: Record<ChatMode, string[]> = {
-  chat: ['Explain this code', 'Generate function', 'Add comments', 'Fix bugs', 'Optimize code', 'Write tests'],
-  agent: ['Create a new feature', 'Refactor this component', 'Add error handling', 'Generate test suite'],
+  chat: [
+    'Explain this code',
+    'Generate function',
+    'Add comments',
+    'Fix bugs',
+    'Optimize code',
+    'Write tests',
+  ],
+  agent: [
+    'Create a new feature',
+    'Refactor this component',
+    'Add error handling',
+    'Generate test suite',
+  ],
 };
 
 const AIChat = ({
-  messages, onSendMessage, onClose, showReasoningProcess = false, currentModel: _currentModel = 'deepseek/deepseek-v3.2',
-  mode: externalMode, onModeChange, taskPlanner, executionEngine, workspaceContext,
-  onAddMessage, onUpdateMessage, onFileChanged, onTaskComplete, onTaskError, onApprovalRequired,
+  messages,
+  onSendMessage,
+  onClose,
+  isAiResponding = false,
+  responseState = 'idle',
+  onCancelResponse,
+  showReasoningProcess = false,
+  currentModel: _currentModel = 'moonshot/kimi-2.5-pro',
+  mode: externalMode,
+  onModeChange,
+  taskPlanner,
+  executionEngine,
+  workspaceContext,
+  onAddMessage,
+  onUpdateMessage,
+  onFileChanged,
+  onTaskComplete,
+  onTaskError,
+  onApprovalRequired,
   onMultiFileEditDetected: _onMultiFileEditDetected,
+  onClearMessages,
 }: AIChatProps) => {
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [pendingSendCount, setPendingSendCount] = useState(0);
+  const { clearMessages } = useAIActions();
+  // The rendered conversation lives in useAIChat (via the messages prop);
+  // clear BOTH it and the useAIStore copy so no layer keeps stale history.
+  const handleClearChat = useCallback(() => {
+    onClearMessages?.();
+    clearMessages();
+  }, [onClearMessages, clearMessages]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [internalMode, setInternalMode] = useState<ChatMode>('chat');
   const mode = externalMode ?? internalMode;
+  const isTyping = pendingSendCount > 0;
+  const isChatBusy = mode === 'chat' && (isAiResponding || isTyping);
+  const inputDisabled = mode === 'agent' ? isTyping : responseState === 'cancelling';
+  const sendDisabled =
+    !input.trim() || (mode === 'agent' && isTyping) || responseState === 'cancelling';
+  const showCancelButton =
+    mode === 'chat' && isAiResponding && typeof onCancelResponse === 'function';
 
   const [width, setWidth] = useState<number>(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
@@ -51,7 +130,7 @@ const AIChat = ({
   const agentPlaceholder = workspaceContext?.workspaceRoot
     ? 'Describe a multi-step task for the agent...'
     : 'Open a folder to use agent mode effectively...';
-  const hasAgentHistory = messages.some((message) => !!message.agentTask);
+  const hasAgentHistory = messages.some(message => !!message.agentTask);
 
   // Load width on mount
   useEffect(() => {
@@ -70,32 +149,44 @@ const AIChat = ({
     loadWidth();
   }, []);
 
-  const handleModeChange = useCallback((newMode: ChatMode) => {
-    if (onModeChange) {
-      onModeChange(newMode);
-    } else {
-      setInternalMode(newMode);
-    }
-    if (newMode === 'agent') { setWidth((w) => Math.max(w, 600)); }
-    inputRef.current?.focus();
-  }, [onModeChange]);
+  const handleModeChange = useCallback(
+    (newMode: ChatMode) => {
+      if (onModeChange) {
+        onModeChange(newMode);
+      } else {
+        setInternalMode(newMode);
+      }
+      if (newMode === 'agent') {
+        setWidth(w => Math.max(w, 600));
+      }
+      inputRef.current?.focus();
+    },
+    [onModeChange]
+  );
 
-  const handleResizeStart = useCallback((e: ReactMouseEvent) => {
-    e.preventDefault();
-    setIsResizing(true);
-    resizeStartX.current = e.clientX;
-    resizeStartWidth.current = width;
-  }, [width]);
+  const handleResizeStart = useCallback(
+    (e: ReactMouseEvent) => {
+      e.preventDefault();
+      setIsResizing(true);
+      resizeStartX.current = e.clientX;
+      resizeStartWidth.current = width;
+    },
+    [width]
+  );
 
   useEffect(() => {
-    if (!isResizing) { return; }
+    if (!isResizing) {
+      return;
+    }
     const handleResizeMove = (e: MouseEvent) => {
       const deltaX = resizeStartX.current - e.clientX;
       setWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, resizeStartWidth.current + deltaX)));
     };
     const handleResizeEnd = () => {
       setIsResizing(false);
-      window.electron?.store?.set('aiChatWidth', width.toString()).catch(console.error);
+      window.electron?.store
+        ?.set('aiChatWidth', width.toString())
+        .catch(e => logger.error('Failed to save chat width', e));
     };
     document.addEventListener('mousemove', handleResizeMove);
     document.addEventListener('mouseup', handleResizeEnd);
@@ -107,7 +198,9 @@ const AIChat = ({
 
   useEffect(() => {
     if (!isResizing && window.electron?.store) {
-        window.electron.store.set('aiChatWidth', width.toString()).catch(console.error);
+      window.electron.store
+        .set('aiChatWidth', width.toString())
+        .catch(e => logger.error('Failed to save chat width', e));
     }
   }, [width, isResizing]);
 
@@ -115,44 +208,57 @@ const AIChat = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
-  useEffect(() => { inputRef.current?.focus(); }, []);
-  useEffect(() => () => {
-    approvalResolversRef.current.forEach((resolve) => resolve(false));
-    approvalResolversRef.current.clear();
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+  useEffect(() => {
+    inputRef.current?.focus();
   }, []);
+  useEffect(
+    () => () => {
+      approvalResolversRef.current.forEach(resolve => resolve(false));
+      approvalResolversRef.current.clear();
+    },
+    []
+  );
 
-  const updateAgentMessage = useCallback((messageId: string, updater: (message: AIMessage) => AIMessage) => {
-    onUpdateMessage?.(messageId, updater);
-  }, [onUpdateMessage]);
+  const updateAgentMessage = useCallback(
+    (messageId: string, updater: (message: AIMessage) => AIMessage) => {
+      onUpdateMessage?.(messageId, updater);
+    },
+    [onUpdateMessage]
+  );
 
-  const handleApprovalDecision = useCallback((messageId: string, stepId: string, approved: boolean) => {
-    const resolver = approvalResolversRef.current.get(stepId);
-    if (!resolver) {
-      return;
-    }
-
-    approvalResolversRef.current.delete(stepId);
-    updateAgentMessage(messageId, (message) => {
-      if (!message.agentTask) {
-        return message;
+  const handleApprovalDecision = useCallback(
+    (messageId: string, stepId: string, approved: boolean) => {
+      const resolver = approvalResolversRef.current.get(stepId);
+      if (!resolver) {
+        return;
       }
 
-      return {
-        ...message,
-        agentTask: {
-          ...message.agentTask,
-          pendingApproval: undefined,
-          phase: approved ? 'executing' : 'failed',
-          statusMessage: approved
-            ? 'Approval granted. Resuming task.'
-            : 'Approval rejected. Task execution stopped.',
-          lastError: approved ? undefined : 'User rejected approval request.',
-        },
-      };
-    });
-    resolver(approved);
-  }, [updateAgentMessage]);
+      approvalResolversRef.current.delete(stepId);
+      updateAgentMessage(messageId, message => {
+        if (!message.agentTask) {
+          return message;
+        }
+
+        return {
+          ...message,
+          agentTask: {
+            ...message.agentTask,
+            pendingApproval: undefined,
+            phase: approved ? 'executing' : 'failed',
+            statusMessage: approved
+              ? 'Approval granted. Resuming task.'
+              : 'Approval rejected. Task execution stopped.',
+            lastError: approved ? undefined : 'User rejected approval request.',
+          },
+        };
+      });
+      resolver(approved);
+    },
+    [updateAgentMessage]
+  );
 
   const getAgentPreflightError = useCallback((): string | null => {
     if (!workspaceContext?.workspaceRoot) {
@@ -174,284 +280,353 @@ const AIChat = ({
     return null;
   }, [executionEngine, taskPlanner, workspaceContext]);
 
-  const handleAgentTask = useCallback(async (userRequest: string) => {
-    const agentMessageId = `${Date.now()}-agent`;
-    const preflightError = getAgentPreflightError();
+  const handleAgentTask = useCallback(
+    async (userRequest: string) => {
+      const agentMessageId = `${Date.now()}-agent`;
+      const preflightError = getAgentPreflightError();
 
-    if (preflightError) {
-      logger.error('Agent mode preflight failed:', preflightError);
+      if (preflightError) {
+        logger.error('Agent mode preflight failed:', preflightError);
+        onAddMessage?.({
+          id: agentMessageId,
+          role: 'assistant',
+          content: `**Agent Mode Needs Attention**\n\n${preflightError}`,
+          timestamp: new Date(),
+          agentTask: {
+            task: {
+              id: `${agentMessageId}-preflight`,
+              title: 'Agent setup issue',
+              description: preflightError,
+              userRequest,
+              steps: [],
+              status: 'failed',
+              createdAt: new Date(),
+              error: preflightError,
+            },
+            phase: 'failed',
+            statusMessage: preflightError,
+            lastError: preflightError,
+          },
+        });
+        return;
+      }
+
+      const planningTask: AgentTask = {
+        id: `${agentMessageId}-planning`,
+        title: 'Planning task',
+        description: userRequest,
+        userRequest,
+        steps: [],
+        status: 'planning',
+        createdAt: new Date(),
+      };
+
       onAddMessage?.({
         id: agentMessageId,
         role: 'assistant',
-        content: `**Agent Mode Needs Attention**\n\n${preflightError}`,
+        content: `**Agent Request**\n\n${userRequest}`,
         timestamp: new Date(),
         agentTask: {
-          task: {
-            id: `${agentMessageId}-preflight`,
-            title: 'Agent setup issue',
-            description: preflightError,
-            userRequest,
-            steps: [],
-            status: 'failed',
-            createdAt: new Date(),
-            error: preflightError,
+          task: planningTask,
+          phase: 'planning',
+          statusMessage: 'Planning the task and validating workspace prerequisites.',
+        },
+      });
+
+      try {
+        const safeWorkspaceContext = workspaceContext!;
+        executionEngine!.setTaskContext(userRequest, safeWorkspaceContext.workspaceRoot);
+        const planResponse = await taskPlanner!.planTask({
+          userRequest,
+          context: safeWorkspaceContext,
+          options: { maxSteps: 10, requireApprovalForAll: false, allowDestructiveActions: true },
+        });
+
+        updateAgentMessage(agentMessageId, message => ({
+          ...message,
+          content: `**Agent Task**: ${planResponse.task.title}\n\n${planResponse.task.description}`,
+          agentTask: {
+            task: planResponse.task,
+            phase: 'executing',
+            statusMessage:
+              planResponse.task.steps.length > 0
+                ? `Plan ready. Starting ${planResponse.task.steps.length} steps.`
+                : 'Plan ready. No executable steps were generated.',
+            warnings: planResponse.warnings,
           },
-          phase: 'failed',
-          statusMessage: preflightError,
-          lastError: preflightError,
-        },
-      });
-      return;
-    }
+        }));
 
-    const planningTask: AgentTask = {
-      id: `${agentMessageId}-planning`,
-      title: 'Planning task',
-      description: userRequest,
-      userRequest,
-      steps: [],
-      status: 'planning',
-      createdAt: new Date(),
-    };
-
-    onAddMessage?.({
-      id: agentMessageId,
-      role: 'assistant',
-      content: `**Agent Request**\n\n${userRequest}`,
-      timestamp: new Date(),
-      agentTask: {
-        task: planningTask,
-        phase: 'planning',
-        statusMessage: 'Planning the task and validating workspace prerequisites.',
-      },
-    });
-
-    try {
-      const safeWorkspaceContext = workspaceContext!;
-      executionEngine.setTaskContext(userRequest, safeWorkspaceContext.workspaceRoot);
-      const planResponse = await taskPlanner.planTask({
-        userRequest, context: safeWorkspaceContext,
-        options: { maxSteps: 10, requireApprovalForAll: false, allowDestructiveActions: true },
-      });
-
-      updateAgentMessage(agentMessageId, (message) => ({
-        ...message,
-        content: `**Agent Task**: ${planResponse.task.title}\n\n${planResponse.task.description}`,
-        agentTask: {
-          task: planResponse.task,
-          phase: 'executing',
-          statusMessage:
-            planResponse.task.steps.length > 0
-              ? `Plan ready. Starting ${planResponse.task.steps.length} steps.`
-              : 'Plan ready. No executable steps were generated.',
-          warnings: planResponse.warnings,
-        },
-      }));
-
-      const callbacks = {
-        onStepStart: (step: AgentStep) => {
-          logger.debug('[AIChat] Step started:', step.title);
-          updateAgentMessage(agentMessageId, (message) => ({
-            ...message,
-            agentTask: message.agentTask ? {
-              ...message.agentTask,
-              currentStep: step,
-              phase: 'executing',
-              pendingApproval: undefined,
-              statusMessage: `Executing step ${step.order + 1} of ${message.agentTask.task.steps.length}: ${step.title}`,
-              lastError: undefined,
-            } : message.agentTask,
-          }));
-        },
-        onStepComplete: (step: AgentStep) => {
-          logger.debug('[AIChat] Step completed:', step.title);
-          updateAgentMessage(agentMessageId, (message) => ({
-            ...message,
-            agentTask: message.agentTask ? {
-              ...message.agentTask,
-              currentStep: step,
-              pendingApproval: undefined,
-              phase: 'executing',
-              statusMessage: `Completed step ${step.order + 1} of ${message.agentTask.task.steps.length}: ${step.title}`,
-            } : message.agentTask,
-          }));
-        },
-        onStepError: (step: AgentStep, error: Error) => {
-          logger.error('[AIChat] Step failed:', step.title, error);
-          updateAgentMessage(agentMessageId, (message) => ({
-            ...message,
-            agentTask: message.agentTask ? {
-              ...message.agentTask,
-              currentStep: step,
-              phase: 'executing',
-              statusMessage: `Step failed: ${step.title}`,
-              lastError: error.message,
-            } : message.agentTask,
-          }));
-        },
-        onFileChanged: (filePath: string, action: 'created' | 'modified' | 'deleted') => {
-          onFileChanged?.(filePath, action);
-        },
-        onStepApprovalRequired: async (step: AgentStep, request: ApprovalRequest) => {
-          updateAgentMessage(agentMessageId, (message) => ({
-            ...message,
-            agentTask: message.agentTask ? {
-              ...message.agentTask,
-              currentStep: step,
-              pendingApproval: request,
-              phase: 'awaiting_approval',
-              statusMessage: `Waiting for approval on "${step.title}".`,
-            } : message.agentTask,
-          }));
-
-          if (onApprovalRequired) {
-            const approved = await onApprovalRequired(step, request);
-            updateAgentMessage(agentMessageId, (message) => ({
+        const callbacks = {
+          onStepStart: (step: AgentStep) => {
+            logger.debug('[AIChat] Step started:', step.title);
+            updateAgentMessage(agentMessageId, message => ({
               ...message,
-              agentTask: message.agentTask ? {
-                ...message.agentTask,
-                pendingApproval: undefined,
-                phase: approved ? 'executing' : 'failed',
-                statusMessage: approved
-                  ? `Approval granted for "${step.title}".`
-                  : `Approval rejected for "${step.title}".`,
-                lastError: approved ? undefined : 'User rejected approval request.',
-              } : message.agentTask,
+              agentTask: message.agentTask
+                ? {
+                    ...message.agentTask,
+                    currentStep: step,
+                    phase: 'executing',
+                    pendingApproval: undefined,
+                    statusMessage: `Executing step ${step.order + 1} of ${message.agentTask.task.steps.length}: ${step.title}`,
+                    lastError: undefined,
+                  }
+                : message.agentTask,
             }));
-            return approved;
-          }
+          },
+          onStepComplete: (step: AgentStep) => {
+            logger.debug('[AIChat] Step completed:', step.title);
+            updateAgentMessage(agentMessageId, message => ({
+              ...message,
+              agentTask: message.agentTask
+                ? {
+                    ...message.agentTask,
+                    currentStep: step,
+                    pendingApproval: undefined,
+                    phase: 'executing',
+                    statusMessage: `Completed step ${step.order + 1} of ${message.agentTask.task.steps.length}: ${step.title}`,
+                  }
+                : message.agentTask,
+            }));
+          },
+          onStepError: (step: AgentStep, error: Error) => {
+            logger.error('[AIChat] Step failed:', step.title, error);
+            updateAgentMessage(agentMessageId, message => ({
+              ...message,
+              agentTask: message.agentTask
+                ? {
+                    ...message.agentTask,
+                    currentStep: step,
+                    phase: 'executing',
+                    statusMessage: `Step failed: ${step.title}`,
+                    lastError: error.message,
+                  }
+                : message.agentTask,
+            }));
+          },
+          onFileChanged: (filePath: string, action: 'created' | 'modified' | 'deleted') => {
+            onFileChanged?.(filePath, action);
+          },
+          onStepApprovalRequired: async (step: AgentStep, request: ApprovalRequest) => {
+            updateAgentMessage(agentMessageId, message => ({
+              ...message,
+              agentTask: message.agentTask
+                ? {
+                    ...message.agentTask,
+                    currentStep: step,
+                    pendingApproval: request,
+                    phase: 'awaiting_approval',
+                    statusMessage: `Waiting for approval on "${step.title}".`,
+                  }
+                : message.agentTask,
+            }));
 
-          return await new Promise<boolean>((resolve) => {
-            approvalResolversRef.current.set(step.id, resolve);
-          });
-        },
-        onTaskComplete: (task: AgentTask) => {
-          updateAgentMessage(agentMessageId, (message) => ({
-            ...message,
-            content: `**Agent Task**: ${task.title}\n\n${task.description}`,
-            agentTask: message.agentTask ? {
-              ...message.agentTask,
-              task,
-              currentStep: undefined,
-              pendingApproval: undefined,
-              phase: 'completed',
-              statusMessage: 'Task completed successfully.',
-              lastError: undefined,
-            } : message.agentTask,
-          }));
-          onTaskComplete?.(task);
-        },
-        onTaskError: (task: AgentTask, error: Error) => {
-          updateAgentMessage(agentMessageId, (message) => ({
-            ...message,
-            content: `**Agent Task Failed**: ${task.title}\n\n${task.description}`,
-            agentTask: message.agentTask ? {
-              ...message.agentTask,
-              task,
-              pendingApproval: undefined,
-              phase: 'failed',
-              statusMessage: `Task failed: ${error.message}`,
-              lastError: error.message,
-            } : message.agentTask,
-          }));
-          onTaskError?.(task, error);
-        },
-      };
-      await executionEngine.executeTask(planResponse.task, callbacks);
-    } catch (error) {
-      logger.error('Agent task failed:', error);
-      const message = error instanceof Error ? error.message : String(error);
-      updateAgentMessage(agentMessageId, (existingMessage) => ({
-        ...existingMessage,
-        content: `**Agent Task Failed**\n\n${message}`,
-        agentTask: existingMessage.agentTask ? {
-          ...existingMessage.agentTask,
-          phase: 'failed',
-          statusMessage: `Task failed before execution could complete: ${message}`,
-          lastError: message,
-        } : existingMessage.agentTask,
-      }));
-    }
-  }, [taskPlanner, executionEngine, workspaceContext, onAddMessage, getAgentPreflightError, updateAgentMessage, onFileChanged, onApprovalRequired, onTaskComplete, onTaskError]);
+            if (onApprovalRequired) {
+              const approved = await onApprovalRequired(step, request);
+              updateAgentMessage(agentMessageId, message => ({
+                ...message,
+                agentTask: message.agentTask
+                  ? {
+                      ...message.agentTask,
+                      pendingApproval: undefined,
+                      phase: approved ? 'executing' : 'failed',
+                      statusMessage: approved
+                        ? `Approval granted for "${step.title}".`
+                        : `Approval rejected for "${step.title}".`,
+                      lastError: approved ? undefined : 'User rejected approval request.',
+                    }
+                  : message.agentTask,
+              }));
+              return approved;
+            }
 
-  const handleSend = useCallback(async () => {
-    if (!input.trim()) { return; }
-    const messageText = input.trim();
-    setInput('');
-    setIsTyping(true);
-    try {
-      if (mode === 'agent') {
-        await handleAgentTask(messageText);
-      } else {
-        await onSendMessage(messageText);
+            return await new Promise<boolean>(resolve => {
+              approvalResolversRef.current.set(step.id, resolve);
+            });
+          },
+          onTaskComplete: (task: AgentTask) => {
+            updateAgentMessage(agentMessageId, message => ({
+              ...message,
+              content: `**Agent Task**: ${task.title}\n\n${task.description}`,
+              agentTask: message.agentTask
+                ? {
+                    ...message.agentTask,
+                    task,
+                    currentStep: undefined,
+                    pendingApproval: undefined,
+                    phase: 'completed',
+                    statusMessage: 'Task completed successfully.',
+                    lastError: undefined,
+                  }
+                : message.agentTask,
+            }));
+            onTaskComplete?.(task);
+          },
+          onTaskError: (task: AgentTask, error: Error) => {
+            updateAgentMessage(agentMessageId, message => ({
+              ...message,
+              content: `**Agent Task Failed**: ${task.title}\n\n${task.description}`,
+              agentTask: message.agentTask
+                ? {
+                    ...message.agentTask,
+                    task,
+                    pendingApproval: undefined,
+                    phase: 'failed',
+                    statusMessage: `Task failed: ${error.message}`,
+                    lastError: error.message,
+                  }
+                : message.agentTask,
+            }));
+            onTaskError?.(task, error);
+          },
+        };
+        await executionEngine!.executeTask(planResponse.task, callbacks);
+      } catch (error) {
+        logger.error('Agent task failed:', error);
+        const message = error instanceof Error ? error.message : String(error);
+        updateAgentMessage(agentMessageId, existingMessage => ({
+          ...existingMessage,
+          content: `**Agent Task Failed**\n\n${message}`,
+          agentTask: existingMessage.agentTask
+            ? {
+                ...existingMessage.agentTask,
+                phase: 'failed',
+                statusMessage: `Task failed before execution could complete: ${message}`,
+                lastError: message,
+              }
+            : existingMessage.agentTask,
+        }));
       }
-    } catch (error) {
-      // Handle send errors gracefully - don't crash the component
-      console.error('[AIChat] Failed to send message:', error);
-      if (onAddMessage) {
-        onAddMessage({
+    },
+    [
+      taskPlanner,
+      executionEngine,
+      workspaceContext,
+      onAddMessage,
+      getAgentPreflightError,
+      updateAgentMessage,
+      onFileChanged,
+      onApprovalRequired,
+      onTaskComplete,
+      onTaskError,
+    ]
+  );
+
+  const handleSend = useCallback(
+    async (overrideText?: string) => {
+      const messageText = (overrideText ?? input).trim();
+      if (!messageText) {
+        return;
+      }
+      // Chat variant of the palette /schedule command (spec 16) — opens the
+      // schedule-creation flow instead of sending the message to the AI.
+      if (handleScheduleChatCommand(messageText)) {
+        if (!overrideText) {
+          setInput('');
+        }
+        return;
+      }
+      const blockedByState = responseState === 'cancelling' || (mode === 'agent' && isTyping);
+      if (blockedByState) {
+        return;
+      }
+      if (!overrideText) setInput('');
+      setPendingSendCount(count => count + 1);
+      try {
+        if (mode === 'agent') {
+          await handleAgentTask(messageText);
+        } else {
+          await onSendMessage(messageText);
+        }
+      } catch (error) {
+        logger.error('[AIChat] Failed to send message:', error);
+        onAddMessage?.({
           id: Date.now().toString() + '-error',
           role: 'assistant',
           content: `⚠️ Error: ${error instanceof Error ? error.message : String(error)}`,
-          timestamp: new Date()
+          timestamp: new Date(),
         });
+      } finally {
+        setPendingSendCount(count => Math.max(0, count - 1));
       }
-    } finally {
-      setIsTyping(false);
-    }
-  }, [input, mode, onSendMessage, handleAgentTask, onAddMessage]);
+    },
+    [input, responseState, mode, isTyping, onSendMessage, handleAgentTask, onAddMessage]
+  );
 
-  const handleKeyPress = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
-  }, [handleSend]);
+  const handleKeyPress = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend]
+  );
 
-  const handleQuickAction = useCallback((action: string) => {
-    setInput(action);
-    inputRef.current?.focus();
-  }, []);
+  const handleQuickAction = useCallback(
+    (action: string) => {
+      void handleSend(action);
+    },
+    [handleSend]
+  );
 
-  const renderAgentTask = useCallback((message: AIMessage) => {
-    if (!message.agentTask) { return null; }
-    const { task, pendingApproval, phase = 'planning', statusMessage, warnings, lastError } = message.agentTask;
-    const completedSteps = task.steps.filter((s) => s.status === 'completed').length;
-    const progress = task.steps.length > 0 ? (completedSteps / task.steps.length) * 100 : 0;
-    return (
-      <div data-testid="agent-task">
-        <AgentStatusCard>
-          <AgentStatusHeader>
-            <AgentStatusText>{statusMessage ?? 'Preparing agent workflow.'}</AgentStatusText>
-            <AgentStatusBadge $phase={phase}>{phase.replace('_', ' ')}</AgentStatusBadge>
-          </AgentStatusHeader>
-          {lastError && <AgentStatusText>{lastError}</AgentStatusText>}
-          {warnings && warnings.length > 0 && (
-            <AgentWarningList>
-              {warnings.map((warning) => (
-                <li key={warning}>{warning}</li>
-              ))}
-            </AgentWarningList>
+  const renderAgentTask = useCallback(
+    (message: AIMessage) => {
+      if (!message.agentTask) {
+        return null;
+      }
+      const {
+        task,
+        pendingApproval,
+        phase = 'planning',
+        statusMessage,
+        warnings,
+        lastError,
+      } = message.agentTask;
+      const completedSteps = task.steps.filter(s => s.status === 'completed').length;
+      const progress = task.steps.length > 0 ? (completedSteps / task.steps.length) * 100 : 0;
+      return (
+        <div data-testid="agent-task">
+          <AgentStatusCard>
+            <AgentStatusHeader>
+              <AgentStatusText>{statusMessage ?? 'Preparing agent workflow.'}</AgentStatusText>
+              <AgentStatusBadge $phase={phase}>{phase.replace('_', ' ')}</AgentStatusBadge>
+            </AgentStatusHeader>
+            {lastError && <AgentStatusText>{lastError}</AgentStatusText>}
+            {warnings && warnings.length > 0 && (
+              <AgentWarningList>
+                {warnings.map(warning => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </AgentWarningList>
+            )}
+          </AgentStatusCard>
+          {task.steps.length > 0 && (
+            <TaskProgressBar>
+              <TaskProgressFill
+                $progress={progress}
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+              />
+            </TaskProgressBar>
           )}
-        </AgentStatusCard>
-        {task.steps.length > 0 && (
-          <TaskProgressBar>
-            <TaskProgressFill $progress={progress} initial={{ width: 0 }} animate={{ width: `${progress}%` }} />
-          </TaskProgressBar>
-        )}
-        <AgentStepsList>
-          {task.steps.map((step) => (
-            <MemoizedStepCard
-              key={step.id}
-              step={step}
-              pendingApproval={pendingApproval ?? null}
-              getStepIcon={getStepIcon}
-              handleApproval={(stepId: string, approved: boolean) => {
-                handleApprovalDecision(message.id, stepId, approved);
-              }}
-            />
-          ))}
-        </AgentStepsList>
-      </div>
-    );
-  }, [handleApprovalDecision]);
+          <AgentStepsList>
+            {task.steps.map(step => (
+              <MemoizedStepCard
+                key={step.id}
+                step={step}
+                pendingApproval={pendingApproval ?? null}
+                getStepIcon={getStepIcon}
+                handleApproval={(stepId: string, approved: boolean) => {
+                  handleApprovalDecision(message.id, stepId, approved);
+                }}
+              />
+            ))}
+          </AgentStepsList>
+        </div>
+      );
+    },
+    [handleApprovalDecision]
+  );
 
   return (
     <ChatContainer $width={width} $mode={mode}>
@@ -461,16 +636,51 @@ const AIChat = ({
         {mode === 'agent' && <Play size={16} />}
         {mode === 'chat' ? 'AI Assistant' : 'Agent Mode'}
         <ModeSwitcher>
-          <ModeButton $active={mode === 'chat'} onClick={() => handleModeChange('chat')}
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} data-testid="mode-chat">Chat</ModeButton>
-          <ModeButton $active={mode === 'agent'} onClick={() => handleModeChange('agent')}
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} data-testid="mode-agent">Agent</ModeButton>
+          <ModeButton
+            $active={mode === 'chat'}
+            onClick={() => handleModeChange('chat')}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            data-testid="mode-chat"
+          >
+            Chat
+          </ModeButton>
+          <ModeButton
+            $active={mode === 'agent'}
+            onClick={() => handleModeChange('agent')}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            data-testid="mode-agent"
+          >
+            Agent
+          </ModeButton>
         </ModeSwitcher>
-        <CloseButton onClick={onClose} title="Close AI Chat" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+        <CloseButton
+          onClick={handleClearChat}
+          title="Clear chat"
+          aria-label="Clear chat"
+          data-testid="clear-chat"
+          disabled={isChatBusy}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Trash2 size={16} />
+        </CloseButton>
+        <CloseButton
+          onClick={onClose}
+          title="Close AI Chat"
+          aria-label="Close AI Chat"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
           <X size={16} />
         </CloseButton>
       </ChatHeader>
-      <ModeDescription initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} key={mode}>
+      <ModeDescription
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: 'auto' }}
+        key={mode}
+      >
         <strong>{modeInfo.title}</strong>
         {modeInfo.description}
       </ModeDescription>
@@ -487,41 +697,82 @@ const AIChat = ({
               : 'Open a folder first so the agent can plan and execute work against your workspace.'}
           </AgentEmptyState>
         )}
-        {messages.map((message) => (
+        {messages.map(message => (
           <MessageItem
             key={message.id}
             message={message}
             showReasoningProcess={showReasoningProcess}
             renderAgentTask={renderAgentTask}
-            onCopy={(text) => {
-              if (navigator?.clipboard?.writeText) {
-                navigator.clipboard.writeText(text).catch((err) => {
-                  logger.warn('Failed to copy message', err);
-                });
-              }
+            onCopy={text => {
+              navigator?.clipboard?.writeText(text).catch(err => {
+                logger.warn('Failed to copy message', err);
+              });
+            }}
+            onFeedback={(messageId, feedback) => {
+              logger.info('[AIChat] Feedback:', messageId, feedback);
             }}
           />
         ))}
-        {isTyping && mode === 'chat' && <TypingMessage />}
+        {isChatBusy && <TypingMessage />}
         <div ref={messagesEndRef} />
       </MessagesContainer>
       <InputContainer>
         <QuickActions>
-          {quickActions.map((action) => (
-            <QuickActionButton key={action} onClick={() => handleQuickAction(action)}
-              whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>{action}</QuickActionButton>
+          {quickActions.map(action => (
+            <QuickActionButton
+              key={action}
+              onClick={() => handleQuickAction(action)}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {action}
+            </QuickActionButton>
           ))}
         </QuickActions>
         <InputWrapper>
-          <TextInput ref={inputRef} id="ai-chat-input" name="aiChatMessage" data-testid="chat-input"
-            value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress}
-            placeholder={mode === 'agent' ? agentPlaceholder : 'Ask AI about your code...'} disabled={isTyping} />
-          <SendButton onClick={handleSend} disabled={!input.trim() || isTyping} title="Send message (Enter)"
-            whileHover={!isTyping && input.trim() ? { scale: 1.05 } : {}}
-            whileTap={!isTyping && input.trim() ? { scale: 0.95 } : {}}>
+          <TextInput
+            ref={inputRef}
+            id="ai-chat-input"
+            name="aiChatMessage"
+            data-testid="chat-input"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder={mode === 'agent' ? agentPlaceholder : 'Ask AI about your code...'}
+            disabled={inputDisabled}
+            aria-label="Message input"
+          />
+          <SendButton
+            onClick={() => handleSend()}
+            disabled={sendDisabled}
+            title="Send message (Enter)"
+            aria-label="Send message"
+            whileHover={!sendDisabled ? { scale: 1.05 } : {}}
+            whileTap={!sendDisabled ? { scale: 0.95 } : {}}
+          >
             <Send size={16} />
           </SendButton>
+          {showCancelButton && (
+            <CancelButton
+              data-testid="cancel-response"
+              onClick={onCancelResponse}
+              title="Cancel generation"
+              aria-label="Cancel generation"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Square size={14} />
+            </CancelButton>
+          )}
         </InputWrapper>
+        {mode === 'chat' && responseState !== 'idle' && (
+          <ResponseStatus data-testid="ai-response-state" $state={responseState}>
+            {responseState === 'streaming' && 'AI is responding...'}
+            {responseState === 'cancelling' && 'Cancelling generation...'}
+            {responseState === 'cancelled' && 'Generation cancelled.'}
+            {responseState === 'error' && 'Last response failed. You can retry now.'}
+          </ResponseStatus>
+        )}
       </InputContainer>
     </ChatContainer>
   );

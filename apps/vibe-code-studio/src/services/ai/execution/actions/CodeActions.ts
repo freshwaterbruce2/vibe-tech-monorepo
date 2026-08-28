@@ -236,7 +236,7 @@ async function executeSingleCodeGeneration(
         const workspaceContext = await workspaceService.getWorkspaceContext();
         const currentFile =
             params['currentFile'] && typeof params['currentFile'] === 'object'
-                ? (params['currentFile'] as any)
+                ? (params['currentFile'] as Record<string, unknown>)
                 : undefined;
 
         const response = await aiService.sendContextualMessage({
@@ -290,7 +290,11 @@ async function executeChunkedCodeGeneration(
                 throw new Error(`Chunk ${i + 1} generation failed: ${chunkResult.message}`);
             }
 
-            generatedChunks.push((chunkResult.data as any)?.generatedCode ?? chunkResult.data ?? '');
+            const chunkData = chunkResult.data;
+            const chunkCode = typeof chunkData === 'object' && chunkData !== null && 'generatedCode' in chunkData
+                ? (chunkData as Record<string, unknown>)['generatedCode'] as string
+                : typeof chunkData === 'string' ? chunkData : '';
+            generatedChunks.push(chunkCode);
 
             if (i < chunks.length - 1) {
                 await sleep(1000);

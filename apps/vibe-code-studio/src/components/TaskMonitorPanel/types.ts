@@ -2,7 +2,7 @@
  * TaskMonitorPanel Types
  * Type definitions for the Task Monitor Panel component
  */
-import type { BackgroundTask, TaskStats, TaskStatus, TaskType } from '@vibetech/types/tasks';
+import type { BackgroundTask, TaskStats, TaskStatus, TaskType } from '@vibetech/types';
 
 export interface TaskMonitorPanelProps {
   tasks: BackgroundTask[];

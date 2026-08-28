@@ -93,177 +93,179 @@ const ToggleSlider = styled.span`
   right: 0;
   bottom: 0;
   background-color: ${vibeTheme.colors.tertiary};
-  transition: .4s;
+  transition: 0.4s;
   border-radius: 20px;
 
   &:before {
     position: absolute;
-    content: "";
+    content: '';
     height: 16px;
     width: 16px;
     left: 2px;
     bottom: 2px;
     background-color: white;
-    transition: .4s;
+    transition: 0.4s;
     border-radius: 50%;
   }
 `;
 
-const SettingsModal: React.FC = () => {
-    const settings = useEditorStore((state) => state.settings);
-    const isOpen = useEditorStore((state) => state.settingsOpen);
-    const { updateSettings, toggleSettings } = useEditorStore((state) => state.actions);
+const SettingsModal = () => {
+  const settings = useEditorStore(state => state.settings);
+  const isOpen = useEditorStore(state => state.settingsOpen);
+  const { updateSettings, toggleSettings } = useEditorStore(state => state.actions);
 
-    const handleClose = () => {
-        toggleSettings();
-    };
+  const handleClose = () => {
+    toggleSettings();
+  };
 
-    const handleChange = (key: keyof typeof settings, value: any) => {
-        updateSettings({ [key]: value });
-    };
+  const handleChange = (
+    key: keyof typeof settings,
+    value: (typeof settings)[keyof typeof settings]
+  ) => {
+    updateSettings({ [key]: value });
+  };
 
-    if (!isOpen) {return null;}
+  if (!isOpen) {
+    return null;
+  }
 
-    return (
-        <Dialog
-            isOpen={isOpen}
-            onClose={handleClose}
-            title="Editor Settings"
-            message=""
-            showCancel={false}
-            confirmLabel="Done"
-            onConfirm={handleClose}
-        >
-            <div style={{ padding: '10px 0' }}>
-                <SettingsGroup>
-                    <GroupTitle>Appearance</GroupTitle>
-                    <SettingRow>
-                        <Label>Theme</Label>
-                        <Select
-                            value={settings.theme}
-                            onChange={(e) => handleChange('theme', e.target.value)}
-                        >
-                            <option value="dark">Dark</option>
-                            <option value="light">Light</option>
-                        </Select>
-                    </SettingRow>
-                    <SettingRow>
-                        <Label>Font Size</Label>
-                        <Input
-                            type="number"
-                            value={settings.fontSize}
-                            onChange={(e) => handleChange('fontSize', parseInt(e.target.value))}
-                            min={8}
-                            max={32}
-                        />
-                    </SettingRow>
-                    <SettingRow>
-                        <Label>Minimap</Label>
-                        <ToggleSwitch>
-                            <ToggleInput
-                                type="checkbox"
-                                checked={settings.minimap}
-                                onChange={(e) => handleChange('minimap', e.target.checked)}
-                            />
-                            <ToggleSlider />
-                        </ToggleSwitch>
-                    </SettingRow>
-                </SettingsGroup>
+  return (
+    <Dialog
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Editor Settings"
+      message=""
+      showCancel={false}
+      confirmLabel="Done"
+      onConfirm={handleClose}
+    >
+      <div style={{ padding: '10px 0' }}>
+        <SettingsGroup>
+          <GroupTitle>Appearance</GroupTitle>
+          <SettingRow>
+            <Label>Theme</Label>
+            <Select value={settings.theme} onChange={e => handleChange('theme', e.target.value)}>
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </Select>
+          </SettingRow>
+          <SettingRow>
+            <Label>Font Size</Label>
+            <Input
+              type="number"
+              value={settings.fontSize}
+              onChange={e => handleChange('fontSize', parseInt(e.target.value))}
+              min={8}
+              max={32}
+            />
+          </SettingRow>
+          <SettingRow>
+            <Label>Minimap</Label>
+            <ToggleSwitch>
+              <ToggleInput
+                type="checkbox"
+                checked={settings.minimap}
+                onChange={e => handleChange('minimap', e.target.checked)}
+              />
+              <ToggleSlider />
+            </ToggleSwitch>
+          </SettingRow>
+        </SettingsGroup>
 
-                <SettingsGroup>
-                    <GroupTitle>Editor</GroupTitle>
-                    <SettingRow>
-                        <Label>Tab Size</Label>
-                        <Input
-                            type="number"
-                            value={settings.tabSize}
-                            onChange={(e) => handleChange('tabSize', parseInt(e.target.value))}
-                            min={2}
-                            max={8}
-                        />
-                    </SettingRow>
-                    <SettingRow>
-                        <Label>Word Wrap</Label>
-                        <ToggleSwitch>
-                            <ToggleInput
-                                type="checkbox"
-                                checked={settings.wordWrap}
-                                onChange={(e) => handleChange('wordWrap', e.target.checked)}
-                            />
-                            <ToggleSlider />
-                        </ToggleSwitch>
-                    </SettingRow>
-                    <SettingRow>
-                        <Label>Auto Save</Label>
-                        <ToggleSwitch>
-                            <ToggleInput
-                                type="checkbox"
-                                checked={settings.autoSave}
-                                onChange={(e) => handleChange('autoSave', e.target.checked)}
-                            />
-                            <ToggleSlider />
-                        </ToggleSwitch>
-                    </SettingRow>
-                </SettingsGroup>
+        <SettingsGroup>
+          <GroupTitle>Editor</GroupTitle>
+          <SettingRow>
+            <Label>Tab Size</Label>
+            <Input
+              type="number"
+              value={settings.tabSize}
+              onChange={e => handleChange('tabSize', parseInt(e.target.value))}
+              min={2}
+              max={8}
+            />
+          </SettingRow>
+          <SettingRow>
+            <Label>Word Wrap</Label>
+            <ToggleSwitch>
+              <ToggleInput
+                type="checkbox"
+                checked={settings.wordWrap}
+                onChange={e => handleChange('wordWrap', e.target.checked)}
+              />
+              <ToggleSlider />
+            </ToggleSwitch>
+          </SettingRow>
+          <SettingRow>
+            <Label>Auto Save</Label>
+            <ToggleSwitch>
+              <ToggleInput
+                type="checkbox"
+                checked={settings.autoSave}
+                onChange={e => handleChange('autoSave', e.target.checked)}
+              />
+              <ToggleSlider />
+            </ToggleSwitch>
+          </SettingRow>
+        </SettingsGroup>
 
-                <SettingsGroup>
-                    <GroupTitle>AI Assistance</GroupTitle>
-                    <SettingRow>
-                        <Label>AI Auto-Complete</Label>
-                        <ToggleSwitch>
-                            <ToggleInput
-                                type="checkbox"
-                                checked={settings.aiAutoComplete}
-                                onChange={(e) => handleChange('aiAutoComplete', e.target.checked)}
-                            />
-                            <ToggleSlider />
-                        </ToggleSwitch>
-                    </SettingRow>
-                    <SettingRow>
-                        <Label>AI Suggestions</Label>
-                        <ToggleSwitch>
-                            <ToggleInput
-                                type="checkbox"
-                                checked={settings.aiSuggestions}
-                                onChange={(e) => handleChange('aiSuggestions', e.target.checked)}
-                            />
-                            <ToggleSlider />
-                        </ToggleSwitch>
-                    </SettingRow>
-                    <SettingRow>
-                        <Label>Show Reasoning</Label>
-                        <ToggleSwitch>
-                            <ToggleInput
-                                type="checkbox"
-                                checked={settings.showReasoningProcess ?? false}
-                                onChange={(e) => handleChange('showReasoningProcess', e.target.checked)}
-                            />
-                            <ToggleSlider />
-                        </ToggleSwitch>
-                    </SettingRow>
-                    <SettingRow>
-                        <Label>AI Model</Label>
-                        <Select
-                            value={settings.aiModel ?? 'deepseek/deepseek-v3.2'}
-                            onChange={(e) => handleChange('aiModel', e.target.value)}
-                            style={{ width: '200px' }}
-                        >
-                            <optgroup label="✨ Vibe Code Studio 2026 Models">
-                                {MODELS_ARRAY.filter(m => m.recommended !== false).map((model) => (
-                                    <option key={model.id} value={model.id}>
-                                        {model.name}
-                                    </option>
-                                ))}
-                            </optgroup>
-                            <optgroup label="🏠 Local">
-                                <option value="local/vibe-completion">Vibe Custom</option>
-                            </optgroup>
-                        </Select>
-                    </SettingRow>
-                </SettingsGroup>
-            </div>
-        </Dialog>
-    );
+        <SettingsGroup>
+          <GroupTitle>AI Assistance</GroupTitle>
+          <SettingRow>
+            <Label>AI Auto-Complete</Label>
+            <ToggleSwitch>
+              <ToggleInput
+                type="checkbox"
+                checked={settings.aiAutoComplete}
+                onChange={e => handleChange('aiAutoComplete', e.target.checked)}
+              />
+              <ToggleSlider />
+            </ToggleSwitch>
+          </SettingRow>
+          <SettingRow>
+            <Label>AI Suggestions</Label>
+            <ToggleSwitch>
+              <ToggleInput
+                type="checkbox"
+                checked={settings.aiSuggestions}
+                onChange={e => handleChange('aiSuggestions', e.target.checked)}
+              />
+              <ToggleSlider />
+            </ToggleSwitch>
+          </SettingRow>
+          <SettingRow>
+            <Label>Show Reasoning</Label>
+            <ToggleSwitch>
+              <ToggleInput
+                type="checkbox"
+                checked={settings.showReasoningProcess ?? false}
+                onChange={e => handleChange('showReasoningProcess', e.target.checked)}
+              />
+              <ToggleSlider />
+            </ToggleSwitch>
+          </SettingRow>
+          <SettingRow>
+            <Label>AI Model</Label>
+            <Select
+              value={settings.aiModel ?? 'moonshotai/kimi-k2.7-code'}
+              onChange={e => handleChange('aiModel', e.target.value)}
+              style={{ width: '200px' }}
+            >
+              <optgroup label="✨ Vibe Code Studio 2026 Models">
+                {MODELS_ARRAY.filter(m => m.recommended !== false).map(model => (
+                  <option key={model.id} value={model.id}>
+                    {model.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="🏠 Local">
+                <option value="local/vibe-completion">Vibe Custom</option>
+              </optgroup>
+            </Select>
+          </SettingRow>
+        </SettingsGroup>
+      </div>
+    </Dialog>
+  );
 };
 
 export default SettingsModal;

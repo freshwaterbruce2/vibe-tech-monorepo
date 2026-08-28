@@ -1,4 +1,4 @@
-import type { BackgroundTask, TaskStats } from '@vibetech/types/tasks';
+import type { BackgroundTask, TaskStats } from '@vibetech/types';
 
 export interface TaskMonitorPanelProps {
   tasks: BackgroundTask[];

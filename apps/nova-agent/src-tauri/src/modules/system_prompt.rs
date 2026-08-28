@@ -6,15 +6,18 @@ use tracing::{info, warn};
 
 pub fn load_system_prompt() -> String {
     // Kimi K2.5 optimized prompt - leverages native multimodal, thinking mode, and agentic features
-    let prompt_path = r"C:\dev\apps\nova-agent\prompts\nova-kimi-k2.5-v1.md";
+    let prompt_path = r"V:\monorepo\apps\nova-agent\prompts\nova-kimi-k2.5-v1.md";
 
     match fs::read_to_string(prompt_path) {
         Ok(content) => {
             info!("✅ Loaded system prompt from: {}", prompt_path);
             content
-        },
+        }
         Err(e) => {
-            warn!("⚠️  Could not load system prompt from {}: {}", prompt_path, e);
+            warn!(
+                "⚠️  Could not load system prompt from {}: {}",
+                prompt_path, e
+            );
             get_fallback_prompt()
         }
     }
@@ -28,15 +31,14 @@ pub fn load_prompt_from_database() -> Result<String, String> {
 
     let db_path = r"D:\databases\nova_shared.db";
 
-    let conn = Connection::open(db_path)
-        .map_err(|e| format!("Failed to open database: {}", e))?;
+    let conn = Connection::open(db_path).map_err(|e| format!("Failed to open database: {}", e))?;
 
     // Get the prompt file path from settings
     let prompt_path: String = conn
         .query_row(
             "SELECT value FROM settings WHERE key = 'nova_system_prompt_path'",
             [],
-            |row| row.get(0)
+            |row| row.get(0),
         )
         .map_err(|e| format!("Failed to read prompt path from settings: {}", e))?;
 

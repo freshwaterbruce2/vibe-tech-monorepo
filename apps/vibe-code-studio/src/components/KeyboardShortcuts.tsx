@@ -192,7 +192,9 @@ const FilterContainer = styled.div`
   align-items: center;
 `;
 
-const FilterButton = styled.button<{ active: boolean }>`
+const FilterButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'active',
+})<{ active: boolean }>`
   background: ${props => props.active ? (props.theme.accent || '#00d2ff') : 'transparent'};
   border: 1px solid ${props => props.active ? (props.theme.accent || '#00d2ff') : (props.theme.border || '#444')};
   border-radius: 6px;

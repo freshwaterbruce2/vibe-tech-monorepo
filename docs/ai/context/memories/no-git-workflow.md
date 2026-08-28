@@ -59,7 +59,7 @@
 - ✅ Database management (D:\ storage)
 - ✅ Learning system (agent_learning.db)
 - ✅ Monorepo structure (apps/, packages/, backend/)
-- ✅ Path policy (C:\dev for code, D:\ for data)
+- ✅ Path policy (V:\monorepo for code, D:\ for data)
 - ✅ VS Code + Nx Console integration
 - ✅ Claude Code / Augment AI workflows
 
@@ -117,17 +117,17 @@ pnpm nx affected -t lint,test,typecheck
 
 ```powershell
 # Backup entire workspace
-Copy-Item -Path C:\dev -Destination "D:\backups\dev-$(Get-Date -Format 'yyyy-MM-dd-HHmm')" -Recurse
+Copy-Item -Path V:\monorepo -Destination "D:\backups\dev-$(Get-Date -Format 'yyyy-MM-dd-HHmm')" -Recurse
 
 # Backup specific project
-Copy-Item -Path C:\dev\apps\nova-agent -Destination "D:\backups\nova-agent-$(Get-Date -Format 'yyyy-MM-dd-HHmm')" -Recurse
+Copy-Item -Path V:\monorepo\apps\nova-agent -Destination "D:\backups\nova-agent-$(Get-Date -Format 'yyyy-MM-dd-HHmm')" -Recurse
 ```
 
 **Automated Backups (Optional):**
 
 ```powershell
 # Create scheduled task for daily backups
-$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-File C:\dev\scripts\backup-workspace.ps1"
+$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-File V:\monorepo\scripts\backup-workspace.ps1"
 $trigger = New-ScheduledTaskTrigger -Daily -At 11:59PM
 Register-ScheduledTask -TaskName "VibeTech Workspace Backup" -Action $action -Trigger $trigger
 ```

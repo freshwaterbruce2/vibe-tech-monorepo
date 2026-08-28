@@ -11,8 +11,28 @@ dotenv.config();
 
 const app = express();
 
-// Security headers (relaxed for API-only service)
-app.use(helmet({ contentSecurityPolicy: false }));
+// Content Security Policy — authoritative source for the vibe-tutor frontend.
+// The Cloud Run service that serves the PWA must apply this same policy as a
+// `Content-Security-Policy` response header. Kept here so a single commit
+// updates both the API and the frontend host.
+export const CSP_DIRECTIVES = {
+  defaultSrc: ["'self'"],
+  baseUri: ["'self'"],
+  formAction: ["'self'"],
+  objectSrc: ["'none'"],
+  scriptSrc: ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'", 'http://localhost:*'],
+  styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://fonts.cdnfonts.com'],
+  fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://fonts.cdnfonts.com', 'data:'],
+  imgSrc: ["'self'", 'data:', 'blob:', 'https:', 'http:'],
+  mediaSrc: ["'self'", 'blob:', 'data:', 'https:', 'http:'],
+  connectSrc: ["'self'", 'https:', 'http:', 'ws:', 'wss:', 'http://localhost:*', 'ws://localhost:*'],
+};
+
+app.use(
+  helmet({
+    contentSecurityPolicy: { useDefaults: false, directives: CSP_DIRECTIVES },
+  }),
+);
 const PORT = process.env.PORT || 3001;
 
 // ============== CONFIGURATION ==============
@@ -33,10 +53,17 @@ Key behaviors:
 - Use emoji sparingly to keep things fun 🌟`,
 };
 
-// OpenRouter (Fallback provider)
+// Moonshot / Kimi AI (Fallback provider — OpenAI-compatible)
+const MOONSHOT_CONFIG = {
+  baseURL: 'https://api.moonshot.cn/v1',
+  model: 'moonshot-v1-8k',
+  timeout: 30000,
+};
+
+// OpenRouter (PRIMARY provider — honors the client-requested model)
 const OPENROUTER_CONFIG = {
   baseURL: 'https://openrouter.ai/api/v1',
-  model: 'deepseek/deepseek-chat',
+  model: 'deepseek/deepseek-v3.2', // default only; the client sends its own model
   timeout: 30000,
 };
 
@@ -50,20 +77,20 @@ const rateLimit = new Map();
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
 const MAX_REQUESTS_PER_WINDOW = 30;
 
-// Content filter for child safety
-const INAPPROPRIATE_PATTERNS = [
-  /\b(violence|violent|kill|death|die|dead|suicide|drug|alcohol|sex|nude|porn)\b/gi,
-  /\b(hate|racist|discrimination)\b/gi,
-  /\b(damn|hell|shit|fuck|ass|bitch)\b/gi,
-];
+// Child-safety guardrail (defense-in-depth). The crude keyword blocklist that
+// used to live here was REMOVED: it over-blocked legitimate homework (e.g.
+// "why did soldiers die in WWII", "the cell undergoes death") with an HTTP 400
+// and swallowed the client's Tier-3 LLM safety classifier. Safety is enforced
+// by the layered system instead — client regex crisis floor (detectCrisis) +
+// LLM safetyClassifier + fixed 988/Childhelp responses, provider moderation
+// (OpenRouter/deepseek), and the child-safety system prompt below. Aligns with
+// the Google Play AI-Generated Content policy (input/output guardrails).
+const CHILD_SAFETY_SYSTEM = GEMINI_CONFIG.systemInstruction;
 
-function filterInappropriateContent(text) {
-  for (const pattern of INAPPROPRIATE_PATTERNS) {
-    if (pattern.test(text)) {
-      return { safe: false, reason: 'Content contains inappropriate material' };
-    }
-  }
-  return { safe: true };
+/** Guarantee a child-safety system prompt on any request that lacks one. */
+function ensureSystemPrompt(messages) {
+  if (messages.some((m) => m.role === 'system')) return messages;
+  return [{ role: 'system', content: CHILD_SAFETY_SYSTEM }, ...messages];
 }
 
 // ============== MIDDLEWARE ==============
@@ -267,7 +294,7 @@ function validateSession(req, res, next) {
   next();
 }
 
-// ============== GEMINI API (Primary) ==============
+// ============== GEMINI API (Fallback 1) ==============
 
 /** Convert OpenAI-style messages to Gemini format */
 function toGeminiContents(messages) {
@@ -317,9 +344,40 @@ async function callGemini(messages) {
   return text;
 }
 
-// ============== OPENROUTER API (Fallback) ==============
+// ============== MOONSHOT / KIMI API (Fallback 2) ==============
 
-async function callOpenRouter(messages) {
+async function callMoonshot(messages) {
+  const apiKey = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
+  if (!apiKey) throw new Error('KIMI_API_KEY / MOONSHOT_API_KEY not configured');
+
+  const response = await fetch(`${MOONSHOT_CONFIG.baseURL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: MOONSHOT_CONFIG.model,
+      messages,
+      temperature: 0.7,
+      max_tokens: 2000,
+    }),
+    signal: AbortSignal.timeout(MOONSHOT_CONFIG.timeout),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[Moonshot] Error ${response.status}:`, errorText);
+    throw new Error(`Moonshot API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content ?? '';
+}
+
+// ============== OPENROUTER API (PRIMARY) ==============
+
+async function callOpenRouter(messages, model, params = {}) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('OPENROUTER_API_KEY not configured');
 
@@ -332,17 +390,24 @@ async function callOpenRouter(messages) {
       'X-Title': 'Vibe Tutor',
     },
     body: JSON.stringify({
-      model: OPENROUTER_CONFIG.model,
-      messages,
-      temperature: 0.7,
-      max_tokens: 2000,
+      model: model || OPENROUTER_CONFIG.model,
+      messages: ensureSystemPrompt(messages),
+      // `??` (not `||`) so the classifier's temperature:0 / max_tokens:32 survive.
+      temperature: params.temperature ?? 0.7,
+      top_p: params.top_p,
+      max_tokens: params.max_tokens ?? 2000,
     }),
+    signal: AbortSignal.timeout(OPENROUTER_CONFIG.timeout),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`[OpenRouter] Error ${response.status}:`, errorText);
-    throw new Error(`OpenRouter API error: ${response.status}`);
+    // Tag the status so the caller can pass 402/503 through to the client,
+    // which then retries once with the free router model.
+    const err = new Error(`OpenRouter API error: ${response.status}`);
+    err.status = response.status;
+    throw err;
   }
 
   const data = await response.json();
@@ -351,23 +416,41 @@ async function callOpenRouter(messages) {
 
 // ============== UNIFIED CHAT ENDPOINT ==============
 
-/** Try Gemini first, fallback to OpenRouter */
-async function getAIResponse(messages) {
-  // Try Gemini (primary)
+/** Try OpenRouter (primary, honors requested model) → Gemini → Moonshot. */
+async function getAIResponse(messages, requestedModel, params) {
+  const kimiConfigured = !!(process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY);
+
+  // Primary: OpenRouter with the client's requested model.
+  if (process.env.OPENROUTER_API_KEY) {
+    try {
+      return {
+        text: await callOpenRouter(messages, requestedModel, params),
+        provider: 'openrouter',
+      };
+    } catch (err) {
+      const billing = err.status === 402 || err.status === 503;
+      // If nothing else is configured, bubble 402/503 up so the chat handler
+      // can pass it through and the client retries with the free model.
+      if (billing && !geminiClient && !kimiConfigured) throw err;
+      console.warn(`[AI] OpenRouter failed (${err.status ?? 'network'}), trying fallbacks:`, err.message);
+    }
+  }
+
+  // Fallback: Gemini.
   if (geminiClient) {
     try {
       return { text: await callGemini(messages), provider: 'gemini' };
     } catch (err) {
-      console.warn('[AI] Gemini failed, trying fallback:', err.message);
+      console.warn('[AI] Gemini failed, trying Moonshot:', err.message);
     }
   }
 
-  // Try OpenRouter (fallback)
-  if (process.env.OPENROUTER_API_KEY) {
+  // Fallback: Moonshot / Kimi.
+  if (kimiConfigured) {
     try {
-      return { text: await callOpenRouter(messages), provider: 'openrouter' };
+      return { text: await callMoonshot(messages), provider: 'moonshot' };
     } catch (err) {
-      console.error('[AI] OpenRouter fallback failed:', err.message);
+      console.error('[AI] Moonshot fallback failed:', err.message);
     }
   }
 
@@ -377,38 +460,39 @@ async function getAIResponse(messages) {
 // Primary chat endpoint — used by both /api/chat and /api/openrouter/chat
 app.post(['/api/chat', '/api/openrouter/chat'], validateSession, async (req, res) => {
   try {
-    const { messages } = req.body;
+    const { messages, model, temperature, top_p, max_tokens, options } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       res.status(400).json({ error: 'Invalid request format' });
       return;
     }
 
-    // Content safety check on user input
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.role === 'user') {
-      const check = filterInappropriateContent(lastMessage.content);
-      if (!check.safe) {
-        res.status(400).json({ error: 'Request blocked', reason: check.reason });
-        return;
-      }
-    }
+    // The client sends the model both top-level and nested in `options`.
+    const requestedModel = model ?? options?.model ?? OPENROUTER_CONFIG.model;
+    const params = {
+      temperature: temperature ?? options?.temperature,
+      top_p: top_p ?? options?.top_p,
+      max_tokens: max_tokens ?? options?.max_tokens,
+    };
 
-    const { text, provider } = await getAIResponse(messages);
+    const { text, provider } = await getAIResponse(messages, requestedModel, params);
 
-    // Filter AI response
-    const responseCheck = filterInappropriateContent(text);
-    const safeText = responseCheck.safe
-      ? text
-      : "I cannot provide that information. Let's focus on your learning instead!";
-
-    // Return in OpenAI-compatible format for frontend compatibility
+    // OpenAI-compatible shape the client parses (choices[0].message.content).
     res.json({
-      choices: [{ message: { role: 'assistant', content: safeText } }],
-      message: safeText,
+      choices: [{ message: { role: 'assistant', content: text } }],
+      message: text,
       provider,
     });
   } catch (error) {
+    // Pass paid-model billing / unavailable through so the client retries once
+    // with the free router model (secureClient handles 402/503).
+    if (error.status === 402 || error.status === 503) {
+      res.status(error.status).json({
+        error: 'Upstream provider unavailable',
+        message: 'Please retry.',
+      });
+      return;
+    }
     console.error('[Chat] Error:', error.message);
     res.status(500).json({ error: 'Service error', message: 'Please try again later' });
   }
@@ -498,9 +582,29 @@ const ALLOWED_RADIO_DOMAINS = [
   'streamow6.radionomy.com',
 ];
 
+/** Security: only proxy known radio domains (prevents open-proxy abuse). */
+function isRadioDomainAllowed(hostname) {
+  return ALLOWED_RADIO_DOMAINS.some((d) => hostname === d || hostname.endsWith(`.${d}`));
+}
+
+/** Forward audio headers + pipe the upstream body, cleaning up on disconnect. */
+async function pipeUpstream(upstream, req, res) {
+  for (const h of ['content-type', 'content-length', 'accept-ranges', 'content-range']) {
+    const v = upstream.headers.get(h);
+    if (v) res.setHeader(h, v);
+  }
+  res.setHeader('Cache-Control', 'no-cache, no-store');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.status(upstream.status);
+
+  const { Readable } = await import('node:stream');
+  const nodeStream = Readable.fromWeb(upstream.body);
+  nodeStream.pipe(res);
+  req.on('close', () => nodeStream.destroy());
+}
+
 app.get('/api/radio/stream', async (req, res) => {
   const streamUrl = req.query.url;
-
   if (!streamUrl || typeof streamUrl !== 'string') {
     res.status(400).json({ error: 'Missing `url` query parameter' });
     return;
@@ -514,12 +618,7 @@ app.get('/api/radio/stream', async (req, res) => {
     return;
   }
 
-  // Security: only proxy known radio domains
-  const isDomainAllowed = ALLOWED_RADIO_DOMAINS.some(
-    (d) => parsed.hostname === d || parsed.hostname.endsWith(`.${d}`),
-  );
-
-  if (!isDomainAllowed) {
+  if (!isRadioDomainAllowed(parsed.hostname)) {
     res.status(403).json({ error: 'Domain not allowed', hostname: parsed.hostname });
     return;
   }
@@ -539,33 +638,7 @@ app.get('/api/radio/stream', async (req, res) => {
       return;
     }
 
-    // Forward essential headers for audio playback
-    const contentType = upstream.headers.get('content-type');
-    if (contentType) res.setHeader('Content-Type', contentType);
-
-    const contentLength = upstream.headers.get('content-length');
-    if (contentLength) res.setHeader('Content-Length', contentLength);
-
-    const acceptRanges = upstream.headers.get('accept-ranges');
-    if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges);
-
-    const contentRange = upstream.headers.get('content-range');
-    if (contentRange) res.setHeader('Content-Range', contentRange);
-
-    res.setHeader('Cache-Control', 'no-cache, no-store');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-
-    res.status(upstream.status);
-
-    // Pipe the stream (Node 18+ ReadableStream)
-    const { Readable } = await import('node:stream');
-    const nodeStream = Readable.fromWeb(upstream.body);
-    nodeStream.pipe(res);
-
-    // Clean up when client disconnects
-    req.on('close', () => {
-      nodeStream.destroy();
-    });
+    await pipeUpstream(upstream, req, res);
   } catch (err) {
     if (!res.headersSent) {
       res.status(502).json({ error: 'Failed to connect to radio stream', details: err.message });
@@ -585,11 +658,13 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     providers: {
       gemini: !!process.env.GEMINI_API_KEY,
+      moonshot: !!(process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY),
       openrouter: !!process.env.OPENROUTER_API_KEY,
     },
     models: {
-      primary: GEMINI_CONFIG.model,
-      fallback: OPENROUTER_CONFIG.model,
+      primary: OPENROUTER_CONFIG.model,
+      fallback1: GEMINI_CONFIG.model,
+      fallback2: MOONSHOT_CONFIG.model,
     },
   });
 });
@@ -615,13 +690,12 @@ app.get('/api/stats/:token', (req, res) => {
 
 app.listen(PORT, () => {
   /* eslint-disable no-console */
+  const mark = (v) => (v ? '✓' : '✗');
+  const kimiKey = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
   console.log(`\n[OK] Vibe-Tutor API server running on port ${PORT}`);
-  console.log('[OK] Primary:', GEMINI_CONFIG.model, process.env.GEMINI_API_KEY ? '✓' : '✗');
-  console.log(
-    '[OK] Fallback:',
-    OPENROUTER_CONFIG.model,
-    process.env.OPENROUTER_API_KEY ? '✓' : '✗',
-  );
-  console.log('[OK] Rate limiting: 30/min | Content filtering: active\n');
+  console.log('[OK] Primary:  ', OPENROUTER_CONFIG.model, mark(process.env.OPENROUTER_API_KEY));
+  console.log('[OK] Fallback1:', GEMINI_CONFIG.model, mark(process.env.GEMINI_API_KEY));
+  console.log('[OK] Fallback2:', MOONSHOT_CONFIG.model, mark(kimiKey));
+  console.log('[OK] Rate limit: 30/min | Safety: client floor + LLM classifier\n');
   /* eslint-enable no-console */
 });

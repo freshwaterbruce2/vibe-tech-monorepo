@@ -1,0 +1,140 @@
+import { execSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { loadConfig, saveConfig, isProvisioned, type ShipConfig } from './config.js';
+import { loadLocalEnv } from '../server/src/loadLocalEnv.js';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(here, '..');
+
+loadLocalEnv(projectRoot);
+
+async function waitForHealth(url: string, maxSeconds = 120): Promise<boolean> {
+  const healthUrl = `${url}/api/health`;
+  console.log(`[health] Polling ${healthUrl} (up to ${maxSeconds}s)...`);
+  for (let attempt = 0; attempt < maxSeconds / 5; attempt++) {
+    try {
+      const response = await fetch(healthUrl);
+      if (response.ok) {
+        const body = await response.json() as { ok?: boolean };
+        if (body.ok === true) {
+          console.log(`[health] API is healthy after ${attempt * 5}s`);
+          return true;
+        }
+      }
+    } catch {
+      // Server not ready yet
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
+  return false;
+}
+
+function extractUrl(output: string, pattern: RegExp): string | null {
+  const match = output.match(pattern);
+  return match ? match[1] : null;
+}
+
+async function main(): Promise<void> {
+  console.log('=== <%= displayName %> Ship Deploy ===\n');
+  const config = await loadConfig();
+
+  if (!isProvisioned(config)) {
+    console.error('ERROR: Not provisioned yet. Run ship:provision first.');
+    process.exitCode = 1;
+    return;
+  }
+
+  // Step 1: Build
+  console.log('[build] Building shared packages, frontend, and API...');
+  try {
+    execSync('pnpm run build:shared:api && pnpm run build && pnpm run build:api', {
+      cwd: projectRoot,
+      stdio: 'inherit',
+    });
+    console.log('[build] Build complete.');
+  } catch (e) {
+    console.error('[build] Build failed:', e);
+    process.exitCode = 1;
+    return;
+  }
+
+  // Step 2: Deploy backend to Railway
+  console.log('\n[railway] Deploying backend...');
+  let railwayUrl: string | null = config.railway.url;
+  try {
+    const output = execSync('railway up', {
+      cwd: projectRoot,
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    const extracted = extractUrl(output, /https?:\/\/[^\s]+\.up\.railway\.app/);
+    if (extracted) {
+      railwayUrl = extracted;
+    }
+    console.log(`[railway] Backend deployed: ${railwayUrl ?? 'URL not captured'}`);
+  } catch (e) {
+    console.error('[railway] Deploy failed:', e);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (!railwayUrl) {
+    console.error('[railway] Could not determine Railway URL. Check railway status manually.');
+    process.exitCode = 1;
+    return;
+  }
+
+  // Step 3: Deploy frontend to Vercel
+  console.log('\n[vercel] Deploying frontend to production...');
+  let vercelUrl: string | null = config.vercel.url;
+  try {
+    const output = execSync('vercel deploy --prod', {
+      cwd: projectRoot,
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    const extracted = extractUrl(output, /https?:\/\/[^\s]+\.vercel\.app/);
+    if (extracted) {
+      vercelUrl = extracted;
+    }
+    console.log(`[vercel] Frontend deployed: ${vercelUrl ?? 'URL not captured'}`);
+  } catch (e) {
+    console.error('[vercel] Deploy failed:', e);
+    process.exitCode = 1;
+    return;
+  }
+
+  // Step 4: Wait for API health
+  console.log('\n[health] Waiting for API to become healthy...');
+  const healthy = await waitForHealth(railwayUrl);
+  if (!healthy) {
+    console.error('[health] API did not become healthy within timeout.');
+    console.error('       Check Railway logs: railway logs');
+    process.exitCode = 1;
+    return;
+  }
+
+  // Step 5: Save deployment state
+  config.deployed = true;
+  config.deployedAt = new Date().toISOString();
+  config.frontendUrl = vercelUrl;
+  config.backendUrl = railwayUrl;
+  config.railway.url = railwayUrl;
+  config.vercel.url = vercelUrl;
+
+  await saveConfig(config);
+
+  console.log('\n=== Deployment Complete ===\n');
+  console.log(`  Frontend: ${vercelUrl}`);
+  console.log(`  Backend:  ${railwayUrl}`);
+  console.log(`  Health:   ${railwayUrl}/api/health`);
+  console.log('');
+  console.log('Next steps:');
+  console.log('  1. Run ship:verify to run post-deploy checks');
+  console.log('  2. Run ship:provision again to register the Stripe webhook');
+  console.log('     (now that the Railway URL is known)');
+  console.log('');
+}
+
+await main();

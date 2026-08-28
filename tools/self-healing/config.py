@@ -8,7 +8,7 @@ import yaml
 
 
 DEFAULT_CONFIG_PATHS = [
-    Path(r"C:\dev\.github\self-healing-config.yml"),
+    Path(r"V:\monorepo\.github\self-healing-config.yml"),
 ]
 
 

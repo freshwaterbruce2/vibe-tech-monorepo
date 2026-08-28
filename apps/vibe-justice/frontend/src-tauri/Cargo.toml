@@ -1,0 +1,36 @@
+[package]
+name = "vibe-justice"
+version = "1.0.0"
+description = "Vibe-Justice Legal Assistant - AI-powered legal analysis desktop application"
+authors = ["VibeTech"]
+edition = "2021"
+
+[lib]
+name = "vibe_justice_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2.6"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["process", "time", "sync"] }
+reqwest = { version = "0.12", features = ["json"] }
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-shell = "2"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = "thin"
+opt-level = "s"
+strip = true
+
+[profile.dev]
+incremental = true

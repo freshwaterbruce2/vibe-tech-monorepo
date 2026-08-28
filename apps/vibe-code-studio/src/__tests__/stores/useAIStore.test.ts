@@ -130,7 +130,7 @@ describe('useAIStore', () => {
         result.current.actions.setModel('openai/gpt-5.3-codex-spark');
       });
 
-      expect(result.current.currentModel).toBe('deepseek/deepseek-v3.2');
+      expect(result.current.currentModel).toBe('moonshot/kimi-2.5-pro');
     });
 
     it('should toggle reasoning process', () => {

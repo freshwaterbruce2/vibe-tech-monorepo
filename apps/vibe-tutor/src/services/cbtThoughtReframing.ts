@@ -1,4 +1,5 @@
-import { appStore } from '../utils/electronStore';
+﻿import { appStore } from '../utils/electronStore';
+import { logger } from '../utils/logger';
 
 /**
  * CBT Thought Reframing Service
@@ -278,9 +279,8 @@ export function saveThoughtEntry(entry: ThoughtEntry): void {
     const limited = existing.slice(-50);
 
     appStore.set('cbt_thought_journal', JSON.stringify(limited));
-    console.debug('[CBT] Saved thought entry');
   } catch (error) {
-    console.error('[CBT] Failed to save thought entry:', error);
+    logger.error('[CBT] Failed to save thought entry:', error);
   }
 }
 
@@ -292,7 +292,7 @@ export function getThoughtHistory(): ThoughtEntry[] {
     const saved = appStore.get<ThoughtEntry[]>('cbt_thought_journal');
     return saved ?? [];
   } catch (error) {
-    console.warn('[CBT] Failed to load thought history:', error);
+    logger.warn('[CBT] Failed to load thought history:', error);
     return [];
   }
 }

@@ -1,7 +1,7 @@
 // packages/backend/src/services/VectorStore.ts
-import { type LogicPattern, type VectorSearchResult } from '@vibetech/shared-utils';
-import { getIntelligencePath } from '@vibetech/shared-utils';
-import { env } from '@xenova/transformers';
+import { type LogicPattern, type VectorSearchResult } from '@vibetech/core';
+import { getIntelligencePath } from '@vibetech/core';
+import { env } from '@huggingface/transformers';
 import Database from 'better-sqlite3';
 import log from 'electron-log';
 import fs from 'fs';
@@ -46,6 +46,10 @@ export class VectorStore {
         verbose: (msg) => log.debug(`[SQLite] ${msg}`),
       });
 
+      // Enforce WAL mode and busy_timeout = 5000 (Drive segregation and concurrency standards)
+      this.db.pragma('journal_mode = WAL');
+      this.db.pragma('busy_timeout = 5000');
+
       this.initializeSchema();
       this.configureOnnxRuntime();
     } catch (error) {
@@ -59,7 +63,7 @@ export class VectorStore {
   private configureOnnxRuntime() {
     /**
      * Remediates ONNX DLL isolation.
-     * Instructs @xenova/transformers to look for local binaries
+     * Instructs @huggingface/transformers to look for local binaries
      * in the unpacked ASAR resources directory.
      */
     env.localModelPath = path.join(this.modelRoot, 'models');
@@ -73,9 +77,9 @@ export class VectorStore {
         'app.asar.unpacked',
         'node_modules/onnxruntime-node/bin',
       );
-      // Note: env.onnx.wasm.wasmPaths might need adjustment depending on version, checking docs or assuming user is correct.
+      // Note: env.onnx.wasm.wasmPaths might need adjustment depending on version,
+      // checking docs or assuming user is correct.
       // The user code: env.onnx.wasm.wasmPaths = unpackedBin;
-      // In newer xenova/transformers, it might be different, but adhering to user snippet.
       const envWithOnnx = env as typeof env & {
         onnx?: {
           wasm?: {

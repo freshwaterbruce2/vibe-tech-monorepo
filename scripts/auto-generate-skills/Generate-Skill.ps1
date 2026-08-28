@@ -16,10 +16,10 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Paths
-$AnalysisDir = "C:\dev\.agent\skills\auto-skill-creator\analysis"
-$MonorepoRoot = "C:\dev"
-$ExistingSkillsDir = "C:\dev\.agent\skills"
-$ExistingAgentsDir = "C:\dev\.antigravity\agents"
+$AnalysisDir = "V:\monorepo\.agent\skills\auto-skill-creator\analysis"
+$MonorepoRoot = "V:\monorepo"
+$ExistingSkillsDir = "V:\monorepo\skills"
+$ExistingAgentsDir = "V:\monorepo\.antigravity\agents"
 
 # Load pattern data
 Write-Host "Loading Pattern Data..." -ForegroundColor Cyan
@@ -31,6 +31,15 @@ $codePatterns = Import-Csv "$AnalysisDir\code-patterns.csv"
 # Find the specific pattern
 $pattern = $workflowPatterns | Where-Object { $_.task_type -like "*$PatternName*" }
 
+# Also check code patterns if not found in workflow patterns
+if (-not $pattern) {
+    $codePattern = $codePatterns | Where-Object { $_.pattern_name -like "*$PatternName*" }
+    if ($codePattern) {
+        $pattern = $codePattern
+        Write-Host "Found in code patterns" -ForegroundColor Yellow
+    }
+}
+
 if (-not $pattern) {
     Write-Host "ERROR: Pattern '$PatternName' not found in analysis data" -ForegroundColor Red
     Write-Host "Available patterns:" -ForegroundColor Yellow
@@ -39,25 +48,52 @@ if (-not $pattern) {
 }
 
 Write-Host "Pattern Found:" -ForegroundColor Green
-Write-Host "  Name: $($pattern.task_type)" -ForegroundColor White
-Write-Host "  Frequency: $($pattern.frequency) occurrences" -ForegroundColor White
-Write-Host "  Success Rate: $($pattern.avg_success_rate)%" -ForegroundColor White
-Write-Host "  Average Steps: $($pattern.avg_steps)" -ForegroundColor White
-Write-Host ""
+if ($pattern.task_type) {
+    Write-Host "  Name: $($pattern.task_type)" -ForegroundColor White
+    Write-Host "  Frequency: $($pattern.frequency) occurrences" -ForegroundColor White
+    Write-Host "  Success Rate: $($pattern.avg_success_rate)%" -ForegroundColor White
+    Write-Host "  Average Steps: $($pattern.avg_steps)" -ForegroundColor White
+    $patternName = $pattern.task_type
+    $patternFreq = $pattern.frequency
+    $patternSuccessRate = $pattern.avg_success_rate
+    $patternSteps = $pattern.avg_steps
+} else {
+    Write-Host "  Name: $($pattern.pattern_name)" -ForegroundColor White
+    Write-Host "  Language: $($pattern.language)" -ForegroundColor White
+    Write-Host "  Success Count: $($pattern.success_count)" -ForegroundColor White
+    Write-Host "  Success Rate: $($pattern.success_rate_pct)%" -ForegroundColor White
+    Write-Host "  Use Cases: $($pattern.use_cases)" -ForegroundColor White
+    $patternName = $pattern.pattern_name
+    $patternFreq = $pattern.success_count
+    $patternSuccessRate = $pattern.success_rate_pct
+    $patternSteps = "N/A (code pattern)"
+}
+$ExistingAgentsDir = "V:\monorepo\skills"
 
 # Get existing skills/agents for context
 $existingSkills = Get-ChildItem -Path $ExistingSkillsDir -Directory | Select-Object -ExpandProperty Name
-$existingAgents = Get-ChildItem -Path $ExistingAgentsDir -Filter "*.md" | ForEach-Object { $_.BaseName }
+$existingAgents = @()
+if (Test-Path $ExistingAgentsDir) {
+    $existingAgents = Get-ChildItem -Path $ExistingAgentsDir -Filter "*.md" | ForEach-Object { $_.BaseName }
+}
 
 Write-Host "Existing Skills: $($existingSkills -join ', ')" -ForegroundColor Gray
 Write-Host "Existing Agents: $($existingAgents -join ', ')" -ForegroundColor Gray
 Write-Host ""
 
-# Check for API key
-$apiKey = $env:GEMINI_API_KEY
-if (-not $apiKey) {
-    Write-Host "ERROR: GEMINI_API_KEY environment variable not set" -ForegroundColor Red
-    Write-Host "Set it with: `$env:GEMINI_API_KEY = 'your-key'" -ForegroundColor Yellow
+# Check for API keys (OpenRouter preferred, Gemini fallback)
+$openRouterKey = $env:OPENROUTER_API_KEY
+$geminiKey = $env:GEMINI_API_KEY
+$useOpenRouter = $false
+
+if ($openRouterKey) {
+    $useOpenRouter = $true
+    $apiKey = $openRouterKey
+} elseif ($geminiKey) {
+    $apiKey = $geminiKey
+} else {
+    Write-Host "ERROR: No API key found. Set OPENROUTER_API_KEY or GEMINI_API_KEY" -ForegroundColor Red
+    Write-Host "Set it with: `$env:OPENROUTER_API_KEY = 'your-key'" -ForegroundColor Yellow
     exit 1
 }
 
@@ -69,16 +105,16 @@ VibeTech Nx Monorepo Structure:
 - Packages: Shared libraries (@nova/*, @vibetech/ui)
 - Backend: Node.js/Python services
 - Tech Stack: TypeScript 5.9, pnpm 9.15.0, Nx 21.6+, Tailwind 3.4.18
-- Storage: C:\dev (code), D:\ (data/logs/databases)
+- Storage: V:\monorepo (code), D:\ (data/logs/databases)
 - Package Manager: ALWAYS pnpm (never npm/yarn)
 "@
 
 $patternDetails = @"
 Pattern Analysis:
-- Pattern Name: $($pattern.task_type)
-- Observed Occurrences: $($pattern.frequency)
-- Success Rate: $($pattern.avg_success_rate)%
-- Average Complexity: $($pattern.avg_steps) steps
+- Pattern Name: $patternName
+- Observed Occurrences: $patternFreq
+- Success Rate: $patternSuccessRate%
+- Average Complexity: $patternSteps
 - Related Tools: (from tool-usage-patterns.csv)
 - Related Code Patterns: (from code-patterns.csv)
 "@
@@ -97,7 +133,7 @@ EXISTING SKILLS: $($existingSkills -join ', ')
 EXISTING AGENTS: $($existingAgents -join ', ')
 
 TASK:
-Generate a new SKILL.md file for the pattern: "$($pattern.task_type)"
+Generate a new SKILL.md file for the pattern: "$patternName"
 
 REQUIREMENTS:
 1. Follow 2026 Antigravity best practices
@@ -152,41 +188,71 @@ Return ONLY the complete SKILL.md content, starting with the YAML frontmatter (-
 Do NOT include any explanations before or after the markdown.
 "@
 
-Write-Host "Generating $Type with Gemini 3 Pro..." -ForegroundColor Cyan
+if ($useOpenRouter) {
+    Write-Host "Generating $Type with OpenRouter (openai/gpt-4o-mini)..." -ForegroundColor Cyan
+} else {
+    Write-Host "Generating $Type with Gemini 2.0 Flash..." -ForegroundColor Cyan
+}
 Write-Host "This may take 10-30 seconds..." -ForegroundColor Gray
 Write-Host ""
 
-# Call Gemini API
-$apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=$apiKey"
-
-$requestBody = @{
-    contents = @(
-        @{
-            parts = @(
-                @{
-                    text = $promptContent
-                }
-            )
-        }
-    )
-    generationConfig = @{
+if ($useOpenRouter) {
+    $apiUrl = "https://openrouter.ai/api/v1/chat/completions"
+    $requestBody = @{
+        model = "openai/gpt-4o-mini"
+        messages = @(
+            @{
+                role = "user"
+                content = $promptContent
+            }
+        )
         temperature = 0.7
-        maxOutputTokens = 8192
-    }
-} | ConvertTo-Json -Depth 10
+        max_tokens = 8192
+    } | ConvertTo-Json -Depth 10
+} else {
+    $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey"
+    $requestBody = @{
+        contents = @(
+            @{
+                parts = @(
+                    @{
+                        text = $promptContent
+                    }
+                )
+            }
+        )
+        generationConfig = @{
+            temperature = 0.7
+            maxOutputTokens = 8192
+        }
+    } | ConvertTo-Json -Depth 10
+}
 
 try {
-    $response = Invoke-RestMethod -Uri $apiUrl -Method Post -Body $requestBody -ContentType "application/json"
-    $generatedContent = $response.candidates[0].content.parts[0].text
+    $invokeParams = @{
+        Uri = $apiUrl
+        Method = "Post"
+        Body = $requestBody
+        ContentType = "application/json"
+    }
+    if ($useOpenRouter) {
+        $invokeParams.Headers = @{"Authorization" = "Bearer $apiKey" }
+    }
+    $response = Invoke-RestMethod @invokeParams
+    if ($useOpenRouter) {
+        $generatedContent = $response.choices[0].message.content
+    } else {
+        $generatedContent = $response.candidates[0].content.parts[0].text
+    }
 
     # Clean up response (remove any markdown code fences if present)
     $generatedContent = $generatedContent -replace '^```markdown\s*', '' -replace '\s*```$', ''
 
     # Save to file
-    if (-not $OutputPath) {
-        $skillSlug = $PatternName -replace '\s+', '-' -replace '[^a-zA-Z0-9-]', ''
-        $OutputPath = "$ExistingSkillsDir\$skillSlug\SKILL.md"
-    }
+        if (-not $OutputPath) {
+            $skillSlug = $patternName -replace '\s+', '-' -replace '[^a-zA-Z0-9-]', ''
+            $OutputPath = "$ExistingSkillsDir\$skillSlug\SKILL.md"
+        }
 
     $outputDir = Split-Path -Parent $OutputPath
     New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
@@ -215,8 +281,14 @@ try {
     Write-Host "Error: $_" -ForegroundColor Red
     Write-Host ""
     Write-Host "Troubleshooting:" -ForegroundColor Yellow
-    Write-Host "- Verify GEMINI_API_KEY is valid" -ForegroundColor White
-    Write-Host "- Check internet connection" -ForegroundColor White
-    Write-Host "- Review API quotas at https://aistudio.google.com/" -ForegroundColor White
+    if ($useOpenRouter) {
+        Write-Host "- Verify OPENROUTER_API_KEY is valid" -ForegroundColor White
+        Write-Host "- Check internet connection" -ForegroundColor White
+        Write-Host "- Review OpenRouter limits at https://openrouter.ai/" -ForegroundColor White
+    } else {
+        Write-Host "- Verify GEMINI_API_KEY is valid" -ForegroundColor White
+        Write-Host "- Check internet connection" -ForegroundColor White
+        Write-Host "- Review API quotas at https://aistudio.google.com/" -ForegroundColor White
+    }
     exit 1
 }

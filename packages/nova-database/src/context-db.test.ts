@@ -17,7 +17,7 @@ describe('ContextDatabase', () => {
         it('inserts and retrieves project', () => {
             const project: ProjectContext = {
                 name: 'my-app',
-                path: 'C:\\dev\\apps\\my-app',
+                path: 'V:\\monorepo\\apps\\my-app',
                 type: 'web-app',
                 frameworks: ['react', 'vite'],
                 lastActive: Date.now(),
@@ -36,7 +36,7 @@ describe('ContextDatabase', () => {
         it('updates existing project on conflict', () => {
             const project: ProjectContext = {
                 name: 'my-app',
-                path: 'C:\\dev\\apps\\my-app',
+                path: 'V:\\monorepo\\apps\\my-app',
                 type: 'web-app',
                 frameworks: ['react'],
                 lastActive: Date.now(),

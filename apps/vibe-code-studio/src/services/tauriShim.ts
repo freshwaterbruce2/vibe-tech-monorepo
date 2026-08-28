@@ -9,6 +9,8 @@
  * Call `installTauriShim()` once at app startup (main.tsx / App.tsx).
  */
 
+import { logger } from './Logger';
+
 let installed = false;
 
 export async function installTauriShim(): Promise<void> {
@@ -17,7 +19,7 @@ export async function installTauriShim(): Promise<void> {
   if (!('__TAURI_INTERNALS__' in window)) return;
 
   // Already has electron shim (e.g. Electron preload) — skip
-  if ((window as any).electron?.isElectron) return;
+  if (window.electron?.isElectron) return;
 
   try {
     const [
@@ -71,42 +73,44 @@ export async function installTauriShim(): Promise<void> {
         await s.save();
         return { success: true };
       },
+      async keys() {
+        const s = await getStore();
+        return await s.keys();
+      },
     },
 
     // --- Dialog ---
     dialog: {
-      async openFile(options: any = {}) {
+      async openFile(options: Record<string, unknown> = {}) {
         const result = await dialogMod.open({
           multiple: true,
-          filters: options.filters,
           ...options,
-        });
+        } as Parameters<typeof dialogMod.open>[0]);
         if (result === null) return { success: true, canceled: true, filePaths: [] };
         const paths = Array.isArray(result) ? result : [result];
         return { success: true, canceled: false, filePaths: paths };
       },
-      async openFolder(options: any = {}) {
+      async openFolder(options: Record<string, unknown> = {}) {
         const result = await dialogMod.open({
           directory: true,
           multiple: false,
           ...options,
-        });
+        } as Parameters<typeof dialogMod.open>[0]);
         if (result === null) return { success: true, canceled: true, filePaths: [] };
         const paths = Array.isArray(result) ? result : [result];
         return { success: true, canceled: false, filePaths: paths };
       },
-      async saveFile(options: any = {}) {
+      async saveFile(options: Record<string, unknown> = {}) {
         const result = await dialogMod.save({
-          filters: options.filters,
           ...options,
-        });
+        } as Parameters<typeof dialogMod.save>[0]);
         if (result === null) return { success: true, canceled: true };
         return { success: true, canceled: false, filePath: result };
       },
-      async showMessage(options: any = {}) {
-        const ok = await dialogMod.ask(options.message ?? '', {
-          title: options.title ?? 'Vibe Code Studio',
-          kind: options.type ?? 'info',
+      async showMessage(options: Record<string, unknown> = {}) {
+        const ok = await dialogMod.ask(String(options['message'] ?? ''), {
+          title: String(options['title'] ?? 'Vibe Code Studio'),
+          kind: (options['type'] ?? 'info') as 'info' | 'warning' | 'error',
         });
         return { success: true, response: ok ? 0 : 1 };
       },
@@ -116,7 +120,7 @@ export async function installTauriShim(): Promise<void> {
     shell: {
       async execute(command: string, cwd?: string) {
         try {
-          const result = await shellMod.Command.create('exec-cmd', ['-c', command], { cwd }).execute();
+          const result = await shellMod.Command.create('cmd', ['/C', command], { cwd }).execute();
           return { success: true, stdout: result.stdout, stderr: result.stderr, code: result.code ?? 0 };
         } catch (err) {
           return { success: false, stdout: '', stderr: String(err), code: 1 };
@@ -170,11 +174,11 @@ export async function installTauriShim(): Promise<void> {
       async initialize() {
         return { success: true };
       },
-      async execute(sql: string, params?: any[]) {
+      async execute(sql: string, params?: unknown[]) {
         const { invoke } = await import('@tauri-apps/api/core');
         return await invoke('db_execute_query', { sql, queryParams: params });
       },
-      async query(sql: string, params?: any[]) {
+      async query(sql: string, params?: unknown[]) {
         const { invoke } = await import('@tauri-apps/api/core');
         return await invoke('db_execute_query', { sql, queryParams: params });
       },
@@ -272,7 +276,7 @@ export async function installTauriShim(): Promise<void> {
       async set(_key: string, _value: string) { return { success: true }; },
       async delete(_key: string) { return { success: true }; },
       async initSemanticIndex(_path: string) {
-        console.info('[TauriShim] apex.initSemanticIndex is a no-op — use MCP semantic search');
+        logger.info('[TauriShim] apex.initSemanticIndex is a no-op — use MCP semantic search');
         return { success: false, error: 'Semantic search available via MCP memory server' };
       },
       async updateSemanticIndex(_path: string, _files: string[]) {
@@ -290,24 +294,24 @@ export async function installTauriShim(): Promise<void> {
     // Routes known IPC channels to their Tauri command equivalents.
     // Unknown channels log a warning and return null gracefully.
     ipcRenderer: {
-      async invoke(channel: string, ...args: any[]) {
+      async invoke(channel: string, ...args: unknown[]) {
         const { invoke } = await import('@tauri-apps/api/core');
         switch (channel) {
           case 'db:savePattern': {
-            const data = args[0] ?? {};
-            return await invoke('db_save_pattern', { pattern: data.pattern ?? '', tags: data.tags });
+            const data = (args[0] ?? {}) as Record<string, unknown>;
+            return await invoke('db_save_pattern', { pattern: data['pattern'] ?? '', tags: data['tags'] });
           }
           case 'db:query':
             return await invoke('db_execute_query', { sql: args[0], queryParams: args[1] });
           case 'db:getPatterns':
             return await invoke('db_get_patterns', { limit: args[0] ?? 100 });
           default:
-            console.warn(`[TauriShim] Unhandled ipcRenderer.invoke channel: ${channel}`);
+            logger.warn(`[TauriShim] Unhandled ipcRenderer.invoke channel: ${channel}`);
             return null;
         }
       },
-      on(_channel: string, _listener: any) { /* no-op — Tauri uses event system */ },
-      removeListener(_channel: string, _listener: any) { /* no-op */ },
+      on(_channel: string, _listener: (...args: unknown[]) => void) { /* no-op — Tauri uses event system */ },
+      removeListener(_channel: string, _listener: (...args: unknown[]) => void) { /* no-op */ },
     },
 
     // --- Window (delegates to Tauri window API) ---
@@ -352,18 +356,18 @@ export async function installTauriShim(): Promise<void> {
     },
   };
 
-  (shim as any).ipc = {
-    send(_channel: string, _data?: any) { /* no-op */ },
+  (shim as unknown as Record<string, unknown>)['ipc'] = {
+    send(_channel: string, _data?: unknown) { /* no-op */ },
     invoke: shim.ipcRenderer.invoke,
-    on(_channel: string, _listener: any) {
+    on(_channel: string, _listener: (...args: unknown[]) => void) {
       return () => {};
     },
     removeAllListeners(_channel: string) { /* no-op */ },
   };
 
-  (window as any).electron = shim;
+  (window as unknown as Record<string, unknown>)['electron'] = shim;
   installed = true;
   } catch (err) {
-    console.error('[TauriShim] Failed to initialize — app will render without shim:', err);
+    logger.error('[TauriShim] Failed to initialize — app will render without shim:', err);
   }
 }

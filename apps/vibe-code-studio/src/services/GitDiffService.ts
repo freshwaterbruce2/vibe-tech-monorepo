@@ -25,7 +25,13 @@ export interface DiffHunk {
 }
 
 export interface DiffLine {
-  type: 'context' | 'addition' | 'deletion' | 'conflict-ours' | 'conflict-theirs' | 'conflict-marker';
+  type:
+    | 'context'
+    | 'addition'
+    | 'deletion'
+    | 'conflict-ours'
+    | 'conflict-theirs'
+    | 'conflict-marker';
   content: string;
   lineNumber?: {
     old?: number;
@@ -159,10 +165,12 @@ export class GitDiffService {
     const stats = this.calculateStats(hunks);
 
     // Check for conflicts
-    const hasConflicts = hunks.some(hunk => hunk.lines.some(line => line.type.startsWith('conflict')));
+    const hasConflicts = hunks.some(hunk =>
+      hunk.lines.some(line => line.type.startsWith('conflict'))
+    );
 
     return {
-      id: `file-${Date.now()}-${Math.random()}`,
+      id: `file-${crypto.randomUUID()}`,
       filePath: newPath,
       fileName: newPath.split('/').pop() ?? newPath,
       changeType,
@@ -189,7 +197,7 @@ export class GitDiffService {
         }
 
         currentHunk = {
-          id: `hunk-${Date.now()}-${Math.random()}`,
+          id: `hunk-${crypto.randomUUID()}`,
           oldStart: parseInt(hunkMatch[1]),
           oldLines: parseInt(hunkMatch[2] ?? '1'),
           newStart: parseInt(hunkMatch[3]),
@@ -236,7 +244,11 @@ export class GitDiffService {
   /**
    * Calculate stats for hunks
    */
-  private calculateStats(hunks: DiffHunk[]): { additions: number; deletions: number; total: number } {
+  private calculateStats(hunks: DiffHunk[]): {
+    additions: number;
+    deletions: number;
+    total: number;
+  } {
     let additions = 0;
     let deletions = 0;
 
@@ -322,13 +334,13 @@ export class GitDiffService {
             content: prompt,
           },
         ],
-        model: 'deepseek/deepseek-v3.2',
+        model: 'moonshot/kimi-2.5-pro',
         temperature: 0.5,
         maxTokens: 500,
       });
 
       // Parse AI response
-      const insights = this.parseInsightsResponse(response.content);
+      const insights = this.parseInsightsResponse(response.content ?? '');
 
       return insights;
     } catch (error) {
@@ -444,12 +456,12 @@ Focus on the semantic meaning, not line-by-line details.
           content: prompt,
         },
       ],
-      model: 'deepseek/deepseek-v3.2',
+      model: 'moonshot/kimi-2.5-pro',
       temperature: 0.5,
       maxTokens: 100,
     });
 
-    return response.content.trim();
+    return (response.content ?? '').trim();
   }
 
   /**
@@ -478,12 +490,12 @@ Focus on the semantic meaning, not line-by-line details.
             content: prompt,
           },
         ],
-        model: 'deepseek/deepseek-v3.2',
+        model: 'moonshot/kimi-2.5-pro',
         temperature: 0.3, // Low temperature for consistent suggestions
         maxTokens: 300,
       });
 
-      return this.parseConflictSuggestion(response.content);
+      return this.parseConflictSuggestion(response.content ?? '');
     } catch (error) {
       logger.error('[GitDiff] Failed to suggest conflict resolution:', error);
       return {

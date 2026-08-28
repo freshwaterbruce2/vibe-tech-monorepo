@@ -64,7 +64,7 @@ CREATE TABLE generated_skills (
 Registered skills will be tracked by:
 
 ```powershell
-C:\dev\scripts\auto-generate-skills\Monitor-GeneratedSkills.ps1
+V:\monorepo\scripts\auto-generate-skills\Monitor-GeneratedSkills.ps1
 ```
 
 **Weekly Reports** will show:

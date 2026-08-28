@@ -4,13 +4,33 @@
  */
 
 import type {
-    CoverageFileInfo,
-    CoverageInfo,
-    LoggerFunction,
-    TestFrameworkInfo,
-    TestResult,
-    TestSuite
+  CoverageFileInfo,
+  CoverageInfo,
+  LoggerFunction,
+  TestFrameworkInfo,
+  TestResult,
+  TestSuite,
 } from './types';
+
+interface JestAssertionShape {
+  status?: string;
+  fullName?: string;
+  title?: string;
+  failureMessages?: string[];
+  duration?: number;
+  location?: { line?: number; column?: number };
+}
+
+interface JestTestResultShape {
+  name?: string;
+  assertionResults?: JestAssertionShape[];
+}
+
+interface IstanbulFileCoverage {
+  s?: Record<string, number>;
+  f?: Record<string, number>;
+  b?: Record<string, number[]>;
+}
 
 export class OutputParser {
   private readonly logger: LoggerFunction;
@@ -46,7 +66,7 @@ export class OutputParser {
                   coverage = parsed.coverage;
                 }
               }
-            } catch (_e) {
+            } catch {
               // Not JSON, try text parsing
             }
           }
@@ -57,7 +77,6 @@ export class OutputParser {
       if (tests.length === 0) {
         tests.push(...this.parseTextOutput(stdout, stderr, framework));
       }
-
     } catch (error) {
       this.logger(`Failed to parse test output: ${error}`, 'warn');
 
@@ -67,7 +86,7 @@ export class OutputParser {
         testName: 'Test Execution',
         output: stdout,
         error: exitCode !== 0 ? stderr || 'Tests failed' : undefined,
-        duration: 0
+        duration: 0,
       });
     }
 
@@ -78,77 +97,98 @@ export class OutputParser {
       passedTests: tests.filter(t => t.passed).length,
       failedTests: tests.filter(t => !t.passed).length,
       duration: tests.reduce((sum, t) => sum + t.duration, 0),
-      coverage
+      coverage,
     };
   }
 
   /**
    * Parse Jest/Vitest JSON output
    */
-  private parseJestVitestJson(result: any): { tests: TestResult[]; coverage?: CoverageInfo } {
+  private parseJestVitestJson(result: Record<string, unknown>): {
+    tests: TestResult[];
+    coverage?: CoverageInfo;
+  } {
     const tests: TestResult[] = [];
     let coverage: CoverageInfo | undefined;
 
     // Handle Jest format
-    if (result.testResults) {
-      for (const testResult of result.testResults) {
-        const file = testResult.name;
-
-        for (const assertionResult of testResult.assertionResults ?? []) {
-          tests.push({
-            passed: assertionResult.status === 'passed',
-            testName: assertionResult.fullName ?? assertionResult.title,
-            output: assertionResult.failureMessages?.join('\n') ?? '',
-            error: assertionResult.status === 'failed' ?
-              assertionResult.failureMessages?.join('\n') : undefined,
-            duration: assertionResult.duration ?? 0,
-            location: {
-              file,
-              line: assertionResult.location?.line,
-              column: assertionResult.location?.column
-            }
-          });
-        }
-      }
-
-      // Parse coverage if available
-      if (result.coverageMap) {
-        coverage = this.parseCoverage(result.coverageMap);
+    if (result['testResults']) {
+      this.extractJestTests(result['testResults'] as JestTestResultShape[], tests);
+      if (result['coverageMap']) {
+        coverage = this.parseCoverage(result['coverageMap'] as Record<string, unknown>);
       }
     }
 
+    type VitestSuiteResult = {
+      file?: string;
+      tasks?: Record<string, unknown>[];
+    };
+
     // Handle Vitest format
-    if (result.results) {
-      for (const suiteResult of result.results) {
+    if (result['results']) {
+      for (const suiteResult of result['results'] as VitestSuiteResult[]) {
         const { file } = suiteResult;
-        this.extractVitestTests(suiteResult.tasks ?? [], file, tests);
+        this.extractVitestTests(suiteResult.tasks ?? [], file ?? '', tests);
       }
     }
 
     return { tests, coverage };
   }
 
+  /** Map Jest testResults[].assertionResults into TestResult leaves. */
+  private extractJestTests(testResults: JestTestResultShape[], tests: TestResult[]): void {
+    for (const testResult of testResults) {
+      const file = testResult.name;
+      for (const assertion of testResult.assertionResults ?? []) {
+        tests.push({
+          passed: assertion.status === 'passed',
+          skipped:
+            assertion.status === 'skipped' ||
+            assertion.status === 'pending' ||
+            assertion.status === 'todo',
+          testName: assertion.fullName ?? assertion.title ?? '',
+          output: assertion.failureMessages?.join('\n') ?? '',
+          error: assertion.status === 'failed' ? assertion.failureMessages?.join('\n') : undefined,
+          duration: assertion.duration ?? 0,
+          location: {
+            file: file ?? '',
+            line: assertion.location?.line,
+            column: assertion.location?.column,
+          },
+        });
+      }
+    }
+  }
+
   /**
    * Extract tests from Vitest task structure
    */
-  private extractVitestTests(tasks: any[], file: string, tests: TestResult[]): void {
+  private extractVitestTests(
+    tasks: Record<string, unknown>[],
+    file: string,
+    tests: TestResult[]
+  ): void {
     for (const task of tasks) {
-      if (task.type === 'test') {
+      const taskResult = task['result'] as
+        | { state?: string; error?: { message?: string }; duration?: number }
+        | undefined;
+      const taskLocation = task['location'] as { line?: number; column?: number } | undefined;
+      if (task['type'] === 'test') {
         tests.push({
-          passed: task.result?.state === 'pass',
-          testName: task.name,
-          output: task.result?.error?.message ?? '',
-          error: task.result?.state === 'fail' ?
-            task.result?.error?.message : undefined,
-          duration: task.result?.duration ?? 0,
+          passed: taskResult?.state === 'pass',
+          skipped: taskResult?.state === 'skip' || taskResult?.state === 'todo',
+          testName: task['name'] as string,
+          output: taskResult?.error?.message ?? '',
+          error: taskResult?.state === 'fail' ? taskResult?.error?.message : undefined,
+          duration: taskResult?.duration ?? 0,
           location: {
             file,
-            line: task.location?.line,
-            column: task.location?.column
-          }
+            line: taskLocation?.line,
+            column: taskLocation?.column,
+          },
         });
-      } else if (task.tasks) {
-        this.extractVitestTests(task.tasks, file, tests);
+      } else if (task['tasks']) {
+        this.extractVitestTests(task['tasks'] as Record<string, unknown>[], file, tests);
       }
     }
   }
@@ -156,7 +196,11 @@ export class OutputParser {
   /**
    * Parse text output for test results
    */
-  private parseTextOutput(stdout: string, stderr: string, framework: TestFrameworkInfo): TestResult[] {
+  private parseTextOutput(
+    stdout: string,
+    stderr: string,
+    framework: TestFrameworkInfo
+  ): TestResult[] {
     const tests: TestResult[] = [];
     const output = stdout + stderr;
 
@@ -174,7 +218,7 @@ export class OutputParser {
         testName: 'Test Suite',
         output: stdout,
         error: passed ? undefined : stderr || 'Tests failed',
-        duration: 0
+        duration: 0,
       });
     }
 
@@ -195,7 +239,7 @@ export class OutputParser {
           passed: status === '✓' || /^\d+\)/.test(status),
           testName: name.trim(),
           output: '',
-          duration: duration ? parseInt(duration) : 0
+          duration: duration ? parseInt(duration) : 0,
         });
       }
     }
@@ -214,7 +258,7 @@ export class OutputParser {
             passed: true,
             testName,
             output: line,
-            duration: 0
+            duration: 0,
           });
         }
       } else if (line.includes('FAIL') || line.includes('×')) {
@@ -225,7 +269,7 @@ export class OutputParser {
             testName,
             output: line,
             error: 'Test failed',
-            duration: 0
+            duration: 0,
           });
         }
       }
@@ -235,45 +279,36 @@ export class OutputParser {
   /**
    * Parse coverage data from Istanbul format
    */
-  parseCoverage(coverageMap: any): CoverageInfo {
+  parseCoverage(coverageMap: Record<string, unknown>): CoverageInfo {
     const files: CoverageFileInfo[] = [];
-    let totalLines = 0, coveredLines = 0;
-    let totalFunctions = 0, coveredFunctions = 0;
-    let totalBranches = 0, coveredBranches = 0;
-    let totalStatements = 0, coveredStatements = 0;
+    let totalLines = 0,
+      coveredLines = 0;
+    let totalFunctions = 0,
+      coveredFunctions = 0;
+    let totalBranches = 0,
+      coveredBranches = 0;
+    let totalStatements = 0,
+      coveredStatements = 0;
 
     for (const [filePath, fileCoverage] of Object.entries(coverageMap ?? {})) {
-      const fc = fileCoverage as any;
-
-      if (fc.s && fc.f && fc.b) {
-        const linesCov = Object.values(fc.s as Record<string, number>);
-        const funcsCov = Object.values(fc.f as Record<string, number>);
-        const branchesCov = Object.values(fc.b as Record<string, number[]>).flat();
-
-        const fileCoveredLines = linesCov.filter(v => v > 0).length;
-        const fileTotalLines = linesCov.length;
-        const fileCoveredFunctions = funcsCov.filter(v => v > 0).length;
-        const fileTotalFunctions = funcsCov.length;
-        const fileCoveredBranches = branchesCov.filter(v => v > 0).length;
-        const fileTotalBranches = branchesCov.length;
-
-        files.push({
-          file: filePath,
-          lines: this.createCoverageMetric(fileCoveredLines, fileTotalLines),
-          functions: this.createCoverageMetric(fileCoveredFunctions, fileTotalFunctions),
-          branches: this.createCoverageMetric(fileCoveredBranches, fileTotalBranches),
-          statements: this.createCoverageMetric(fileCoveredLines, fileTotalLines)
-        });
-
-        totalLines += fileTotalLines;
-        coveredLines += fileCoveredLines;
-        totalFunctions += fileTotalFunctions;
-        coveredFunctions += fileCoveredFunctions;
-        totalBranches += fileTotalBranches;
-        coveredBranches += fileCoveredBranches;
-        totalStatements += fileTotalLines;
-        coveredStatements += fileCoveredLines;
-      }
+      const fc = fileCoverage as IstanbulFileCoverage;
+      if (!(fc.s && fc.f && fc.b)) continue;
+      const counts = OutputParser.countFileCoverage(fc);
+      files.push({
+        file: filePath,
+        lines: this.createCoverageMetric(counts.coveredLines, counts.totalLines),
+        functions: this.createCoverageMetric(counts.coveredFunctions, counts.totalFunctions),
+        branches: this.createCoverageMetric(counts.coveredBranches, counts.totalBranches),
+        statements: this.createCoverageMetric(counts.coveredLines, counts.totalLines),
+      });
+      totalLines += counts.totalLines;
+      coveredLines += counts.coveredLines;
+      totalFunctions += counts.totalFunctions;
+      coveredFunctions += counts.coveredFunctions;
+      totalBranches += counts.totalBranches;
+      coveredBranches += counts.coveredBranches;
+      totalStatements += counts.totalLines;
+      coveredStatements += counts.coveredLines;
     }
 
     return {
@@ -281,7 +316,29 @@ export class OutputParser {
       functions: this.createCoverageMetric(coveredFunctions, totalFunctions),
       branches: this.createCoverageMetric(coveredBranches, totalBranches),
       statements: this.createCoverageMetric(coveredStatements, totalStatements),
-      files
+      files,
+    };
+  }
+
+  /** Covered/total tallies for one Istanbul file-coverage entry. */
+  private static countFileCoverage(fc: IstanbulFileCoverage): {
+    coveredLines: number;
+    totalLines: number;
+    coveredFunctions: number;
+    totalFunctions: number;
+    coveredBranches: number;
+    totalBranches: number;
+  } {
+    const linesCov = Object.values(fc.s ?? {});
+    const funcsCov = Object.values(fc.f ?? {});
+    const branchesCov = Object.values(fc.b ?? {}).flat();
+    return {
+      coveredLines: linesCov.filter(v => v > 0).length,
+      totalLines: linesCov.length,
+      coveredFunctions: funcsCov.filter(v => v > 0).length,
+      totalFunctions: funcsCov.length,
+      coveredBranches: branchesCov.filter(v => v > 0).length,
+      totalBranches: branchesCov.length,
     };
   }
 
@@ -292,7 +349,7 @@ export class OutputParser {
     return {
       covered,
       total,
-      percentage: total > 0 ? (covered / total) * 100 : 0
+      percentage: total > 0 ? (covered / total) * 100 : 0,
     };
   }
 }

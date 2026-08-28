@@ -11,7 +11,7 @@ export interface ReliabilityMetrics {
 export interface FailureRecord {
   timestamp: Date;
   error: string;
-  context: any;
+  context: Record<string, unknown>;
   recovered: boolean;
   recoveryTime?: number;
 }
@@ -62,7 +62,7 @@ export class AgentMetricsManager {
     this.reliabilityMetrics.set(agentId, metrics);
   }
 
-  recordFailure(agentId: string, error: Error, context: any, _responseTime: number): number {
+  recordFailure(agentId: string, error: Error, context: Record<string, unknown>, _responseTime: number): number {
     const metrics = this.getMetrics(agentId);
     metrics.totalRequests++;
     metrics.failedRequests++;

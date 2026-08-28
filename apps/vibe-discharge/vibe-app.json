@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:saas",
+  "projectName": "discharge-ez",
+  "displayName": "DischargeEz",
+  "archetype": "web-saas",
+  "monetization": {
+    "stripeConnected": true,
+    "firstRevenueAt": "2026-05-23",
+    "mrrCents": null,
+    "currency": "usd"
+  }
+}

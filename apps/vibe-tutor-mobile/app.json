@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Vibe Tutor",
+    "slug": "vibe-tutor-mobile",
+    "version": "1.6.0",
+    "orientation": "portrait",
+    "platforms": ["android"],
+    "android": {
+      "package": "com.vibetech.vibetutor.mobile",
+      "versionCode": 10600
+    }
+  }
+}

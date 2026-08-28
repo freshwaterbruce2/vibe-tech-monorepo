@@ -126,7 +126,7 @@ Files to create/modify:
 
 Location Validation:
 ✓ Database will be created at: D:\databases\app.db
-✓ Follows paths policy (no data in C:\dev)
+✓ Follows paths policy (no data in V:\monorepo)
 
 Preview schema.prisma:
 [show Prisma schema]

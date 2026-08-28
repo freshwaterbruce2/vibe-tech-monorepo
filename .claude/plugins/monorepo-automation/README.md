@@ -37,7 +37,7 @@ This plugin provides intelligent automation across your entire monorepo (52+ pro
 This plugin is already installed at:
 
 ```
-C:\dev\.claude\plugins\monorepo-automation\
+V:\monorepo\.claude\plugins\monorepo-automation\
 ```
 
 The plugin will be automatically discovered by Claude Code when you restart.

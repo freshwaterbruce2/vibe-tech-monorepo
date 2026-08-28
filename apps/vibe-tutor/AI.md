@@ -33,7 +33,7 @@ category: mobile
 
 ## Storage
 
-- Code: `C:\dev\apps\vibe-tutor`
+- Code: `V:\monorepo\apps\vibe-tutor`
 - If generating logs or DBs, place them on `D:\` per workspace rules.
 
 ## References

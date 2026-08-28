@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:saas",
+  "projectName": "prior-auth-pro",
+  "displayName": "PriorAuthPro",
+  "archetype": "web-saas",
+  "monetization": {
+    "stripeConnected": false,
+    "firstRevenueAt": null,
+    "mrrCents": null,
+    "currency": "usd"
+  }
+}

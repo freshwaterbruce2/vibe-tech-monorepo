@@ -30,7 +30,7 @@ Analyze the monorepo dependency graph to identify:
 
 ```powershell
 # Generate dependency graph
-cd C:\dev
+cd V:\monorepo
 npx nx graph --file=..\docs\guides\architecture-tasks\outputs\dep-graph.json
 
 # Check for circular dependencies

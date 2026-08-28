@@ -10,8 +10,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$VCSPath = "C:\dev\apps\vibe-code-studio"
-$BackupDir = "C:\dev\apps\vibe-code-studio\_backups"
+$VCSPath = "V:\monorepo\apps\vibe-code-studio"
+$BackupDir = "V:\monorepo\apps\vibe-code-studio\_backups"
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 
 Write-Host "=== VCS Cleanup Script ===" -ForegroundColor Cyan

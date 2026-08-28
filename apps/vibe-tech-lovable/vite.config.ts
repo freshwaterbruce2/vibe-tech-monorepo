@@ -5,24 +5,71 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // Public directory (migrated from C:\dev\public to app-specific location 2026-01-24)
+  // Public directory (migrated from V:\monorepo\public to app-specific location 2026-01-24)
   publicDir: './public',
 
   server: {
     host: "::",
     port: 8080,
     cors: true,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:9001',
+        changeOrigin: true,
+      },
+    },
     hmr: {
       overlay: true
     }
   },
   plugins: [
     VitePWA({
+      injectRegister: false,
       registerType: 'autoUpdate',
+      selfDestroying: true,
       workbox: {
+        disableDevLogs: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,avif}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB (increased from default 2 MB)
         runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname === '/cdn-cgi/speculation',
+            handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: ({ url }) =>
+              url.origin === 'https://www.googletagmanager.com' ||
+              url.origin === 'https://www.google-analytics.com',
+            handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com',
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'google-fonts-stylesheets',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 7 * 24 * 60 * 60 // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: ({ url }) => url.origin === 'https://fonts.gstatic.com',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 365 * 24 * 60 * 60 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
           {
             urlPattern: /.*\.(jpg|jpeg|png|webp|avif|gif)$/i,
             handler: 'CacheFirst',

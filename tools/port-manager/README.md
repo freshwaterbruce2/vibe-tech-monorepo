@@ -6,10 +6,10 @@ Quick utility to manage dev server ports across the monorepo.
 
 ```powershell
 # Add to your PowerShell profile for global access:
-# Add-Content $PROFILE "`nfunction port { & 'C:\dev\tools\port-manager\port.ps1' @args }"
+# Add-Content $PROFILE "`nfunction port { & 'V:\monorepo\tools\port-manager\port.ps1' @args }"
 
 # Or run directly:
-C:\dev\tools\port-manager\port.ps1 <command> [args]
+V:\monorepo\tools\port-manager\port.ps1 <command> [args]
 ```
 
 ## Commands
@@ -47,8 +47,8 @@ All port assignments are documented in `port-registry.json`:
 | 5173 | root-dev                  | vite    |
 | 5174 | vibeblox                  | vite    |
 | 5175 | shipping-pwa              | vite    |
-| 5176 | monorepo-dashboard        | vite    |
-| 5177 | monorepo-dashboard-server | backend |
+| 5176 | vibetech-command-center   | vite    |
+| 5177 | vibetech-command-center   | backend |
 | 5179 | symptom-tracker           | vite    |
 | 8000 | crypto-enhanced           | python  |
 | 8765 | memory-bank               | backend |
@@ -63,7 +63,7 @@ To use `port` from anywhere, add this to your PowerShell profile:
 notepad $PROFILE
 
 # Add this line:
-function port { & 'C:\dev\tools\port-manager\port.ps1' @args }
+function port { & 'V:\monorepo\tools\port-manager\port.ps1' @args }
 
 # Reload profile
 . $PROFILE
@@ -87,7 +87,7 @@ Apps can auto-free their port before starting by adding to their startup script:
 
 ```powershell
 # In start-app.ps1
-& C:\dev\tools\port-manager\port.ps1 kill 8091
+& V:\monorepo\tools\port-manager\port.ps1 kill 8091
 pnpm run dev
 ```
 
@@ -96,7 +96,7 @@ Or in package.json:
 ```json
 {
   "scripts": {
-    "predev": "powershell -File C:/dev/tools/port-manager/port.ps1 kill 8091",
+    "predev": "powershell -File V:/monorepo/tools/port-manager/port.ps1 kill 8091",
     "dev": "tsx watch src/server.ts"
   }
 }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-- **Path**: C:\dev\apps\vibe-code-studio
+- **Path**: V:\monorepo\apps\vibe-code-studio
 - **Type**: React
 - **Analyzed**: 2026-01-09 12:28
 

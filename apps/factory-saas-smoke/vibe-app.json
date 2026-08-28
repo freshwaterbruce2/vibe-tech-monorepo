@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:saas",
+  "projectName": "factory-saas-smoke",
+  "displayName": "FactorySaasSmoke",
+  "archetype": "web-saas",
+  "monetization": {
+    "stripeConnected": false,
+    "firstRevenueAt": null,
+    "mrrCents": null,
+    "currency": "usd"
+  }
+}

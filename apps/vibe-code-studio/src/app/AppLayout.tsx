@@ -6,7 +6,7 @@
  */
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import styled from 'styled-components';
 
 // Eagerly loaded core components (always visible)
@@ -17,25 +17,44 @@ import Sidebar from '../components/Sidebar';
 import StatusBar from '../components/StatusBar';
 import TitleBar from '../components/TitleBar';
 
-// Lazy-loaded conditional components (only loaded when their panel is opened)
-const BackgroundTaskPanel = lazy(() => import('../components/BackgroundTaskPanel').then(m => ({ default: m.BackgroundTaskPanel })));
-const ComponentLibrary = lazy(() => import('../components/ComponentLibrary').then(m => ({ default: m.ComponentLibrary })));
-const EditorStreamPanel = lazy(() => import('../components/EditorStreamPanel').then(m => ({ default: m.EditorStreamPanel })));
-const ErrorFixPanel = lazy(() => import('../components/ErrorFixPanel'));
-const GitPanel = lazy(() => import('../components/GitPanel'));
-const GlobalSearch = lazy(() => import('../components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
-const KeyboardShortcuts = lazy(() => import('../components/KeyboardShortcuts').then(m => ({ default: m.KeyboardShortcuts })));
-const MultiFileEditApprovalPanel = lazy(() => import('../components/MultiFileEditApprovalPanel').then(m => ({ default: m.MultiFileEditApprovalPanel })));
-const PerformanceMonitor = lazy(() => import('../components/PerformanceMonitor'));
-const PreviewPanel = lazy(() => import('../components/PreviewPanel').then(m => ({ default: m.PreviewPanel })));
-const ScreenshotToCodePanel = lazy(() => import('../components/ScreenshotToCodePanel').then(m => ({ default: m.ScreenshotToCodePanel })));
-const TerminalPanel = lazy(() => import('../components/TerminalPanel').then(m => ({ default: m.TerminalPanel })));
-const VisualEditor = lazy(() => import('../components/VisualEditor').then(m => ({ default: m.VisualEditor })));
-const WelcomeScreen = lazy(() => import('../components/WelcomeScreen'));
+// Lazy-loaded conditional panels (only loaded when their toggle opens them)
+import {
+  AgentManagerPanelHost,
+  BackgroundTaskPanel,
+  BrainScanPanel,
+  BrowserPermissionPromptHost,
+  ComponentLibrary,
+  EditorStreamPanel,
+  EnhancedAgentMode,
+  ErrorFixPanel,
+  GitPanel,
+  GlobalSearch,
+  KeyboardShortcuts,
+  KnowledgePanelHost,
+  MultiFileEditApprovalPanel,
+  PerformanceMonitor,
+  PlanModeDialogHost,
+  PreviewPanel,
+  ArtifactsPanelHost,
+  ProblemsPanelHost,
+  SchedulePanelHost,
+  ScreenshotToCodePanel,
+  SettingsSyncDialog,
+  TerminalPanel,
+  TestExplorerPanelHost,
+  VisualEditor,
+  WelcomeScreen,
+} from './lazyPanels';
 
 import type { GeneratedFix } from '../services/AutoFixService';
 import { logger } from '../services/Logger';
+import { applySettingsChange } from './applySettingsChange';
 import { useAppExtras, useServices, useUIPanel, useWorkspaceCtx } from './contexts';
+import { useEffect } from 'react';
+import { LandingPage } from '@vibetech/landing';
+import { authService, type UserWithPlan } from '../services/AuthService';
+import { AuthModal } from '../components/AuthModal';
+import { vibeStudioLandingContent } from './landingContent';
 
 // Styled Components
 const AppContainer = styled.div`
@@ -68,6 +87,42 @@ export function AppLayout() {
   const extras = useAppExtras();
 
   const [workspaceRefreshKey, setWorkspaceRefreshKey] = useState(0);
+  const [user, setUser] = useState<UserWithPlan | null>(authService.getCurrentUser());
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null);
+
+  // Check user session and subscribe
+  useEffect(() => {
+    const initSession = async () => {
+      await authService.init();
+      setSessionChecked(true);
+    };
+    initSession();
+
+    const unsubscribe = authService.subscribe(u => {
+      setUser(u);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Listen to hash changes for login/signup modal triggers
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#login') {
+        setAuthModalMode('login');
+      } else if (hash === '#signup') {
+        setAuthModalMode('signup');
+      } else {
+        setAuthModalMode(null);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange();
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // Memoize workspaceContext to prevent unnecessary re-renders of AIChat
   const memoizedWorkspaceContext = useMemo(
@@ -76,12 +131,47 @@ export function AppLayout() {
         ? {
             workspaceRoot: ws.workspaceFolder,
             currentFile: ws.currentFile?.path,
-            openFiles: ws.openFiles.map((f) => f.path),
-            recentFiles: ws.openFiles.slice(0, 5).map((f) => f.path),
+            openFiles: ws.openFiles.map(f => f.path),
+            recentFiles: ws.openFiles.slice(0, 5).map(f => f.path),
           }
         : undefined,
     [ws.workspaceFolder, ws.currentFile?.path, ws.openFiles]
   );
+
+  if (!sessionChecked) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          background: '#08111f',
+          color: '#67e8f9',
+          fontFamily: 'system-ui',
+        }}
+      >
+        <div style={{ fontSize: '18px', fontWeight: 600 }}>Initializing Neural Interface...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <>
+        <LandingPage content={vibeStudioLandingContent} />
+        {authModalMode && (
+          <AuthModal
+            initialMode={authModalMode}
+            onClose={() => {
+              setAuthModalMode(null);
+              window.history.pushState(null, '', ' '); // Clear hash
+            }}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <AppContainer data-testid="app-container">
@@ -91,7 +181,9 @@ export function AppLayout() {
         onOpenFolder={ws.handleOpenFolderDialog}
         onSaveAll={ws.handleSaveAll}
         onCloseFolder={ws.handleCloseFolder}
-        onScreenshotToCode={() => ui.setActiveVisualPanel(ui.activeVisualPanel === 'screenshot' ? 'none' : 'screenshot')}
+        onScreenshotToCode={() =>
+          ui.setActiveVisualPanel(ui.activeVisualPanel === 'screenshot' ? 'none' : 'screenshot')
+        }
         onToggleSidebar={() => ui.setSidebarOpen(!ui.sidebarOpen)}
         onToggleAIChat={() => ui.setAiChatOpen(!ui.aiChatOpen)}
         onTogglePreview={() => ui.setPreviewOpen(!ui.previewOpen)}
@@ -164,7 +256,11 @@ export function AppLayout() {
             <LazyAIChat
               data-testid="ai-chat"
               messages={extras.aiMessages}
+              isAiResponding={extras.isAiResponding}
+              responseState={extras.aiResponseState}
               onSendMessage={extras.handleAIMessage}
+              onCancelResponse={extras.cancelAiResponse}
+              onClearMessages={extras.clearAiMessages}
               onClose={() => ui.setAiChatOpen(false)}
               showReasoningProcess={ws.editorSettings.showReasoningProcess}
               currentModel={ws.editorSettings.aiModel}
@@ -177,29 +273,36 @@ export function AppLayout() {
               onUpdateMessage={extras.updateAiMessage}
               onFileChanged={(filePath, action) => {
                 logger.debug('[App] Agent file changed:', filePath, action);
-                setWorkspaceRefreshKey((current) => current + 1);
+                setWorkspaceRefreshKey(current => current + 1);
                 if (action === 'created' || action === 'modified') {
                   ws.handleOpenFile(filePath);
                 }
               }}
-              onTaskComplete={(task) => {
+              onTaskComplete={task => {
                 extras.showSuccess('Task Completed', `Successfully executed: ${task.title}`);
               }}
               onTaskError={(task, error) => {
-                extras.showError('Task Failed', `Failed to execute ${task.title}: ${error.message}`);
+                extras.showError(
+                  'Task Failed',
+                  `Failed to execute ${task.title}: ${error.message}`
+                );
               }}
               onMultiFileEditDetected={extras.handleMultiFileEditDetected}
             />
           </Suspense>
         )}
 
-        {ui.gitPanelOpen && <Suspense fallback={null}><GitPanel workingDirectory={ws.workspaceFolder ?? undefined} /></Suspense>}
+        {ui.gitPanelOpen && (
+          <Suspense fallback={null}>
+            <GitPanel workingDirectory={ws.workspaceFolder ?? undefined} />
+          </Suspense>
+        )}
 
         {ui.backgroundPanelOpen && (
           <Suspense fallback={null}>
             <BackgroundTaskPanel
               backgroundAgent={services.backgroundAgentSystem}
-              onTaskClick={(task) => {
+              onTaskClick={task => {
                 logger.debug('[App] Background task clicked:', task);
               }}
             />
@@ -211,29 +314,34 @@ export function AppLayout() {
         currentFile={ws.currentFile}
         aiChatOpen={ui.aiChatOpen}
         backgroundPanelOpen={ui.backgroundPanelOpen}
+        sidebarOpen={ui.sidebarOpen}
+        activeVisualPanel={ui.activeVisualPanel}
+        terminalOpen={ui.terminalOpen}
+        agentModeOpen={ui.agentModeOpen}
+        currentModel={extras.currentModel}
         onToggleSidebar={() => ui.setSidebarOpen(!ui.sidebarOpen)}
         onToggleAIChat={() => ui.setAiChatOpen(!ui.aiChatOpen)}
         onToggleBackgroundPanel={() => ui.setBackgroundPanelOpen(!ui.backgroundPanelOpen)}
-        onOpenAgentMode={() => {
-          if (!ui.aiChatOpen) ui.setAiChatOpen(true);
-          ui.setChatMode('agent');
-        }}
-        onOpenTerminal={() => {/* Terminal disabled */}}
+        onOpenAgentMode={() => ui.setAgentModeOpen(true)}
+        onOpenTerminal={() => ui.setTerminalOpen(!ui.terminalOpen)}
         onToggleScreenshot={extras.handleToggleScreenshotPanel}
         onToggleLibrary={extras.handleToggleComponentLibrary}
         onToggleVisualEditor={extras.handleToggleVisualEditor}
       />
 
-      <NotificationContainer notifications={extras.notifications} onClose={extras.removeNotification} />
+      <NotificationContainer
+        notifications={extras.notifications}
+        onClose={extras.removeNotification}
+      />
 
       <Suspense fallback={null}>
         <EditorStreamPanel
           isStreaming={services.liveStream.isCurrentlyStreaming()}
-          onApprove={(filePath) => {
+          onApprove={filePath => {
             logger.debug(`[App] Approved changes for: ${filePath}`);
             extras.showSuccess('Changes Approved', `Applied changes to ${filePath}`);
           }}
-          onReject={(filePath) => {
+          onReject={filePath => {
             logger.debug(`[App] Rejected changes for: ${filePath}`);
             extras.showWarning('Changes Rejected', `Discarded changes to ${filePath}`);
           }}
@@ -242,13 +350,17 @@ export function AppLayout() {
 
       {/* Auto-Fix Error Panel */}
       {ui.errorFixPanelOpen && extras.currentError && (
-        <div style={{
-          position: 'fixed',
-          bottom: '80px',
-          right: '20px',
-          zIndex: 2000,
-          maxWidth: '600px',
-        }}>
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '80px',
+            right: '20px',
+            zIndex: 2000,
+            maxWidth: '600px',
+            maxHeight: 'calc(100vh - 100px)',
+            overflowY: 'auto',
+          }}
+        >
           <Suspense fallback={null}>
             <ErrorFixPanel
               error={extras.currentError}
@@ -263,10 +375,15 @@ export function AppLayout() {
                 extras.setCurrentFix(null);
               }}
               onRetry={() => {
-                if (extras.currentError && ws.editorRef.current && extras.autoFixServiceRef.current) {
+                if (
+                  extras.currentError &&
+                  ws.editorRef.current &&
+                  extras.autoFixServiceRef.current
+                ) {
                   extras.setFixLoading(true);
                   extras.setFixError('');
-                  extras.autoFixServiceRef.current.generateFix(extras.currentError, ws.editorRef.current as never)
+                  extras.autoFixServiceRef.current
+                    .generateFix(extras.currentError, ws.editorRef.current as never)
                     .then((fix: GeneratedFix) => {
                       extras.setCurrentFix(fix);
                       extras.setFixLoading(false);
@@ -287,22 +404,18 @@ export function AppLayout() {
           isOpen={ui.settingsOpen}
           onClose={() => ui.setSettingsOpen(false)}
           settings={ws.editorSettings}
-          onSettingsChange={async (newSettings) => {
-            ws.updateEditorSettings(newSettings);
-            if (newSettings.aiModel && newSettings.aiModel !== ws.editorSettings.aiModel) {
-              try {
-                await services.aiService.setModel(newSettings.aiModel);
-                extras.showSuccess('Settings Updated', 'Your preferences have been saved');
-              } catch (error) {
-                extras.showError(
-                  'Model Error',
-                  error instanceof Error ? error.message : 'Failed to update AI model'
-                );
-              }
-            } else {
-              extras.showSuccess('Settings Updated', 'Your preferences have been saved');
-            }
-          }}
+          onSettingsChange={newSettings =>
+            applySettingsChange(
+              {
+                updateEditorSettings: ws.updateEditorSettings,
+                prevAiModel: ws.editorSettings.aiModel,
+                aiService: services.aiService,
+                showSuccess: extras.showSuccess,
+                showError: extras.showError,
+              },
+              newSettings
+            )
+          }
         />
       </Suspense>
 
@@ -321,7 +434,7 @@ export function AppLayout() {
           onOpenFile={ws.handleOpenFileFromSearch}
           onReplaceInFile={ws.handleReplaceInFile}
           onSearchInFiles={ws.handleSearchInFiles}
-          workspaceFiles={ws.openFiles.map((f) => f.path)}
+          workspaceFiles={ws.openFiles.map(f => f.path)}
           workspaceRoot={ws.workspaceFolder}
         />
       </Suspense>
@@ -351,7 +464,7 @@ export function AppLayout() {
             }}
           >
             <ScreenshotToCodePanel
-              apiKey={extras.deepseekApiKey}
+              apiKey={extras.openrouterApiKey}
               onInsertCode={extras.handleInsertCode}
             />
           </motion.div>
@@ -413,15 +526,87 @@ export function AppLayout() {
       </AnimatePresence>
 
       <Suspense fallback={null}>
-        <TerminalPanel
-          isOpen={ui.terminalOpen}
-          onClose={() => ui.setTerminalOpen(false)}
-        />
+        <TerminalPanel isOpen={ui.terminalOpen} onClose={() => ui.setTerminalOpen(false)} />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <ProblemsPanelHost onOpenFile={ws.handleOpenFileFromSearch} />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SchedulePanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <ArtifactsPanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <BrowserPermissionPromptHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <PlanModeDialogHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SettingsSyncDialog />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <KnowledgePanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <TestExplorerPanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <AgentManagerPanelHost />
       </Suspense>
 
       <Suspense fallback={null}>
         <PerformanceMonitor />
       </Suspense>
+
+      {ui.brainScanOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1500,
+            background: 'rgba(8, 17, 31, 0.85)',
+          }}
+        >
+          <Suspense fallback={null}>
+            <BrainScanPanel onClose={() => ui.setBrainScanOpen(false)} />
+          </Suspense>
+        </div>
+      )}
+
+      {ui.agentModeOpen && (
+        <Suspense fallback={null}>
+          <EnhancedAgentMode
+            isOpen={ui.agentModeOpen}
+            onClose={() => ui.setAgentModeOpen(false)}
+            onComplete={() => {
+              ui.setAgentModeOpen(false);
+              extras.showSuccess('Agent Task Complete', 'Multi-agent task completed successfully');
+            }}
+            orchestrator={services.orchestrator}
+            performanceOptimizer={services.performanceOptimizer}
+            workspaceContext={
+              ws.workspaceFolder
+                ? {
+                    workspaceFolder: ws.workspaceFolder,
+                    currentFile: ws.currentFile?.path,
+                    openFiles: ws.openFiles.map(f => f.path),
+                  }
+                : undefined
+            }
+          />
+        </Suspense>
+      )}
     </AppContainer>
   );
 }

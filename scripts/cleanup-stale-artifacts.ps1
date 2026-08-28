@@ -4,14 +4,10 @@ param(
 
 $ErrorActionPreference = 'Continue'
 
-$root = "C:\dev"
+$root = "V:\monorepo"
 $tmpRoot = Join-Path $root "tmp"
 $driftRoots = @(
     $root
-    Join-Path $root "apps"
-    Join-Path $root "packages"
-    Join-Path $root "backend"
-    Join-Path $root "archive"
 )
 
 $skipPathPatterns = @(
@@ -19,7 +15,21 @@ $skipPathPatterns = @(
     '\\node_modules\\',
     '\\.nx\\',
     '\\.pnpm-store\\',
-    '\\.turbo\\'
+    '\\.turbo\\',
+    '\\target\\',
+    '\\\.venv\\',
+    '\\venv\\',
+    '\\Ollama\\',
+    '\\_backups\\',
+    '\\_worktrees\\',
+    '\\\.gradle\\',
+    '\\build\\',
+    '\\playwright-report\\',
+    '\\test-results\\',
+    '\\coverage\\',
+    '\\\.gemini\\',
+    '\\\.antigravitycli\\',
+    '\\\.pnpm\\'
 )
 
 function ShouldSkipPath([string]$path) {
@@ -68,7 +78,7 @@ function Remove-DirectoryContents([string]$DirectoryPath) {
 
 function CollectDistCandidates {
     $candidates = New-Object System.Collections.Generic.List[string]
-    $skipDirs = @('.git', '.vscode', 'node_modules', '.nx', '.pnpm-store', '.turbo')
+    $skipDirs = @('.git', '.vscode', 'node_modules', '.nx', '.pnpm-store', '.turbo', 'target', '.venv', 'venv', 'Ollama', '_backups', '_worktrees', '.gradle', 'build', 'playwright-report', 'test-results', 'coverage', '.gemini', '.antigravitycli', '.pnpm')
     $stack = New-Object System.Collections.Generic.Stack[string]
 
     foreach ($root in $driftRoots) {
@@ -107,7 +117,7 @@ function CollectDistCandidates {
     return [string[]]($unique.Keys | Sort-Object { $_.Length } -Descending)
 }
 
-Write-Host "Cleaning stale C:\dev artifacts"
+Write-Host "Cleaning stale V:\monorepo artifacts"
 
 $tmpCount = 0
 if (Test-Path -LiteralPath $tmpRoot) {
@@ -121,6 +131,25 @@ else {
 }
 
 $distCandidates = CollectDistCandidates
+
+$cacheRoots = @(
+    $env:TEMP,
+    "C:\Windows\Temp",
+    "V:\monorepo\.nx\cache",
+    "V:\monorepo\node_modules\.cache",
+    (Join-Path $env:LOCALAPPDATA 'Temp\claude')
+)
+
+Write-Host "\nCleaning system temp and cache folders..."
+$cacheCount = 0
+foreach ($cRoot in $cacheRoots) {
+    if (Test-Path -LiteralPath $cRoot) {
+        $cEntries = Get-ChildItem -LiteralPath $cRoot -Force -ErrorAction SilentlyContinue
+        $cacheCount += $cEntries.Count
+        Remove-DirectoryContents -DirectoryPath $cRoot
+    }
+}
+
 Write-Host "`nCleaning dist artifacts..."
 $distCount = $distCandidates.Count
 foreach ($candidate in $distCandidates) {
@@ -128,10 +157,10 @@ foreach ($candidate in $distCandidates) {
 }
 
 if ($DryRun) {
-    Write-Host "`nDry run complete. Would remove $tmpCount tmp entries and $distCount dist paths."
+    Write-Host "`nDry run complete. Would remove $tmpCount tmp entries, $cacheCount cache/temp entries, and $distCount dist paths."
 }
 else {
-    Write-Host "`nCleanup complete. Removed $tmpCount tmp entries and $distCount dist paths."
+    Write-Host "`nCleanup complete. Removed $tmpCount tmp entries, $cacheCount cache/temp entries, and $distCount dist paths."
 }
 
 exit 0

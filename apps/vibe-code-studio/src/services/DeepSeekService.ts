@@ -23,7 +23,7 @@ import {
   validateLLMOutput,
   validateStreamChunk,
   costTracker,
-} from '@vibetech/shared-utils';
+} from '@vibetech/core';
 
 export type MessageRole = 'system' | 'user' | 'assistant';
 
@@ -199,7 +199,7 @@ export class DeepSeekService {
         this.conversationManager.addUserMessage(request.userQuery);
         this.conversationManager.addAssistantMessage(response.content);
 
-        const words = response.content.split(' ');
+        const words = (response.content ?? '').split(' ');
         for (const word of words) {
           if (signal?.aborted) return;
           await new Promise((resolve) => setTimeout(resolve, 50));

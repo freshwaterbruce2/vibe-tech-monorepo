@@ -205,7 +205,9 @@ describe('EmbeddingService Cache', () => {
 
     it('returns provider name', () => {
       const provider = service.getProvider();
-      expect(['ollama', 'transformers']).toContain(provider);
+      // Canonical provider is OpenRouter (1536d). 'transformers' is the offline
+      // fallback; 'ollama' is retained in the union for legacy compat.
+      expect(['openrouter', 'ollama', 'transformers']).toContain(provider);
     });
   });
 });

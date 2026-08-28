@@ -1,7 +1,7 @@
 # LearningSystem PowerShell Module - Enhanced with Auto-Capture
-# Location: C:\dev\scripts\LearningSystem.psm1
+# Location: V:\monorepo\scripts\LearningSystem.psm1
 
-$Script:DbPath = "D:\learning-system\agent_learning.db"
+$Script:DbPath = "D:\databases\agent_learning.db"
 $Script:PythonVenv = "D:\learning-system\.venv\Scripts\python.exe"
 $Script:CaptureScript = "D:\learning-system\capture_learning.py"
 
@@ -92,7 +92,7 @@ function Record-Learning {
         $safeShould = $WhatShouldHappen.Replace("'", "''")
         $safeTask = $TaskType.Replace("'", "''")
         
-        $query1 = "INSERT INTO agent_executions (agent_name, task_type, success, tools_used, error_message, timestamp) VALUES ('clawdbot', '$safeTask', 0, '$toolsJson', '$safeWrong', '$timestamp');"
+        $query1 = "INSERT INTO agent_executions (agent_name, task_type, success, tools_used, error_message, timestamp) VALUES ('workspace-agent', '$safeTask', 0, '$toolsJson', '$safeWrong', '$timestamp');"
         $query2 = "INSERT INTO agent_mistakes (execution_id, mistake_type, what_went_wrong, what_should_happen, tools_involved, learned_fix, confidence, last_seen) SELECT last_insert_rowid(), '$safeTask', '$safeWrong', '$safeShould', '$toolsJson', '$safeShould', 0.8, '$timestamp';"
         $query3 = "INSERT INTO learning_events (event_type, description, related_execution_id, timestamp) SELECT 'mistake_captured', 'Mistake: $safeWrong', (SELECT id FROM agent_executions ORDER BY id DESC LIMIT 1), '$timestamp';"
         
@@ -117,7 +117,7 @@ function Record-Learning {
         $safeTask = $TaskType.Replace("'", "''")
         $safeProj = $proj.Replace("'", "''")
         
-        $query1 = "INSERT INTO agent_executions (agent_name, task_type, success, execution_time, tools_used, project, timestamp) VALUES ('clawdbot', '$safeTask', 1, $execTime, '$toolsJson', '$safeProj', '$timestamp');"
+        $query1 = "INSERT INTO agent_executions (agent_name, task_type, success, execution_time, tools_used, project, timestamp) VALUES ('workspace-agent', '$safeTask', 1, $execTime, '$toolsJson', '$safeProj', '$timestamp');"
         $query2 = "INSERT INTO agent_knowledge (task_type, tools, approach, execution_time, project, confidence, times_used, success_rate, last_used, created_at) VALUES ('$safeTask', '$toolsJson', '$safeApproach', $execTime, '$safeProj', 0.9, 1, 1.0, '$timestamp', '$timestamp');"
         $query3 = "INSERT INTO learning_events (event_type, description, related_execution_id, timestamp) SELECT 'success_recorded', 'Success: $safeTask - $safeApproach', (SELECT id FROM agent_executions ORDER BY id DESC LIMIT 1), '$timestamp';"
         

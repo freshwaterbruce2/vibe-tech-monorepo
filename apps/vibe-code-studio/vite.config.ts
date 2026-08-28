@@ -1,22 +1,13 @@
-import react from '@vitejs/plugin-react'
-import { builtinModules } from 'module'
-import { resolve } from 'path'
-import { visualizer } from 'rollup-plugin-visualizer'
-import { defineConfig } from 'vite'
-import viteCompression from 'vite-plugin-compression'
+import react from '@vitejs/plugin-react';
+import { builtinModules } from 'module';
+import { resolve } from 'path';
+import { visualizer } from 'rollup-plugin-visualizer';
+import { defineConfig } from 'vite';
+import viteCompression from 'vite-plugin-compression';
 
-const rendererPort = Number(process.env.VIBE_RENDERER_PORT ?? process.env.VITE_PORT ?? 5174)
+const rendererPort = Number(process.env.VIBE_RENDERER_PORT ?? process.env.VITE_PORT ?? 5174);
 
-const nodeBuiltins = [
-  'fs', 'path', 'os', 'crypto', 'http', 'https', 'net', 'tls',
-  'stream', 'zlib', 'url', 'util', 'events', 'buffer', 'child_process',
-  'dns', 'dgram', 'cluster', 'module', 'readline', 'vm', 'assert',
-  'constants', 'querystring', 'string_decoder', 'punycode', 'tty',
-  'worker_threads', 'perf_hooks', 'async_hooks',
-  ...builtinModules,
-  ...builtinModules.map(m => `node:${m}`),
-]
-
+// eslint-disable-next-line max-lines-per-function -- single vite config object, not splittable
 export default defineConfig(({ mode }) => ({
   // @monaco-editor/react handles workers automatically - NO plugin needed
   base: mode === 'production' ? './' : '/',
@@ -28,13 +19,13 @@ export default defineConfig(({ mode }) => ({
 
     viteCompression({
       algorithm: 'gzip',
-      threshold: 10240
+      threshold: 10240,
     }),
 
     viteCompression({
       algorithm: 'brotliCompress',
       threshold: 10240,
-      ext: '.br'
+      ext: '.br',
     }),
 
     // Strip crossorigin from module scripts — Tauri's custom protocol may not serve CORS headers
@@ -42,33 +33,81 @@ export default defineConfig(({ mode }) => ({
       name: 'strip-crossorigin',
       enforce: 'post' as const,
       transformIndexHtml(html: string) {
-        return html.replace(/ crossorigin/g, '')
+        return html.replace(/ crossorigin/g, '');
       },
     },
 
-    process.env.ANALYZE && visualizer({
-      filename: './dist/stats.html',
-      open: true,
-      gzipSize: true,
-      brotliSize: true
-    })
+    process.env.ANALYZE &&
+      visualizer({
+        filename: './dist/stats.html',
+        open: true,
+        gzipSize: true,
+        brotliSize: true,
+      }),
   ].filter(Boolean),
 
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      '@vibetech/types': resolve(__dirname, '../../packages/types/src/index.ts'),
+      '@vibetech/auth': resolve(__dirname, '../../packages/auth/src/index.ts'),
+      '@vibetech/billing': resolve(__dirname, '../../packages/billing/src/index.ts'),
+      '@vibetech/entitlements': resolve(__dirname, '../../packages/entitlements/src/index.ts'),
+      '@vibetech/landing': resolve(__dirname, '../../packages/landing/src/index.tsx'),
+      '@vibetech/shared-ipc': resolve(__dirname, '../../packages/shared-ipc/src/index.ts'),
+      // The app only consumes browser-safe utilities (SecureApiKeyManager, token
+      // counters, LLM validators, costTracker) from @vibetech/core. Point the alias
+      // at the utils barrel, not the package root: the root also re-exports shared/
+      // (DatabaseManager, AgentLearningRAG, pythonAdapter, ...) whose Node-only
+      // top-level code crashes the renderer. utils/ has no native/dotenv deps.
+      '@vibetech/core': resolve(__dirname, '../../packages/core/src/utils/index.ts'),
+      // Defensive: shared-config runs Node-only code (process.cwd, dotenv) at module
+      // load. Not reachable via the utils barrel above, but kept so any future import
+      // can't reintroduce the crash. See src/shims/shared-config-shim.js.
+      '@vibetech/shared-config': resolve(__dirname, 'src/shims/empty-module.ts'),
+      '@vibetech/feature-flags-core': resolve(
+        __dirname,
+        '../../packages/feature-flags/core/src/index.ts'
+      ),
+      '@vibetech/feature-flags-sdk-node': resolve(
+        __dirname,
+        '../../packages/feature-flags/sdk-node/src/index.ts'
+      ),
+      // monacopilot's browser entry statically imports { Copilot, logger } from
+      // '@monacopilot/core' (Node-dependent). Only registerCompletion runs client-side;
+      // alias the core to the empty-module shim so it isn't bundled into the renderer.
+      '@monacopilot/core': resolve(__dirname, 'src/shims/empty-module.ts'),
       // Stub Node.js builtins that crypto-js and other deps try to import
-      'fs': resolve(__dirname, 'src/shims/empty-module.ts'),
-      'path': resolve(__dirname, 'src/shims/empty-module.ts'),
-      'os': resolve(__dirname, 'src/shims/empty-module.ts'),
-      'crypto': resolve(__dirname, 'src/shims/empty-module.ts'),
-      'http': resolve(__dirname, 'src/shims/empty-module.ts'),
-      'https': resolve(__dirname, 'src/shims/empty-module.ts'),
-      'stream': resolve(__dirname, 'src/shims/empty-module.ts'),
-      'zlib': resolve(__dirname, 'src/shims/empty-module.ts'),
-      'net': resolve(__dirname, 'src/shims/empty-module.ts'),
-      'tls': resolve(__dirname, 'src/shims/empty-module.ts'),
-      'child_process': resolve(__dirname, 'src/shims/empty-module.ts'),
+      'fs/promises': resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:fs/promises': resolve(__dirname, 'src/shims/empty-module.ts'),
+      fs: resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:fs': resolve(__dirname, 'src/shims/empty-module.ts'),
+      path: resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:path': resolve(__dirname, 'src/shims/empty-module.ts'),
+      os: resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:os': resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:events': resolve(__dirname, 'src/shims/empty-module.ts'),
+      events: resolve(__dirname, 'src/shims/empty-module.ts'),
+      util: resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:util': resolve(__dirname, 'src/shims/empty-module.ts'),
+      crypto: resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:crypto': resolve(__dirname, 'src/shims/empty-module.ts'),
+      http: resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:http': resolve(__dirname, 'src/shims/empty-module.ts'),
+      https: resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:https': resolve(__dirname, 'src/shims/empty-module.ts'),
+      stream: resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:stream': resolve(__dirname, 'src/shims/empty-module.ts'),
+      zlib: resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:zlib': resolve(__dirname, 'src/shims/empty-module.ts'),
+      net: resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:net': resolve(__dirname, 'src/shims/empty-module.ts'),
+      tls: resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:tls': resolve(__dirname, 'src/shims/empty-module.ts'),
+      child_process: resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:child_process': resolve(__dirname, 'src/shims/empty-module.ts'),
+      url: resolve(__dirname, 'src/shims/empty-module.ts'),
+      'node:url': resolve(__dirname, 'src/shims/empty-module.ts'),
     },
   },
 
@@ -86,7 +125,7 @@ export default defineConfig(({ mode }) => ({
       'react-router-dom',
       'styled-components',
       'zustand',
-      'framer-motion'
+      'framer-motion',
     ],
 
     exclude: [
@@ -100,21 +139,17 @@ export default defineConfig(({ mode }) => ({
       'puppeteer-core',
       '@puppeteer/browsers',
       ...builtinModules,
-      ...builtinModules.map(m => `node:${m}`)
+      ...builtinModules.map(m => `node:${m}`),
     ],
-
   },
 
   worker: {
     format: 'es',
-    plugins: () => [
-      react()
-    ],
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name]-[hash].js',
-      }
-    }
+      },
+    },
   },
 
   build: {
@@ -131,25 +166,34 @@ export default defineConfig(({ mode }) => ({
       external: ['sql.js'],
 
       output: {
-        assetFileNames: (assetInfo) => {
-          const name = assetInfo.name ?? assetInfo.names?.[0] ?? ''
-          const ext = name.split('.').pop() ?? ''
+        assetFileNames: assetInfo => {
+          const name = assetInfo.name ?? assetInfo.names?.[0] ?? '';
+          const ext = name.split('.').pop() ?? '';
           if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
-            return `assets/images/[name]-[hash][extname]`
+            return `assets/images/[name]-[hash][extname]`;
           } else if (/woff|woff2|eot|ttf|otf/i.test(ext)) {
-            return `assets/fonts/[name]-[hash][extname]`
+            return `assets/fonts/[name]-[hash][extname]`;
           }
-          return `assets/[name]-[hash][extname]`
+          return `assets/[name]-[hash][extname]`;
         },
 
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
 
         manualChunks(id) {
-          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/') || id.includes('node_modules/react-router-dom') || id.includes('node_modules/react-error-boundary')) {
+          if (
+            id.includes('node_modules/react-dom') ||
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-router-dom') ||
+            id.includes('node_modules/react-error-boundary')
+          ) {
             return 'react-vendor';
           }
-          if (id.includes('node_modules/styled-components') || id.includes('node_modules/framer-motion') || id.includes('node_modules/lucide-react')) {
+          if (
+            id.includes('node_modules/styled-components') ||
+            id.includes('node_modules/framer-motion') ||
+            id.includes('node_modules/lucide-react')
+          ) {
             return 'ui-vendor';
           }
           if (id.includes('node_modules/zustand') || id.includes('node_modules/immer')) {
@@ -158,10 +202,13 @@ export default defineConfig(({ mode }) => ({
           if (id.includes('node_modules/monaco-editor')) {
             return 'monaco';
           }
-          if (id.includes('node_modules/eventsource-parser') || id.includes('node_modules/isomorphic-dompurify')) {
+          if (
+            id.includes('node_modules/eventsource-parser') ||
+            id.includes('node_modules/isomorphic-dompurify')
+          ) {
             return 'ai-utils';
           }
-        }
+        },
       },
     },
 
@@ -169,9 +216,9 @@ export default defineConfig(({ mode }) => ({
 
     assetsInlineLimit: 4096,
 
-    target: ['es2022', 'edge88', 'firefox78', 'chrome87', 'safari14'],
+    target: ['es2022', 'chrome95'],
 
-    reportCompressedSize: true
+    reportCompressedSize: true,
   },
 
   server: {
@@ -186,16 +233,16 @@ export default defineConfig(({ mode }) => ({
         target: 'http://localhost:9001',
         changeOrigin: true,
         secure: false,
-      }
+      },
     },
 
     warmup: {
       clientFiles: [
         './src/App.tsx',
         './src/components/Editor/index.ts',
-        './src/stores/useEditorStore.ts'
-      ]
-    }
+        './src/stores/useEditorStore.ts',
+      ],
+    },
   },
 
   esbuild: {
@@ -205,11 +252,11 @@ export default defineConfig(({ mode }) => ({
 
     keepNames: mode === 'development',
 
-    legalComments: 'none'
+    legalComments: 'none',
   },
 
   preview: {
     port: 3002,
-    strictPort: true
-  }
+    strictPort: true,
+  },
 }));

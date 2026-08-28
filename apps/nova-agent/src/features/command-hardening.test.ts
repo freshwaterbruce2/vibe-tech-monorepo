@@ -28,13 +28,13 @@ describe("frontend command hardening", () => {
 
 	it("git manager uses structured args for branch creation", async () => {
 		const { GitManager } = await import("./git-manager");
-		await new GitManager().createBranch("C:\\dev\\repo", "feature/safe-branch");
+		await new GitManager().createBranch("V:\\monorepo\\repo", "feature/safe-branch");
 
 		expect(mockExecFile).toHaveBeenCalledWith(
 			"git",
 			["switch", "-c", "feature/safe-branch"],
 			expect.objectContaining({
-				cwd: path.resolve("C:\\dev\\repo"),
+				cwd: path.resolve("V:\\monorepo\\repo"),
 				timeout: 15000,
 			}),
 			expect.any(Function),
@@ -43,7 +43,7 @@ describe("frontend command hardening", () => {
 
 	it("git manager rejects unsafe branch names", async () => {
 		const { GitManager } = await import("./git-manager");
-		const result = await new GitManager().createBranch("C:\\dev\\repo", "bad && branch");
+		const result = await new GitManager().createBranch("V:\\monorepo\\repo", "bad && branch");
 
 		expect(result).toContain("Invalid branch name");
 		expect(mockExecFile).not.toHaveBeenCalled();
@@ -51,7 +51,7 @@ describe("frontend command hardening", () => {
 
 	it("project manager rejects paths outside its base root", async () => {
 		const { ProjectManager } = await import("./project-manager");
-		const manager = new ProjectManager("C:\\dev\\workspace");
+		const manager = new ProjectManager("V:\\monorepo\\workspace");
 
 		await expect(manager.getState("C:\\Windows")).rejects.toThrow(
 			"Project path escapes base directory",

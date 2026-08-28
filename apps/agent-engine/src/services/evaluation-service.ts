@@ -59,18 +59,37 @@ export class EvaluationService {
     return this.runSuites(suites);
   }
 
-  public async runBehavioralSuites(): Promise<EvalSuiteResult[]> {
+  public async runBehavioralSuites(filter?: string, suiteIdFilter?: string): Promise<EvalSuiteResult[]> {
     const suites = this.loadBehavioralSuites();
     const results: EvalSuiteResult[] = [];
 
     for (const suite of suites) {
+      if (suiteIdFilter && suite.id !== suiteIdFilter) {
+        continue;
+      }
+
       const caseResults: BehavioralCaseResult[] = [];
       const started = Date.now();
 
-      for (const testCase of suite.cases) {
+      let casesToRun = suite.cases;
+      if (filter) {
+        casesToRun = suite.cases.filter(
+          (testCase) => testCase.id === filter || testCase.category === filter
+        );
+      }
+
+      console.log(`\nSuite: ${suite.name} (Running ${casesToRun.length} case(s))`);
+
+      for (const testCase of casesToRun) {
+        console.log(`  Running case [${testCase.id}] ${testCase.name}...`);
+        const caseStart = Date.now();
         try {
-          caseResults.push(await this.runBehavioralCase(testCase));
+          const result = await this.runBehavioralCase(testCase);
+          caseResults.push(result);
+          const duration = ((Date.now() - caseStart) / 1000).toFixed(1);
+          console.log(`  [${testCase.id}] ${result.passed ? 'PASS' : 'FAIL'} (${result.score.toFixed(2)}) - ${duration}s`);
         } catch (error) {
+          console.error(`  [${testCase.id}] ERROR:`, error);
           caseResults.push({
             id: testCase.id,
             name: testCase.name,
@@ -266,23 +285,34 @@ export class EvaluationService {
   }
 
   private parseRolePayload(value: string): BehavioralRolePayload {
-    const normalized = value
-      .trim()
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/\s*```$/, '');
-    const parsed = JSON.parse(normalized) as BehavioralRolePayload;
+    const normalized = value.trim();
+    let jsonText = normalized;
+    const match = normalized.match(/\{[\s\S]*\}/);
+    if (match) {
+      jsonText = match[0];
+    } else {
+      jsonText = normalized
+        .replace(/^```json\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/\s*```$/, '');
+    }
 
-    return {
-      summary: parsed.summary ?? 'No summary provided.',
-      requestedTools: parsed.requestedTools ?? [],
-      sources: parsed.sources ?? [],
-      duplicateChecks: parsed.duplicateChecks ?? [],
-      askUser: parsed.askUser ?? false,
-      response: parsed.response ?? '',
-      findings: parsed.findings ?? [],
-      decision: parsed.decision ?? 'needs_review',
-    };
+    try {
+      const parsed = JSON.parse(jsonText) as BehavioralRolePayload;
+      return {
+        summary: parsed.summary ?? 'No summary provided.',
+        requestedTools: parsed.requestedTools ?? [],
+        sources: parsed.sources ?? [],
+        duplicateChecks: parsed.duplicateChecks ?? [],
+        askUser: parsed.askUser ?? false,
+        response: parsed.response ?? '',
+        findings: parsed.findings ?? [],
+        decision: parsed.decision ?? 'needs_review',
+      };
+    } catch (e) {
+      console.error('Failed to parse JSON. Raw value was:\n', value);
+      throw e;
+    }
   }
 
   private evaluateAssertion(

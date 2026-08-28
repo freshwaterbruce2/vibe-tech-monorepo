@@ -97,36 +97,36 @@ describe("CommandExecutor", () => {
 		it("should execute dc_move_file", async () => {
 			(FileSystem.moveFile as any).mockResolvedValue(undefined);
 			const result = await executor.execute({
-				text: 'dc_move_file source="C:\\dev\\src.txt" destination="C:\\dev\\dest.txt"',
+				text: 'dc_move_file source="V:\\monorepo\\src.txt" destination="V:\\monorepo\\dest.txt"',
 				context: {},
 			} as any);
 
 			expect(FileSystem.moveFile).toHaveBeenCalledWith(
-				"C:\\dev\\src.txt",
-				"C:\\dev\\dest.txt",
+				"V:\\monorepo\\src.txt",
+				"V:\\monorepo\\dest.txt",
 			);
 			expect(result).toEqual({
 				moved: true,
-				from: "C:\\dev\\src.txt",
-				to: "C:\\dev\\dest.txt",
+				from: "V:\\monorepo\\src.txt",
+				to: "V:\\monorepo\\dest.txt",
 			});
 		});
 
 		it("should execute dc_copy_file", async () => {
 			(FileSystem.copyFile as any).mockResolvedValue(undefined);
 			const result = await executor.execute({
-				text: 'dc_copy_file source="C:\\dev\\src.txt" destination="C:\\dev\\copy.txt"',
+				text: 'dc_copy_file source="V:\\monorepo\\src.txt" destination="V:\\monorepo\\copy.txt"',
 				context: {},
 			} as any);
 
 			expect(FileSystem.copyFile).toHaveBeenCalledWith(
-				"C:\\dev\\src.txt",
-				"C:\\dev\\copy.txt",
+				"V:\\monorepo\\src.txt",
+				"V:\\monorepo\\copy.txt",
 			);
 			expect(result).toEqual({
 				copied: true,
-				from: "C:\\dev\\src.txt",
-				to: "C:\\dev\\copy.txt",
+				from: "V:\\monorepo\\src.txt",
+				to: "V:\\monorepo\\copy.txt",
 			});
 		});
 
@@ -135,11 +135,11 @@ describe("CommandExecutor", () => {
 			(FileSystem.getFileInfo as any).mockResolvedValue(mockInfo);
 
 			const result = await executor.execute({
-				text: 'dc_get_file_info path="C:\\dev\\file.txt"',
+				text: 'dc_get_file_info path="V:\\monorepo\\file.txt"',
 				context: {},
 			} as any);
 
-			expect(FileSystem.getFileInfo).toHaveBeenCalledWith("C:\\dev\\file.txt");
+			expect(FileSystem.getFileInfo).toHaveBeenCalledWith("V:\\monorepo\\file.txt");
 			expect(result).toEqual(mockInfo);
 		});
 	});

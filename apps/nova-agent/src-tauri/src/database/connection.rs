@@ -1,7 +1,7 @@
+use crate::database::types::RetryConfig;
 use rusqlite::Connection;
 use std::path::PathBuf;
 use tracing::info;
-use crate::database::types::RetryConfig;
 
 pub struct DatabaseService {
     pub(crate) tasks_db: Connection,
@@ -23,8 +23,13 @@ impl DatabaseService {
 
         // Ensure directory exists
         #[cfg(not(test))]
-        if !base_path.to_string_lossy().to_string().to_uppercase().starts_with("D:\\") {
-             return Err("Database path must be on D:\\ drive".into());
+        if !base_path
+            .to_string_lossy()
+            .to_string()
+            .to_uppercase()
+            .starts_with("D:\\")
+        {
+            return Err("Database path must be on D:\\ drive".into());
         }
         std::fs::create_dir_all(&base_path)?;
 

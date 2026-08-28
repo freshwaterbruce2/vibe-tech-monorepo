@@ -2,21 +2,37 @@
  * RAG Indexer
  * Walks the workspace, detects changed files via SHA-256 hashing,
  * chunks and embeds only changed files, writes to LanceDB.
+ *
+ * Opt-in: Anthropic-style contextual chunking (config.contextualChunkingEnabled).
+ * When enabled, each chunk is passed to {@link Contextualizer} which produces a
+ * 50-100 token explanatory prefix; that prefix is then prepended to the
+ * embedding input only (chunk.content stays raw for display/snippet use).
+ *
+ * Operational impact when enabled:
+ *   - Re-index cost (full): ~264K chunks * ~75 tokens prefix output +
+ *     per-chunk prompt = ~$3-8 with claude-3-haiku via OpenRouter, depending
+ *     on prompt cache hit rate. See contextualizer.ts header for the math.
+ *   - Existing indexed data is NOT affected. Only files (re)indexed after
+ *     enabling will store a contextPrefix. Mixing is supported.
+ *   - To enable: set RAGConfig.contextualChunkingEnabled = true (or override
+ *     via env in your bootstrap), then trigger a full re-index when ready.
+ *   - The prefix goes into the embedding ONLY. Anthropic's full pattern also
+ *     prepends it to the BM25/FTS index; LanceDB's FTS indexes the `content`
+ *     column which we keep raw, so FTS contextualization is a deliberate gap
+ *     (would require a new column + FTS rebuild).
  */
 
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync, appendFileSync } from 'node:fs';
-import { join, relative, extname } from 'node:path';
+import { readFileSync, existsSync, mkdirSync, appendFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { connect, type Connection, type Table } from '@lancedb/lancedb';
 import { RAGChunker } from './chunker.js';
 import { RAGEmbedder } from './embedder.js';
-import type {
-  Chunk,
-  FileHash,
-  IndexResult,
-  IndexState,
-  RAGConfig,
-} from './types.js';
+import { Contextualizer } from './contextualizer.js';
+import { discoverFiles } from './fileDiscovery.js';
+import { loadFileHashes, saveFileHashes, isFileChanged } from './hashManager.js';
+import { buildPathFilter } from './filterUtils.js';
+import type { Chunk, FileHash, IndexResult, IndexState, RAGConfig } from './types.js';
 
 /** Row stored in LanceDB */
 interface LanceRow {
@@ -31,20 +47,18 @@ interface LanceRow {
   language: string;
   tokenCount: number;
   createdAt: number;
+  /** Anthropic-style contextual prefix (empty string if contextual chunking off). */
+  contextPrefix: string;
+  /** 1 if this row was generated with contextual chunking, 0 otherwise. */
+  contextual: number;
   vector: number[];
 }
-
-const INDEXABLE_EXTENSIONS = new Set([
-  '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
-  '.py', '.md', '.mdx', '.json', '.jsonc',
-]);
-
-const MAX_FILE_SIZE = 500_000; // 500KB — skip larger files
 
 export class RAGIndexer {
   private config: RAGConfig;
   private chunker: RAGChunker;
   private embedder: RAGEmbedder;
+  private contextualizer: Contextualizer | null;
   private db: Connection | null = null;
   private table: Table | null = null;
   private fileHashes: Map<string, FileHash> = new Map();
@@ -57,13 +71,10 @@ export class RAGIndexer {
     this.config = config;
     this.chunker = new RAGChunker(config);
     this.embedder = new RAGEmbedder(config);
+    this.contextualizer = config.contextualChunkingEnabled ? new Contextualizer(config) : null;
   }
 
-  /**
-   * Initialize LanceDB connection and load file hashes
-   */
   async init(): Promise<void> {
-    // Ensure directories exist
     for (const dir of [
       this.config.lanceDbPath,
       join(this.config.cachePath, '..'),
@@ -75,13 +86,9 @@ export class RAGIndexer {
       }
     }
 
-    // Connect to LanceDB
     this.db = await connect(this.config.lanceDbPath);
+    this.fileHashes = loadFileHashes(this.config.hashIndexPath);
 
-    // Load existing file hashes
-    this.loadFileHashes();
-
-    // Try to open existing table
     try {
       const tables = await this.db.tableNames();
       if (tables.includes('codebase')) {
@@ -94,9 +101,6 @@ export class RAGIndexer {
     this.log('Indexer initialized');
   }
 
-  /**
-   * Run a full or incremental index
-   */
   async index(options: { full?: boolean } = {}): Promise<IndexResult> {
     if (this.isRunning) {
       return {
@@ -119,159 +123,9 @@ export class RAGIndexer {
     };
 
     try {
-      // Discover all indexable files
-      const allFiles = this.discoverFiles();
-      this.log(`Discovered ${allFiles.length} indexable files`);
-
-      // Determine which files changed
-      const changedFiles = options.full
-        ? allFiles
-        : allFiles.filter((f) => this.isFileChanged(f));
-
-      this.log(`${changedFiles.length} files need (re)indexing`);
-
-      if (changedFiles.length === 0) {
-        result.durationMs = Date.now() - start;
-        this.isRunning = false;
-        return result;
-      }
-
-      // Chunk changed files
-      const allChunks: Chunk[] = [];
-      for (const filePath of changedFiles) {
-        try {
-          const content = readFileSync(filePath, 'utf-8');
-          const relPath = relative(this.config.workspaceRoot, filePath).replace(/\\/g, '/');
-          const chunks = this.chunker.chunkFile(relPath, content);
-          allChunks.push(...chunks);
-
-          // Update file hash
-          const hash = createHash('sha256').update(content).digest('hex');
-          this.fileHashes.set(relPath, {
-            filePath: relPath,
-            hash,
-            lastIndexed: Date.now(),
-            chunkCount: chunks.length,
-          });
-
-          result.filesProcessed++;
-        } catch (error) {
-          result.errors.push({
-            filePath,
-            error: (error as Error).message,
-          });
-        }
-      }
-
-      this.log(`Created ${allChunks.length} chunks from ${result.filesProcessed} files`);
-
-      if (allChunks.length === 0) {
-        result.durationMs = Date.now() - start;
-        this.isRunning = false;
-        return result;
-      }
-
-      // Embed all chunks
-      const texts = allChunks.map((c) => c.content);
-      const embeddings = await this.embedder.embedBatch(texts);
-
-      this.log(`Embedded ${texts.length} chunks (${embeddings.failedIndices.length} failures)`);
-
-      // Build LanceDB rows (skip failed embeddings)
-      const rows: LanceRow[] = [];
-      for (let i = 0; i < allChunks.length; i++) {
-        if (embeddings.failedIndices.includes(i)) continue;
-
-        const chunk = allChunks[i]!;
-        const vector = embeddings.results[i]!.vector;
-        if (vector.length === 0) continue;
-
-        rows.push({
-          id: chunk.id,
-          filePath: chunk.filePath,
-          content: chunk.content,
-          type: chunk.type,
-          startLine: chunk.startLine,
-          endLine: chunk.endLine,
-          symbolName: chunk.symbolName ?? '',
-          language: chunk.language,
-          tokenCount: chunk.tokenCount,
-          createdAt: chunk.createdAt,
-          vector,
-        });
-      }
-
-      // Remove old chunks for changed files
-      const changedRelPaths = new Set(
-        changedFiles.map((f) => relative(this.config.workspaceRoot, f).replace(/\\/g, '/')),
-      );
-
-      if (this.table) {
-        try {
-          // Delete old entries for changed files
-          for (const path of changedRelPaths) {
-            await this.table.delete(`filePath = '${path.replace(/'/g, "''")}'`);
-          }
-          // Add new rows
-          if (rows.length > 0) {
-            await this.table.add(rows);
-          }
-        } catch (error) {
-          this.log(`Error updating table: ${(error as Error).message}`);
-          // If table is corrupted, recreate it
-          await this.recreateTable(rows);
-        }
-      } else {
-        // Create table from scratch
-        if (rows.length > 0 && this.db) {
-          this.table = await this.db.createTable('codebase', rows, {
-            mode: 'overwrite',
-          });
-        }
-      }
-
-      result.chunksCreated = rows.length;
-
-      // Save file hashes — but ONLY for files that had at least one chunk
-      // successfully embedded. Files whose chunks all failed embedding are
-      // removed from the map so the next run will re-attempt them.
-      const successfulFiles = new Set(rows.map((r) => r.filePath));
-      for (const changedFile of changedFiles) {
-        const relPath = relative(this.config.workspaceRoot, changedFile).replace(/\\/g, '/');
-        if (!successfulFiles.has(relPath)) {
-          this.fileHashes.delete(relPath);
-        }
-      }
-      this.saveFileHashes();
-
-      // Detect deleted files and clean up
-      const existingPaths = new Set(allFiles.map((f) => relative(this.config.workspaceRoot, f).replace(/\\/g, '/')));
-      for (const [path] of this.fileHashes) {
-        if (!existingPaths.has(path)) {
-          this.fileHashes.delete(path);
-          if (this.table) {
-            try {
-              await this.table.delete(`filePath = '${path.replace(/'/g, "''")}'`);
-              result.chunksRemoved++;
-            } catch { /* ignore */ }
-          }
-        }
-      }
-
-      this.log(`Index complete: ${result.filesProcessed} files, ${result.chunksCreated} chunks`);
-
-      // Track index timestamps
-      const now = Date.now();
-      if (options.full) {
-        this.lastFullIndexTime = now;
-      } else {
-        this.lastIncrementalIndexTime = now;
-      }
+      await this.runIndex(options, result);
     } catch (error) {
-      result.errors.push({
-        filePath: '',
-        error: `Index failed: ${(error as Error).message}`,
-      });
+      result.errors.push({ filePath: '', error: `Index failed: ${(error as Error).message}` });
       this.log(`Index failed: ${(error as Error).message}`);
     } finally {
       result.durationMs = Date.now() - start;
@@ -281,30 +135,185 @@ export class RAGIndexer {
     return result;
   }
 
-  /**
-   * Start automatic periodic indexing
-   */
+  /** Core indexing pipeline; durationMs/isRunning are finalized by the caller. */
+  private async runIndex(options: { full?: boolean }, result: IndexResult): Promise<void> {
+    const allFiles = discoverFiles(this.config);
+    this.log(`Discovered ${allFiles.length} indexable files`);
+
+    const changedFiles = options.full
+      ? allFiles
+      : allFiles.filter((f) => isFileChanged(f, this.config.workspaceRoot, this.fileHashes));
+
+    this.log(`${changedFiles.length} files need (re)indexing`);
+
+    if (changedFiles.length === 0) {
+      return;
+    }
+
+    const allChunks = await this.chunkChangedFiles(changedFiles, result);
+
+    this.log(`Created ${allChunks.length} chunks from ${result.filesProcessed} files`);
+
+    if (allChunks.length === 0) {
+      return;
+    }
+
+    const rows = await this.embedChunks(allChunks);
+    await this.persistRows(rows, changedFiles);
+    result.chunksCreated = rows.length;
+
+    this.cleanupHashesForFailedFiles(rows, changedFiles);
+    saveFileHashes(this.config.hashIndexPath, this.fileHashes);
+
+    await this.cleanupDeletedFiles(allFiles, result);
+
+    this.log(`Index complete: ${result.filesProcessed} files, ${result.chunksCreated} chunks`);
+
+    if (options.full) {
+      this.lastFullIndexTime = Date.now();
+    } else {
+      this.lastIncrementalIndexTime = Date.now();
+    }
+  }
+
+  /** Chunk (and optionally contextualize) each changed file. */
+  private async chunkChangedFiles(changedFiles: string[], result: IndexResult): Promise<Chunk[]> {
+    const allChunks: Chunk[] = [];
+    for (const filePath of changedFiles) {
+      try {
+        const content = readFileSync(filePath, 'utf-8');
+        const relPath = relative(this.config.workspaceRoot, filePath).replace(/\\/g, '/');
+        let chunks = this.chunker.chunkFile(relPath, content);
+
+        // Opt-in: Anthropic contextual chunking. The full document is sent
+        // once per chunk in the prompt body but marked as ephemeral so the
+        // prompt cache returns it for chunks 2..N within the 5-minute TTL.
+        if (this.contextualizer && chunks.length > 0) {
+          chunks = await this.contextualizer.contextualizeFile(relPath, content, chunks);
+        }
+
+        allChunks.push(...chunks);
+
+        const hash = createHash('sha256').update(content).digest('hex');
+        this.fileHashes.set(relPath, {
+          filePath: relPath,
+          hash,
+          lastIndexed: Date.now(),
+          chunkCount: chunks.length,
+        });
+        result.filesProcessed++;
+      } catch (error) {
+        result.errors.push({ filePath, error: (error as Error).message });
+      }
+    }
+    return allChunks;
+  }
+
+  /** Embed chunks and build the LanceDB rows for successful embeddings. */
+  private async embedChunks(allChunks: Chunk[]): Promise<LanceRow[]> {
+    // Build embedding inputs: when a chunk has a contextPrefix it is
+    // prepended (separated by a blank line). chunk.content stays raw so
+    // search results render the actual source.
+    const texts = allChunks.map((c) => Contextualizer.buildEmbeddingText(c));
+    const embeddings = await this.embedder.embedBatch(texts);
+    this.log(`Embedded ${texts.length} chunks (${embeddings.failedIndices.length} failures)`);
+
+    const rows: LanceRow[] = [];
+    for (let i = 0; i < allChunks.length; i++) {
+      if (embeddings.failedIndices.includes(i)) continue;
+      const chunk = allChunks[i];
+      const vector = embeddings.results[i]?.vector;
+      if (!chunk || !vector || vector.length === 0) continue;
+
+      rows.push({
+        id: chunk.id,
+        filePath: chunk.filePath,
+        content: chunk.content,
+        type: chunk.type,
+        startLine: chunk.startLine,
+        endLine: chunk.endLine,
+        symbolName: chunk.symbolName ?? '',
+        language: chunk.language,
+        tokenCount: chunk.tokenCount,
+        createdAt: chunk.createdAt,
+        contextPrefix: chunk.contextPrefix ?? '',
+        contextual: chunk.contextual ? 1 : 0,
+        vector,
+      });
+    }
+    return rows;
+  }
+
+  /** Replace rows for changed files in LanceDB (creating the table if needed). */
+  private async persistRows(rows: LanceRow[], changedFiles: string[]): Promise<void> {
+    const changedRelPaths = new Set(
+      changedFiles.map((f) => relative(this.config.workspaceRoot, f).replace(/\\/g, '/')),
+    );
+
+    if (this.table) {
+      try {
+        for (const path of changedRelPaths) {
+          await this.table.delete(buildPathFilter(path));
+        }
+        if (rows.length > 0) await this.table.add(rows);
+      } catch (error) {
+        this.log(`Error updating table: ${(error as Error).message}`);
+        await this.recreateTable(rows);
+      }
+    } else if (rows.length > 0 && this.db) {
+      this.table = await this.db.createTable('codebase', rows, { mode: 'overwrite' });
+    }
+  }
+
+  /** Drop hash entries for changed files that produced no successful rows. */
+  private cleanupHashesForFailedFiles(rows: LanceRow[], changedFiles: string[]): void {
+    const successfulFiles = new Set(rows.map((r) => r.filePath));
+    for (const changedFile of changedFiles) {
+      const relPath = relative(this.config.workspaceRoot, changedFile).replace(/\\/g, '/');
+      if (!successfulFiles.has(relPath)) this.fileHashes.delete(relPath);
+    }
+  }
+
+  /** Remove hash + LanceDB rows for files that no longer exist on disk. */
+  private async cleanupDeletedFiles(allFiles: string[], result: IndexResult): Promise<void> {
+    const existingPaths = new Set(
+      allFiles.map((f) => relative(this.config.workspaceRoot, f).replace(/\\/g, '/')),
+    );
+    for (const [path] of this.fileHashes) {
+      if (!existingPaths.has(path)) {
+        this.fileHashes.delete(path);
+        if (this.table) {
+          try {
+            await this.table.delete(buildPathFilter(path));
+            result.chunksRemoved++;
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+    }
+  }
+
   startAutoIndex(): void {
     if (this.config.autoIndexIntervalMs <= 0) return;
     if (this.intervalHandle) return;
 
-    this.intervalHandle = setInterval(async () => {
-      try {
-        const result = await this.index();
-        if (result.filesProcessed > 0) {
-          this.log(`Auto-index: ${result.filesProcessed} files, ${result.chunksCreated} chunks`);
+    this.intervalHandle = setInterval(() => {
+      void (async () => {
+        try {
+          const result = await this.index();
+          if (result.filesProcessed > 0) {
+            this.log(`Auto-index: ${result.filesProcessed} files, ${result.chunksCreated} chunks`);
+          }
+        } catch (error) {
+          this.log(`Auto-index error: ${(error as Error).message}`);
         }
-      } catch (error) {
-        this.log(`Auto-index error: ${(error as Error).message}`);
-      }
+      })();
     }, this.config.autoIndexIntervalMs);
 
     this.log(`Auto-index started (every ${this.config.autoIndexIntervalMs / 1000}s)`);
   }
 
-  /**
-   * Stop automatic indexing
-   */
   stopAutoIndex(): void {
     if (this.intervalHandle) {
       clearInterval(this.intervalHandle);
@@ -313,19 +322,15 @@ export class RAGIndexer {
     }
   }
 
-  /**
-   * Get the LanceDB table for search queries
-   */
   getTable(): Table | null {
     return this.table;
   }
 
-  /**
-   * Get current index state
-   */
   getState(): IndexState {
-    const allFiles = this.discoverFiles();
-    const changedFiles = allFiles.filter((f) => this.isFileChanged(f));
+    const allFiles = discoverFiles(this.config);
+    const changedFiles = allFiles.filter((f) =>
+      isFileChanged(f, this.config.workspaceRoot, this.fileHashes),
+    );
 
     let totalChunks = 0;
     for (const hash of this.fileHashes.values()) {
@@ -342,106 +347,11 @@ export class RAGIndexer {
     };
   }
 
-  /**
-   * Force re-index specific paths
-   */
   async invalidate(paths: string[]): Promise<void> {
     for (const p of paths) {
-      const rel = p.replace(/\\/g, '/');
-      this.fileHashes.delete(rel);
+      this.fileHashes.delete(p.replace(/\\/g, '/'));
     }
-    this.saveFileHashes();
-  }
-
-  // ─── Private ────────────────────────────────────────────────────────────
-
-  private discoverFiles(): string[] {
-    const files: string[] = [];
-    // Use a simple recursive walk since we need to respect exclusions
-    for (const indexPath of this.config.indexPaths) {
-      const fullPath = join(this.config.workspaceRoot, indexPath);
-      if (!existsSync(fullPath)) continue;
-      this.walkDirectory(fullPath, files);
-    }
-
-    return files;
-  }
-
-  private walkDirectory(dir: string, results: string[]): void {
-    let entries: string[];
-    try {
-      entries = readdirSync(dir);
-    } catch {
-      return;
-    }
-
-    for (const entry of entries) {
-      const fullPath = join(dir, entry);
-      const relPath = relative(this.config.workspaceRoot, fullPath).replace(/\\/g, '/');
-
-      // Check exclusion patterns
-      if (this.isExcluded(relPath)) continue;
-
-      let stat;
-      try {
-        stat = statSync(fullPath);
-      } catch {
-        continue;
-      }
-
-      if (stat.isDirectory()) {
-        this.walkDirectory(fullPath, results);
-      } else if (stat.isFile()) {
-        const ext = extname(entry).toLowerCase();
-        if (INDEXABLE_EXTENSIONS.has(ext) && stat.size <= MAX_FILE_SIZE) {
-          results.push(fullPath);
-        }
-      }
-    }
-  }
-
-  private isExcluded(relPath: string): boolean {
-    for (const pattern of this.config.excludePatterns) {
-      // Simple glob matching for common patterns
-      const regex = pattern
-        .replace(/\*\*/g, '{{DOUBLESTAR}}')
-        .replace(/\*/g, '[^/]*')
-        .replace(/\{\{DOUBLESTAR\}\}/g, '.*');
-
-      if (new RegExp(`^${regex}$`).test(relPath)) return true;
-      if (new RegExp(`(^|/)${regex}`).test(relPath)) return true;
-    }
-    return false;
-  }
-
-  private isFileChanged(filePath: string): boolean {
-    const relPath = relative(this.config.workspaceRoot, filePath).replace(/\\/g, '/');
-    const existing = this.fileHashes.get(relPath);
-    if (!existing) return true;
-
-    try {
-      const content = readFileSync(filePath, 'utf-8');
-      const hash = createHash('sha256').update(content).digest('hex');
-      return hash !== existing.hash;
-    } catch {
-      return true;
-    }
-  }
-
-  private loadFileHashes(): void {
-    try {
-      if (existsSync(this.config.hashIndexPath)) {
-        const data = JSON.parse(readFileSync(this.config.hashIndexPath, 'utf-8'));
-        this.fileHashes = new Map(Object.entries(data));
-      }
-    } catch {
-      this.fileHashes = new Map();
-    }
-  }
-
-  private saveFileHashes(): void {
-    const data = Object.fromEntries(this.fileHashes);
-    writeFileSync(this.config.hashIndexPath, JSON.stringify(data, null, 2));
+    saveFileHashes(this.config.hashIndexPath, this.fileHashes);
   }
 
   private async recreateTable(rows: LanceRow[]): Promise<void> {
@@ -456,6 +366,8 @@ export class RAGIndexer {
     console.error(`[RAGIndexer] ${message}`);
     try {
       appendFileSync(this.config.logPath, line);
-    } catch { /* ignore log write failures */ }
+    } catch {
+      /* ignore log write failures */
+    }
   }
 }

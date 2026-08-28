@@ -22,6 +22,38 @@ interface NotificationsContextType {
 }
 
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);
+const NOTIFICATIONS_STORAGE_KEY = "notifications";
+
+type ElectronStoreShape = {
+  get: (key: string) => string | null | undefined;
+  set: (key: string, value: string) => void;
+};
+
+type ElectronApiShape = {
+  store?: ElectronStoreShape;
+};
+
+const getElectronStore = (): ElectronStoreShape | null => {
+  const api = (window as Window & { electronAPI?: ElectronApiShape }).electronAPI;
+  return api?.store ?? null;
+};
+
+const readStoredNotifications = (): string | null => {
+  const electronStore = getElectronStore();
+  if (electronStore) {
+    return electronStore.get(NOTIFICATIONS_STORAGE_KEY) ?? null;
+  }
+  return window.localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+};
+
+const writeStoredNotifications = (value: string): void => {
+  const electronStore = getElectronStore();
+  if (electronStore) {
+    electronStore.set(NOTIFICATIONS_STORAGE_KEY, value);
+    return;
+  }
+  window.localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, value);
+};
 
 export const useNotifications = () => {
   const context = useContext(NotificationsContext);
@@ -33,7 +65,7 @@ export const useNotifications = () => {
 
 const loadNotificationsFromStorage = (): Notification[] => {
   try {
-    const storedNotifications = localStorage.getItem("notifications");
+    const storedNotifications = readStoredNotifications();
     if (storedNotifications) {
       const parsedNotifications = JSON.parse(storedNotifications);
 
@@ -57,7 +89,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
   // Update localStorage whenever notifications change
   useEffect(() => {
-    localStorage.setItem("notifications", JSON.stringify(notifications));
+    writeStoredNotifications(JSON.stringify(notifications));
   }, [notifications]);
 
   // Add a new notification

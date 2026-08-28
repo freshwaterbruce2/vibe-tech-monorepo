@@ -6,7 +6,7 @@
 
 ## Storage & Paths
 
-### ❌ Storing Data in C:\dev
+### ❌ Storing Data in V:\monorepo
 
 **Problem:** Mixing source code with databases/logs.
 
@@ -42,7 +42,7 @@ const LOG_PATH = process.env.LOGS_PATH || 'D:\\logs\\app.log';
 ```typescript
 // WRONG: Hardcoded Windows path
 import { readFile } from 'fs';
-const config = readFile('C:\\dev\\config.json');
+const config = readFile('V:\\monorepo\\config.json');
 
 // WRONG: Hardcoded D:\ path
 const dbPath = 'D:\\databases\\app.db';
@@ -210,7 +210,7 @@ export function MassiveComponent() {
 node scripts/check-line-limits.mjs --staged --max 500
 ```
 
-**Reference:** `C:\dev\CLAUDE.md` (line 9)
+**Reference:** `V:\monorepo\CLAUDE.md` (line 9)
 
 ---
 
@@ -477,7 +477,7 @@ MAX_POSITION_SIZE = 20  # $10 → $20 (conservative increase)
 pnpm add -D tailwindcss@3.4.18
 ```
 
-**Reference:** `C:\dev\CLAUDE.md` (line 168)
+**Reference:** `V:\monorepo\CLAUDE.md` (line 168)
 
 ---
 
@@ -502,7 +502,7 @@ const response = await CapacitorHttp.request({
 });
 ```
 
-**Reference:** `C:\dev\CLAUDE.md` (line 169)
+**Reference:** `V:\monorepo\CLAUDE.md` (line 169)
 
 ---
 
@@ -569,6 +569,6 @@ Document new anti-patterns when found:
 ## References
 
 - **All Patterns:** `.claude/patterns/`
-- **Workspace Guide:** `C:\dev\CLAUDE.md`
-- **Path Policy:** `C:\dev\docs\PATHS_POLICY.md`
-- **Validation Script:** `C:\dev\check-vibe-paths.ps1`
+- **Workspace Guide:** `V:\monorepo\CLAUDE.md`
+- **Path Policy:** `V:\monorepo\docs\PATHS_POLICY.md`
+- **Validation Script:** `V:\monorepo\check-vibe-paths.ps1`

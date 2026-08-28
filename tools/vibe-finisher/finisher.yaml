@@ -2,10 +2,10 @@
 # Adapted from repomirror for Windows/PowerShell
 
 # Target project to finish (change this per project)
-targetProject: C:\dev\apps\vibe-code-studio
+targetProject: V:\monorepo\apps\vibe-code-studio
 
 # Backup location
-backupDir: C:\dev\_backups
+backupDir: V:\monorepo\_backups
 
 # Finish criteria - what defines "done"
 finishCriteria:

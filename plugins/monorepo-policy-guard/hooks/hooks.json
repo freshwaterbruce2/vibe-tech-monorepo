@@ -1,0 +1,14 @@
+{
+  "PreToolUse": [
+    {
+      "matcher": "Write|Edit|MultiEdit|Bash",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "Inspect the target path(s) for this tool call and enforce workspace placement policy.\n\nPolicy:\n1. Code artifacts must live under V:\\monorepo\n2. D:\\ is reserved for runtime data (databases, logs, learning-system, memory)\n3. Writing code artifacts to D:\\ is a policy violation\n\nIf a potential violation is detected, warn with:\n'POLICY WARNING: This action appears to place code artifacts outside V:\\monorepo (target: <path>). Use V:\\monorepo for code and reserve D:\\ for data/logs/memory.'\n\nIf no violation is detected, approve silently.",
+          "timeout": 10
+        }
+      ]
+    }
+  ]
+}

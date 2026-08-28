@@ -10,7 +10,7 @@ Run an Agent SDK agent from the agent-sdk-workspace.
 1. Navigate to the agent workspace:
 
    ```
-   cd C:\dev\apps\agent-sdk-workspace
+   cd V:\monorepo\apps\agent-sdk-workspace
    ```
 
 2. Install dependencies if not already installed:

@@ -30,7 +30,7 @@ Solution: Reordered model priority
 
 ## ═══════════════════════════════════════════════════════════════
 
-**File Modified:** `C:\dev\apps\nova-agent\src-tauri\src\modules\llm.rs`
+**File Modified:** `V:\monorepo\apps\nova-agent\src-tauri\src\modules\llm.rs`
 
 **Changes Made:**
 
@@ -87,7 +87,7 @@ Solution: Reordered model priority
 ### Test 1: Simple File Write
 
 ```
-Create a test file at C:\dev\nova-test-fixed.txt with "DeepSeek Nex works!"
+Create a test file at V:\monorepo\nova-test-fixed.txt with "DeepSeek Nex works!"
 After creating it, read it back and show me the content.
 ```
 
@@ -108,7 +108,7 @@ After creating it, read it back and show me the content.
 ### Test 2: README.md Creation
 
 ```
-Create README.md for symptom-tracker at C:\dev\apps\symptom-tracker\README.md
+Create README.md for symptom-tracker at V:\monorepo\apps\symptom-tracker\README.md
 Use the template you generated earlier but actually write the file.
 ```
 
@@ -123,7 +123,7 @@ Use the template you generated earlier but actually write the file.
 ### Test 3: Context Retention
 
 ```
-Review C:\dev\apps\symptom-tracker
+Review V:\monorepo\apps\symptom-tracker
 [wait for response]
 Now apply one optimization you suggested
 ```
@@ -206,7 +206,7 @@ After restart, verify:
 If new models have issues, revert changes:
 
 ```bash
-cd C:\dev\apps\nova-agent\src-tauri\src\modules
+cd V:\monorepo\apps\nova-agent\src-tauri\src\modules
 # Restore llm.rs from backup or Git
 # Or manually reorder models back
 ```

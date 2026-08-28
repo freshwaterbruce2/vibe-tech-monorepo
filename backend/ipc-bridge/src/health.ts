@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 
 export const createHealthHandler = (wss: WebSocketServer) => {
   return (_req: IncomingMessage, res: ServerResponse) => {
@@ -11,7 +11,7 @@ export const createHealthHandler = (wss: WebSocketServer) => {
       uptime: process.uptime(),
       connections: {
         total: wss.clients.size,
-        active: Array.from(wss.clients).filter(client => client.readyState === 1).length,
+        active: Array.from(wss.clients).filter(client => client.readyState === WebSocket.OPEN).length,
       },
       memory: {
         rss: Math.round(process.memoryUsage().rss / 1024 / 1024),

@@ -1,8 +1,8 @@
 /**
  * Task Executors - Example implementations for common background tasks
  */
-import type { BackgroundTask, TaskExecutor, TaskProgress, TaskResult} from '@vibetech/types/tasks';
-import { TaskType } from '@vibetech/types/tasks';
+import type { BackgroundTask, TaskExecutor, TaskProgress, TaskResult} from '@vibetech/types';
+import { TaskType } from '@vibetech/types';
 
 import { logger } from '../services/Logger';
 
@@ -107,13 +107,14 @@ export const multiFileEditExecutor: TaskExecutor = {
     onProgress: (progress: TaskProgress) => void
   ): Promise<TaskResult> {
     try {
-      const changes = (task.metadata?.['changes'] as any[]) || [];
+      const changes = (task.metadata?.['changes'] as Array<{ path: string }>) || [];
       const total = changes.length;
       const appliedFiles: string[] = [];
       const failedFiles: string[] = [];
 
       for (let i = 0; i < total; i++) {
         const change = changes[i];
+        if (!change) continue;
 
         // Simulate file modification
         await new Promise((resolve) => setTimeout(resolve, 200));
@@ -350,7 +351,7 @@ export const aiCompletionExecutor: TaskExecutor = {
         success: true,
         data: {
           completion: '// AI-generated code here',
-          model: 'deepseek-coder',
+          model: 'moonshot/kimi-2.5-pro',
           tokens: Math.floor(Math.random() * 1000),
         },
         logs: [`Generated completion for context: ${context.substring(0, 50)}...`],

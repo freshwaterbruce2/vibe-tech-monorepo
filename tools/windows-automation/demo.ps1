@@ -1,5 +1,5 @@
 # Demo: Windows Automation with Desktop Commander
-Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1
+Import-Module V:\monorepo\tools\windows-automation\WindowsAutomation.psm1
 
 Write-Host "`n=== Windows Automation Demo ===" -ForegroundColor Cyan
 

@@ -161,7 +161,7 @@ export class MetacognitiveLayer {
       });
 
       // Parse AI response
-      const helpResponse = this.parseHelpResponse(response.content);
+      const helpResponse = this.parseHelpResponse(response.content ?? '');
 
       logger.debug(`[Metacognitive] 💡 AI Assistant provided guidance:`);
       logger.debug(`  Diagnosis: ${helpResponse.diagnosis}`);

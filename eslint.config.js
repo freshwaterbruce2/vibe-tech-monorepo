@@ -1,8 +1,9 @@
 // ESLint Flat Config (ESLint 9+) - Unified Configuration
 // Enforces all 24 best practices from learning system analysis
-// @see C:\dev\desktop-commander-v2\BEST_PRACTICES_2025_COMPLETE.md
+// @see desktop-commander-v2/BEST_PRACTICES_2025_COMPLETE.md
 
 import js from '@eslint/js';
+import enforceModuleBoundariesModule from '@nx/eslint-plugin/src/rules/enforce-module-boundaries.js';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
@@ -10,6 +11,9 @@ import tseslint from 'typescript-eslint';
 
 // Custom Electron rules (AST-based, no false positives)
 import noLocalStorageElectron from './tools/eslint-rules/no-localstorage-electron.cjs';
+
+const enforceModuleBoundariesRule =
+  enforceModuleBoundariesModule.default ?? enforceModuleBoundariesModule;
 
 export default tseslint.config(
   // Ignore patterns (comprehensive)
@@ -19,6 +23,7 @@ export default tseslint.config(
       'dist',
       '**/dist/**',
       '**/dist-electron/**',
+      '**/.gateway-build/**', // maintenance-copilot bundled sidecar (build:gateway)
       '**/out/**',
       'build',
       '**/build/**',
@@ -28,6 +33,8 @@ export default tseslint.config(
       '**/.output/**',
       '.vite-cache/**',
       '**/.vite/**',
+      '.vercel',
+      '**/.vercel/**',
 
       // Dependencies
       'node_modules',
@@ -74,12 +81,6 @@ export default tseslint.config(
       'src/**',
 
       // Project specific
-      'DesktopCommanderMCP/**',
-      'Vibe-Tutor/**',
-      'opcode/**',
-      'edge_extension_deps/**',
-      'database-proxy-standalone/**',
-      'devworktrees*/**',
       'backups/**',
       'logs/**',
       'playwright-report/**',
@@ -87,31 +88,37 @@ export default tseslint.config(
       'projects/**',
       'PowerShell/**',
       'supabase/**',
-      'desktop-commander-mcp/**',
-      'workflow-hub-mcp/**',
       '**/android/**',
       '**/ios/**',
       '**/_archived/**',
       '**/_backups/**',
-      'apps/vibe-code-studio/src/services/ai/**',
       'apps/vibe-code-studio/src/test-setup.ts',
       'apps/vibe-code-studio/src/**/__tests__/**',
       'apps/vibe-code-studio/src/**/*.{test,spec}.{ts,tsx}',
+      // learning-pipeline-mcp unit tests: not in its build tsconfig program
+      // (which excludes *.test.ts to keep dist clean) — vitest runs them directly.
+      'apps/learning-pipeline-mcp/src/**/__tests__/**',
+      'apps/learning-pipeline-mcp/src/**/*.{test,spec}.ts',
+      // monorepo-health-mcp unit tests: same reason — build tsconfig excludes
+      // *.test.ts to keep dist clean; vitest runs them directly.
+      'apps/monorepo-health-mcp/src/**/__tests__/**',
+      'apps/monorepo-health-mcp/src/**/*.{test,spec}.ts',
+      // vibe-shipping unit tests: not in its build tsconfig program (excludes
+      // *.test.ts to keep dist clean) — vitest runs them directly.
+      'apps/vibe-shipping/src/**/__tests__/**',
+      'apps/vibe-shipping/src/**/*.{test,spec}.{ts,tsx}',
+      // Playwright E2E specs: not in the typed tsconfig program (same intent as
+      // the ignored src unit tests above) — keeps typed linting from erroring on them.
+      'apps/vibe-code-studio/tests/**',
       'apps/vibe-code-studio/src/components/AIProviderSelector/AIProviderSelector.tsx',
-      'apps/vibe-code-studio/src/components/AgentMode/AgentModeV2/StepCardView.tsx',
+
       'apps/vibe-code-studio/src/components/ComponentLibrary/index.tsx',
       'apps/vibe-code-studio/src/components/EnhancedAgentMode/EnhancedAgentMode.tsx',
       'apps/vibe-code-studio/src/components/ModelPerformanceDashboard.tsx',
       'apps/vibe-code-studio/src/components/VisualEditor/index.tsx',
 
-      // Orphaned/malformed directories
-      'C.devappsaugment-code/**',
-      'Cdev.husky/**',
-      'Cdev.vscode/**',
-      'NVIDIA Corporation/**',
-      '%SystemDrive%/**',
-      'antigravity-awesome-skills/**',
-      'ralph/**',
+      // Third party / example integrations
+      'packages/openclaw-bridge/examples/**',
     ],
   },
 
@@ -122,6 +129,9 @@ export default tseslint.config(
       'apps/**/*.{js,mjs,cjs,jsx}',
       'packages/**/*.{js,mjs,cjs,jsx}',
       'backend/**/*.{js,mjs,cjs,jsx}',
+      'personal-tools/**/*.{js,mjs,cjs,jsx}',
+      'plugins/**/*.{js,mjs,cjs,jsx}',
+      'desktop-bridge/**/*.{js,mjs,cjs,jsx}',
     ],
     languageOptions: {
       ecmaVersion: 2025,
@@ -206,7 +216,14 @@ export default tseslint.config(
   // TypeScript-specific configuration
   {
     extends: [...tseslint.configs.strict, ...tseslint.configs.stylistic],
-    files: ['apps/**/*.{ts,tsx}', 'packages/**/*.{ts,tsx}', 'backend/**/*.{ts,tsx}'],
+    files: [
+      'apps/**/*.{ts,tsx}',
+      'packages/**/*.{ts,tsx}',
+      'backend/**/*.{ts,tsx}',
+      'tools/**/*.{ts,tsx}',
+      'personal-tools/**/*.{ts,tsx}',
+      'plugins/**/*.{ts,tsx}',
+    ],
     languageOptions: {
       ecmaVersion: 2025,
       globals: {
@@ -292,9 +309,142 @@ export default tseslint.config(
     },
   },
 
+  // ========================================
+  // Workspace size caps (500 +/- 100 line policy)
+  // File cap 1000 (hard) / warning band starts at 500 via Prettier + reviews.
+  // Line length 100. Exclusions handled in the override block below.
+  // A stricter component cap (300) is scoped to vibe-code-studio only, below —
+  // see that block's comment for why it isn't applied workspace-wide.
+  // ========================================
+  {
+    files: [
+      'apps/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'packages/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'backend/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'tools/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'personal-tools/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'plugins/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'desktop-bridge/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+    ],
+    rules: {
+      'max-lines': ['error', { max: 1000, skipBlankLines: true, skipComments: true }],
+      'max-len': [
+        'error',
+        {
+          code: 100,
+          tabWidth: 2,
+          ignoreUrls: true,
+          ignoreStrings: true,
+          ignoreTemplateLiterals: true,
+          ignoreRegExpLiterals: true,
+          ignoreComments: false,
+        },
+      ],
+    },
+  },
+
+  // vibe-code-studio component cap (300 lines, stricter than the 1000-line
+  // workspace default). Scoped to this app only: it's the only project whose
+  // lint script wires up a bulk-suppressions baseline (--suppressions-location
+  // eslint-suppressions.json), so pre-existing oversized components can be
+  // grandfathered at their current line count instead of breaking CI outright.
+  // Other apps have no such baseline wired in, so a repo-wide 300 cap would
+  // fail dozens of existing files with no way to grandfather them.
+  {
+    files: ['apps/vibe-code-studio/src/**/*.{tsx,jsx}'],
+    rules: {
+      'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
+    },
+  },
+
+  // Function-length cap (50 lines) — non-component files only.
+  // React components (.tsx/.jsx) are exempt: the workspace policy allows
+  // components 200-300 lines, which would conflict with a 50-line function cap.
+  {
+    files: [
+      'apps/**/*.{js,mjs,cjs,ts}',
+      'packages/**/*.{js,mjs,cjs,ts}',
+      'backend/**/*.{js,mjs,cjs,ts}',
+      'tools/**/*.{js,mjs,cjs,ts}',
+      'personal-tools/**/*.{js,mjs,cjs,ts}',
+      'plugins/**/*.{js,mjs,cjs,ts}',
+      'desktop-bridge/**/*.{js,mjs,cjs,ts}',
+    ],
+    rules: {
+      'max-lines-per-function': [
+        'error',
+        { max: 50, skipBlankLines: true, skipComments: true, IIFEs: true },
+      ],
+    },
+  },
+
+  // Size-cap exclusions: tests, generated code, snapshots, migrations, and
+  // scaffolding templates are never subject to the size/length caps.
+  {
+    files: [
+      '**/*.{test,spec}.{ts,tsx,js,jsx,mjs,cjs}',
+      '**/__tests__/**',
+      '**/tests/**',
+      '**/e2e/**',
+      '**/*.gen.ts',
+      '**/*.generated.*',
+      '**/*.snap',
+      '**/migrations/**',
+      '**/generated/**',
+      '**/.prisma/**',
+      'plugins/factory/src/generators/**/files/**',
+    ],
+    rules: {
+      'max-lines': 'off',
+      'max-lines-per-function': 'off',
+      'max-len': 'off',
+    },
+  },
+
+  // Nx module boundaries are staged in warn mode while the project tag taxonomy
+  // and existing target failures are cleaned up.
+  {
+    files: [
+      'apps/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'packages/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'backend/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'personal-tools/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'plugins/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'desktop-bridge/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+    ],
+    plugins: {
+      '@nx': {
+        rules: {
+          'enforce-module-boundaries': enforceModuleBoundariesRule,
+        },
+      },
+    },
+    rules: {
+      '@nx/enforce-module-boundaries': [
+        'warn',
+        {
+          enforceBuildableLibDependency: true,
+          allow: [
+            '^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$',
+            '^@vibetech/feature-flags-sdk-node$',
+          ],
+          ignoredCircularDependencies: [
+            ['@vibetech/feature-flags-sdk-node', '@vibetech/workspace'],
+          ],
+          depConstraints: [{ sourceTag: '*', onlyDependOnLibsWithTags: ['*'] }],
+        },
+      ],
+    },
+  },
+
   // React-specific configuration
   {
-    files: ['apps/**/*.{jsx,tsx}', 'packages/**/*.{jsx,tsx}', 'apps/nova-mobile-app/src/**/*.{ts,tsx}'],
+    files: [
+      'apps/**/*.{jsx,tsx}',
+      'packages/**/*.{jsx,tsx}',
+      'apps/nova-mobile-app/src/**/*.{ts,tsx}',
+      'personal-tools/**/*.{jsx,tsx}',
+    ],
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
@@ -334,6 +484,9 @@ export default tseslint.config(
       'apps/**/*.{js,mjs,cjs,jsx,ts,tsx}',
       'packages/**/*.{js,mjs,cjs,jsx,ts,tsx}',
       'backend/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'personal-tools/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'plugins/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'desktop-bridge/**/*.{js,mjs,cjs,jsx,ts,tsx}',
     ],
     rules: {
       // ========================================
@@ -354,8 +507,14 @@ export default tseslint.config(
   },
 
   // Electron-specific security rules (AST-based)
+  // Only applies to actual Electron apps — NOT all apps/*/src/ directories.
+  // Web-only apps (e.g. business-booking-platform) must use localStorage freely.
   {
-    files: ['apps/**/electron/**/*.{js,ts,jsx,tsx}', 'apps/**/src/**/*.{js,ts,jsx,tsx}'],
+    files: [
+      'apps/nova-agent/**/*.{js,ts,jsx,tsx}',
+      'apps/vibe-code-studio/**/*.{js,ts,jsx,tsx}',
+      'apps/**/electron/**/*.{js,ts,jsx,tsx}',
+    ],
     plugins: {
       'electron-security': {
         rules: {
@@ -388,6 +547,26 @@ export default tseslint.config(
     },
   },
 
+  // Shared games V1 contains extracted app components; keep lint compatible
+  // with the source apps while the package API stabilizes.
+  {
+    files: ['packages/games/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/consistent-type-definitions': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/prefer-optional-chain': 'off',
+      'no-console': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+
   // These projects lint tests and config files that are intentionally excluded
   // from their build-oriented tsconfig.json files.
   {
@@ -395,13 +574,26 @@ export default tseslint.config(
       'packages/shared-ipc/**/*.{ts,tsx}',
       'packages/shared-config/**/*.{ts,tsx}',
       'packages/nova-types/**/*.{ts,tsx}',
-      'packages/vibetech-shared/**/*.{ts,tsx}',
-      'apps/monorepo-dashboard/**/*.{ts,tsx}',
+      'packages/core/**/*.{ts,tsx}',
+      'packages/avatar-render-engine/**/*.{ts,tsx}',
       'apps/desktop-commander-v3/**/*.{ts,tsx}',
       'apps/memory-mcp/**/*.{ts,tsx}',
-      'apps/vibe-shop/**/*.{ts,tsx}',
-      'apps/mcp-codeberg/**/*.ts',
       'apps/vibe-code-studio/**/*.{ts,tsx}',
+      'apps/vibe-tech-lovable/**/*.{ts,tsx}',
+      'tools/vectorshift-svg/**/*.{ts,tsx}',
+      'packages/openrouter-client/**/*.ts',
+      'packages/inngest-client/**/*.{ts,tsx}',
+      'packages/types/**/*.{ts,tsx}',
+      'packages/hooks/**/*.{ts,tsx}',
+      'packages/testing-utils/**/*.{ts,tsx}',
+      'packages/service-common/**/*.{ts,tsx}',
+      'packages/monetization/**/*.{ts,tsx}',
+      'packages/payments/**/*.{ts,tsx}',
+      'packages/email/**/*.{ts,tsx}',
+      'packages/ai/**/*.{ts,tsx}',
+      'apps/mcp-skills-server/**/*.{ts,tsx}',
+      'apps/workspace-mcp-server/**/*.{ts,tsx}',
+      'backend/openrouter-proxy/**/*.{ts,tsx}',
     ],
     languageOptions: {
       parserOptions: {
@@ -411,14 +603,109 @@ export default tseslint.config(
           './packages/shared-ipc/tsconfig.lint.json',
           './packages/shared-config/tsconfig.lint.json',
           './packages/nova-types/tsconfig.lint.json',
-          './packages/vibetech-shared/tsconfig.lint.json',
-          './apps/monorepo-dashboard/tsconfig.lint.json',
+          './packages/core/tsconfig.json',
+          './packages/avatar-render-engine/tsconfig.lint.json',
           './apps/desktop-commander-v3/tsconfig.lint.json',
           './apps/memory-mcp/tsconfig.lint.json',
-          './apps/vibe-shop/tsconfig.lint.json',
-          './apps/mcp-codeberg/tsconfig.lint.json',
           './apps/vibe-code-studio/tsconfig.lint.json',
+          './apps/vibe-tech-lovable/tsconfig.app.json',
+          './apps/vibe-tech-lovable/tsconfig.node.json',
+          './tools/vectorshift-svg/tsconfig.json',
+          './packages/openrouter-client/tsconfig.lint.json',
+          './packages/inngest-client/tsconfig.lint.json',
+          './packages/types/tsconfig.lint.json',
+          './packages/hooks/tsconfig.lint.json',
+          './packages/testing-utils/tsconfig.lint.json',
+          './packages/service-common/tsconfig.lint.json',
+          './packages/monetization/tsconfig.lib.json',
+          './packages/monetization/tsconfig.spec.json',
+          './packages/payments/tsconfig.lib.json',
+          './packages/payments/tsconfig.spec.json',
+          './packages/email/tsconfig.lib.json',
+          './packages/email/tsconfig.spec.json',
+          './packages/ai/tsconfig.lib.json',
+          './packages/ai/tsconfig.spec.json',
+          './apps/mcp-skills-server/tsconfig.lint.json',
+          './apps/workspace-mcp-server/tsconfig.lint.json',
+          './backend/openrouter-proxy/tsconfig.lint.json',
         ],
+      },
+    },
+  },
+
+  // openrouter-proxy: scope typed linting to its own tsconfig.lint.json instead
+  // of the shared multi-project array above. Linting this project against the
+  // full project list builds one TS program per tsconfig and exhausts the CI
+  // Node heap (OOM in `eslint src`); a single-project program keeps it bounded.
+  {
+    files: ['backend/openrouter-proxy/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./backend/openrouter-proxy/tsconfig.lint.json'],
+      },
+    },
+  },
+
+  // mcp-skills-server: keep typed linting scoped to its own tsconfig.lint.json
+  // to avoid loading the multi-project program that OOMs on this small server.
+  {
+    files: ['apps/mcp-skills-server/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./apps/mcp-skills-server/tsconfig.lint.json'],
+      },
+    },
+  },
+
+  {
+    files: ['packages/agent-lats/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./packages/agent-lats/tsconfig.lint.json'],
+      },
+    },
+  },
+
+  // Factory-generated smoke apps have small lint tsconfigs; keep them out of
+  // the broader migration override to avoid loading unrelated projects.
+  {
+    files: ['apps/*factory*/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./apps/*factory*/tsconfig.lint.json'],
+      },
+    },
+  },
+
+  // vibe-shop: tsconfig.json excludes tests (so tsc --noEmit stays green);
+  // its tsconfig.lint.json includes them so typed linting can resolve test files.
+  {
+    files: ['apps/vibe-shop/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./apps/vibe-shop/tsconfig.lint.json'],
+      },
+    },
+  },
+
+  // vibe-booking-backend: use tsconfig.lint.json to include all files for linting
+  {
+    files: ['apps/vibe-booking-backend/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./apps/vibe-booking-backend/tsconfig.lint.json'],
       },
     },
   },
@@ -441,6 +728,18 @@ export default tseslint.config(
             'packages/memory/src/utils.test.ts',
           ],
         },
+      },
+    },
+  },
+
+  // vibe-reflection: server and client have separate configs, use tsconfig.lint.json
+  {
+    files: ['apps/vibe-reflection/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./apps/vibe-reflection/tsconfig.lint.json'],
       },
     },
   },
@@ -475,14 +774,13 @@ export default tseslint.config(
   {
     files: [
       'apps/desktop-commander-v3/src/**/*.{ts,tsx}',
-      'apps/clawdbot-desktop/**/*.{ts,tsx}',
-      'packages/vibetech-shared/**/*.{ts,tsx}',
-      'apps/invoice-automation-saas/**/*.{ts,tsx}',
+      'packages/core/**/*.{ts,tsx}',
+      'apps/vibe-invoice/**/*.{ts,tsx}',
       'apps/prompt-engineer/**/*.{ts,tsx}',
-      'apps/business-booking-platform/backend/src/**/*.{ts,tsx}',
-      'apps/shipping-pwa/src/**/*.{ts,tsx}',
+      'apps/vibe-booking/backend/src/**/*.{ts,tsx}',
+      'apps/vibe-shipping/src/**/*.{ts,tsx}',
       'apps/nova-mobile-app/src/**/*.{ts,tsx}',
-      'apps/mcp-codeberg/**/*.ts',
+      'apps/vibe-tutor-mobile/src/**/*.{ts,tsx}',
     ],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
@@ -495,19 +793,68 @@ export default tseslint.config(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
       'no-console': 'off',
-      'max-len': 'off',
       'consistent-return': 'off',
       'react-hooks/exhaustive-deps': 'off',
       'react-refresh/only-export-components': 'off',
     },
   },
 
+  // Generated/prototype app surfaces: keep commit hooks focused on errors while
+  // these asset-heavy apps are brought up to the stricter workspace baseline.
+  {
+    files: [
+      'apps/serenity-flow/**/*.{js,jsx,ts,tsx}',
+      'apps/vibe-tech-lovable/**/*.{js,jsx,ts,tsx,mjs,cjs}',
+      'tools/vectorshift-svg/**/*.{js,jsx,ts,tsx}',
+      'apps/cme-track/**/*.{js,jsx,ts,tsx}',
+      'apps/vibe-booking-v2/**/*.{js,jsx,ts,tsx}',
+      'apps/vibe-dental/**/*.{js,jsx,ts,tsx}',
+      'apps/vibe-portal/**/*.{js,jsx,ts,tsx}',
+      'apps/vibe-discharge/**/*.{js,jsx,ts,tsx}',
+      'apps/vibetech-command-center/**/*.{js,jsx,ts,tsx}',
+      'backend/ipc-bridge/**/*.{js,jsx,ts,tsx}',
+    ],
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+    },
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: {
+      parserOptions: {
+        project: false,
+        projectService: false,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/prefer-optional-chain': 'off',
+      '@typescript-eslint/promise-function-async': 'off',
+      '@typescript-eslint/await-thenable': 'off',
+      'no-console': 'off',
+      'no-await-in-loop': 'off',
+      'no-restricted-syntax': 'off',
+      'no-unused-vars': 'off',
+      'prefer-destructuring': 'off',
+      '@nx/enforce-module-boundaries': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+
   // Relaxed rules for vibe-code-studio legacy code
   {
-    files: ['apps/vibe-code-studio/src/**/*.{js,jsx,ts,tsx}'],
+    files: ['apps/vibe-code-studio/**/*.{js,jsx,ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      'no-unused-vars': 'off',
+      'prefer-destructuring': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/no-misused-promises': 'off',
@@ -525,6 +872,49 @@ export default tseslint.config(
       'no-restricted-syntax': 'off',
       'react-hooks/exhaustive-deps': 'off',
       'react-refresh/only-export-components': 'off',
+    },
+  },
+
+  // Disable enforce-module-boundaries for openclaw-bridge examples to avoid AST boundary crashes
+  {
+    files: ['packages/openclaw-bridge/examples/**/*.{js,jsx,ts,tsx,mjs,cjs}'],
+    rules: {
+      '@nx/enforce-module-boundaries': 'off',
+    },
+  },
+
+  // Disable type-checked rules for configuration files, test scripts, and dev tools to avoid parser project service errors
+  {
+    files: [
+      '**/*.config.{js,ts,mjs,cjs}',
+      '**/playwright.config.ts',
+      '**/vite.config.{js,ts}',
+      '**/vitest.config.{js,ts}',
+      '**/tests/e2e/**/*.{js,ts,tsx}',
+      '**/e2e/**/*.{js,ts,tsx}',
+      '**/scripts/**/*.{js,ts,tsx}',
+      'packages/openclaw-bridge/examples/**/*.{js,ts}',
+    ],
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+    },
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: {
+      parserOptions: {
+        project: false,
+        projectService: false,
+      },
+    },
+  },
+
+  // Server files in prompt-engineer need their own tsconfig file
+  {
+    files: ['apps/prompt-engineer/server/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        project: 'apps/prompt-engineer/tsconfig.server.json',
+        projectService: false,
+      },
     },
   },
 

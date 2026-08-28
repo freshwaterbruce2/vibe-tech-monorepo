@@ -192,13 +192,13 @@ describe('useHomework', () => {
 
   it('waits for dataStore initialization before persisting homework items', async () => {
     let resolveInitialize!: () => void;
-
-    mockedDataStore.initialize.mockImplementation(
-      async () =>
-        new Promise<void>((resolve) => {
-          resolveInitialize = resolve;
-        }),
-    );
+    // Single shared gate (mirrors the real idempotent initialize) — the
+    // debounced persist calls initialize() again, so a fresh-promise-per-call
+    // mock would leave that second call hanging forever.
+    const initGate = new Promise<void>((resolve) => {
+      resolveInitialize = resolve;
+    });
+    mockedDataStore.initialize.mockReturnValue(initGate);
 
     const { result } = renderHook(() => useHomework());
 
@@ -208,7 +208,10 @@ describe('useHomework', () => {
 
     expect(mockedDataStore.saveHomeworkItems).not.toHaveBeenCalled();
 
-    resolveInitialize();
+    await act(async () => {
+      resolveInitialize();
+      await initGate;
+    });
 
     await vi.waitFor(() => {
       expect(mockedDataStore.saveHomeworkItems).toHaveBeenCalledTimes(1);
@@ -219,13 +222,10 @@ describe('useHomework', () => {
 
   it('preserves homework added before initialization finishes', async () => {
     let resolveInitialize!: () => void;
-
-    mockedDataStore.initialize.mockImplementation(
-      async () =>
-        new Promise<void>((resolve) => {
-          resolveInitialize = resolve;
-        }),
-    );
+    const initGate = new Promise<void>((resolve) => {
+      resolveInitialize = resolve;
+    });
+    mockedDataStore.initialize.mockReturnValue(initGate);
     mockedDataStore.getHomeworkItems.mockResolvedValue([]);
 
     const { result } = renderHook(() => useHomework());
@@ -236,7 +236,10 @@ describe('useHomework', () => {
 
     expect(result.current.homeworkItems).toHaveLength(1);
 
-    resolveInitialize();
+    await act(async () => {
+      resolveInitialize();
+      await initGate;
+    });
 
     await vi.waitFor(() => {
       expect(mockedDataStore.saveHomeworkItems).toHaveBeenCalledTimes(1);
@@ -244,5 +247,49 @@ describe('useHomework', () => {
 
     expect(result.current.homeworkItems).toHaveLength(1);
     expect(result.current.homeworkItems[0]!.title).toBe('Atoms');
+  });
+});
+
+describe('useHomework — debounced persistence (SVC-05)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedDataStore.initialize.mockResolvedValue(undefined);
+    mockedDataStore.getHomeworkItems.mockResolvedValue([]);
+    mockedDataStore.saveHomeworkItems.mockResolvedValue(undefined);
+  });
+
+  it('collapses rapid edits into a single debounced save', async () => {
+    const { result } = renderHook(() => useHomework());
+
+    act(() => {
+      result.current.addHomework({ subject: 'm', title: 'one', dueDate: '2026-07-01' });
+    });
+    act(() => {
+      result.current.addHomework({ subject: 'm', title: 'two', dueDate: '2026-07-01' });
+    });
+    act(() => {
+      result.current.addHomework({ subject: 'm', title: 'three', dueDate: '2026-07-01' });
+    });
+
+    await vi.waitFor(() => {
+      expect(mockedDataStore.saveHomeworkItems).toHaveBeenCalledTimes(1);
+    });
+    expect(mockedDataStore.saveHomeworkItems.mock.calls[0]![0]).toHaveLength(3);
+  });
+
+  it('flushes a pending write on unmount', async () => {
+    const { result, unmount } = renderHook(() => useHomework());
+
+    act(() => {
+      result.current.addHomework({ subject: 'm', title: 'pending', dueDate: '2026-07-01' });
+    });
+
+    // Unmount before the debounce timer fires — the flush effect must persist.
+    unmount();
+
+    await vi.waitFor(() => {
+      expect(mockedDataStore.saveHomeworkItems).toHaveBeenCalled();
+    });
+    expect(mockedDataStore.saveHomeworkItems.mock.calls.at(-1)![0]).toHaveLength(1);
   });
 });

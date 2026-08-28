@@ -1,0 +1,19 @@
+{
+  "generators": {
+    "saas": {
+      "factory": "./src/generators/saas/generator.js",
+      "schema": "./src/generators/saas/schema.json",
+      "description": "Generate a monetized Vite + React + Fastify SaaS app scaffold"
+    },
+    "tauri-app": {
+      "factory": "./src/generators/tauri-app/generator.js",
+      "schema": "./src/generators/tauri-app/schema.json",
+      "description": "Generate a Tauri 2 desktop app scaffold wired for monetization"
+    },
+    "landing-only": {
+      "factory": "./src/generators/landing-only/generator.js",
+      "schema": "./src/generators/landing-only/schema.json",
+      "description": "Generate a Vite + React marketing site scaffold"
+    }
+  }
+}

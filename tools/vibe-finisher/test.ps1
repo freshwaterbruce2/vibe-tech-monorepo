@@ -124,7 +124,7 @@ if ($projectToTest) {
 
 # Test 7: Backup directory
 Write-Host "[TEST 7] Checking backup directory..." -NoNewline
-$backupDir = "C:\dev\_backups"
+$backupDir = "V:\monorepo\_backups"
 if (Test-Path $backupDir) {
     $backupCount = (Get-ChildItem $backupDir -Filter "*.zip").Count
     Write-Host " OK ($backupCount existing backups)" -ForegroundColor Green
@@ -142,7 +142,7 @@ if ($allGood) {
     Write-Host "  ALL TESTS PASSED - Ready to run!" -ForegroundColor Green
     Write-Host ""
     Write-Host "  Next steps:" -ForegroundColor White
-    Write-Host "    1. .\init.ps1 -TargetProject 'C:\dev\apps\your-project'" -ForegroundColor Gray
+    Write-Host "    1. .\init.ps1 -TargetProject 'V:\monorepo\apps\your-project'" -ForegroundColor Gray
     Write-Host "    2. .\sync.ps1 -DryRun   (preview without API)" -ForegroundColor Gray
     Write-Host "    3. .\sync.ps1           (single pass)" -ForegroundColor Gray
     Write-Host "    4. .\ralph.ps1          (infinite loop)" -ForegroundColor Gray

@@ -1,0 +1,58 @@
+{
+  "name": "vibe-flow",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "root": "apps/vibe-flow",
+  "sourceRoot": "apps/vibe-flow/src",
+  "tags": ["type:desktop", "scope:vibe-flow"],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm run tauri:dev", "cwd": "apps/vibe-flow" }
+    },
+    "dev:web": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm run dev:web", "cwd": "apps/vibe-flow" }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": { "command": "pnpm run build", "cwd": "apps/vibe-flow" }
+    },
+    "package": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "pnpm run tauri:build", "cwd": "apps/vibe-flow" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": { "command": "pnpm run lint", "cwd": "apps/vibe-flow" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": { "command": "pnpm run typecheck", "cwd": "apps/vibe-flow" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": { "command": "pnpm run test", "cwd": "apps/vibe-flow" }
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/coverage"],
+      "cache": true,
+      "options": { "command": "pnpm run test:coverage", "cwd": "apps/vibe-flow" }
+    },
+    "quality": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": ["pnpm run lint", "pnpm run typecheck", "pnpm run test"],
+        "cwd": "apps/vibe-flow",
+        "parallel": false
+      }
+    }
+  }
+}

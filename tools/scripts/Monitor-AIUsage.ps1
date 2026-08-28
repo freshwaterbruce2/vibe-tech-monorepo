@@ -39,13 +39,13 @@ function Get-CodeStats {
     # Count files by extension
     $extensions = @("*.ts", "*.tsx", "*.js", "*.jsx", "*.py", "*.cs", "*.ps1")
     foreach ($ext in $extensions) {
-        $count = (Get-ChildItem -Path "C:\dev" -Recurse -Include $ext -ErrorAction SilentlyContinue |
+        $count = (Get-ChildItem -Path "V:\monorepo" -Recurse -Include $ext -ErrorAction SilentlyContinue |
             Where-Object { $_.FullName -notmatch "node_modules|\.git|dist|build" }).Count
         $stats.FileCounts[$ext.Replace("*.", "")] = $count
     }
 
     # Find files over 360 lines
-    $largeFiles = Get-ChildItem -Path "C:\dev" -Recurse -Include "*.ts","*.tsx","*.js","*.jsx","*.py" -ErrorAction SilentlyContinue |
+    $largeFiles = Get-ChildItem -Path "V:\monorepo" -Recurse -Include "*.ts","*.tsx","*.js","*.jsx","*.py" -ErrorAction SilentlyContinue |
         Where-Object {
             $_.FullName -notmatch "node_modules|\.git|dist|build" -and
             $_.Length -gt 0
@@ -53,7 +53,7 @@ function Get-CodeStats {
             $lines = (Get-Content $_.FullName -ErrorAction SilentlyContinue | Measure-Object -Line).Lines
             if ($lines -gt 360) {
                 @{
-                    Path = $_.FullName.Replace("C:\dev\", "")
+                    Path = $_.FullName.Replace("V:\monorepo\", "")
                     Lines = $lines
                 }
             }
@@ -61,11 +61,11 @@ function Get-CodeStats {
     $stats.LargeFiles = $largeFiles
 
     # Get recently modified files (last hour)
-    $recentFiles = Get-ChildItem -Path "C:\dev" -Recurse -File -ErrorAction SilentlyContinue |
+    $recentFiles = Get-ChildItem -Path "V:\monorepo" -Recurse -File -ErrorAction SilentlyContinue |
         Where-Object {
             $_.LastWriteTime -gt (Get-Date).AddHours(-1) -and
             $_.FullName -notmatch "node_modules|\.git|dist|build|logs"
-        } | Select-Object @{Name="Path";Expression={$_.FullName.Replace("C:\dev\", "")}}, LastWriteTime
+        } | Select-Object @{Name="Path";Expression={$_.FullName.Replace("V:\monorepo\", "")}}, LastWriteTime
 
     $stats.RecentChanges = $recentFiles
 

@@ -8,7 +8,7 @@ param(
 )
 
 $ErrorActionPreference = "SilentlyContinue"
-$MemoryPath = "C:\dev\apps\memory-mcp"
+$MemoryPath = "V:\monorepo\apps\memory-mcp"
 
 # TIMEOUT: Maximum seconds to wait for any operation
 $TIMEOUT_SECONDS = 2
@@ -62,7 +62,13 @@ try {
     $EnableMemoryInjection = $true
     if ($EnableMemoryInjection) {
         try {
-            $MemoryBridgeUrl = "http://localhost:3200"
+            $MemoryBridgeUrl = if ($env:MEMORY_MCP_URL) {
+                $env:MEMORY_MCP_URL
+            } elseif ($env:MEMORY_MCP_PORT) {
+                "http://localhost:$($env:MEMORY_MCP_PORT)"
+            } else {
+                "http://localhost:3200"
+            }
 
             # Get memory context (recent work, patterns)
             $ContextBody = '{"method":"tools/call","params":{"name":"memory_get_context","arguments":{}}}'
@@ -126,6 +132,65 @@ try {
         $SessionData | Out-File -FilePath $SessionFile -Encoding utf8 -Force
     } catch {
         # Silently fail - session logging is non-critical
+    }
+
+    # Phase 7 (2026-04-18): Craft daily-note awareness reminder
+    # Stdout lines are picked up by Claude Code's native SessionStart hook contract
+    # as system context. Terminal lines are visual confirmation for Bruce.
+    try {
+        $today = (Get-Date -Format 'yyyy-MM-dd')
+        $reminderLines = @(
+            "[CRAFT-DAILY-NOTE-CHECK]",
+            "Date: $today",
+            "Before responding to the user, fetch today's Craft daily note via the Craft MCP:",
+            "  - Tool: documents_list  (location='daily_notes', dailyNoteDateGte='$today', dailyNoteDateLte='$today')",
+            "  - If a doc exists, blocks_get the root and surface key items in 1-2 sentences.",
+            "  - If none exists, do not auto-create. Offer to run /craft:daily-log."
+        )
+        $reminderLines | ForEach-Object { Write-Output $_ }
+        if (-not $Silent) {
+            Write-Host "CRAFT" -ForegroundColor Green
+            Write-Host "  Will check today's daily note ($today)" -ForegroundColor DarkGray
+            Write-Host ""
+        }
+    } catch {
+        # Non-critical — session continues if Craft block fails
+    }
+
+    # Phase 8 (2026-04-24): Branch-hygiene + dirty-tree warnings
+    # Emits visible warnings when working tree state violates .claude/rules/automation-boundaries.md
+    # Also emits a stdout reminder for Claude to see the state.
+    try {
+        $protectedBranches = @('main', 'master', 'develop')
+        $onProtected = $protectedBranches -contains $GitContext.branch
+        $dirty = $GitContext.modified_files
+
+        if ($onProtected -or $dirty -gt 10) {
+            # Claude-visible stdout reminder
+            Write-Output "[BRANCH-HYGIENE-CHECK]"
+            Write-Output "Branch: $($GitContext.branch)  Modified: $dirty"
+            if ($onProtected) {
+                Write-Output "WARNING: Working directly on protected branch '$($GitContext.branch)'. Rule: feature branches only (.claude/rules/automation-boundaries.md). Before making any commit, create a feature branch: git checkout -b feat/<name> or fix/<name>."
+            }
+            if ($dirty -gt 10) {
+                Write-Output "WARNING: Working tree has $dirty uncommitted changes. Review with git diff before new work, then either commit a coherent slice on a feature branch, stash with a description, or explicitly discard only reviewed files."
+            }
+
+            # Terminal-visible warning for Bruce
+            if (-not $Silent) {
+                Write-Host "BRANCH HYGIENE" -ForegroundColor Yellow
+                if ($onProtected) {
+                    Write-Host "  On protected branch '$($GitContext.branch)'. Feature branches only (see .claude/rules/automation-boundaries.md)." -ForegroundColor Yellow
+                    Write-Host "  Before committing: git checkout -b feat/<name>" -ForegroundColor DarkGray
+                }
+                if ($dirty -gt 10) {
+                    Write-Host "  Dirty tree: $dirty uncommitted changes. Consider stash or triage." -ForegroundColor Yellow
+                }
+                Write-Host ""
+            }
+        }
+    } catch {
+        # Non-critical — session continues if git introspection fails
     }
 
 } catch {

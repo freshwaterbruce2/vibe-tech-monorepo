@@ -14,29 +14,28 @@ module.exports = {
     docs: {
       description: 'Disallow localStorage usage in Electron apps',
       recommended: true,
-      url: 'https://github.com/electron/electron/blob/main/docs/api/storage.md'
+      url: 'https://github.com/electron/electron/blob/main/docs/api/storage.md',
     },
     fixable: 'code',
     messages: {
-      noLocalStorage: 'localStorage is forbidden in Electron apps. Use electron-store with IPC bridge instead.',
-      noSessionStorage: 'sessionStorage is forbidden in Electron apps. Use electron-store with IPC bridge instead.',
-      useElectronStore: 'Replace with: await window.electronAPI.store.{{method}}({{args}})'
+      noLocalStorage:
+        'localStorage is forbidden in Electron apps. Use electron-store with IPC bridge instead.',
+      noSessionStorage:
+        'sessionStorage is forbidden in Electron apps. Use electron-store with IPC bridge instead.',
+      useElectronStore: 'Replace with: await window.electronAPI.store.{{method}}({{args}})',
     },
-    schema: []
+    schema: [],
   },
 
   create(context) {
     const sourceCode = context.sourceCode ?? context.getSourceCode?.();
 
-    // Helper to check if we're in an Electron project
+    // Helper to check if we're in an Electron project.
+    // Must match /electron/ path segment only — not /src/ — to avoid
+    // triggering on web-only apps whose source happens to live under src/.
     const isElectronProject = () => {
       const filename = context.filename ?? context.getFilename?.();
-      // Check if file is in an Electron project structure
-      return filename.includes('/electron/') ||
-             filename.includes('\\electron\\') ||
-             filename.includes('/src/') ||
-             filename.includes('\\src\\') ||
-             filename.includes('electron');
+      return filename.includes('/electron/') || filename.includes('\\electron\\');
     };
 
     return {
@@ -55,12 +54,15 @@ module.exports = {
 
               // Handle common localStorage patterns
               if (parent.type === 'CallExpression') {
-                switch(method) {
+                switch (method) {
                   case 'setItem':
                     if (parent.arguments.length === 2) {
                       const key = sourceCode.getText(parent.arguments[0]);
                       const value = sourceCode.getText(parent.arguments[1]);
-                      return fixer.replaceText(parent, `window.electronAPI.store.set(${key}, ${value})`);
+                      return fixer.replaceText(
+                        parent,
+                        `window.electronAPI.store.set(${key}, ${value})`,
+                      );
                     }
                     break;
                   case 'getItem':
@@ -87,7 +89,7 @@ module.exports = {
 
               // Default replacement
               return fixer.replaceText(node, 'window.electronAPI.store');
-            }
+            },
           });
         }
 
@@ -95,20 +97,22 @@ module.exports = {
         if (node.object.name === 'sessionStorage') {
           context.report({
             node,
-            messageId: 'noSessionStorage'
+            messageId: 'noSessionStorage',
           });
         }
 
         // Check for window.localStorage pattern
-        if (node.object.type === 'MemberExpression' &&
-            node.object.object.name === 'window' &&
-            node.object.property.name === 'localStorage') {
+        if (
+          node.object.type === 'MemberExpression' &&
+          node.object.object.name === 'window' &&
+          node.object.property.name === 'localStorage'
+        ) {
           context.report({
             node: node.object,
             messageId: 'noLocalStorage',
             fix(fixer) {
               return fixer.replaceText(node.object, 'window.electronAPI.store');
-            }
+            },
           });
         }
       },
@@ -127,11 +131,11 @@ module.exports = {
               messageId: 'noLocalStorage',
               fix(fixer) {
                 return fixer.replaceText(node, `window.electronAPI.store.set('${key}', ${value})`);
-              }
+              },
             });
           }
         }
-      }
+      },
     };
-  }
+  },
 };

@@ -13,10 +13,12 @@ import { mkdirSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { registerLocalLlmIpc, setupLocalLlm } from './llm';
+
 // better-sqlite3 is preferred for Electron (sync + fast transactions).
 // NOTE: Requires dependency + rebuild for Electron.
 
-const HUB_DB_PATH = String.raw`D:\databases\database.db`;
+const HUB_DB_PATH = process.env.HUB_DB_PATH ?? String.raw`D:\databases\database.db`;
 
 const DEV_SERVER_URL = 'http://localhost:5173';
 function isDevMode(): boolean {
@@ -444,10 +446,20 @@ async function loadRenderer(win: BrowserWindow): Promise<void> {
   await win.loadFile(path.join(__dirname, '../dist/index.html'));
 }
 
-void app.whenReady().then(() => {
+void app.whenReady().then(async () => {
   console.info(`[main] ready (devMode=${String(isDevMode())})`);
   registerWebContentsGuards();
   registerIpcHandlers();
+  registerLocalLlmIpc(assertTrustedIpcSender);
+
+  // Must complete before any BrowserWindow exists so the @electron/llm
+  // preload (window.electronAi) is injected into the renderer session.
+  try {
+    await setupLocalLlm();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[local-llm] setup failed, AI tools degrade to cloud/none:', message);
+  }
 
   const win = createMainWindow();
 

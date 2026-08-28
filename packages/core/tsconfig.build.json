@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "src/shared/setupTests.ts"],
+  "references": [
+    {
+      "path": "../shared-config/tsconfig.build.json"
+    },
+    {
+      "path": "../logger"
+    }
+  ]
+}

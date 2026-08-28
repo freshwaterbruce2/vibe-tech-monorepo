@@ -89,7 +89,7 @@ Proceeding in 3 seconds...
 If task involves crypto-enhanced project, execute:
 
 ```bash
-cd projects/crypto-enhanced && python -c "
+cd apps/crypto-enhanced && python -c "
 import sqlite3
 from datetime import datetime, timedelta
 

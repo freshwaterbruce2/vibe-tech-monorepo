@@ -36,6 +36,7 @@ const GREEN = '\x1b[32m';
 const YELLOW = '\x1b[33m';
 const CYAN = '\x1b[36m';
 const MAGENTA = '\x1b[35m';
+const NX = 'node ./node_modules/nx/bin/nx.js';
 
 function heading(text) {
   console.log(`\n${BOLD}${CYAN}━━━ ${text} ━━━${RESET}`);
@@ -98,6 +99,28 @@ function getAllTrackedFiles() {
     .filter(Boolean);
 }
 
+function getStagedSourceFiles() {
+  return getStagedFiles().filter((f) => /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(f));
+}
+
+function runNxTarget(target, files = []) {
+  if (MODE === 'staged') {
+    if (files.length === 0) {
+      return { ok: true, output: '', code: 0 };
+    }
+    const fileList = files.join(',');
+    return run(`${NX} affected -t ${target} --files="${fileList}" --output-style=static`, {
+      capture: true,
+      timeout: 300_000,
+    });
+  }
+
+  return run(`${NX} run-many -t ${target} --all --output-style=static`, {
+    capture: true,
+    timeout: 300_000,
+  });
+}
+
 // ─── Phase Results Collector ─────────────────────────────────
 const results = [];
 
@@ -142,26 +165,16 @@ function phaseEslintStrict() {
 
   let cmd;
   if (MODE === 'staged') {
-    // Scope to staged JS/TS files for speed
-    const staged = getStagedFiles().filter((f) =>
-      /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(f),
-    );
+    const staged = getStagedSourceFiles();
     if (staged.length === 0) {
       pass('No staged JS/TS files to lint');
       phaseResult('ESLint Strict', 'pass', elapsed());
       return;
     }
-    // Pass files directly to ESLint (shell-safe quoting)
-    const fileArgs = staged.map((f) => `"${f}"`).join(' ');
-    cmd = `npx eslint --max-warnings 0 ${fileArgs}`;
-  } else {
-    cmd = 'npx eslint . --max-warnings 0';
+    cmd = staged;
   }
 
-  const result = run(cmd, {
-    capture: true,
-    timeout: 300_000,
-  });
+  const result = runNxTarget('lint', cmd ?? []);
 
   if (result.ok) {
     pass('Zero warnings, zero errors');
@@ -184,7 +197,14 @@ function phaseTypescriptStrict() {
   heading('Phase 3 · TypeScript Strict (tsc --noEmit)');
   const elapsed = timer();
 
-  const result = run('npx tsc --noEmit', { capture: true, timeout: 180_000 });
+  const staged = getStagedSourceFiles();
+  if (MODE === 'staged' && staged.length === 0) {
+    pass('No staged JS/TS files to typecheck');
+    phaseResult('TypeScript Strict', 'pass', elapsed());
+    return;
+  }
+
+  const result = runNxTarget('typecheck', staged);
 
   if (result.ok) {
     pass('Zero type errors');

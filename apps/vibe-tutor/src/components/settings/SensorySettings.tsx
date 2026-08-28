@@ -210,7 +210,7 @@ const SensorySettings = () => {
       {/* Color Mode */}
       <div className="glass-card p-5 rounded-xl space-y-3">
         <div className="flex items-center gap-2">
-          <Palette className="w-4 h-4 text-pink-400" />
+          <Palette className="w-4 h-4 text-sky-400" />
           <h3 className="font-medium text-white">Color Mode</h3>
         </div>
         <p className="text-sm text-gray-400">Adjust colors for visual comfort</p>

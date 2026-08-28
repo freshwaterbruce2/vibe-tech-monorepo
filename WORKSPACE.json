@@ -1,16 +1,16 @@
 {
-  "version": "1.3.0",
-  "lastUpdated": "2026-03-29T12:00:00-05:00",
+  "version": "1.3.2",
+  "lastUpdated": "2026-06-17T00:00:00-04:00",
   "techStack": {
-    "packageManager": "pnpm@10.32.1",
+    "packageManager": "pnpm@10.33.0",
     "node": "22.x",
     "typescript": "5.9.3",
     "react": "19.2.4",
-    "buildSystem": "nx@22.5.0"
+    "buildSystem": "nx@22.7.1"
   },
   "versionControl": {
-    "provider": "codeberg",
-    "repo": "https://codeberg.org/Vibe-Tech/vibe-tech-monorepo.git",
+    "provider": "github",
+    "repo": "https://github.com/freshwaterbruce2/vibe-tech-monorepo.git",
     "branch": "main"
   },
   "aiModels": {
@@ -18,6 +18,96 @@
     "provider": "openrouter"
   },
   "recentActivity": [
+    {
+      "date": "2026-05-30",
+      "project": "monetized-mcp-service",
+      "action": "Generated new app monetized-mcp-service, integrated monetizedmcp-sdk (x402 protocol) for USDC micropayments, added standard price-listing, payment-methods, make-purchase tools, configured Fastify Swagger (OpenAPI docs) at /docs, implemented automated openapi.json extraction target, resolved lock resource issues with NX_DAEMON=false, and verified lint, typecheck, client/API builds pass green."
+    },
+    {
+      "date": "2026-05-30",
+      "project": "vibe-discharge",
+      "action": "Migrated auth system from legacy local password salts/hashes to central D:\\databases\\auth.db using @vibetech/auth. Updated authSession server helpers and refactored unit test suite to run hermetically against an isolated test database on the D:\\ drive."
+    },
+    {
+      "date": "2026-05-29",
+      "project": "monorepo-auth",
+      "action": "Ported vibe-reminder, vibe-dental, vibe-portal, and vibe-reminder-v2 SaaS applications to the database-backed secure central authentication pattern (D:\\databases\\auth.db), resolving local preflight ship:check tests and conventional commits formatting."
+    },
+    {
+      "date": "2026-05-29",
+      "project": "vibe-booking",
+      "action": "Refactored backend API to use shared @vibetech/db-app BookingRepository pattern, implemented verified guest reviews and coupon discount codes, migrated styling system to a premium dark theme, passed local preflight ship:check tests, and deployed directly to production main."
+    },
+    {
+      "date": "2026-05-28",
+      "project": "vibe-booking-backend",
+      "action": "Implemented Stripe Checkout Session endpoint (/api/payments/create-checkout-session), resolved dynamic redirects using Request Origin, and wired checkout.session.completed webhook processing. Refactored E2E tests to run concurrently on separate workers and verified all pass."
+    },
+    {
+      "date": "2026-05-28",
+      "project": "monorepo-security",
+      "action": "Updated root package.json to override Vite dependency to >=7.3.2 to fix CVE-2026-39364 (server.fs.deny query bypass). Ran pnpm install to apply overrides and verified E2E test suites pass successfully."
+    },
+    {
+      "date": "2026-05-28",
+      "project": "vibe-booking-backend",
+      "action": "Implemented Playwright E2E tests for registration and login paths in vibe-booking. Renamed users, bookings, and payments tables to booking_users, vibe_bookings, and vibe_payments to isolate reservation schemas from conflicting shared SQLite tables. Exposed /api/pro and /api/pro/rewrite endpoints and added Authorization header parser support."
+    },
+    {
+      "date": "2026-05-28",
+      "project": "vibe-booking",
+      "action": "Connected vibe-booking widgets frontend to the vibe-booking-backend Fastify API via proxy port 4020. Resolved vitest runner conflicts with playwright tests by adding exclude pathing filters to the backend vite.config.ts, and verified compile and test suites pass."
+    },
+    {
+      "date": "2026-05-28",
+      "project": "vibe-booking-backend",
+      "action": "Scaffolded vibe-booking-backend Node Fastify API using SaaS template. Resolved workspace paths configuration issues, rebuilt @vibetech/db-app with corrected rootDir and package entries to allow clean TypeScript compilation, and successfully verified local API health and search query responses."
+    },
+    {
+      "date": "2026-05-27",
+      "project": "cme-track",
+      "action": "Configured and verified the production deployment preflight validator script, ensuring isolated SQLite volume mount handling and environment checks."
+    },
+    {
+      "date": "2026-05-27",
+      "project": "cme-track",
+      "action": "Scaffolded cme-track Micro-SaaS application, implemented CME credit tracker logging, secured endpoints behind a database-backed SQLite Pro tier entitlement, fully integrated Stripe checkout and webhook updates, and verified production builds, Vitest units, and E2E Playwright tests."
+    },
+    {
+      "date": "2026-05-27",
+      "project": "monorepo-branding-and-testing",
+      "action": "Updated client-portal and dental-scheduler to Vibe-Tech branding, verified production builds, typechecks, and ship checks. Configured visual regression testing and added games E2E specs in vibe-tutor. Verified tests pass on vibe-code-studio and nova-agent. Authored a monorepo-wide brand consistency audit."
+    },
+    {
+      "date": "2026-05-26",
+      "project": "dental-scheduler",
+      "action": "Configured shared Stripe keys fallback, fixed Playwright E2E strict-mode locator in smoke.spec.ts, and resolved custom feature gating in entitlements.ts. Installed Stripe CLI, projects plugin, and agent skills (.agents/skills/stripe-*), initializing Stripe Projects in V:\\monorepo."
+    },
+    {
+      "date": "2026-05-25",
+      "project": "vibe-code-studio",
+      "action": "Fixed both the TypeError: x.has is not a function and subsequent x.includes is not a function hydration crashes in Enhanced Agent Mode by migrating expandedSections from a Set to a string array, and introducing versioning (v2) and merge-validation guards in Zustand persist storage. Rebuilt and packaged the application, silently deployed the update, and verified the entire register/login and UI control flow using custom PowerShell scripts driven by Win32 user32 APIs and SendKeys keyboard simulation."
+    },
+    {
+      "date": "2026-05-25",
+      "project": "android-command-center",
+      "action": "Scaffolded native Android client, compiled debug APK (remediated Gradle native daemon thread memory OOM), deployed to Galaxy A54 over ADB, and verified WebSocket connection & auth with the Desktop Bridge via URL query parameters."
+    },
+    {
+      "date": "2026-05-24",
+      "project": "vibe-code-studio",
+      "action": "Diagnosed and repaired post-package loading failure by forcing NODE_ENV=production in Vite compiler; added DATABASE_PATH environment override in Tauri backend; built and verified V:\\monorepo\\desktop-bridge server for local LAN REST+WS."
+    },
+    {
+      "date": "2026-05-24",
+      "project": "discharge-ez",
+      "action": "Completed Option A: Integrated Stripe webhook handlers, email-based SQLite subscription lookup, registered fastify-raw-body plugin, and resolved type definitions for production readiness."
+    },
+    {
+      "date": "2026-05-18",
+      "project": "serenity-flow",
+      "action": "Added Serenity Flow under apps/serenity-flow and VectorShift SVG under tools/vectorshift-svg as Nx workspace projects"
+    },
     {
       "date": "2026-03-29",
       "project": "monorepo",
@@ -104,7 +194,7 @@
       "agent-engine": {
         "status": "development",
         "priority": "medium",
-        "description": "Autonomous coding engine with gated self-improvement (Anthropic SDK)"
+        "description": "Autonomous coding engine with gated self-improvement (Kimi/Moonshot via OpenRouter; not Anthropic SDK)"
       },
       "nova-agent": {
         "status": "production",
@@ -114,44 +204,49 @@
       "vibe-code-studio": {
         "status": "production",
         "priority": "high",
-        "description": "Advanced Development & Packaging IDE (Electron)"
+        "description": "Advanced Development & Packaging IDE (Tauri 2.0; src-tauri present)"
       },
       "vibe-tutor": {
         "status": "production",
         "priority": "high",
-        "description": "AI Tutor System (Electron + Capacitor, Play Store ready)"
+        "description": "AI Tutor System (Electron 35.7 + Capacitor 8 + React/Vite; Android via Capacitor, not React Native or Expo)"
       },
       "nova-mobile-app": {
         "status": "beta",
         "priority": "high",
-        "description": "Mobile Client for Nova (Expo 54, React Navigation, Zustand)"
+        "description": "Mobile Client for Nova (Expo 54 + React Native 0.81, React Navigation, Zustand)"
       },
-      "vtde": {
+      "vibetech-command-center": {
         "status": "beta",
         "priority": "high",
-        "description": "Vibe-Tech Desktop Environment (Tauri 2.0) — terminal, draggable windows, memory integration, vibe-app.json protocol, healing dashboard"
+        "description": "Tier 1 dashboard and diagnostics app (Electron 33 + electron-vite + electron-builder, not Tauri). MCP server build target (`tsconfig.mcp.json`), scripts: `mcp:start`, `probe:claude`, `probe:mcp`"
       },
-      "clawdbot-desktop": {
-        "status": "development",
-        "priority": "medium",
-        "description": "Desktop automation (Electron, @nut-tree-fork)"
-      },
-      "shipping-pwa": {
+      "vibe-shipping": {
         "status": "development",
         "priority": "medium",
         "description": "Logistics PWA"
       },
-      "invoice-automation-saas": {
+      "serenity-flow": {
         "status": "development",
         "priority": "medium",
-        "description": "Invoice processing (Next.js, Stripe)"
+        "description": "Serenity Flow React/Vite app using VectorShift-generated SVG assets"
+      },
+      "vibe-invoice": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Invoice processing SaaS application with Vibe-Tech branding"
       },
       "vibe-tech-lovable": {
         "status": "production",
         "priority": "medium",
         "description": "Vibe Tech landing page"
       },
-      "VibeBlox": {
+      "vibe-chess": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Chess lesson, puzzle, and AI tutor application with Vibe-Tech branding"
+      },
+      "vibe-blox": {
         "status": "development",
         "priority": "medium",
         "description": "Gamified token economy (Hono, SQLite)"
@@ -159,32 +254,22 @@
       "vibe-justice": {
         "status": "maintenance",
         "priority": "medium",
-        "description": "Legal document analysis (Claude API)"
-      },
-      "vibe-shop": {
-        "status": "development",
-        "priority": "low",
-        "description": "E-commerce storefront (Next.js 16, Prisma, Neon — exception to no-Next rule)"
-      },
-      "vibe-booking-backend": {
-        "status": "development",
-        "priority": "low",
-        "description": "Booking backend (Fastify, SQLite, Zod)"
+        "description": "Legal document analysis (Tauri 2 frontend + Python/FastAPI backend packaged with PyInstaller; no root package.json)"
       },
       "crypto-enhanced": {
         "status": "storage",
         "priority": "low",
-        "description": "Trading logic (Python, storage mode)"
+        "description": "Trading and analysis service (Python; managed through root scripts/Nx targets)"
       },
-      "prompt-engineer": {
-        "status": "maintenance",
+      "vibe-reflection": {
+        "status": "development",
         "priority": "medium",
-        "description": "Prompt Management System"
+        "description": "Full-stack React + Express cross-agent reflection system"
       },
-      "mcp-codeberg": {
-        "status": "production",
-        "priority": "high",
-        "description": "Git operations MCP server"
+      "vibe-booking-v2": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Business Booking V2 application with Vibe-Tech branding"
       },
       "mcp-skills-server": {
         "status": "production",
@@ -196,45 +281,175 @@
         "priority": "medium",
         "description": "MCP gateway server"
       },
+      "mcp-rag-server": {
+        "status": "development",
+        "priority": "medium",
+        "description": "MCP server with LanceDB RAG capabilities"
+      },
       "memory-mcp": {
         "status": "development",
         "priority": "high",
         "description": "Memory system MCP server"
       },
-      "avge-dashboard": {
+      "workspace-mcp-server": {
         "status": "development",
         "priority": "medium",
-        "description": "Autonomous Video Generation Engine dashboard (Vite, React)"
+        "description": "Workspace MCP server"
       },
-      "ai-youtube-pipeline": {
-        "status": "development",
-        "priority": "low",
-        "description": "YouTube content pipeline"
-      },
-      "business-booking-platform": {
-        "status": "development",
-        "priority": "low",
-        "description": "Booking platform"
+      "vibe-booking": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Clean-break business booking funnel (React/Vite Nx app; backend has the only package.json)"
       },
       "desktop-commander-v3": {
         "status": "maintenance",
         "priority": "low",
         "description": "Desktop commander"
       },
-      "monorepo-dashboard": {
-        "status": "maintenance",
-        "priority": "low",
-        "description": "Monorepo dashboard"
+      "dap-proxy": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Debug Adapter Protocol proxy (port 5003)"
       },
-      "symptom-tracker": {
-        "status": "maintenance",
-        "priority": "low",
-        "description": "Symptom tracking"
+      "ipc-bridge": {
+        "status": "production",
+        "priority": "high",
+        "description": "WebSocket IPC bridge (NOVA ↔ VCS, port 5004)"
       },
-      "gravity-claw": {
+      "lsp-proxy": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Language Server Protocol proxy (port 5002)"
+      },
+      "openrouter-proxy": {
+        "status": "production",
+        "priority": "high",
+        "description": "Centralized OpenRouter API proxy (port 3001)"
+      },
+      "workflow-engine": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Multi-step workflow orchestration"
+      },
+      "prompt-engineer-app": {
+        "status": "maintenance",
+        "priority": "medium",
+        "description": "Prompt Management System (full-stack React + Express)"
+      },
+      "vibe-booking-backend": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Business booking platform Node backend"
+      },
+      "symptom-tracker-api": {
+        "status": "development",
+        "priority": "low",
+        "description": "Symptom tracker backend API"
+      },
+      "vibe-portal": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Client Portal SaaS application with dark-mode UI and multi-tier billing"
+      },
+      "vibe-dental": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Dental Scheduler SaaS application with Vibe-Tech branding"
+      },
+      "vibe-reminder": {
         "status": "development",
         "priority": "medium",
-        "description": "Gravity claw application"
+        "description": "Appointment Reminder SaaS application with Vibe-Tech branding"
+      },
+      "vibe-discharge": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Discharge SaaS application with Vibe-Tech branding"
+      },
+      "cme-track": {
+        "status": "production",
+        "priority": "medium",
+        "description": "CME credit tracker Micro-SaaS (Stripe, SQLite Pro tier) [added 2026-06-17 audit]"
+      },
+      "prior-auth-pro": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Prior-authorization SaaS [added 2026-06-17 audit]"
+      },
+      "proposal-review-saas": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Proposal review SaaS (live, Stripe) [added 2026-06-17 audit]"
+      },
+      "vibe-shop": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Storefront (Next.js) [added 2026-06-17 audit]"
+      },
+      "vibe-tech-marketing": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Marketing site [added 2026-06-17 audit]"
+      },
+      "vibe-tutor-mobile": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Vibe Tutor mobile (Capacitor/Vite) [added 2026-06-17 audit]"
+      },
+      "prompt-engineer": {
+        "status": "maintenance",
+        "priority": "low",
+        "description": "Prompt engineering app (registry previously 'prompt-engineer-app') [added 2026-06-17 audit]"
+      },
+      "learning-pipeline-mcp": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Learning pipeline MCP server [added 2026-06-17 audit]"
+      },
+      "monorepo-health-mcp": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Monorepo health MCP server [added 2026-06-17 audit]"
+      },
+      "proactive-recommendations-mcp": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Proactive recommendations MCP server [added 2026-06-17 audit]"
+      },
+      "skill-feedback-mcp": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Skill feedback MCP server [added 2026-06-17 audit]"
+      },
+      "_-factory-runtime-smoke": {
+        "status": "scaffold",
+        "priority": "low",
+        "description": "Factory smoke-test scaffold — removal candidate [added 2026-06-17 audit]"
+      },
+      "factory-landing-smoke": {
+        "status": "scaffold",
+        "priority": "low",
+        "description": "Factory smoke-test scaffold — removal candidate [added 2026-06-17 audit]"
+      },
+      "factory-saas-smoke": {
+        "status": "scaffold",
+        "priority": "low",
+        "description": "Factory smoke-test scaffold — removal candidate [added 2026-06-17 audit]"
+      },
+      "factory-tauri-smoke": {
+        "status": "scaffold",
+        "priority": "low",
+        "description": "Factory smoke-test scaffold — removal candidate [added 2026-06-17 audit]"
+      },
+      "factory-verify": {
+        "status": "scaffold",
+        "priority": "low",
+        "description": "Factory verify scaffold — removal candidate [added 2026-06-17 audit]"
+      },
+      "test-factory-app": {
+        "status": "scaffold",
+        "priority": "low",
+        "description": "Factory test app (near-dup of factory-verify) — removal candidate [added 2026-06-17 audit]"
       }
     },
     "packages": {
@@ -242,11 +457,6 @@
         "status": "production",
         "priority": "high",
         "description": "IPC message schemas (Zod)"
-      },
-      "nova-core": {
-        "status": "production",
-        "priority": "high",
-        "description": "Core Logic for Nova"
       },
       "nova-types": {
         "status": "production",
@@ -278,15 +488,10 @@
         "priority": "medium",
         "description": "Shared configuration"
       },
-      "shared-utils": {
+      "core": {
         "status": "production",
         "priority": "medium",
-        "description": "Shared utilities"
-      },
-      "shared-logic": {
-        "status": "production",
-        "priority": "medium",
-        "description": "Shared business logic"
+        "description": "Consolidated core services and utilities"
       },
       "testing-utils": {
         "status": "production",
@@ -297,6 +502,11 @@
         "status": "production",
         "priority": "medium",
         "description": "Shared UI Components"
+      },
+      "games": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Shared React + Capacitor-safe educational games and chess trainers"
       },
       "logger": {
         "status": "production",
@@ -323,25 +533,15 @@
         "priority": "medium",
         "description": "Common service patterns"
       },
-      "vibetech-hooks": {
+      "hooks": {
         "status": "production",
         "priority": "medium",
         "description": "Shared React hooks"
       },
-      "vibetech-shared": {
-        "status": "production",
-        "priority": "medium",
-        "description": "Shared Vibe utilities"
-      },
-      "vibetech-types": {
+      "types": {
         "status": "production",
         "priority": "medium",
         "description": "Shared TypeScript types"
-      },
-      "vibe-python-shared": {
-        "status": "production",
-        "priority": "medium",
-        "description": "Shared Python utilities"
       },
       "memory": {
         "status": "development",
@@ -362,6 +562,16 @@
         "status": "production",
         "priority": "medium",
         "description": "Vibe Code Studio design tokens (colors, typography, spacing)"
+      },
+      "agent-lats": {
+        "status": "development",
+        "priority": "medium",
+        "description": "MCTS planning for autonomous agents"
+      },
+      "avatars": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Avatar types, data, and `AvatarImage` component"
       }
     }
   },
@@ -377,15 +587,25 @@
     "vibe-finisher": {
       "status": "production",
       "description": "Project completion tool"
+    },
+    "vectorshift-svg": {
+      "status": "development",
+      "description": "Local raster-to-SVG asset pipeline for generating app-ready SVG assets"
     }
   },
-  "currentFocus": ["vtde", "memory-system", "nova-mobile-app", "vibe-tutor-release"],
+  "currentFocus": [
+    "vibe-booking-backend",
+    "vibetech-command-center",
+    "memory-system",
+    "nova-mobile-app",
+    "vibe-tutor-release"
+  ],
   "blockers": [],
   "rules": "./docs/ai/RULES.md",
   "paths": {
-    "apps": "C:/dev/apps",
-    "packages": "C:/dev/packages",
-    "tools": "C:/dev/tools",
+    "apps": "V:/monorepo/apps",
+    "packages": "V:/monorepo/packages",
+    "tools": "V:/monorepo/tools",
     "logs": "D:/logs",
     "data": "D:/",
     "learning": "D:/learning-system"

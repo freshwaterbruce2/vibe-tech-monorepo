@@ -2,7 +2,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,13 +18,77 @@ const workspaceStatePath = resolve(workspaceRoot, 'WORKSPACE.json');
 const tmpDir = resolve(workspaceRoot, 'tmp');
 const graphPath = resolve(tmpDir, 'project-graph.sync-audit.json');
 const reportPath = resolve(tmpDir, 'monorepo-sync-audit-report.json');
+const nxBinCmdPath = resolve(workspaceRoot, 'node_modules', '.bin', 'nx.cmd');
+const nxCliCandidates = [
+  resolve(workspaceRoot, 'node_modules', 'nx', 'dist', 'bin', 'nx.js'),
+  resolve(workspaceRoot, 'node_modules', 'nx', 'bin', 'nx.js'),
+];
+const nxCliPath = nxCliCandidates.find((p) => existsSync(p)) ?? nxCliCandidates[0];
+
+function prependPathEntries(currentPath, entries) {
+  const parts = (currentPath ?? '')
+    .split(';')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const seen = new Set(parts.map((entry) => entry.toLowerCase()));
+  const nextEntries = [];
+
+  for (const entry of entries) {
+    if (!entry || !existsSync(entry)) {
+      continue;
+    }
+    const normalized = entry.toLowerCase();
+    if (seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    nextEntries.push(entry);
+  }
+
+  return [...nextEntries, ...parts].join(';');
+}
+
+function createChildEnv() {
+  const env = { ...process.env };
+  const systemRoot = env.SystemRoot?.trim() || 'C:\\Windows';
+  const localAppData =
+    env.LOCALAPPDATA?.trim() || (env.USERPROFILE ? join(env.USERPROFILE, 'AppData', 'Local') : '');
+  const pnpmHome = env.PNPM_HOME?.trim() || (localAppData ? join(localAppData, 'pnpm') : '');
+  const pathEntries = [
+    join(systemRoot, 'System32'),
+    join(systemRoot, 'System32', 'WindowsPowerShell', 'v1.0'),
+    pnpmHome,
+    dirname(process.execPath),
+  ];
+
+  env.SystemRoot = systemRoot;
+  env.WINDIR = env.WINDIR?.trim() || systemRoot;
+  env.ComSpec = env.ComSpec?.trim() || join(systemRoot, 'System32', 'cmd.exe');
+  env.PATHEXT =
+    env.PATHEXT?.trim() && env.PATHEXT !== '.CPL'
+      ? env.PATHEXT
+      : '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL';
+  env.PROCESSOR_ARCHITECTURE = env.PROCESSOR_ARCHITECTURE?.trim() || 'AMD64';
+  env.PNPM_HOME = pnpmHome || env.PNPM_HOME;
+  env.Path = prependPathEntries(env.Path ?? env.PATH ?? '', pathEntries);
+  env.PATH = env.Path;
+  env.NX_DAEMON = 'false';
+  env.NX_CACHE_PROJECT_GRAPH = 'false';
+  env.NX_ISOLATE_PLUGINS = 'false';
+  env.NX_NO_CLOUD = 'true';
+  env.NX_SKIP_REMOTE_CACHE = 'true';
+  return env;
+}
+
+const childEnv = createChildEnv();
+const pnpmCmdPath = childEnv.PNPM_HOME ? resolve(childEnv.PNPM_HOME, 'pnpm.cmd') : null;
 
 function run(command, args = [], options = {}) {
   try {
     const result = spawnSync(command, args, {
       cwd: workspaceRoot,
       encoding: 'utf8',
-      env: { ...process.env, NX_DAEMON: 'false' },
+      env: { ...childEnv, ...(options.env ?? {}) },
       stdio: 'pipe',
       shell: false,
       windowsHide: true,
@@ -258,7 +322,21 @@ function collectGeneratedArtifacts(dirtyByPath) {
 }
 
 function searchLiteral(literal) {
-  const rgCheck = run('rg', ['--version']);
+  let rgCommand = 'rg';
+  let rgCheck = run(rgCommand, ['--version']);
+  if (!rgCheck.ok) {
+    const whereRg = run('where.exe', ['rg']);
+    const candidate = whereRg.stdout
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find((line) => line.toLowerCase().endsWith('rg.exe') && existsSync(line));
+
+    if (candidate) {
+      rgCommand = candidate;
+      rgCheck = run(rgCommand, ['--version']);
+    }
+  }
+
   if (!rgCheck.ok) {
     return {
       available: false,
@@ -267,7 +345,7 @@ function searchLiteral(literal) {
     };
   }
 
-  const search = run('rg', [
+  const search = run(rgCommand, [
     '-n',
     '--hidden',
     '-F',
@@ -317,9 +395,9 @@ function searchLiteral(literal) {
 
 function collectPathPolicyObservations() {
   const learningSearch = searchLiteral('D:\\learning');
-  const dataSearch = searchLiteral('C:\\dev\\data');
-  const logsSearch = searchLiteral('C:\\dev\\logs');
-  const databasesSearch = searchLiteral('C:\\dev\\databases');
+  const dataSearch = searchLiteral('V:\\monorepo\\data');
+  const logsSearch = searchLiteral('V:\\monorepo\\logs');
+  const databasesSearch = searchLiteral('V:\\monorepo\\databases');
 
   const deprecatedLearning = learningSearch.items
     .filter((item) => !item.match.includes('D:\\learning-system'))
@@ -367,26 +445,95 @@ const allowedMissingTargets = config.allowedMissingTargets ?? {};
 const allowedIsolatedProjects = new Set(config.allowedIsolatedProjects ?? []);
 const allowedStandaloneTags = new Set(config.allowedStandaloneTags ?? []);
 const { dirtyEntries, dirtyByPath, error: gitStatusError } = readGitStatus();
+const submodules = parseGitmodules();
+const submoduleRoots = submodules
+  .map((module) => normalizePath(module.path ?? ''))
+  .filter(Boolean);
+
+function isInSubmoduleProject(filePath) {
+  if (submoduleRoots.length === 0) {
+    return false;
+  }
+
+  const relPath = normalizePath(relative(workspaceRoot, filePath));
+  return submoduleRoots.some((submoduleRoot) => relPath.startsWith(`${submoduleRoot}/`));
+}
 
 let graphSource = 'nx-graph';
 let graphLoadWarning = null;
 let nodeMap = {};
 let dependencyMap = {};
 
-const graphCommand = run('pnpm', ['nx', 'graph', '--file', graphPath, '--open=false']);
+const graphCommandCandidates = [
+  () =>
+    pnpmCmdPath && existsSync(pnpmCmdPath)
+      ? run(childEnv.ComSpec || 'cmd.exe', [
+          '/d',
+          '/s',
+          '/c',
+          `${pnpmCmdPath} nx graph --file ${graphPath} --open=false`,
+        ])
+      : {
+          ok: false,
+          stdout: '',
+          stderr: `Missing pnpm CLI at ${pnpmCmdPath ?? 'PNPM_HOME unresolved'}`,
+          code: 1,
+          error: null,
+        },
+  () =>
+    existsSync(nxBinCmdPath)
+      ? run(childEnv.ComSpec || 'cmd.exe', [
+          '/d',
+          '/s',
+          '/c',
+          `${nxBinCmdPath} graph --file ${graphPath} --open=false`,
+        ])
+      : {
+          ok: false,
+          stdout: '',
+          stderr: `Missing Nx CLI at ${nxBinCmdPath}`,
+          code: 1,
+          error: null,
+        },
+  () =>
+    existsSync(nxCliPath)
+      ? run(process.execPath, [nxCliPath, 'graph', '--file', graphPath, '--open=false'])
+      : {
+          ok: false,
+          stdout: '',
+          stderr: `Missing Nx CLI at ${nxCliPath}`,
+          code: 1,
+          error: null,
+        },
+];
+
+let graphCommand = null;
+for (const candidate of graphCommandCandidates) {
+  const result = candidate();
+  if (result.ok) {
+    graphCommand = result;
+    break;
+  }
+  graphCommand = result;
+}
 if (graphCommand.ok && existsSync(graphPath)) {
   const graphJson = readJson(graphPath);
   nodeMap = graphJson?.graph?.nodes ?? {};
   dependencyMap = graphJson?.graph?.dependencies ?? {};
 } else {
   graphSource = 'project-json-fallback';
-  graphLoadWarning = (graphCommand.stderr || graphCommand.stdout || 'Nx graph unavailable.').trim();
+  graphLoadWarning = (
+    graphCommand.stderr ||
+    graphCommand.stdout ||
+    graphCommand.error ||
+    'Nx graph unavailable.'
+  ).trim();
 
   const projectFiles = [
     ...collectProjectJsonFiles(resolve(workspaceRoot, 'apps')),
     ...collectProjectJsonFiles(resolve(workspaceRoot, 'packages')),
     ...collectProjectJsonFiles(resolve(workspaceRoot, 'backend')),
-  ];
+  ].filter((filePath) => !isInSubmoduleProject(filePath));
 
   nodeMap = Object.fromEntries(
     projectFiles.map((filePath) => {
@@ -470,23 +617,31 @@ const unexpectedIsolated =
       })
     : [];
 
-const staleIsolatedAllowances = [...allowedIsolatedProjects].filter(
-  (project) => !isolatedProjects.includes(project),
-);
+const staleIsolatedAllowances =
+  graphSource === 'nx-graph'
+    ? [...allowedIsolatedProjects].filter((project) => !isolatedProjects.includes(project))
+    : [];
 
 const workspaceDrift = [];
 if (existsSync(workspaceStatePath)) {
   const workspaceState = readJson(workspaceStatePath);
   const declaredApps = Object.keys(workspaceState?.projects?.apps ?? {});
   const declaredPackages = Object.keys(workspaceState?.projects?.packages ?? {});
+  const projectNameSet = new Set(projectNames);
   const diskApps = safeDirectoryEntries(resolve(workspaceRoot, 'apps'))
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+  const diskBackend = safeDirectoryEntries(resolve(workspaceRoot, 'backend'))
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
   const diskPackages = safeDirectoryEntries(resolve(workspaceRoot, 'packages'))
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
 
-  const declaredAppsMissingOnDisk = declaredApps.filter((app) => !diskApps.includes(app));
+  const allDiskApps = [...diskApps, ...diskBackend];
+  const declaredAppsMissingOnDisk = declaredApps.filter(
+    (app) => !allDiskApps.includes(app) && !projectNameSet.has(app),
+  );
   const declaredPackagesMissingOnDisk = declaredPackages.filter(
     (pkg) => !diskPackages.includes(pkg),
   );
@@ -537,7 +692,6 @@ const rootArtifactCandidates = collectRootArtifacts(dirtyByPath);
 const generatedArtifactCandidates = collectGeneratedArtifacts(dirtyByPath);
 const cleanupCandidates = [...rootArtifactCandidates, ...generatedArtifactCandidates];
 const pathPolicy = collectPathPolicyObservations();
-const submodules = parseGitmodules();
 const localToolState = collectLocalToolState();
 
 const issues = {
@@ -627,7 +781,24 @@ if (focus === 'cleanup') {
 }
 
 if (issueCount > 0 && !reportOnly) {
-  console.error('\nBlocking issues detected. See report for details.');
+  console.error('\nBlocking issues detected:');
+  if (missingTargetsUnexpected.length) {
+    console.error('  Unexpected target gaps:');
+    console.error(JSON.stringify(missingTargetsUnexpected, null, 2));
+  }
+  if (unexpectedIsolated.length) {
+    console.error('  Unexpected isolated projects:');
+    console.error(JSON.stringify(unexpectedIsolated, null, 2));
+  }
+  if (workspaceDrift.length) {
+    console.error('  Workspace metadata drift:');
+    console.error(JSON.stringify(workspaceDrift, null, 2));
+  }
+  if (packageScriptsIssues.length) {
+    console.error('  Root CI script issues:');
+    console.error(JSON.stringify(packageScriptsIssues, null, 2));
+  }
+  console.error(`\nFull report: ${reportPath}`);
   process.exit(1);
 }
 

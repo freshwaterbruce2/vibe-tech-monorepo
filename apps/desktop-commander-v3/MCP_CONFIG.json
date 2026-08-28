@@ -2,7 +2,7 @@
 	"mcpServers": {
 		"desktop-commander": {
 			"command": "node",
-			"args": ["C:\\dev\\apps\\desktop-commander-v3\\dist\\mcp.js"],
+			"args": ["V:\\monorepo\\apps\\desktop-commander-v3\\dist\\mcp.js"],
 			"env": {
 				"NODE_ENV": "production"
 			},

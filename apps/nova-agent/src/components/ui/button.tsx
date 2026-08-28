@@ -69,7 +69,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 			<Comp
 				className={cn(buttonVariants({ variant, size, className }))}
 				ref={ref}
-				disabled={props.disabled || isLoading}
+				disabled={props.disabled === true || isLoading}
 				{...props}
 			>
 				{isLoading && <Loader2 className="animate-spin" />}
@@ -83,4 +83,5 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 Button.displayName = "Button";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Button, buttonVariants };

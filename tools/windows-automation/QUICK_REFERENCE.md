@@ -3,7 +3,7 @@
 ## 🚀 Import Module
 
 ```powershell
-Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1
+Import-Module V:\monorepo\tools\windows-automation\WindowsAutomation.psm1
 ```
 
 ## 🎹 KEYBOARD
@@ -85,11 +85,11 @@ Set-ClipboardText "Automated content"
 
 ```powershell
 # Capture screen
-Capture-Screenshot -Path "C:\dev\screenshot.png"
+Capture-Screenshot -Path "V:\monorepo\screenshot.png"
 
 # With timestamp
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-Capture-Screenshot -Path "C:\dev\screen_$timestamp.png"
+Capture-Screenshot -Path "V:\monorepo\screen_$timestamp.png"
 ```
 
 ## 🔔 NOTIFICATION
@@ -152,7 +152,7 @@ Send-Keys "{ENTER}"
 ### Pattern 4: Screenshot + Notification
 
 ```powershell
-$path = Capture-Screenshot -Path "C:\dev\screenshot.png"
+$path = Capture-Screenshot -Path "V:\monorepo\screenshot.png"
 Set-ClipboardText $path
 Show-WindowsNotification `
     -Title "Screenshot Captured" `
@@ -180,7 +180,7 @@ Show-WindowsNotification `
 ### Example 1: Hello World
 
 ```powershell
-Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1
+Import-Module V:\monorepo\tools\windows-automation\WindowsAutomation.psm1
 Type-Text -Text "Hello from Windows Automation!"
 Show-WindowsNotification -Title "Success!" -Message "It works!"
 ```
@@ -209,7 +209,7 @@ Write-Host "Clipboard set. Press Ctrl+V to paste: $data"
 for ($i = 1; $i -le 3; $i++) {
     Write-Host "Screenshot $i in 3 seconds..."
     Start-Sleep -Seconds 3
-    Capture-Screenshot -Path "C:\dev\screenshot_$i.png"
+    Capture-Screenshot -Path "V:\monorepo\screenshot_$i.png"
     Write-Host "Captured!"
 }
 ```
@@ -218,13 +218,13 @@ for ($i = 1; $i -le 3; $i++) {
 
 ```powershell
 # Full feature demo
-C:\dev\tools\windows-automation\demo.ps1
+V:\monorepo\tools\windows-automation\demo.ps1
 
 # Keyboard & mouse demo
-C:\dev\tools\windows-automation\keyboard-mouse-demo.ps1
+V:\monorepo\tools\windows-automation\keyboard-mouse-demo.ps1
 
 # Practical examples
-C:\dev\tools\windows-automation\practical-examples.ps1
+V:\monorepo\tools\windows-automation\practical-examples.ps1
 ```
 
 ## 🔗 FULL DOCUMENTATION
@@ -237,20 +237,20 @@ C:\dev\tools\windows-automation\practical-examples.ps1
 
 ```powershell
 # Quick screenshot
-Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1; Capture-Screenshot -Path "C:\dev\quick.png"
+Import-Module V:\monorepo\tools\windows-automation\WindowsAutomation.psm1; Capture-Screenshot -Path "V:\monorepo\quick.png"
 
 # Quick notification
-Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1; Show-WindowsNotification -Title "Alert" -Message "Something happened"
+Import-Module V:\monorepo\tools\windows-automation\WindowsAutomation.psm1; Show-WindowsNotification -Title "Alert" -Message "Something happened"
 
 # Quick clipboard
-Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1; Set-ClipboardText "Quick content"; Write-Host "Clipboard set!"
+Import-Module V:\monorepo\tools\windows-automation\WindowsAutomation.psm1; Set-ClipboardText "Quick content"; Write-Host "Clipboard set!"
 
 # Mouse position
-Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1; $p = Get-MousePosition; Write-Host "Mouse: ($($p.X), $($p.Y))"
+Import-Module V:\monorepo\tools\windows-automation\WindowsAutomation.psm1; $p = Get-MousePosition; Write-Host "Mouse: ($($p.X), $($p.Y))"
 ```
 
 ---
 
-**Location**: `C:\dev\tools\windows-automation\`  
+**Location**: `V:\monorepo\tools\windows-automation\`  
 **Status**: ✅ All features working  
 **Version**: 1.0 (2025-10-12)

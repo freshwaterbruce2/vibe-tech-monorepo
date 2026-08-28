@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import {
     Code,
     FileText,
@@ -119,7 +120,9 @@ const FeatureGrid = styled.div`
   margin: 0 auto ${vibeTheme.spacing['3xl']};
 `;
 
-const FeatureCard = styled(motion.div) <{ $variant?: 'primary' | 'secondary' }>`
+const FeatureCard = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ $variant?: 'primary' | 'secondary' }>`
   background: ${(props) =>
     props.$variant === 'primary'
       ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(0, 212, 255, 0.05) 100%)'
@@ -190,6 +193,15 @@ const FeatureDescription = styled.p`
   font-size: ${vibeTheme.typography.fontSize.sm};
   line-height: 1.5;
   margin: 0;
+`;
+
+const SectionTitle = styled.h2`
+  font-size: ${vibeTheme.typography.fontSize.lg};
+  font-weight: ${vibeTheme.typography.fontWeight.semibold};
+  color: ${vibeTheme.colors.textSecondary};
+  margin: 0 0 ${vibeTheme.spacing.md} 0;
+  text-transform: uppercase;
+  letter-spacing: ${vibeTheme.typography.letterSpacing.wide};
 `;
 
 const LoadingIndicator = styled.div`
@@ -372,7 +384,7 @@ export const WelcomeScreen = ({
 
         {/* Quick Start actions */}
         <div>
-          <h2>Quick Start</h2>
+          <SectionTitle>Quick Start</SectionTitle>
           <div style={{ display: 'flex', gap: vibeTheme.spacing.md, flexWrap: 'wrap' }}>
             <Button
               variant="outline"
@@ -416,15 +428,9 @@ export const WelcomeScreen = ({
             <Button
               variant="outline"
               icon={<GitBranch />}
-              onClick={() => {
-                try {
-                  onOpenFolder('/demo/project');
-                } catch (error) {
-                  logger.error('Error handling Clone Repo action:', error);
-                }
-              }}
+              onClick={handleOpenFolder}
             >
-              Clone Repo
+              Open Repo
             </Button>
           </div>
         </div>

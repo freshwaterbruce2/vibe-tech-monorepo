@@ -62,7 +62,7 @@ export const LearningInsights = ({
 			icon: <Brain className="w-4 h-4" />,
 			iconBg: "bg-pink-500/15 text-pink-400",
 			label: "Signals",
-			value: topActivityType ? topActivityType : "No activity yet",
+			value: topActivityType ?? "No activity yet",
 			subtext: `${learningEvents.length} learning events${agentStatus ? ` • ${agentStatus.memory_count} memories` : ""}`,
 		},
 		{

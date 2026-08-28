@@ -1,12 +1,15 @@
-/**
+﻿/**
  * App Integration Service
  * Connects database and learning analytics to the main application
  */
 
+import { Capacitor } from '@capacitor/core';
+
+import { logger } from '../utils/logger';
 import type { Achievement, HomeworkItem, MusicPlaylist, Reward } from '../types';
 import { databaseService } from './databaseService';
+import { dataStore } from './dataStore';
 import { learningAnalytics } from './learningAnalytics';
-import { migrationService } from './migrationService';
 
 export interface UserStats {
   totalHomework: number;
@@ -38,22 +41,30 @@ export class AppIntegrationService {
 
     this.initializePromise = (async () => {
       try {
-        // Initialize database on D: drive
-        await databaseService.initialize();
-        this.dbAvailable = true;
+        // SQLite is only available on native platforms; on web the
+        // jeep-sqlite WASM loader can hang the init chain when Vite
+        // returns HTML for the .wasm request. Fall back to localStorage.
+        const platform = Capacitor.getPlatform();
+        const useSQLite = platform === 'android' || platform === 'windows';
 
-        // Perform data migration only once
-        const migrated = await migrationService.isMigrationComplete();
-        if (!migrated) {
-          await migrationService.performMigration();
+        if (useSQLite) {
+          // Delegate DB init + migration to the single owner (dataStore). App.tsx
+          // already calls dataStore.initialize(), whose internal promise guard
+          // makes both callers share ONE init — eliminating the double-init race
+          // and the duplicate migration that ran here independently.
+          await dataStore.initialize();
+          this.dbAvailable = databaseService.getConnection() !== null;
+        } else {
+          this.dbAvailable = false;
         }
 
-        // Initialize learning analytics
         await learningAnalytics.initialize();
 
         this.initialized = true;
-      } catch {
+      } catch (error) {
+        logger.error('[AppIntegration] Initialization failed; using localStorage fallback:', error);
         this.dbAvailable = false;
+        this.initialized = true;
       }
     })().finally(() => {
       this.initializePromise = null;
@@ -70,7 +81,7 @@ export class AppIntegrationService {
       try {
         return await databaseService.getHomeworkItems();
       } catch (error) {
-        console.error('Database error, falling back to localStorage:', error);
+        logger.error('Database error, falling back to localStorage:', error);
       }
     }
 
@@ -99,7 +110,7 @@ export class AppIntegrationService {
       try {
         await databaseService.saveHomeworkItem(item);
       } catch (error) {
-        console.error('Failed to save to database:', error);
+        logger.error('Failed to save to database:', error);
       }
     }
   }
@@ -121,7 +132,7 @@ export class AppIntegrationService {
           await db.run('DELETE FROM homework_items WHERE id = ?', [id]);
         }
       } catch (error) {
-        console.error('Failed to delete from database:', error);
+        logger.error('Failed to delete from database:', error);
       }
     }
   }
@@ -186,7 +197,7 @@ export class AppIntegrationService {
           achievement.progress ?? 0,
         );
       } catch (error) {
-        console.error('Failed to track achievement:', error);
+        logger.error('Failed to track achievement:', error);
       }
     }
   }
@@ -234,7 +245,7 @@ export class AppIntegrationService {
         }
       }
     } catch (error) {
-      console.error('Failed to get user stats:', error);
+      logger.error('Failed to get user stats:', error);
     }
 
     return stats;
@@ -287,10 +298,8 @@ export class AppIntegrationService {
       if (data.points) {
         appStore.set('studentPoints', data.points);
       }
-
-      console.debug('Data imported successfully');
     } catch (error) {
-      console.error('Failed to import data:', error);
+      logger.error('Failed to import data:', error);
       throw error;
     }
   }

@@ -4,7 +4,6 @@ export { default as BreakdownModal } from './BreakdownModal';
 export { default as GoalsPanel } from './GoalsPanel';
 export { default as HomeworkDashboard } from './HomeworkDashboard';
 export { default as HomeworkItem } from './HomeworkItem';
-export { default as HomeworkTaskCards } from './HomeworkTaskCards';
 export { default as NotificationPanel } from './NotificationPanel';
 export { default as ParentDashboard } from './ParentDashboard';
 export { default as ProgressReports } from './ProgressReports';

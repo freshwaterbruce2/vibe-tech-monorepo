@@ -3,8 +3,8 @@
 # Run as Administrator.
 
 $taskName = "VibeOps-SelfHealing-4AM"
-$scriptPath = "C:\dev\scripts\self-healing-cron.ps1"
-$workingDir = "C:\dev"
+$scriptPath = "V:\monorepo\scripts\self-healing-cron.ps1"
+$workingDir = "V:\monorepo"
 
 # Remove existing task if present
 $existing = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue

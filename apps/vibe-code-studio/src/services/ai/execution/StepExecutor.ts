@@ -10,6 +10,7 @@ import type { StuckPattern } from '../MetacognitiveLayer';
 import { createActionRegistry, executeAction } from './actions';
 import { calculateBackoffDelay,generateAlternativeStrategy } from './SelfCorrection';
 import type {
+    ActionType,
     AgentStep, AgentTask as _AgentTask,
     ExecutionCallbacks,
     StepExecutionContext,
@@ -29,7 +30,7 @@ export async function executeStepWithFallbacks(
     const result = await executeStepWithRetry(step, context, callbacks);
 
     // If failed and fallbacks exist, try each fallback
-    const enhancedStep = step as any; // EnhancedAgentStep type
+    const enhancedStep = step as AgentStep & { fallbackPlans?: Array<{ id: string; reasoning: string; alternativeAction: AgentStep['action'] }> };
     if (!result.success && enhancedStep.fallbackPlans && enhancedStep.fallbackPlans.length > 0) {
         logger.debug(`[StepExecutor] ❌ Primary approach failed, trying fallbacks...`);
 
@@ -100,7 +101,7 @@ export async function executeStepWithRetry(
             }
 
             // Query strategy memory for relevant patterns BEFORE execution
-            let relevantPatterns: any[] = [];
+            let relevantPatterns: unknown[] = [];
             if (enableMemory) {
                 relevantPatterns = await strategyMemory.queryPatterns({
                     problemDescription: step.description,
@@ -210,7 +211,7 @@ export async function executeStepWithRetry(
                         logger.debug(`[StepExecutor] 💡 AI guidance: ${helpResponse.suggestedApproach}`);
                         // Try the AI's suggested approach as an alternative strategy
                         step.action = {
-                            type: 'custom' as any,
+                            type: 'custom' as ActionType,
                             params: {
                                 approach: helpResponse.suggestedApproach,
                                 reasoning: helpResponse.reasoning

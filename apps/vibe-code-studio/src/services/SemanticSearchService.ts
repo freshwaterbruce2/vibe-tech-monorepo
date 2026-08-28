@@ -171,7 +171,7 @@ export class SemanticSearchService {
       totalFiles: files.length,
       filesSearched: keywordMatches.length,
       searchTime: Date.now() - startTime,
-      modelUsed: 'deepseek/deepseek-v3.2', // fallback AI ranking
+      modelUsed: 'moonshot/kimi-2.5-pro', // fallback AI ranking
     };
 
     logger.info('[SemanticSearch] Keyword search complete:', {
@@ -258,7 +258,7 @@ export class SemanticSearchService {
    * Walks the directory tree via FileSystemService, reads each file, and
    * stores it in the in-memory cache for keyword / semantic search.
    *
-   * @param rootPath  Workspace root (e.g. "demo://workspace" or "C:/dev/apps/myapp")
+   * @param rootPath  Workspace root (e.g. "demo://workspace" or "V:/monorepo/apps/myapp")
    * @param maxFiles  Safety cap to prevent runaway indexing (default 500)
    * @returns Number of files indexed
    */
@@ -503,7 +503,7 @@ export class SemanticSearchService {
             content: prompt,
           },
         ],
-        model: 'deepseek/deepseek-v3.2',
+        model: 'moonshot/kimi-2.5-pro',
         temperature: 0.3, // Low temperature for consistent ranking
         maxTokens: 1000,
       });
@@ -652,12 +652,12 @@ Focus on the semantic meaning and functionality.
           content: prompt,
         },
       ],
-      model: 'deepseek/deepseek-v3.2',
+      model: 'moonshot/kimi-2.5-pro',
       temperature: 0.5,
       maxTokens: 100,
     });
 
-    return response.content.trim();
+    return (response.content ?? '').trim();
   }
 
   /**

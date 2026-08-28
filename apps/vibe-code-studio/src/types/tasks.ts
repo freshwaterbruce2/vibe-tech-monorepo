@@ -38,7 +38,7 @@ export interface TaskProgress {
 
 export interface TaskResult {
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
   warnings?: string[];
   logs?: string[];
@@ -47,7 +47,7 @@ export interface TaskResult {
   pausable: boolean;
   retryCount: number;
   maxRetries: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface BackgroundTask {
@@ -66,7 +66,7 @@ export interface BackgroundTask {
   pausable: boolean;
   retryCount: number;
   maxRetries: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface TaskQueueOptions {

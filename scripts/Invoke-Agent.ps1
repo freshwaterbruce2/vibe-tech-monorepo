@@ -1,212 +1,123 @@
-#!/usr/bin/env powershell
+#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-Direct PowerShell interface for triggering the enhanced agent system
+    Dispatch a task to the first available Power Cell NATO agent.
 
 .DESCRIPTION
-This script provides a command-line interface for users to directly trigger
-the enhanced agent system with AGENTS.md context awareness from any directory.
+    Finds an idle agent cell (by checking D:\databases\cell_status and live PID),
+    then assigns the task via Manage-Agents.ps1.
+
+    Run .\New-AgentCells.ps1 once and start at least one cell before using this script.
 
 .PARAMETER Task
-The task or request to send to the agent system
+    The task text to dispatch.
 
 .PARAMETER Force
-Skip confirmation prompts for destructive operations
-
-.PARAMETER Verbose
-Enable verbose logging and output
+    Skip the confirmation prompt.
 
 .EXAMPLE
-Invoke-Agent "Create a dashboard component"
+    .\Invoke-Agent.ps1 "Check lint errors in apps/vibe-shop"
+    .\Invoke-Agent.ps1 "List TypeScript errors in apps/vibe-tutor" -Force
 
-.EXAMPLE
-Invoke-Agent "Implement security for trading API" -Verbose
-
-.EXAMPLE
-agent "Add caching to memory system"
+.NOTES
+    Alias: agent "..."  (if you have an alias set in your PowerShell profile)
 #>
 
 param(
-    [Parameter(Mandatory=$true, Position=0)]
+    [Parameter(Mandatory, Position = 0)]
     [string]$Task,
-
-    [switch]$Force = $false,
-    [switch]$VerboseOutput = $false
+    [switch]$Force
 )
 
-# Configuration
-$AgentSystemPath = "C:\dev\projects\active\agents"
-$BridgeScript = Join-Path $AgentSystemPath "claude_code_bridge.py"
-$LogPath = "C:\dev\.claude\logs"
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
-if (-not (Test-Path $LogPath)) {
-    New-Item -ItemType Directory -Path $LogPath -Force | Out-Null
+$RegistryPath = 'D:\databases\agent_cells.json'
+$StatusDir    = 'D:\databases\cell_status'
+$ManageScript = Join-Path $PSScriptRoot 'Manage-Agents.ps1'
+
+function Test-PidAlive {
+    param([int]$ProcessId)
+    if ($ProcessId -le 0) { return $false }
+    try { $null = Get-Process -Id $ProcessId -ErrorAction Stop; return $true } catch { return $false }
 }
 
-$LogFile = Join-Path $LogPath "agent-cli-$(Get-Date -Format 'yyyy-MM-dd').log"
+Write-Host ''
+Write-Host '  Power Cell NATO  —  Agent Dispatcher' -ForegroundColor Cyan
+Write-Host '  ────────────────────────────────────' -ForegroundColor DarkGray
+Write-Host ''
 
-function Write-AgentLog {
-    param([string]$Message, [string]$Level = "INFO")
-    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss.fff"
-    $LogEntry = "[$Timestamp] [$Level] [AGENT-CLI] $Message"
+# ── Prerequisite checks ───────────────────────────────────────────────────────
 
-    Add-Content -Path $LogFile -Value $LogEntry
-
-    if ($VerboseOutput -or $Level -in @("ERROR", "WARN")) {
-        switch ($Level) {
-            "ERROR" { Write-Host $LogEntry -ForegroundColor Red }
-            "WARN"  { Write-Host $LogEntry -ForegroundColor Yellow }
-            "INFO"  { Write-Host $LogEntry -ForegroundColor Green }
-            "DEBUG" { Write-Host $LogEntry -ForegroundColor Gray }
-        }
-    }
-}
-
-function Test-Prerequisites {
-    Write-AgentLog "Checking system prerequisites..."
-
-    # Check if Python is available
-    try {
-        $PythonVersion = python --version 2>&1
-        Write-AgentLog "Python available: $PythonVersion"
-    } catch {
-        Write-AgentLog "Python not found in PATH" "ERROR"
-        Write-Host "ERROR: Python is required but not found in PATH" -ForegroundColor Red
-        return $false
-    }
-
-    # Check if claude_code_bridge.py exists
-    if (-not (Test-Path $BridgeScript)) {
-        Write-AgentLog "Bridge script not found: $BridgeScript" "ERROR"
-        Write-Host "❌ Agent bridge script not found: $BridgeScript" -ForegroundColor Red
-        return $false
-    }
-
-    Write-AgentLog "Prerequisites check passed"
-    return $true
-}
-
-function Invoke-AgentAnalysis {
-    param([string]$UserTask, [string]$WorkingDirectory)
-
-    Write-AgentLog "Analyzing task: $UserTask"
-    Write-AgentLog "Working directory: $WorkingDirectory"
-
-    try {
-        # Store current location
-        $OriginalLocation = Get-Location
-
-        # Navigate to agent system directory
-        Set-Location $AgentSystemPath
-
-        # Execute analysis
-        $AnalysisResult = python claude_code_bridge.py --analyze "$UserTask" --working-directory "$WorkingDirectory" 2>&1
-        $ExitCode = $LASTEXITCODE
-
-        # Restore location
-        Set-Location $OriginalLocation
-
-        if ($ExitCode -eq 0) {
-            Write-AgentLog "Analysis completed successfully"
-
-            # Parse JSON result
-            try {
-                $Analysis = $AnalysisResult | ConvertFrom-Json
-                return $Analysis
-            } catch {
-                Write-AgentLog "Failed to parse analysis result: $AnalysisResult" "WARN"
-                return @{
-                    agents = @("general-purpose")
-                    parallel = $false
-                    complexity = 0.5
-                    task_type = "unknown"
-                }
-            }
-        } else {
-            Write-AgentLog "Analysis failed with exit code $ExitCode" "ERROR"
-            Write-AgentLog "Output: $AnalysisResult" "ERROR"
-            throw "Agent analysis failed"
-        }
-    } catch {
-        Write-AgentLog "Exception during analysis: $($_.Exception.Message)" "ERROR"
-        throw
-    }
-}
-
-function Execute-AgentTask {
-    param([string]$UserTask, [hashtable]$Analysis, [string]$WorkingDirectory)
-
-    Write-AgentLog "Executing agent task with $(($Analysis.agents | Measure-Object).Count) agents"
-
-    # Display analysis results
-    Write-Host "`n🔍 Agent Analysis:" -ForegroundColor Cyan
-    Write-Host "   Task Type: $($Analysis.task_type)" -ForegroundColor White
-    Write-Host "   Complexity: $($Analysis.complexity)" -ForegroundColor White
-    Write-Host "   Selected Agents: $($Analysis.agents -join ', ')" -ForegroundColor White
-    Write-Host "   Parallel Execution: $($Analysis.parallel)" -ForegroundColor White
-
-    # Confirm execution (unless forced)
-    if (-not $Force) {
-        Write-Host "`n⚠️  Execute this task? [Y/N]: " -ForegroundColor Yellow -NoNewline
-        $Confirmation = Read-Host
-        if ($Confirmation -notmatch '^[Yy]') {
-            Write-Host "❌ Task execution cancelled by user" -ForegroundColor Red
-            return $false
-        }
-    }
-
-    Write-Host "`n🚀 Executing task..." -ForegroundColor Green
-    Write-AgentLog "User confirmed task execution"
-
-    # For now, we'll simulate the task execution since we need Claude Code's Task tool
-    # In a full implementation, this would integrate with Claude Code's API
-    Write-Host "🔄 Routing to agents: $($Analysis.agents -join ', ')" -ForegroundColor Blue
-    Write-Host "📋 Task: $UserTask" -ForegroundColor White
-    Write-Host "📁 Context: $WorkingDirectory" -ForegroundColor Gray
-
-    # Simulate execution (in real implementation, this would call Claude Code's Task API)
-    Write-Host "`n⚡ Task execution initiated through Claude Code interface..." -ForegroundColor Green
-    Write-Host "   Check Claude Code for task progress and results." -ForegroundColor Gray
-
-    Write-AgentLog "Task execution completed (routed to Claude Code)"
-    return $true
-}
-
-# Main execution
-try {
-    Write-Host "`nEnhanced Agent System - Direct Interface" -ForegroundColor Cyan
-    Write-Host "================================================" -ForegroundColor Cyan
-
-    Write-AgentLog "Agent CLI started with task: $Task"
-
-    # Check prerequisites
-    if (-not (Test-Prerequisites)) {
-        exit 1
-    }
-
-    # Get current working directory for context
-    $WorkingDirectory = (Get-Location).Path
-    Write-AgentLog "Current working directory: $WorkingDirectory"
-
-    # Analyze the task
-    Write-Host "`n🔍 Analyzing task with AGENTS.md context..." -ForegroundColor Blue
-    $Analysis = Invoke-AgentAnalysis -UserTask $Task -WorkingDirectory $WorkingDirectory
-
-    # Execute the task
-    $Success = Execute-AgentTask -UserTask $Task -Analysis $Analysis -WorkingDirectory $WorkingDirectory
-
-    if ($Success) {
-        Write-Host "`n✅ Agent task initiated successfully!" -ForegroundColor Green
-        Write-Host "   The enhanced agent system has analyzed your request and routed it appropriately." -ForegroundColor Gray
-        exit 0
-    } else {
-        Write-Host "`n❌ Task execution failed or was cancelled" -ForegroundColor Red
-        exit 1
-    }
-
-} catch {
-    Write-AgentLog "Critical error: $($_.Exception.Message)" "ERROR"
-    Write-Host "`n❌ Critical Error: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "   Check the log file: $LogFile" -ForegroundColor Gray
+if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
+    Write-Host '  [!!] claude not on PATH. Install Claude Code from https://claude.ai/code' -ForegroundColor Red
     exit 1
 }
+
+if (-not (Test-Path $ManageScript)) {
+    Write-Host "  [!!] Manage-Agents.ps1 not found at: $ManageScript" -ForegroundColor Red
+    exit 1
+}
+
+if (-not (Test-Path $RegistryPath)) {
+    Write-Host '  [!!] Registry not found. Bootstrap first:' -ForegroundColor Red
+    Write-Host '       .\New-AgentCells.ps1' -ForegroundColor Gray
+    Write-Host '       .\Manage-Agents.ps1 -Action start -Cell CELL_01' -ForegroundColor Gray
+    exit 1
+}
+
+# ── Find idle cell ────────────────────────────────────────────────────────────
+
+$registry = Get-Content $RegistryPath -Raw | ConvertFrom-Json
+$idleCell = $null
+
+foreach ($cell in @($registry.cells)) {
+    # Worker must be a live process
+    $procPid = [int]($cell.pid ?? 0)
+    if (-not (Test-PidAlive $procPid)) { continue }
+
+    # Live status file must say 'idle' (worker writes this every 30s)
+    $liveFile   = Join-Path $StatusDir "$($cell.name).json"
+    $liveStatus = 'unknown'
+    if (Test-Path $liveFile) {
+        try { $liveStatus = (Get-Content $liveFile -Raw | ConvertFrom-Json).status } catch {}
+    }
+
+    if ($liveStatus -eq 'idle') {
+        $idleCell = $cell.name
+        break
+    }
+}
+
+if (-not $idleCell) {
+    $total = @($registry.cells).Count
+    Write-Host "  [!!] No idle cells available ($total registered)." -ForegroundColor Yellow
+    Write-Host '       Check status: .\Manage-Agents.ps1 -Action list' -ForegroundColor Gray
+    Write-Host '       Start a cell: .\Manage-Agents.ps1 -Action start -Cell CELL_01' -ForegroundColor Gray
+    exit 1
+}
+
+# ── Confirm and dispatch ──────────────────────────────────────────────────────
+
+$workingDir = (Get-Location).Path
+$fullTask   = "$Task  [cwd: $workingDir]"
+
+Write-Host "  Task   : $Task" -ForegroundColor White
+Write-Host "  Context: $workingDir" -ForegroundColor DarkGray
+Write-Host "  Cell   : $idleCell" -ForegroundColor DarkGray
+Write-Host ''
+
+if (-not $Force) {
+    Write-Host '  Dispatch? [Y/N]: ' -ForegroundColor Yellow -NoNewline
+    $confirm = Read-Host
+    if ($confirm -notmatch '^[Yy]') {
+        Write-Host '  Cancelled.' -ForegroundColor DarkGray
+        exit 0
+    }
+}
+
+& $ManageScript -Action assign -Cell $idleCell -Task $fullTask
+
+Write-Host ''
+Write-Host "  Monitor: .\Manage-Agents.ps1 -Action monitor -Cell $idleCell -Follow" -ForegroundColor DarkGray
+Write-Host ''

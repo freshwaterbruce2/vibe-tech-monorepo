@@ -7,7 +7,7 @@ from datetime import datetime
 from collections import defaultdict
 
 # Connect to database
-conn = sqlite3.connect('C:/dev/projects/crypto-enhanced/trading.db')
+conn = sqlite3.connect('V:/monorepo/projects/crypto-enhanced/trading.db')
 conn.row_factory = sqlite3.Row
 c = conn.cursor()
 

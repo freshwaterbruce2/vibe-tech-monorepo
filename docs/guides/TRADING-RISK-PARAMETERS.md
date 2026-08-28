@@ -307,10 +307,10 @@ tail -100 trading_new.log | grep "Stop Loss"
 
 ```bash
 # Option 1: Edit config.py directly
-code projects/crypto-enhanced/config.py
+code apps/crypto-enhanced/config.py
 
 # Option 2: Create trading_config.json
-code projects/crypto-enhanced/trading_config.json
+code apps/crypto-enhanced/trading_config.json
 
 # Option 3: Environment variables (least recommended)
 set MAX_POSITION_SIZE=50

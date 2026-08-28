@@ -61,9 +61,7 @@ describe('GitHubService', () => {
 
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => [
-          { number: 1, title: 'Test PR', state: 'open' }
-        ]
+        json: async () => [{ number: 1, title: 'Test PR', state: 'open' }],
       });
 
       const service = new GitHubService(mockToken);
@@ -84,8 +82,8 @@ describe('GitHubService', () => {
           title: 'Test PR',
           body: 'Description',
           state: 'open',
-          user: { login: 'testuser' }
-        })
+          user: { login: 'testuser' },
+        }),
       });
 
       const service = new GitHubService(mockToken);
@@ -102,8 +100,8 @@ describe('GitHubService', () => {
         ok: true,
         json: async () => ({
           number: 2,
-          html_url: 'https://github.com/owner/repo/pull/2'
-        })
+          html_url: 'https://github.com/owner/repo/pull/2',
+        }),
       });
 
       const service = new GitHubService(mockToken);
@@ -111,7 +109,7 @@ describe('GitHubService', () => {
         title: 'New Feature',
         body: 'Description',
         head: 'feature-branch',
-        base: 'main'
+        base: 'main',
       });
 
       expect(pr.number).toBe(2);
@@ -123,7 +121,7 @@ describe('GitHubService', () => {
 
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        text: async () => 'diff --git a/file.ts b/file.ts\n+new line'
+        text: async () => 'diff --git a/file.ts b/file.ts\n+new line',
       });
 
       const service = new GitHubService(mockToken);
@@ -134,15 +132,165 @@ describe('GitHubService', () => {
     });
   });
 
+  describe('PR diff coverage fallback (large PR — 406 diff-too-large)', () => {
+    function mockDiffTooLargeOnce() {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 406,
+        json: async () => ({
+          message: 'Sorry, the diff exceeded the maximum number of lines (20000)',
+        }),
+      });
+    }
+
+    function mockFilesPage(files: unknown[], linkHeader: string | null) {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => files,
+        headers: { get: (name: string) => (name === 'link' ? linkHeader : null) },
+      });
+    }
+
+    it('returns the diff directly when the initial fetch succeeds (no 406)', async () => {
+      if (!GitHubService) return;
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        text: async () => 'diff --git a/file.ts b/file.ts\n+new line',
+      });
+
+      const service = new GitHubService(mockToken);
+      const result = await service.getPullRequestDiffWithCoverage(mockRepo, 1);
+
+      expect(result).toEqual({
+        diff: 'diff --git a/file.ts b/file.ts\n+new line',
+        truncated: false,
+        includedFiles: 0,
+        totalFiles: 0,
+        skippedFiles: [],
+      });
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to the paginated files API and reconstructs patches across 2 pages', async () => {
+      if (!GitHubService) return;
+
+      mockDiffTooLargeOnce();
+      mockFilesPage(
+        [
+          {
+            filename: 'src/a.ts',
+            status: 'modified',
+            changes: 3,
+            patch: '@@ -1,1 +1,2 @@\n+added',
+          },
+          {
+            filename: 'src/b.ts',
+            status: 'modified',
+            changes: 1,
+            patch: '@@ -1,1 +1,1 @@\n-old\n+new',
+          },
+        ],
+        '<https://api.github.com/repos/testowner/testrepo/pulls/1/files?page=2>; rel="next"'
+      );
+      mockFilesPage(
+        [{ filename: 'src/c.ts', status: 'added', changes: 5, patch: '@@ -0,0 +1,5 @@\n+created' }],
+        null
+      );
+
+      const service = new GitHubService(mockToken);
+      const result = await service.getPullRequestDiffWithCoverage(mockRepo, 1);
+
+      expect(result.truncated).toBe(false);
+      expect(result.totalFiles).toBe(3);
+      expect(result.includedFiles).toBe(3);
+      expect(result.skippedFiles).toEqual([]);
+      expect(result.diff).toContain('diff --git a/src/a.ts b/src/a.ts');
+      expect(result.diff).toContain('diff --git a/src/c.ts b/src/c.ts');
+      expect(result.diff).toContain('+created');
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+      const urls = (global.fetch as any).mock.calls.map((call: unknown[]) => call[0]);
+      expect(urls[2]).toContain('page=2');
+    });
+
+    it('gives a placeholder section for a binary file with no patch', async () => {
+      if (!GitHubService) return;
+
+      mockDiffTooLargeOnce();
+      mockFilesPage([{ filename: 'assets/logo.png', status: 'modified', changes: 0 }], null);
+
+      const service = new GitHubService(mockToken);
+      const result = await service.getPullRequestDiffWithCoverage(mockRepo, 1);
+
+      expect(result.diff).toContain('diff --git a/assets/logo.png b/assets/logo.png');
+      expect(result.diff).toContain('no patch available');
+      expect(result.totalFiles).toBe(1);
+      expect(result.includedFiles).toBe(1);
+      expect(result.truncated).toBe(false);
+    });
+
+    it('sets truncated and records skipped files once the size cap is exceeded', async () => {
+      if (!GitHubService) return;
+
+      mockDiffTooLargeOnce();
+      const hugePatch = '+'.repeat(410_000);
+      mockFilesPage(
+        [
+          { filename: 'huge.ts', status: 'modified', changes: 1, patch: hugePatch },
+          { filename: 'small.ts', status: 'modified', changes: 1, patch: '@@ -1,1 +1,1 @@\n+x' },
+        ],
+        null
+      );
+
+      const service = new GitHubService(mockToken);
+      const result = await service.getPullRequestDiffWithCoverage(mockRepo, 1);
+
+      expect(result.truncated).toBe(true);
+      expect(result.skippedFiles).toEqual(['huge.ts']);
+      expect(result.includedFiles).toBe(1);
+      expect(result.totalFiles).toBe(2);
+      expect(result.diff).toContain('diff --git a/small.ts b/small.ts');
+      expect(result.diff).not.toContain('diff --git a/huge.ts');
+    });
+
+    it('non-406 errors on the diff request still throw, without falling back', async () => {
+      if (!GitHubService) return;
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ message: 'Server error' }),
+      });
+
+      const service = new GitHubService(mockToken);
+      await expect(service.getPullRequestDiffWithCoverage(mockRepo, 1)).rejects.toThrow(/500/);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not fall back for a non-Error thrown value (isDiffTooLargeError false branch)', async () => {
+      if (!GitHubService) return;
+
+      // ok:true so the private fetch() wrapper's try/catch never runs; the
+      // rejection comes from response.text() itself, so it reaches
+      // getPullRequestDiffWithCoverage's catch as a raw non-Error value.
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.reject('boom'),
+      });
+
+      const service = new GitHubService(mockToken);
+      await expect(service.getPullRequestDiffWithCoverage(mockRepo, 1)).rejects.toBe('boom');
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('Code Review', () => {
     it('should get PR files', async () => {
       if (!GitHubService) return;
 
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => [
-          { filename: 'src/test.ts', status: 'modified', changes: 10 }
-        ]
+        json: async () => [{ filename: 'src/test.ts', status: 'modified', changes: 10 }],
       });
 
       const service = new GitHubService(mockToken);
@@ -157,7 +305,7 @@ describe('GitHubService', () => {
 
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ id: 123, body: 'Comment' })
+        json: async () => ({ id: 123, body: 'Comment' }),
       });
 
       const service = new GitHubService(mockToken);
@@ -165,7 +313,7 @@ describe('GitHubService', () => {
         body: 'Good work!',
         commit_id: 'abc123',
         path: 'src/test.ts',
-        line: 10
+        line: 10,
       });
 
       expect(comment.id).toBe(123);
@@ -176,13 +324,13 @@ describe('GitHubService', () => {
 
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ id: 456, state: 'APPROVED' })
+        json: async () => ({ id: 456, state: 'APPROVED' }),
       });
 
       const service = new GitHubService(mockToken);
       const review = await service.submitReview(mockRepo, 1, {
         event: 'APPROVE',
-        body: 'LGTM'
+        body: 'LGTM',
       });
 
       expect(review.state).toBe('APPROVED');
@@ -193,9 +341,7 @@ describe('GitHubService', () => {
 
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => [
-          { id: 1, body: 'Comment 1', user: { login: 'user1' } }
-        ]
+        json: async () => [{ id: 1, body: 'Comment 1', user: { login: 'user1' } }],
       });
 
       const service = new GitHubService(mockToken);
@@ -212,9 +358,7 @@ describe('GitHubService', () => {
 
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => [
-          { number: 10, title: 'Bug', state: 'open' }
-        ]
+        json: async () => [{ number: 10, title: 'Bug', state: 'open' }],
       });
 
       const service = new GitHubService(mockToken);
@@ -229,13 +373,13 @@ describe('GitHubService', () => {
 
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ number: 11, html_url: 'https://...' })
+        json: async () => ({ number: 11, html_url: 'https://...' }),
       });
 
       const service = new GitHubService(mockToken);
       const issue = await service.createIssue(mockRepo, {
         title: 'New Bug',
-        body: 'Description'
+        body: 'Description',
       });
 
       expect(issue.number).toBe(11);
@@ -246,7 +390,7 @@ describe('GitHubService', () => {
 
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ number: 10, state: 'closed' })
+        json: async () => ({ number: 10, state: 'closed' }),
       });
 
       const service = new GitHubService(mockToken);
@@ -264,8 +408,8 @@ describe('GitHubService', () => {
         ok: true,
         json: async () => [
           { name: 'main', protected: true },
-          { name: 'feature', protected: false }
-        ]
+          { name: 'feature', protected: false },
+        ],
       });
 
       const service = new GitHubService(mockToken);
@@ -283,8 +427,8 @@ describe('GitHubService', () => {
         json: async () => ({
           ahead_by: 5,
           behind_by: 2,
-          total_commits: 5
-        })
+          total_commits: 5,
+        }),
       });
 
       const service = new GitHubService(mockToken);
@@ -302,7 +446,7 @@ describe('GitHubService', () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 404,
-        json: async () => ({ message: 'Not found' })
+        json: async () => ({ message: 'Not found' }),
       });
 
       const service = new GitHubService(mockToken);
@@ -326,7 +470,7 @@ describe('GitHubService', () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 429,
-        json: async () => ({ message: 'Rate limit exceeded' })
+        json: async () => ({ message: 'Rate limit exceeded' }),
       });
 
       const service = new GitHubService(mockToken);
@@ -349,13 +493,90 @@ describe('GitHubService', () => {
 
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ login: 'testuser' })
+        json: async () => ({ login: 'testuser' }),
       });
 
       const service = new GitHubService(mockToken);
       const authenticated = await service.checkAuth();
 
       expect(authenticated).toBe(true);
+    });
+  });
+
+  describe('Review bot endpoints (spec 15)', () => {
+    it('creates a PR-level issue comment', async () => {
+      if (!GitHubService) return;
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 9, body: 'summary' }),
+      });
+
+      const service = new GitHubService(mockToken);
+      const comment = await service.createIssueComment(mockRepo, 7, 'summary');
+
+      expect(comment.id).toBe(9);
+      const [url, init] = (global.fetch as any).mock.calls[0];
+      expect(url).toBe('https://api.github.com/repos/testowner/testrepo/issues/7/comments');
+      expect(init.method).toBe('POST');
+      expect(JSON.parse(init.body)).toEqual({ body: 'summary' });
+    });
+
+    it('lists PR-level issue comments', async () => {
+      if (!GitHubService) return;
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ id: 1, body: 'first' }],
+      });
+
+      const service = new GitHubService(mockToken);
+      const comments = await service.listIssueComments(mockRepo, 7);
+
+      expect(comments).toHaveLength(1);
+      const [url] = (global.fetch as any).mock.calls[0];
+      expect(url).toBe('https://api.github.com/repos/testowner/testrepo/issues/7/comments');
+    });
+
+    it('lists submitted reviews', async () => {
+      if (!GitHubService) return;
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ id: 3, state: 'COMMENTED' }],
+      });
+
+      const service = new GitHubService(mockToken);
+      const reviews = await service.listReviews(mockRepo, 7);
+
+      expect(reviews[0].state).toBe('COMMENTED');
+      const [url] = (global.fetch as any).mock.calls[0];
+      expect(url).toBe('https://api.github.com/repos/testowner/testrepo/pulls/7/reviews');
+    });
+
+    it('submits a review with inline comments in one POST', async () => {
+      if (!GitHubService) return;
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 4, state: 'COMMENTED' }),
+      });
+
+      const service = new GitHubService(mockToken);
+      const inline = [{ path: 'src/a.ts', line: 10, side: 'RIGHT', body: 'finding' }];
+      await service.submitReview(mockRepo, 7, {
+        event: 'COMMENT',
+        body: 'verdict',
+        comments: inline,
+      });
+
+      const [url, init] = (global.fetch as any).mock.calls[0];
+      expect(url).toBe('https://api.github.com/repos/testowner/testrepo/pulls/7/reviews');
+      expect(JSON.parse(init.body)).toEqual({
+        event: 'COMMENT',
+        body: 'verdict',
+        comments: inline,
+      });
     });
   });
 });

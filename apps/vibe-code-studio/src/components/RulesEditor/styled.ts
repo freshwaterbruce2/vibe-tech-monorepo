@@ -41,7 +41,9 @@ export const ModeSelector = styled.div`
   padding: 4px;
 `;
 
-export const ModeButton = styled.button<{ active?: boolean }>`
+export const ModeButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'active',
+})<{ active?: boolean }>`
   padding: 6px 12px;
   border: none;
   background: ${(props) => (props.active ? 'var(--accent-color, #007acc)' : 'transparent')};
@@ -113,7 +115,9 @@ export const SidebarTitle = styled.h3`
   letter-spacing: 0.5px;
 `;
 
-export const TemplateButton = styled.button<{ active?: boolean }>`
+export const TemplateButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'active',
+})<{ active?: boolean }>`
   width: 100%;
   padding: 8px 12px;
   margin-bottom: 6px;

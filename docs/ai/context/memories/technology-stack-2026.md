@@ -1,14 +1,15 @@
 # Technology Stack (2026)
 
-Last Updated: 2026-01-06
+Last Updated: 2026-05-04
 
 ## Frontend (Web Apps)
 
-- **React**: 19 (latest stable - verify before using)
-- **TypeScript**: 5.9+
-- **Vite**: 7 (latest build tool)
+- **React**: 19.2.4
+- **TypeScript**: 5.9.3
+- **Vite**: 7.x for current React/Vite apps
+- **Next.js**: 16.1.6 only for `apps/vibe-shop`; this is an approved exception to the no-Next default
 - **UI Framework**: shadcn/ui (Radix UI primitives)
-- **Styling**: Tailwind CSS 3.4.18 (stable - v4 downgraded due to @apply directive issues)
+- **Styling**: Tailwind is app-local; root apps use both Tailwind 4.1.x and legacy Tailwind 3.4.x (`vibe-tutor` remains 3.4.15)
 - **State Management**: React Query 5 (TanStack Query)
 - **Routing**: React Router v7
 - **Forms**: React Hook Form 7 + Zod 4 validation
@@ -16,35 +17,36 @@ Last Updated: 2026-01-06
 
 ## Desktop Apps
 
-- **Preferred**: Tauri (smaller bundles, better performance than Electron)
-- **Legacy**: Electron (for vibe-code-studio)
-- **Projects**: nova-agent (Tauri), vibe-code-studio (Electron), desktop-commander-v3 (MCP)
+- **Tauri 2**: `nova-agent`, `vibe-code-studio`, and `vibe-justice/frontend`
+- **Electron 33**: `vibetech-command-center` through electron-vite and electron-builder; do not call it Tauri
+- **Electron 35.7**: `vibe-tutor` desktop shell through electron-builder
+- **Local-only WIP**: `apps/gravity-claw` has Tauri scripts but is excluded from `pnpm-workspace.yaml`; its package version is not a shipped workspace release
 
 ## Mobile Apps
 
-- **Framework**: Capacitor 7 + React 19
-- **Strategy**: PWA → Native conversion
-- **Projects**: vibe-tutor (Production v1.0.5+)
-- **Critical**: Use Tailwind v3 (NOT CDN), explicit CapacitorHttp
+- **Capacitor 8**: `apps/vibe-tutor` Android app; it is not React Native or Expo
+- **Expo 54 + React Native 0.81**: `apps/nova-mobile-app`, the actual React Native mobile app
+- **Critical**: Use app-local Android/Nx targets and verify package manifests before assuming root package scripts
 
 ## Backend
 
-- **Node.js**: 22.x LTS (latest)
-- **Runtime**: Express for APIs
-- **Python**: 3.x for crypto-enhanced
+- **Node.js**: 22.x
+- **Runtime**: Express/Fastify/Hono depending on app
+- **Python**: 3.x for `crypto-enhanced` and `vibe-justice/backend`
 - **Database**: SQLite (D:\databases\)
+- **Packaging**: `vibe-justice` backend uses a PyInstaller `.spec`; `vibe-justice` has no root `package.json`
 
 ## Build Tools
 
-- **Package Manager**: pnpm 9.15.0 (59.5% disk space savings)
-- **Monorepo Tool**: Nx 21.6.3
+- **Package Manager**: pnpm 10.33.0
+- **Monorepo Tool**: Nx 22.6.5
 - **CI/CD**: GitHub Actions
 - **Testing**: Vitest (unit), Playwright (E2E)
 
 ## Platform Requirements
 
 - **OS**: Windows 11 ONLY (no cross-platform)
-- **Shell**: PowerShell 7+ (NOT bash)
+- **Shell**: PowerShell 7+ preferred
 - **File System**: NTFS (C:\ for code, D:\ for data)
 
 ## Version Verification

@@ -1,0 +1,49 @@
+{
+  "name": "<%= projectName %>",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node ../../node_modules/vite/bin/vite.js --host 127.0.0.1 --port <%= port %>",
+    "build:shared:api": "pnpm --dir ../../packages/feature-flags/core build && pnpm --dir ../../packages/auth build && pnpm --dir ../../packages/monetization build && pnpm --dir ../../packages/billing build && pnpm --dir ../../packages/payments build && pnpm --dir ../../packages/emails build && pnpm --dir ../../packages/email build && pnpm --dir ../../packages/analytics build && pnpm --dir ../../packages/ai build && pnpm --dir ../../packages/landing build",
+    "dev:api": "pnpm run build:shared:api && tsx watch server/src/index.ts",
+    "build": "node ../../node_modules/vite/bin/vite.js build",
+    "preview": "node ../../node_modules/vite/bin/vite.js preview",
+    "build:api": "tsc -p server/tsconfig.json",
+    "start:api": "node server/dist/index.js",
+    "ship:check": "pnpm run build:shared:api && pnpm run build && pnpm run build:api && tsx server/scripts/ship-check.ts",
+    "test": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
+    "test:e2e": "playwright test",
+    "ux:polish": "bash scripts/ralph_loop_runner.sh",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vibetech/auth": "workspace:*",
+    "@vibetech/analytics": "workspace:*",
+    "@vibetech/ai": "workspace:*",
+    "@vibetech/billing": "workspace:*",
+    "@vibetech/db-app": "workspace:*",
+    "@vibetech/email": "workspace:*",
+    "@vibetech/emails": "workspace:*",
+    "@vibetech/landing": "workspace:*",
+    "@vibetech/monetization": "workspace:*",
+    "@vibetech/payments": "workspace:*",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "fastify": "^5.8.4",
+    "fastify-raw-body": "^5.0.0",
+    "@fastify/cors": "^11.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@nx/playwright": "22.7.1",
+    "@playwright/test": "^1.58.2",
+    "@vitejs/plugin-react": "^5.2.0",
+    "tsx": "^4.21.0",
+    "typescript": "5.9.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.1.2"
+  }
+}

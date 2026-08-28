@@ -4,8 +4,11 @@ import { immer } from 'zustand/middleware/immer';
 
 import type { EditorFile, EditorSettings, WorkspaceContext } from '../types';
 
+// Track notification auto-remove timers so they can be cleared on manual removal
+const notificationTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
 /**
- * Modern Zustand Store for DeepCode Editor - 2025 Patterns
+ * Modern Zustand Store for Vibe Code Studio - 2025 Patterns
  *
  * Features:
  * - TypeScript first with proper inference
@@ -98,7 +101,7 @@ const defaultSettings: EditorSettings = {
   autoSave: true,
   aiAutoComplete: true,
   aiSuggestions: true,
-  aiModel: 'deepseek/deepseek-v3.2',
+  aiModel: 'moonshot/kimi-2.5-pro',
   showReasoningProcess: false,
 };
 
@@ -265,14 +268,21 @@ export const useEditorStore = create<EditorState>()(
 
                 // Auto-remove after 5 seconds for non-error notifications
                 if (notification.type !== 'error') {
-                  setTimeout(() => {
+                  const timer = setTimeout(() => {
+                    notificationTimers.delete(id);
                     get().actions.removeNotification(id);
                   }, 5000);
+                  notificationTimers.set(id, timer);
                 }
               }),
 
             removeNotification: (id) =>
               set((state) => {
+                const timer = notificationTimers.get(id);
+                if (timer) {
+                  clearTimeout(timer);
+                  notificationTimers.delete(id);
+                }
                 const index = state.notifications.findIndex((n) => n.id === id);
                 if (index > -1) {
                   state.notifications.splice(index, 1);
@@ -281,6 +291,10 @@ export const useEditorStore = create<EditorState>()(
 
             clearNotifications: () =>
               set((state) => {
+                for (const timer of notificationTimers.values()) {
+                  clearTimeout(timer);
+                }
+                notificationTimers.clear();
                 state.notifications = [];
               }),
           },
@@ -310,7 +324,7 @@ export const useEditorStore = create<EditorState>()(
         }))
       ),
       {
-        name: 'deepcode-editor-store',
+        name: 'vibe-code-studio-editor-store',
         partialize: (state) => ({
           recentFiles: state.recentFiles,
           settings: state.settings,
@@ -320,7 +334,7 @@ export const useEditorStore = create<EditorState>()(
       }
     ),
     {
-      name: 'DeepCode Editor Store',
+      name: 'Vibe Code Studio Editor Store',
     }
   )
 );
@@ -362,6 +376,5 @@ export const subscribeToFileChanges = (
 
 // DevTools actions
 if (import.meta.env.DEV) {
-  // @ts-expect-error - Exposing store for dev tools
-  window.editorStore = useEditorStore;
+  (window as Window & { editorStore?: typeof useEditorStore }).editorStore = useEditorStore;
 }

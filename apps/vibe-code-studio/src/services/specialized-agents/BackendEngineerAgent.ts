@@ -1,13 +1,11 @@
 /**
  * Backend Engineer Agent - Server-side development and API specialist
  */
-import type { DeepSeekService } from '../DeepSeekService';
-
 import type { AgentContext, AgentResponse} from './BaseSpecializedAgent';
 import { AgentCapability,BaseSpecializedAgent } from './BaseSpecializedAgent';
 
 export class BackendEngineerAgent extends BaseSpecializedAgent {
-  constructor(deepSeekService: DeepSeekService) {
+  constructor() {
     super('Backend Engineer Agent', [
       AgentCapability.API_DESIGN,
       AgentCapability.DATABASE_DESIGN,
@@ -16,7 +14,7 @@ export class BackendEngineerAgent extends BaseSpecializedAgent {
       AgentCapability.MICROSERVICES,
       AgentCapability.MONITORING,
       AgentCapability.DATA_VALIDATION
-    ], deepSeekService);
+    ]);
   }
 
   getRole(): string {

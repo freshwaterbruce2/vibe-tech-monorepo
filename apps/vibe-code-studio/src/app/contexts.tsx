@@ -11,6 +11,8 @@
 
 import { createContext, useContext, type MutableRefObject } from 'react';
 import type { BackgroundAgentSystem } from '../services/BackgroundAgentSystem';
+import type { AgentOrchestrator } from '../services/specialized-agents/AgentOrchestrator';
+import type { AgentPerformanceOptimizer } from '../services/AgentPerformanceOptimizer';
 import type { AutoFixService, FixSuggestion, GeneratedFix } from '../services/AutoFixService';
 import type { DetectedError } from '../services/ErrorDetector';
 import type { FileSystemService } from '../services/FileSystemService';
@@ -21,7 +23,14 @@ import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
 import type { AIModel, AIProvider } from '../services/ai/AIProviderInterface';
 import type { SearchOptions, SearchResult, SearchScope } from '../components/GlobalSearch/types';
 import type { NotificationItem } from '../hooks/useNotifications';
-import type { AIMessage, ContextualFile, EditorFile, EditorSettings, WorkspaceContext as WorkspaceIndexContext } from '../types';
+import type {
+  AIMessage,
+  AIResponseState,
+  ContextualFile,
+  EditorFile,
+  EditorSettings,
+  WorkspaceContext as WorkspaceIndexContext,
+} from '../types';
 import type { FileChange, MultiFileEditPlan } from '../types/multifile';
 import type { ChatMode, VisualPanelState } from './types';
 
@@ -36,6 +45,8 @@ export interface ServicesContextValue {
   liveStream: LiveEditorStream;
   executionEngine: ExecutionEngine;
   backgroundAgentSystem: BackgroundAgentSystem;
+  orchestrator: AgentOrchestrator;
+  performanceOptimizer: AgentPerformanceOptimizer;
 }
 
 export const ServicesContext = createContext<ServicesContextValue | null>(null);
@@ -76,6 +87,10 @@ export interface UIPanelContextValue {
   setChatMode: (mode: ChatMode) => void;
   errorFixPanelOpen: boolean;
   setErrorFixPanelOpen: (open: boolean) => void;
+  agentModeOpen: boolean;
+  setAgentModeOpen: (open: boolean) => void;
+  brainScanOpen: boolean;
+  setBrainScanOpen: (open: boolean) => void;
 }
 
 export const UIPanelContext = createContext<UIPanelContextValue | null>(null);
@@ -125,12 +140,17 @@ export interface WorkspaceContextValue {
 
   // Search
   handleOpenFileFromSearch: (file: string, line?: number, column?: number) => void;
-  handleReplaceInFile: (file: string, search: string, replace: string, options: SearchOptions) => Promise<void>;
+  handleReplaceInFile: (
+    file: string,
+    search: string,
+    replace: string,
+    options: SearchOptions
+  ) => Promise<void>;
   handleSearchInFiles: (
     searchText: string,
     files: string[],
     options: SearchOptions,
-    scope?: SearchScope,
+    scope?: SearchScope
   ) => Promise<Record<string, SearchResult[]>>;
 }
 
@@ -160,15 +180,19 @@ export interface CommandEntry {
 export interface AppExtrasContextValue {
   // AI Chat
   aiMessages: AIMessage[];
+  isAiResponding: boolean;
+  aiResponseState: AIResponseState;
   handleAIMessage: (message: string) => Promise<void>;
+  cancelAiResponse: () => void;
   addAiMessage: (message: AIMessage) => void;
   updateAiMessage: (messageId: string, updater: (msg: AIMessage) => AIMessage) => void;
+  clearAiMessages: () => void;
   handleModelChange: (model: AIModel) => Promise<void>;
   handleProviderChange: (provider: AIProvider) => Promise<void>;
   handleMultiFileEditDetected?: (plan: MultiFileEditPlan, changes: FileChange[]) => void;
   currentModel: string;
   currentProvider: string;
-  deepseekApiKey: string;
+  openrouterApiKey: string;
 
   // Error fix
   currentError: DetectedError | null;

@@ -9,8 +9,9 @@
  * - Copy to clipboard
  * - Insert into editor
  */
-import React, { useCallback, useRef,useState } from 'react';
+import React, { useCallback, useEffect, useRef,useState } from 'react';
 import { AnimatePresence,motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import {
   Check,
   Code2,
@@ -234,7 +235,9 @@ const CodeContent = styled.pre`
   }
 `;
 
-const GenerateButton = styled(motion.button)`
+const GenerateButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   padding: 12px 24px;
   border-radius: 8px;
   border: none;
@@ -301,6 +304,7 @@ export const ScreenshotToCodePanel = ({
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const serviceRef = useRef(new ImageToCodeService(apiKey));
@@ -362,8 +366,8 @@ export const ScreenshotToCodePanel = ({
         options
       );
       setResult(generatedResult);
-    } catch (err: any) {
-      setError(err.message ?? 'Failed to generate code');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to generate code');
     } finally {
       setIsGenerating(false);
     }
@@ -375,11 +379,26 @@ export const ScreenshotToCodePanel = ({
     try {
       await navigator.clipboard.writeText(result.code);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+      copiedTimeoutRef.current = setTimeout(() => {
+        copiedTimeoutRef.current = undefined;
+        setCopied(false);
+      }, 2000);
     } catch (err) {
       logger.error('Failed to copy:', err);
     }
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleInsert = () => {
     if (!result) {return;}
@@ -445,7 +464,7 @@ export const ScreenshotToCodePanel = ({
                 <Label>Framework</Label>
                 <Select
                   value={options.framework}
-                  onChange={(e) => setOptions({ ...options, framework: e.target.value as any })}
+                  onChange={(e) => setOptions({ ...options, framework: e.target.value as ImageToCodeOptions['framework'] })}
                 >
                   <option value="react">React</option>
                   <option value="html">HTML</option>
@@ -457,7 +476,7 @@ export const ScreenshotToCodePanel = ({
                 <Label>Styling</Label>
                 <Select
                   value={options.styling}
-                  onChange={(e) => setOptions({ ...options, styling: e.target.value as any })}
+                  onChange={(e) => setOptions({ ...options, styling: e.target.value as ImageToCodeOptions['styling'] })}
                 >
                   <option value="tailwind">Tailwind CSS</option>
                   <option value="css">CSS</option>

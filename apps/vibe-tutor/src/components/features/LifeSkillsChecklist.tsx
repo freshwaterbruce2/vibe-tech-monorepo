@@ -139,7 +139,7 @@ const LifeSkillsChecklist = ({ onTaskComplete }: LifeSkillsChecklistProps) => {
       <div className="mb-6">
         <ProgressBar
           percent={completionRate}
-          barClassName="bg-gradient-to-r from-purple-500 to-pink-500"
+          barClassName="bg-gradient-to-r from-purple-500 to-sky-500"
           trackClassName="h-3 bg-white/10 rounded-full overflow-hidden"
           label="Life skills completion progress"
         />
@@ -155,20 +155,20 @@ const LifeSkillsChecklist = ({ onTaskComplete }: LifeSkillsChecklistProps) => {
               onClick={() => toggleTask(skill.id)}
               className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all ${
                 isCompleted
-                  ? 'bg-fuchsia-500/10 border border-fuchsia-500/30'
+                  ? 'bg-violet-500/10 border border-violet-500/30'
                   : 'bg-white/5 border border-white/10 hover:bg-white/10'
               }`}
             >
               {isCompleted ? (
-                <CheckCircle2 className="w-5 h-5 text-fuchsia-400 flex-shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-violet-400 flex-shrink-0" />
               ) : (
                 <Circle className="w-5 h-5 text-gray-400 flex-shrink-0" />
               )}
               <skill.icon
-                className={`w-4 h-4 flex-shrink-0 ${isCompleted ? 'text-fuchsia-400' : 'text-gray-400'}`}
+                className={`w-4 h-4 flex-shrink-0 ${isCompleted ? 'text-violet-400' : 'text-gray-400'}`}
               />
               <span
-                className={`text-sm flex-1 text-left ${isCompleted ? 'text-fuchsia-300 line-through' : 'text-white'}`}
+                className={`text-sm flex-1 text-left ${isCompleted ? 'text-violet-300 line-through' : 'text-white'}`}
               >
                 {skill.task}
               </span>
@@ -178,8 +178,8 @@ const LifeSkillsChecklist = ({ onTaskComplete }: LifeSkillsChecklistProps) => {
       </div>
 
       {completionRate === 100 && (
-        <div className="mt-4 p-4 bg-fuchsia-500/10 border border-fuchsia-500/30 rounded-lg text-center">
-          <p className="text-fuchsia-400 font-semibold">Amazing! All tasks complete today! 🎉</p>
+        <div className="mt-4 p-4 bg-violet-500/10 border border-violet-500/30 rounded-lg text-center">
+          <p className="text-violet-400 font-semibold">Amazing! All tasks complete today! 🎉</p>
           <p className="text-sm text-gray-300 mt-1">You're building great life habits!</p>
         </div>
       )}

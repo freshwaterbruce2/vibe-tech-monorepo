@@ -1,5 +1,7 @@
 import React, { useRef, useTransition } from 'react';
 import { dataStore } from '../../services/dataStore';
+import { logger } from '../../utils/logger';
+import PrivacyPolicy from './PrivacyPolicy';
 
 const DataManagement = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,7 +60,7 @@ const DataManagement = () => {
                 URL.revokeObjectURL(url);
                 alert('Data exported successfully!');
             } catch (error) {
-                console.error('Failed to export data:', error);
+                logger.error('Failed to export data:', error);
                 alert('An error occurred during export.');
             }
         });
@@ -116,7 +118,7 @@ const DataManagement = () => {
                         window.location.reload();
                     }
                 } catch (error) {
-                    console.error('Failed to import data:', error);
+                    logger.error('Failed to import data:', error);
                     alert('Failed to import data. Please ensure it is a valid backup file.');
                 } finally {
                     // Reset file input
@@ -153,7 +155,7 @@ const DataManagement = () => {
                     alert('Application data has been reset. The app will now reload.');
                     window.location.reload();
                 } catch (error) {
-                    console.error('Failed to reset data:', error);
+                    logger.error('Failed to reset data:', error);
                     alert('An error occurred while resetting data. Please try again.');
                 }
             });
@@ -175,6 +177,7 @@ const DataManagement = () => {
                 Reset App
             </button>
        </div>
+       <PrivacyPolicy />
     </div>
   );
 };

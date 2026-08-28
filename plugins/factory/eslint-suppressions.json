@@ -1,0 +1,15 @@
+{
+  "src/generators/saas/generator.js": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/utils/write-project.js": {
+    "max-lines-per-function": {
+      "count": 3
+    }
+  }
+}

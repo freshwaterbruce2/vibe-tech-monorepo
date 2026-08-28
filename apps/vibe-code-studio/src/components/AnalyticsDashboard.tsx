@@ -22,7 +22,7 @@ import styled from 'styled-components';
 
 import { getAnalyticsInstance } from '../services/ai/CompletionAnalytics';
 import { logger } from '../services/Logger';
-import type { AnalyticsSummary, DailyMetrics as _DailyMetrics, LanguageMetrics as _LanguageMetrics, VariationMetrics as _VariationMetrics } from '../types/analytics';
+import type { AnalyticsSummary } from '../types/analytics';
 
 interface AnalyticsDashboardProps {
   isOpen: boolean;

@@ -4,6 +4,9 @@
 
 $ErrorActionPreference = "SilentlyContinue"
 
+# Prevent hook's git calls from racing with user operations that need index.lock
+$env:GIT_OPTIONAL_LOCKS = '0'
+
 try {
     # Quick git info
     $branch = git branch --show-current 2>$null

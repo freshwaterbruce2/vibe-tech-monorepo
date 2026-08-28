@@ -11,7 +11,7 @@
  * File length optimized (~360 LOC) ✅
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 
 // Core Module
@@ -30,20 +30,21 @@ import { useWorkspace } from './hooks/useWorkspace';
 // App-specific hooks and components
 import { AppLayout } from './app/AppLayout';
 import {
-    AppExtrasContext,
-    ServicesContext,
-    UIPanelContext,
-    WorkspaceContext,
+  AppExtrasContext,
+  ServicesContext,
+  UIPanelContext,
+  WorkspaceContext,
 } from './app/contexts';
 import {
-    useAIProviderInit,
-    useApiKeyLoader,
-    useAppInit,
-    useDatabaseInit,
-    useKeyboardShortcuts
+  useAIProviderInit,
+  useApiKeyLoader,
+  useAppInit,
+  useDatabaseInit,
+  useKeyboardShortcuts,
 } from './app/hooks/useAppEffects';
 import { useAppHandlers } from './app/hooks/useAppHandlers';
 import { useAppState } from './app/hooks/useAppState';
+import { useWorkspaceFileHandlers } from './app/hooks/useWorkspaceFileHandlers';
 
 // Components
 import { ModernErrorBoundary } from './components/ErrorBoundary/index';
@@ -54,30 +55,13 @@ import { DesignTokenManager } from './services/DesignTokenManager';
 import { logger } from './services/Logger';
 import { getUserFriendlyError } from './utils/errorHandler';
 
-// Types
-import type { EditorFile } from './types';
-
-function normalizePath(path: string): string {
-  return path.replace(/\\/g, '/');
-}
-
-function remapOpenPath(path: string, oldPath: string, newPath: string): string {
-  if (path === oldPath) {
-    return newPath;
-  }
-
-  const prefix = `${oldPath}/`;
-  if (path.startsWith(prefix)) {
-    return `${newPath}${path.slice(oldPath.length)}`;
-  }
-
-  return path;
-}
-
 function App() {
   // Input dialog state
   const [folderPathDialogOpen, setFolderPathDialogOpen] = useState(false);
   const [newFileDialogOpen, setNewFileDialogOpen] = useState(false);
+
+  // Learning Memory (Brain Scan) viewer panel toggle
+  const [brainScanOpen, setBrainScanOpen] = useState(false);
 
   // App state management
   const appState = useAppState();
@@ -91,6 +75,8 @@ function App() {
     liveStream,
     executionEngine,
     backgroundAgentSystem,
+    orchestrator,
+    performanceOptimizer,
   } = useAppServices();
 
   // Notifications
@@ -133,29 +119,36 @@ function App() {
     setOpenFiles,
   } = useFileManager({
     fileSystemService,
-    onSaveSuccess: (fileName) => showSuccess('File Saved', `${fileName} saved successfully`),
-    onSaveError: (fileName) => showError('Save Failed', `Unable to save ${fileName}`),
+    onSaveSuccess: fileName => showSuccess('File Saved', `${fileName} saved successfully`),
+    onSaveError: fileName => showError('Save Failed', `Unable to save ${fileName}`),
   });
 
   // Wrap handleOpenFile with error handling
-  const handleOpenFile = useCallback(async (filePath: string) => {
-    try {
-      await handleOpenFileRaw(filePath);
-    } catch (error) {
-      logger.error('[App] Failed to open file:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to open file';
-      showError('Open File Failed', errorMessage);
-    }
-  }, [handleOpenFileRaw, showError]);
+  const handleOpenFile = useCallback(
+    async (filePath: string) => {
+      try {
+        await handleOpenFileRaw(filePath);
+      } catch (error) {
+        logger.error('[App] Failed to open file:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to open file';
+        showError('Open File Failed', errorMessage);
+      }
+    },
+    [handleOpenFileRaw, showError]
+  );
 
   // AI Chat
   const {
     aiMessages,
     aiChatOpen,
+    isAiResponding,
+    aiResponseState,
     setAiChatOpen,
     handleSendMessage: handleAIMessage,
+    cancelAiResponse,
     addAiMessage,
     updateAiMessage,
+    clearAiMessages,
   } = useAIChat({
     aiService,
     currentFile,
@@ -164,7 +157,7 @@ function App() {
     workspaceFolder,
     sidebarOpen,
     previewOpen: appState.previewOpen,
-    onError: (error) =>
+    onError: error =>
       showError(
         'AI Service Error',
         getUserFriendlyError({
@@ -178,41 +171,41 @@ function App() {
   useEffect(() => {
     const loadTokens = async () => {
       await DesignTokenManager.load();
-      // We don't have a specific setter for tokens exposed in context yet,
-      // but this ensures the async load logic is triggered.
-      // In a real scenario, we'd update a context or store here.
-      // If it's intended to be a global singleton or side-effect, we just need to ensure load() is called.
+      // Triggers the async token-load side effect (no context setter yet).
     };
     loadTokens();
   }, []);
 
   // Handle workspace opening
-  const handleOpenFolder = useCallback(async (folderPath: string) => {
-    try {
-      logger.debug(`Opening workspace: ${folderPath}`);
-      setWorkspaceFolder(folderPath);
-      const indexedContext = await indexWorkspace(folderPath);
+  const handleOpenFolder = useCallback(
+    async (folderPath: string) => {
+      try {
+        logger.debug(`Opening workspace: ${folderPath}`);
+        setWorkspaceFolder(folderPath);
+        const indexedContext = await indexWorkspace(folderPath);
 
-      if (indexedContext) {
+        if (indexedContext) {
+          addAiMessage({
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: `✅ **Workspace Indexed Successfully!**\n\nI've analyzed your project at \`${folderPath}\` and I'm now ready to help with:\n\n🔍 **Repository Understanding**: ${indexedContext.totalFiles || 0} files indexed\n🚀 **Multi-file Context**: I understand relationships between your files\n⚡ **Smart Suggestions**: Context-aware code completion and generation\n🧠 **Project Knowledge**: Familiar with your codebase structure\n\n**Languages Detected**: ${indexedContext.languages.join(', ') || 'Analyzing...'}\n**Test Files**: ${indexedContext.testFiles || 0} detected\n\nTry asking me:\n- "Create a new component that fits my project structure"\n- "Explain how this file relates to others"\n- "Generate tests for this function"\n- "Refactor this code to match project patterns"\n\nI'm now your context-aware coding companion! 🎯`,
+            timestamp: new Date(),
+          });
+        } else {
+          throw new Error('Failed to index workspace');
+        }
+      } catch (error) {
+        logger.error('Failed to open workspace:', error);
         addAiMessage({
           id: Date.now().toString(),
           role: 'assistant',
-          content: `✅ **Workspace Indexed Successfully!**\n\nI've analyzed your project at \`${folderPath}\` and I'm now ready to help with:\n\n🔍 **Repository Understanding**: ${indexedContext.totalFiles || 0} files indexed\n🚀 **Multi-file Context**: I understand relationships between your files\n⚡ **Smart Suggestions**: Context-aware code completion and generation\n🧠 **Project Knowledge**: Familiar with your codebase structure\n\n**Languages Detected**: ${indexedContext.languages.join(', ') || 'Analyzing...'}\n**Test Files**: ${indexedContext.testFiles || 0} detected\n\nTry asking me:\n- "Create a new component that fits my project structure"\n- "Explain how this file relates to others"\n- "Generate tests for this function"\n- "Refactor this code to match project patterns"\n\nI'm now your context-aware coding companion! 🎯`,
+          content: `❌ Failed to index workspace at \`${folderPath}\`. I can still help with individual files, but won't have full project context. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
           timestamp: new Date(),
         });
-      } else {
-        throw new Error('Failed to index workspace');
       }
-    } catch (error) {
-      logger.error('Failed to open workspace:', error);
-      addAiMessage({
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: `❌ Failed to index workspace at \`${folderPath}\`. I can still help with individual files, but won't have full project context. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        timestamp: new Date(),
-      });
-    }
-  }, [setWorkspaceFolder, indexWorkspace, addAiMessage]);
+    },
+    [setWorkspaceFolder, indexWorkspace, addAiMessage]
+  );
 
   // Handle workspace opening with file picker
   const handleOpenFolderDialog = useCallback(async () => {
@@ -239,158 +232,34 @@ function App() {
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') return;
-      showError('Open Folder Failed', `Unable to open the selected folder: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError(
+        'Open Folder Failed',
+        `Unable to open the selected folder: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }, [handleOpenFolder, showError]);
 
-  // Helper function for creating new files
-  const handleCreateFile = useCallback((name: string) => {
-    const getLanguageFromExtension = (filePath: string): string => {
-      const ext = filePath.split('.').pop()?.toLowerCase();
-      const languageMap: Record<string, string> = {
-        js: 'javascript', jsx: 'javascript', ts: 'typescript', tsx: 'typescript',
-        py: 'python', java: 'java', cpp: 'cpp', c: 'c', cs: 'csharp', php: 'php',
-        rb: 'ruby', go: 'go', rs: 'rust', html: 'html', css: 'css', scss: 'scss',
-        json: 'json', xml: 'xml', yaml: 'yaml', yml: 'yaml', md: 'markdown',
-        sh: 'shell', sql: 'sql',
-      };
-      return languageMap[ext ?? ''] ?? 'plaintext';
-    };
-
-    const newFile: EditorFile = {
-      id: name,
-      name,
-      path: name,
-      content: '',
-      language: getLanguageFromExtension(name),
-      isModified: false,
-    };
-    setCurrentFile(newFile);
-  }, [setCurrentFile]);
-
-  const handleCreateWorkspaceFile = useCallback(async (filePath: string): Promise<void> => {
-    const normalizedPath = normalizePath(filePath);
-
-    try {
-      await fileSystemService.createFile(normalizedPath, '');
-      await handleOpenFile(normalizedPath);
-      showSuccess('File Created', `Created ${normalizedPath.split('/').pop()}`);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      showError('Create File Failed', `Unable to create file: ${errorMessage}`);
-      throw error;
-    }
-  }, [fileSystemService, handleOpenFile, showSuccess, showError]);
-
-  const handleCreateWorkspaceFolder = useCallback(async (folderPath: string): Promise<void> => {
-    const normalizedPath = normalizePath(folderPath);
-
-    try {
-      await fileSystemService.createDirectory(normalizedPath);
-      showSuccess('Folder Created', `Created ${normalizedPath.split('/').pop()}`);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      showError('Create Folder Failed', `Unable to create folder: ${errorMessage}`);
-      throw error;
-    }
-  }, [fileSystemService, showSuccess, showError]);
-
-  const handleRenameWorkspacePath = useCallback(async (oldPath: string, newPath: string): Promise<void> => {
-    const normalizedOldPath = normalizePath(oldPath);
-    const normalizedNewPath = normalizePath(newPath);
-
-    try {
-      await fileSystemService.rename(normalizedOldPath, normalizedNewPath);
-
-      setOpenFiles(
-        openFiles.map((file) => {
-          const remappedPath = remapOpenPath(file.path, normalizedOldPath, normalizedNewPath);
-          if (remappedPath === file.path) {
-            return file;
-          }
-
-          return {
-            ...file,
-            id: remappedPath,
-            path: remappedPath,
-            name: remappedPath.split('/').pop() ?? remappedPath,
-          };
-        })
-      );
-
-      if (currentFile) {
-        const remappedCurrentPath = remapOpenPath(
-          currentFile.path,
-          normalizedOldPath,
-          normalizedNewPath
-        );
-        if (remappedCurrentPath !== currentFile.path) {
-          setCurrentFile({
-            ...currentFile,
-            id: remappedCurrentPath,
-            path: remappedCurrentPath,
-            name: remappedCurrentPath.split('/').pop() ?? remappedCurrentPath,
-          });
-        }
-      }
-
-      showSuccess(
-        'Item Renamed',
-        `${normalizedOldPath.split('/').pop()} → ${normalizedNewPath.split('/').pop()}`
-      );
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      showError('Rename Failed', `Unable to rename item: ${errorMessage}`);
-      throw error;
-    }
-  }, [fileSystemService, currentFile, openFiles, setCurrentFile, setOpenFiles, showSuccess, showError]);
-
-  // Handle file deletion
-  const handleDeleteFile = useCallback(async (filePath: string): Promise<void> => {
-    const normalizedPath = normalizePath(filePath);
-    const removedPrefix = `${normalizedPath}/`;
-
-    try {
-      await fileSystemService.deleteFile(normalizedPath);
-      if (currentFile?.path === normalizedPath || currentFile?.path.startsWith(removedPrefix)) {
-        setCurrentFile(null);
-      }
-      const updatedOpenFiles = openFiles.filter(
-        file => file.path !== normalizedPath && !file.path.startsWith(removedPrefix)
-      );
-      setOpenFiles(updatedOpenFiles);
-      showSuccess('File Deleted', `Successfully deleted ${normalizedPath.split('/').pop()}`);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      showError('Delete Failed', `Unable to delete file: ${errorMessage}`);
-      throw error;
-    }
-  }, [fileSystemService, currentFile, openFiles, setCurrentFile, setOpenFiles, showSuccess, showError]);
-
-  // Handle saving all open files
-  const handleSaveAll = useCallback(async () => {
-    try {
-      const modifiedFiles = openFiles.filter(f => f.isModified);
-      await Promise.all(modifiedFiles.map(f => fileSystemService.writeFile(f.path, f.content)));
-      const savedCount = modifiedFiles.length;
-      if (savedCount > 0) {
-        showSuccess('Files Saved', `Successfully saved ${savedCount} file(s)`);
-      } else {
-        showWarning('No Changes', 'No files needed to be saved');
-      }
-    } catch (error: unknown) {
-      logger.error('Save all failed', { error });
-      showError('Save Failed', 'Unable to save all files');
-    }
-  }, [openFiles, fileSystemService, showSuccess, showWarning, showError]);
-
-  // Handle closing current workspace
-  const handleCloseFolder = useCallback(() => {
-    setWorkspaceFolder(null);
-    setCurrentFile(null);
-    setOpenFiles([]);
-    showSuccess('Workspace Closed', 'Workspace has been closed');
-  }, [setWorkspaceFolder, setCurrentFile, setOpenFiles, showSuccess]);
+  // Workspace file handlers (create / rename / delete / save / close)
+  const {
+    handleCreateFile,
+    handleCreateWorkspaceFile,
+    handleCreateWorkspaceFolder,
+    handleRenameWorkspacePath,
+    handleDeleteFile,
+    handleSaveAll,
+    handleCloseFolder,
+  } = useWorkspaceFileHandlers({
+    fileSystemService,
+    currentFile,
+    openFiles,
+    setCurrentFile,
+    setOpenFiles,
+    setWorkspaceFolder,
+    handleOpenFile,
+    showSuccess,
+    showError,
+    showWarning,
+  });
 
   // Handle creating new file
   const handleNewFile = useCallback(() => {
@@ -402,6 +271,8 @@ function App() {
     aiService,
     fileSystemService,
     multiFileEditor,
+    multiFileEditPlan: appState.multiFileEditPlan,
+    multiFileChanges: appState.multiFileChanges,
     currentFile,
     openFiles,
     workspaceFolder,
@@ -453,10 +324,16 @@ function App() {
     onAIAddComments: async () => handlers.handleAICommand('add-comments'),
     onAIGenerateComponent: async () => handlers.handleAICommand('generate-component'),
     onFormatDocument: () => {
-      document.dispatchEvent(new KeyboardEvent('keydown', {
-        key: 'f', shiftKey: true, altKey: true, bubbles: true,
-      }));
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'f',
+          shiftKey: true,
+          altKey: true,
+          bubbles: true,
+        })
+      );
     },
+    onOpenBrainScan: () => setBrainScanOpen(true),
     currentFile: currentFile?.path ?? null,
   });
 
@@ -464,7 +341,7 @@ function App() {
   useAIProviderInit();
   useDatabaseInit({ setDbStatus: appState.setDbStatus, showWarning, showError });
   useAppInit({ showWarning, handleOpenFolder, handleOpenFile });
-  useApiKeyLoader({ setDeepseekApiKey: appState.setDeepseekApiKey });
+  useApiKeyLoader({ setOpenrouterApiKey: appState.setOpenrouterApiKey });
   useKeyboardShortcuts({
     setGlobalSearchOpen: appState.setGlobalSearchOpen,
     setAiChatOpen,
@@ -473,6 +350,245 @@ function App() {
     setTerminalOpen: appState.setTerminalOpen,
     terminalOpen: appState.terminalOpen,
   });
+
+  // Memoize context values to prevent unnecessary re-renders of consumers
+  const servicesContextValue = useMemo(
+    () => ({
+      aiService,
+      fileSystemService,
+      taskPlanner,
+      liveStream,
+      executionEngine,
+      backgroundAgentSystem,
+      orchestrator,
+      performanceOptimizer,
+    }),
+    [
+      aiService,
+      fileSystemService,
+      taskPlanner,
+      liveStream,
+      executionEngine,
+      backgroundAgentSystem,
+      orchestrator,
+      performanceOptimizer,
+    ]
+  );
+
+  const uiPanelContextValue = useMemo(
+    () => ({
+      settingsOpen,
+      setSettingsOpen,
+      aiChatOpen,
+      setAiChatOpen,
+      gitPanelOpen: appState.gitPanelOpen,
+      globalSearchOpen: appState.globalSearchOpen,
+      setGlobalSearchOpen: appState.setGlobalSearchOpen,
+      keyboardShortcutsOpen: appState.keyboardShortcutsOpen,
+      setKeyboardShortcutsOpen: appState.setKeyboardShortcutsOpen,
+      backgroundPanelOpen: appState.backgroundPanelOpen,
+      setBackgroundPanelOpen: appState.setBackgroundPanelOpen,
+      commandPaletteOpen,
+      setCommandPaletteOpen,
+      previewOpen: appState.previewOpen,
+      setPreviewOpen: appState.setPreviewOpen,
+      terminalOpen: appState.terminalOpen,
+      setTerminalOpen: appState.setTerminalOpen,
+      sidebarOpen,
+      setSidebarOpen,
+      activeVisualPanel: appState.activeVisualPanel,
+      setActiveVisualPanel: appState.setActiveVisualPanel,
+      chatMode: appState.chatMode,
+      setChatMode: appState.setChatMode,
+      errorFixPanelOpen: appState.errorFixPanelOpen,
+      setErrorFixPanelOpen: appState.setErrorFixPanelOpen,
+      agentModeOpen: appState.agentModeOpen,
+      setAgentModeOpen: appState.setAgentModeOpen,
+      brainScanOpen,
+      setBrainScanOpen,
+    }),
+    [
+      settingsOpen,
+      setSettingsOpen,
+      aiChatOpen,
+      setAiChatOpen,
+      appState.gitPanelOpen,
+      appState.globalSearchOpen,
+      appState.setGlobalSearchOpen,
+      appState.keyboardShortcutsOpen,
+      appState.setKeyboardShortcutsOpen,
+      appState.backgroundPanelOpen,
+      appState.setBackgroundPanelOpen,
+      commandPaletteOpen,
+      setCommandPaletteOpen,
+      appState.previewOpen,
+      appState.setPreviewOpen,
+      appState.terminalOpen,
+      appState.setTerminalOpen,
+      sidebarOpen,
+      setSidebarOpen,
+      appState.activeVisualPanel,
+      appState.setActiveVisualPanel,
+      appState.chatMode,
+      appState.setChatMode,
+      appState.errorFixPanelOpen,
+      appState.setErrorFixPanelOpen,
+      appState.agentModeOpen,
+      appState.setAgentModeOpen,
+      brainScanOpen,
+      setBrainScanOpen,
+    ]
+  );
+
+  const workspaceContextValue = useMemo(
+    () => ({
+      currentFile,
+      openFiles,
+      workspaceFolder,
+      workspaceContext,
+      isIndexing,
+      indexingProgress,
+      getFileContext,
+      editorSettings,
+      updateEditorSettings,
+      setCurrentFile,
+      handleOpenFile,
+      handleCloseFile,
+      handleFileChange,
+      handleSaveFile,
+      handleDeleteFile,
+      handleCreateWorkspaceFile,
+      handleCreateWorkspaceFolder,
+      handleRenameWorkspacePath,
+      handleNewFile,
+      handleOpenFolderDialog,
+      handleCloseFolder,
+      handleOpenFolder,
+      handleCreateFile,
+      handleSaveAll,
+      handleEditorMount: handlers.handleEditorMount,
+      editorRef: appState.editorRef,
+      handleOpenFileFromSearch: handlers.handleOpenFileFromSearch,
+      handleReplaceInFile: handlers.handleReplaceInFile,
+      handleSearchInFiles: handlers.handleSearchInFiles,
+    }),
+    [
+      currentFile,
+      openFiles,
+      workspaceFolder,
+      workspaceContext,
+      isIndexing,
+      indexingProgress,
+      getFileContext,
+      editorSettings,
+      updateEditorSettings,
+      setCurrentFile,
+      handleOpenFile,
+      handleCloseFile,
+      handleFileChange,
+      handleSaveFile,
+      handleDeleteFile,
+      handleCreateWorkspaceFile,
+      handleCreateWorkspaceFolder,
+      handleRenameWorkspacePath,
+      handleNewFile,
+      handleOpenFolderDialog,
+      handleCloseFolder,
+      handleOpenFolder,
+      handleCreateFile,
+      handleSaveAll,
+      handlers.handleEditorMount,
+      appState.editorRef,
+      handlers.handleOpenFileFromSearch,
+      handlers.handleReplaceInFile,
+      handlers.handleSearchInFiles,
+    ]
+  );
+
+  const appExtrasContextValue = useMemo(
+    () => ({
+      aiMessages,
+      isAiResponding,
+      aiResponseState,
+      handleAIMessage,
+      cancelAiResponse,
+      addAiMessage,
+      updateAiMessage,
+      clearAiMessages,
+      handleModelChange: handlers.handleModelChange,
+      handleProviderChange: handlers.handleProviderChange,
+      handleMultiFileEditDetected: handlers.handleMultiFileEditDetected,
+      currentModel: appState.currentModel,
+      currentProvider: appState.currentProvider,
+      openrouterApiKey: appState.openrouterApiKey,
+      currentError: appState.currentError,
+      currentFix: appState.currentFix,
+      fixLoading: appState.fixLoading,
+      fixError: appState.fixError,
+      setCurrentError: appState.setCurrentError,
+      setCurrentFix: appState.setCurrentFix,
+      setFixLoading: appState.setFixLoading,
+      setFixError: appState.setFixError,
+      handleApplyFix: handlers.handleApplyFix,
+      autoFixServiceRef: appState.autoFixServiceRef,
+      multiFileEditPlan: appState.multiFileEditPlan,
+      multiFileChanges: appState.multiFileChanges,
+      multiFileApprovalOpen: appState.multiFileApprovalOpen,
+      handleApplyMultiFileChanges: handlers.handleApplyMultiFileChanges,
+      handleRejectMultiFileChanges: handlers.handleRejectMultiFileChanges,
+      notifications,
+      showSuccess,
+      showError,
+      showWarning,
+      removeNotification,
+      commands,
+      handleToggleScreenshotPanel: handlers.handleToggleScreenshotPanel,
+      handleToggleComponentLibrary: handlers.handleToggleComponentLibrary,
+      handleToggleVisualEditor: handlers.handleToggleVisualEditor,
+      handleInsertCode: handlers.handleInsertCode,
+    }),
+    [
+      aiMessages,
+      isAiResponding,
+      aiResponseState,
+      handleAIMessage,
+      cancelAiResponse,
+      addAiMessage,
+      updateAiMessage,
+      clearAiMessages,
+      handlers.handleModelChange,
+      handlers.handleProviderChange,
+      handlers.handleMultiFileEditDetected,
+      appState.currentModel,
+      appState.currentProvider,
+      appState.openrouterApiKey,
+      appState.currentError,
+      appState.currentFix,
+      appState.fixLoading,
+      appState.fixError,
+      appState.setCurrentError,
+      appState.setCurrentFix,
+      appState.setFixLoading,
+      appState.setFixError,
+      handlers.handleApplyFix,
+      appState.autoFixServiceRef,
+      appState.multiFileEditPlan,
+      appState.multiFileChanges,
+      appState.multiFileApprovalOpen,
+      handlers.handleApplyMultiFileChanges,
+      handlers.handleRejectMultiFileChanges,
+      notifications,
+      showSuccess,
+      showError,
+      showWarning,
+      removeNotification,
+      commands,
+      handlers.handleToggleScreenshotPanel,
+      handlers.handleToggleComponentLibrary,
+      handlers.handleToggleVisualEditor,
+      handlers.handleInsertCode,
+    ]
+  );
 
   // Loading screen
   if (appState.isLoading) {
@@ -488,64 +604,14 @@ function App() {
       onReset={() => globalThis.location.reload()}
     >
       <Router>
-        <ServicesContext.Provider value={{
-          aiService, fileSystemService, taskPlanner, liveStream, executionEngine, backgroundAgentSystem,
-        }}>
-        <UIPanelContext.Provider value={{
-          settingsOpen, setSettingsOpen,
-          aiChatOpen, setAiChatOpen,
-          gitPanelOpen: appState.gitPanelOpen,
-          globalSearchOpen: appState.globalSearchOpen, setGlobalSearchOpen: appState.setGlobalSearchOpen,
-          keyboardShortcutsOpen: appState.keyboardShortcutsOpen, setKeyboardShortcutsOpen: appState.setKeyboardShortcutsOpen,
-          backgroundPanelOpen: appState.backgroundPanelOpen, setBackgroundPanelOpen: appState.setBackgroundPanelOpen,
-          commandPaletteOpen, setCommandPaletteOpen,
-          previewOpen: appState.previewOpen, setPreviewOpen: appState.setPreviewOpen,
-          terminalOpen: appState.terminalOpen, setTerminalOpen: appState.setTerminalOpen,
-          sidebarOpen, setSidebarOpen,
-          activeVisualPanel: appState.activeVisualPanel, setActiveVisualPanel: appState.setActiveVisualPanel,
-          chatMode: appState.chatMode, setChatMode: appState.setChatMode,
-          errorFixPanelOpen: appState.errorFixPanelOpen, setErrorFixPanelOpen: appState.setErrorFixPanelOpen,
-        }}>
-        <WorkspaceContext.Provider value={{
-          currentFile, openFiles, workspaceFolder,
-          workspaceContext, isIndexing, indexingProgress, getFileContext,
-          editorSettings, updateEditorSettings, setCurrentFile,
-          handleOpenFile, handleCloseFile, handleFileChange, handleSaveFile,
-          handleDeleteFile, handleCreateWorkspaceFile, handleCreateWorkspaceFolder,
-          handleRenameWorkspacePath, handleNewFile, handleOpenFolderDialog,
-          handleCloseFolder, handleOpenFolder, handleCreateFile, handleSaveAll,
-          handleEditorMount: handlers.handleEditorMount, editorRef: appState.editorRef,
-          handleOpenFileFromSearch: handlers.handleOpenFileFromSearch,
-          handleReplaceInFile: handlers.handleReplaceInFile,
-          handleSearchInFiles: handlers.handleSearchInFiles,
-        }}>
-        <AppExtrasContext.Provider value={{
-          aiMessages, handleAIMessage, addAiMessage, updateAiMessage,
-          handleModelChange: handlers.handleModelChange,
-          handleProviderChange: handlers.handleProviderChange,
-          handleMultiFileEditDetected: handlers.handleMultiFileEditDetected,
-          currentModel: appState.currentModel, currentProvider: appState.currentProvider,
-          deepseekApiKey: appState.deepseekApiKey,
-          currentError: appState.currentError, currentFix: appState.currentFix,
-          fixLoading: appState.fixLoading, fixError: appState.fixError,
-          setCurrentError: appState.setCurrentError, setCurrentFix: appState.setCurrentFix,
-          setFixLoading: appState.setFixLoading, setFixError: appState.setFixError,
-          handleApplyFix: handlers.handleApplyFix, autoFixServiceRef: appState.autoFixServiceRef,
-          multiFileEditPlan: appState.multiFileEditPlan, multiFileChanges: appState.multiFileChanges,
-          multiFileApprovalOpen: appState.multiFileApprovalOpen,
-          handleApplyMultiFileChanges: handlers.handleApplyMultiFileChanges,
-          handleRejectMultiFileChanges: handlers.handleRejectMultiFileChanges,
-          notifications, showSuccess, showError, showWarning, removeNotification,
-          commands,
-          handleToggleScreenshotPanel: handlers.handleToggleScreenshotPanel,
-          handleToggleComponentLibrary: handlers.handleToggleComponentLibrary,
-          handleToggleVisualEditor: handlers.handleToggleVisualEditor,
-          handleInsertCode: handlers.handleInsertCode,
-        }}>
-          <AppLayout />
-        </AppExtrasContext.Provider>
-        </WorkspaceContext.Provider>
-        </UIPanelContext.Provider>
+        <ServicesContext.Provider value={servicesContextValue}>
+          <UIPanelContext.Provider value={uiPanelContextValue}>
+            <WorkspaceContext.Provider value={workspaceContextValue}>
+              <AppExtrasContext.Provider value={appExtrasContextValue}>
+                <AppLayout />
+              </AppExtrasContext.Provider>
+            </WorkspaceContext.Provider>
+          </UIPanelContext.Provider>
         </ServicesContext.Provider>
       </Router>
 
@@ -554,7 +620,7 @@ function App() {
         isOpen={folderPathDialogOpen}
         title="Open Folder"
         placeholder="/path/to/folder"
-        onConfirm={(folderPath) => {
+        onConfirm={folderPath => {
           setFolderPathDialogOpen(false);
           if (folderPath) handleOpenFolder(folderPath);
         }}
@@ -565,7 +631,7 @@ function App() {
         isOpen={newFileDialogOpen}
         title="New File"
         placeholder="script.js"
-        onConfirm={(fileName) => {
+        onConfirm={fileName => {
           setNewFileDialogOpen(false);
           if (fileName) handleCreateFile(fileName);
         }}

@@ -153,7 +153,7 @@ export class WorkspaceService {
           structure.tsConfig = JSON.parse(jsonContent);
           structure.configFiles.push('tsconfig.json');
 
-        } catch (_error) {
+        } catch {
           // Silently track file exists even if parsing fails
           // This is non-critical - tsconfig parsing is just for additional context
           structure.configFiles.push('tsconfig.json');
@@ -498,7 +498,7 @@ export class WorkspaceService {
     if (path.includes('package.json')) {
       return JSON.stringify(
         {
-          name: 'deepcode-editor',
+          name: 'vibe-code-studio',
           version: '1.0.0',
           main: 'src/index.ts',
           dependencies: {
@@ -513,7 +513,7 @@ export class WorkspaceService {
     }
 
     if (path.includes('README.md')) {
-      return '# DeepCode Editor\n\nAI-powered code editor with DeepSeek integration.';
+      return '# Vibe Code Studio\n\nAI-powered code editor.';
     }
 
     return `// Mock content for ${path}`;

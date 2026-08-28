@@ -37,7 +37,7 @@ Expert in integrating Retrieval-Augmented Generation (RAG) pipelines into deskto
 - `all-MiniLM-L6-v2` — 384-dim, fast, good quality for semantic search
 - `nomic-embed-text` — higher quality, 768-dim, moderate speed
 - Lazy-loading models to avoid blocking app startup
-- Caching models in `D:\rag\models\` (never C:\dev)
+- Caching models in `D:\rag\models\` (never V:\monorepo)
 
 ### Vector Storage (Desktop-Local)
 
@@ -188,7 +188,7 @@ const RAG_BASE = process.env.RAG_PATH || 'D:\\rag';
 const indexPath = path.join(RAG_BASE, appName, 'index');
 const modelPath = path.join(RAG_BASE, 'models');
 
-// WRONG: Never store in C:\dev or app directory
+// WRONG: Never store in V:\monorepo or app directory
 // const indexPath = path.join(__dirname, 'data', 'index'); // ❌
 ```
 
@@ -343,7 +343,7 @@ Escalate to `rag-pipeline-specialist` when:
 
 ## Success Metrics
 
-- Embedding pipeline set up in D:\rag\ (never C:\dev)
+- Embedding pipeline set up in D:\rag\ (never V:\monorepo)
 - Model lazy-loaded (app starts in <2s with RAG installed)
 - Indexing runs in background worker (renderer never blocked)
 - Search latency: <100ms for typical queries

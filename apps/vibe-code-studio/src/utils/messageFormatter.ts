@@ -143,15 +143,45 @@ function parseInlineElements(text: string): MessagePart[] {
 
 function parseTextFormatting(text: string): MessagePart[] {
   const parts: MessagePart[] = [];
-  
-  // Handle bold and italic formatting (TODO: parse recursively)
-  // For simplicity, just return as text for now
-  // In a full implementation, you'd parse these recursively
-  if (text.trim()) {
-    parts.push({
-      type: 'text',
-      content: text
-    });
+
+  // Parse bold (**...**) first, then recursively parse italic within plain segments.
+  const boldRegex = /\*\*([^*]+)\*\*/g;
+  let match;
+  let lastIndex = 0;
+
+  while ((match = boldRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(...parseItalicText(text.slice(lastIndex, match.index)));
+    }
+    parts.push({ type: 'bold', content: match[1] ?? '' });
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(...parseItalicText(text.slice(lastIndex)));
+  }
+
+  return parts;
+}
+
+function parseItalicText(text: string): MessagePart[] {
+  const parts: MessagePart[] = [];
+  const italicRegex = /\*([^*]+)\*/g;
+  let match;
+  let lastIndex = 0;
+
+  while ((match = italicRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      const plain = text.slice(lastIndex, match.index);
+      if (plain) parts.push({ type: 'text', content: plain });
+    }
+    parts.push({ type: 'italic', content: match[1] ?? '' });
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    const plain = text.slice(lastIndex);
+    if (plain) parts.push({ type: 'text', content: plain });
   }
 
   return parts;

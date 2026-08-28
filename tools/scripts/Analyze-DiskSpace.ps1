@@ -24,7 +24,7 @@ Write-Host ""
 
 # Analyze node_modules folders
 Write-Host "Analyzing node_modules folders..." -ForegroundColor Yellow
-$nodeModules = Get-ChildItem -Path "C:\dev" -Directory -Recurse -Filter "node_modules" -ErrorAction SilentlyContinue |
+$nodeModules = Get-ChildItem -Path "V:\monorepo" -Directory -Recurse -Filter "node_modules" -ErrorAction SilentlyContinue |
     Where-Object { $_.FullName -notmatch "\\node_modules\\.*\\node_modules" }  # Skip nested node_modules
 
 $nodeModulesSize = 0
@@ -37,7 +37,7 @@ foreach ($nm in $nodeModules) {
         if ($size -gt 0) {
             $nodeModulesSize += $size
             $nodeModulesList += [PSCustomObject]@{
-                Path = $nm.FullName.Replace("C:\dev\", "")
+                Path = $nm.FullName.Replace("V:\monorepo\", "")
                 SizeGB = [math]::Round($size, 2)
             }
         }
@@ -59,7 +59,7 @@ if ($nodeModulesList.Count -gt 0) {
 
 # Analyze dist/build folders
 Write-Host "`nAnalyzing build/dist folders..." -ForegroundColor Yellow
-$buildFolders = Get-ChildItem -Path "C:\dev" -Directory -Recurse -Include "dist", "build", ".next", ".turbo", "out", "target" -ErrorAction SilentlyContinue
+$buildFolders = Get-ChildItem -Path "V:\monorepo" -Directory -Recurse -Include "dist", "build", ".next", ".turbo", "out", "target" -ErrorAction SilentlyContinue
 
 $buildSize = 0
 $buildList = @()
@@ -71,7 +71,7 @@ foreach ($bf in $buildFolders) {
         if ($size -gt 0.1) {  # Only count if > 100MB
             $buildSize += $size
             $buildList += [PSCustomObject]@{
-                Path = $bf.FullName.Replace("C:\dev\", "")
+                Path = $bf.FullName.Replace("V:\monorepo\", "")
                 SizeGB = [math]::Round($size, 2)
             }
         }
@@ -93,7 +93,7 @@ $checkPaths = @(
     "C:\Users\$env:USERNAME\AppData\Local\pnpm",
     "C:\Users\$env:USERNAME\.npm",
     "C:\Users\$env:USERNAME\.pnpm-store",
-    "C:\dev\.pnpm-store",
+    "V:\monorepo\.pnpm-store",
     "C:\ProgramData\npm-cache"
 )
 
@@ -153,7 +153,7 @@ if (-not $AnalyzeOnly) {
             $cleaned = 0
             foreach ($nm in $nodeModulesList | Sort-Object SizeGB -Descending) {
                 try {
-                    Remove-Item -Path (Join-Path "C:\dev" $nm.Path) -Recurse -Force -ErrorAction Stop
+                    Remove-Item -Path (Join-Path "V:\monorepo" $nm.Path) -Recurse -Force -ErrorAction Stop
                     Write-Host "  Removed: $($nm.Path)" -ForegroundColor Green
                     $cleaned += $nm.SizeGB
                 } catch {
@@ -167,7 +167,7 @@ if (-not $AnalyzeOnly) {
             $cleanedBuild = 0
             foreach ($bf in $buildList | Sort-Object SizeGB -Descending) {
                 try {
-                    Remove-Item -Path (Join-Path "C:\dev" $bf.Path) -Recurse -Force -ErrorAction Stop
+                    Remove-Item -Path (Join-Path "V:\monorepo" $bf.Path) -Recurse -Force -ErrorAction Stop
                     Write-Host "  Removed: $($bf.Path)" -ForegroundColor Green
                     $cleanedBuild += $bf.SizeGB
                 } catch {

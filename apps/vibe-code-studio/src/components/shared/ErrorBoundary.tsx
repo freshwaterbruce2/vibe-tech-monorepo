@@ -5,6 +5,7 @@
 import { Bug, RefreshCw } from 'lucide-react';
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import styled from 'styled-components';
+import { logger } from '../../services/Logger';
 
 /** Props for the ErrorBoundary component */
 export interface ErrorBoundaryProps {
@@ -61,7 +62,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error('ErrorBoundary caught:', error, errorInfo);
+    logger.error('ErrorBoundary caught:', error, errorInfo);
   }
 
   reset = () => {

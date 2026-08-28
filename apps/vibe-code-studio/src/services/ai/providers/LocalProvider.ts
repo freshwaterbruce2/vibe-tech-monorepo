@@ -34,7 +34,7 @@ export class LocalProvider implements IAIProvider {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: model || 'deepseek/deepseek-v3.2',
+          model: model || 'moonshot/kimi-2.5-pro',
           messages: options.messages,
           max_tokens: options.maxTokens ?? 4096,
           temperature: options.temperature ?? 0.7,

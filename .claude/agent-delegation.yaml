@@ -17,7 +17,7 @@ phase: 4 # Phase 4: Mobile complete
 agents:
   planning:
     primary:
-      - model: 'Claude Opus 4.5'
+      - model: 'Claude Opus 4.8'
         role: 'Orchestrator'
         capabilities:
           - architectural_design
@@ -45,7 +45,7 @@ agents:
 
   implementation:
     primary:
-      - model: 'Claude Sonnet 4.5'
+      - model: 'Claude Sonnet 4.6'
         role: 'Worker'
         capabilities:
           - code_implementation
@@ -60,7 +60,7 @@ agents:
           - no_file_renaming
 
     sub_agents:
-      - model: 'Claude Haiku 4'
+      - model: 'Claude Haiku 4.5'
         role: 'Specialist Worker'
         for: 'deterministic tasks'
         capabilities:
@@ -72,7 +72,7 @@ agents:
           - pwa_configuration
           - mobile_ui
 
-      - model: 'Claude Sonnet 4'
+      - model: 'Claude Sonnet 4.6'
         role: 'Specialist Worker'
         for: 'reasoning tasks'
         capabilities:
@@ -84,7 +84,7 @@ agents:
 
   review:
     primary:
-      - model: 'Claude Opus 4.5'
+      - model: 'Claude Opus 4.8'
         role: 'Orchestrator'
         capabilities:
           - code_review
@@ -136,7 +136,7 @@ delegation_rules:
 
     - step: 2
       name: 'Planning'
-      handler: 'Claude Opus 4.5 / Claude Code'
+      handler: 'Claude Opus 4.8 / Claude Code'
       trigger: 'files >= 3 OR complexity_indicator'
       outputs:
         - planning_document
@@ -152,7 +152,7 @@ delegation_rules:
 
     - step: 4
       name: 'Implementation'
-      handler: 'Claude Sonnet 4.5 / Sub-Agent'
+      handler: 'Claude Sonnet 4.6 / Sub-Agent'
       requires: 'approved_plan OR files < 3'
       constraints:
         - max_lines_per_file: 500
@@ -161,7 +161,7 @@ delegation_rules:
 
     - step: 5
       name: 'Review'
-      handler: 'Claude Opus 4.5'
+      handler: 'Claude Opus 4.8'
       trigger: 'implementation_complete'
       actions:
         - validate_compliance

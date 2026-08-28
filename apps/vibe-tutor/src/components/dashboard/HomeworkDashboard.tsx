@@ -1,6 +1,8 @@
 import { Bell, Plus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { HomeworkItem, ParsedHomework } from '../../types';
+import type { OnboardingNavigationAction } from '../../types';
 import { GradientIcon } from '../ui/icons/GradientIcon';
 import AddHomeworkModal from './AddHomeworkModal';
 import BreakdownModal from './BreakdownModal';
@@ -18,12 +20,24 @@ interface HomeworkDashboardProps {
   onAdd: (item: ParsedHomework) => void;
   onToggleComplete: (id: string) => void;
   tokens: number;
+  onboardingBanner?: ReactNode;
+  onboardingAction?: OnboardingNavigationAction | null;
+  onOnboardingActionHandled?: () => void;
 }
 
-const HomeworkDashboard = ({ items, onAdd, onToggleComplete, tokens }: HomeworkDashboardProps) => {
+const HomeworkDashboard = ({
+  items,
+  onAdd,
+  onToggleComplete,
+  tokens,
+  onboardingBanner,
+  onboardingAction,
+  onOnboardingActionHandled,
+}: HomeworkDashboardProps) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isNotifPanelOpen, setIsNotifPanelOpen] = useState(false);
   const [breakdownItem, setBreakdownItem] = useState<HomeworkItem | null>(null);
+  const toDoSectionRef = useRef<HTMLElement | null>(null);
 
   const upcomingItems = useMemo(() => {
     // FIX: Use UTC dates for comparison to avoid timezone issues.
@@ -48,6 +62,24 @@ const HomeworkDashboard = ({ items, onAdd, onToggleComplete, tokens }: HomeworkD
     onAdd(item);
     setIsAddModalOpen(false);
   };
+
+  useEffect(() => {
+    if (onboardingAction === 'open-add-homework') {
+      setIsAddModalOpen(true);
+      onOnboardingActionHandled?.();
+      return;
+    }
+
+    if (onboardingAction === 'open-task-list') {
+      if (typeof toDoSectionRef.current?.scrollIntoView === 'function') {
+        toDoSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      if (activeItems.length > 0) {
+        setBreakdownItem(activeItems[0] ?? null);
+      }
+      onOnboardingActionHandled?.();
+    }
+  }, [activeItems, onOnboardingActionHandled, onboardingAction]);
 
   return (
     <div className="h-full flex flex-col p-4 md:p-8 overflow-y-auto relative">
@@ -101,6 +133,8 @@ const HomeworkDashboard = ({ items, onAdd, onToggleComplete, tokens }: HomeworkD
       </header>
 
       <div className="flex-1 relative z-10 space-y-8">
+        {onboardingBanner}
+
         {/* Quick Stats Overview */}
         <QuickStats items={items} />
 
@@ -119,7 +153,7 @@ const HomeworkDashboard = ({ items, onAdd, onToggleComplete, tokens }: HomeworkD
         {/* Subject Distribution */}
         <SubjectChart items={items} />
 
-        <section className="space-y-6">
+        <section ref={toDoSectionRef} className="space-y-6" aria-label="Task list">
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold neon-text-secondary">To Do</h2>
             <div className="glass-card px-4 py-2 rounded-full">

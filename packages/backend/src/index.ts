@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { IPCClient } from './IPCClient.js';
 import { VectorStore } from './services/VectorStore.js';
 import { EmbeddingService } from './services/EmbeddingService.js';

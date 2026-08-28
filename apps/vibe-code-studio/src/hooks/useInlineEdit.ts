@@ -1,5 +1,6 @@
 import type { RefObject} from 'react';
 import { useEffect, useState } from 'react';
+import { logger } from '../services/Logger';
 
 interface InlineEditState {
   isOpen: boolean;
@@ -7,7 +8,7 @@ interface InlineEditState {
   selectedCode: string;
 }
 
-export function useInlineEdit(containerRef: RefObject<any>) {
+export function useInlineEdit(containerRef: RefObject<unknown>) {
   const [state, setState] = useState<InlineEditState>({
     isOpen: false,
     position: null,
@@ -47,7 +48,7 @@ export function useInlineEdit(containerRef: RefObject<any>) {
 
   const startInlineEdit = () => {
     // Placeholder for starting inline edit
-    console.log('Starting inline edit');
+    logger.debug('Starting inline edit');
   };
 
   return {

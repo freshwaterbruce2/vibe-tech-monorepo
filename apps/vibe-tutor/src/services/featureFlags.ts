@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { appStore } from '../utils/electronStore';
 
 /**
@@ -11,6 +12,7 @@ export interface FeatureFlags {
   buddyRolePlay: boolean;
   adaptiveAudio: boolean;
   enhancedAccessibility: boolean;
+  localAiTools: boolean;
 }
 
 const DEFAULT_FLAGS: FeatureFlags = {
@@ -18,6 +20,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   buddyRolePlay: true,
   adaptiveAudio: true,
   enhancedAccessibility: true,
+  localAiTools: true,
 };
 
 const STORAGE_KEY = 'vibe-feature-flags';
@@ -37,7 +40,7 @@ class FeatureFlagService {
         return { ...DEFAULT_FLAGS, ...saved };
       }
     } catch (error) {
-      console.warn('Failed to load feature flags:', error);
+      logger.warn('Failed to load feature flags:', error);
     }
     return { ...DEFAULT_FLAGS };
   }
@@ -46,7 +49,7 @@ class FeatureFlagService {
     try {
       appStore.set(STORAGE_KEY, JSON.stringify(this.flags));
     } catch (error) {
-      console.error('Failed to save feature flags:', error);
+      logger.error('Failed to save feature flags:', error);
     }
   }
 

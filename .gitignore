@@ -10,7 +10,10 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+space-agent/
 *.local
+scratch/
+.mcp-fleet-staging/
 
 # Editor directories and files
 .vscode/*
@@ -37,8 +40,6 @@ env/
 .pytest_cache/
 
 # Environment files
-.env
-.env.local
 .env.*.local
 .env.*
 !.env.example
@@ -56,12 +57,33 @@ npm-shrinkwrap.json
 # Local Claude settings (machine-specific)
 .claude/settings.local.json
 **/.claude/settings.local.json
+.claude/worktrees/
+**/.claude/worktrees/
+.claude/scratch/
+**/.claude/scratch/
+# Runtime scheduler lock (per-session sessionId/pid churn — not source)
+.claude/scheduled_tasks.lock
+**/.claude/scheduled_tasks.lock
+
+# OpenCode / local assistant tooling (machine-specific)
+.opencode/
+**/.opencode/
+
+# Hermes Agent runtime state (machine-specific)
+.hermes/
+**/.hermes/
 
 # Local editor/AI assistant tooling
 .codex/
 .codex-home/
 .agent/
 .agents/
+!.agents/
+!.agents/skills/
+!.agents/skills/cross-package-refactor/
+!.agents/skills/cross-package-refactor/SKILL.md
+!.agents/skills/factory-launch/
+!.agents/skills/factory-launch/SKILL.md
 .git-archive-*/
 .codex-readiness-integration-test/
 .playwright-cli/
@@ -73,7 +95,8 @@ npm-shrinkwrap.json
 
 # Build directories
 build/
-.nx/
+.nx/*
+!.nx/
 .next/
 out/
 *.tsbuildinfo
@@ -84,6 +107,7 @@ obj/
 target/
 apps/nova-agent/src-tauri/target/
 apps/*/src-tauri/target/
+apps/*/src-tauri/gen/
 
 # Electron/Tauri packaging outputs
 dist-electron/
@@ -115,6 +139,8 @@ node_modules/.vite/
 
 # Test coverage
 coverage/
+coverage-report/
+coverage-*/
 *.lcov
 *.coverage
 .nyc_output
@@ -139,6 +165,7 @@ null
 # Backup files
 *.backup
 *.bak
+*.bak_*
 *~
 _backup_*
 src.backup
@@ -155,6 +182,7 @@ nul
 # Project-specific (to review)
 DesktopCommanderMCP/
 /Vibe-Tutor/
+/space-agent/
 opcode/
 
 # Sensitive files - API keys and credentials
@@ -218,6 +246,16 @@ apps/nova-agent/src-tauri/tauri.conf.backup.json
 # Serena (AI tool config)
 .serena/
 
+# OpenClaw (AI agent runtime state)
+.openclaw/
+
+# OpenClaw agent identity files (personal local config)
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+
 # Deprecated file backups
 *.deprecated
 
@@ -261,6 +299,7 @@ final_memo.md
 **/health_output.txt
 **/build_result.txt
 **/build_output*.txt
+**/test-results.json
 /tmp/nx-graph.json
 /tmp/project-graph*.json
 /tmp/*lint-report*.json
@@ -274,23 +313,43 @@ final_memo.md
 apps/ai-youtube-pipeline/output/
 tools/vibe-finisher/output/
 apps/*/dev-dist/
+apps/VibeBlox/package/client/
+apps/cross-agent-reflection/n/
 apps/*/build_final/
 apps/*/build_v*/
 
-# PyInstaller build output
+# vibe-justice build artifacts
+apps/vibe-justice/build_v6/
+apps/vibe-justice/build_final/
 apps/vibe-justice/dist_v6/
+apps/vibe-justice/frontend/src-tauri/binaries/*.exe
 
 # Electron build output
 apps/vibe-tutor/release/
+apps/vibetech-command-center/release/
+
+# Generated knowledge-graph artifacts (graphify / nx graph exports)
+graphify-out/
+**/graphify-out/
+*-graph.json
+
+# User-generated uploads (data belongs on D:\ per paths-policy)
+apps/ai-avatar-youtube-saas/public/uploads/
+
+# Large source design assets (keep on disk / Git LFS, not regular git)
+apps/nova-agent/branding/nova-logo-source.png
+
+# Gemini ralph loop runtime state
+.gemini/ralph/
 
 # Archive (moved to D:\archive)
 archive/
+# Allow intentionally archived vibe-justice docs
+!apps/vibe-justice/docs/archive/
+!apps/vibe-justice/docs/archive/**
 
 # Crypto-enhanced temp files
 apps/crypto-enhanced/tmp-*
-
-# Stale project directories
-projects/
 
 
 # Scratch dirs in apps
@@ -303,3 +362,59 @@ vitest.config.d.ts
 vitest.config.d.ts.map
 vitest.config.js
 vitest.config.js.map
+
+# Debug output patterns
+*_output.txt
+*_build.txt
+*_results.txt
+status.err
+
+# Rust build cache
+.cargo/
+
+# ESLint per-project cache shards (written by scripts/fix-all-quality.ps1)
+.eslintcache/
+.eslintcache
+
+# Ollama runtime state
+Ollama/db.sqlite-shm
+Ollama/db.sqlite-wal
+
+.claude/worktrees
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
+
+# NX local cache
+.nx/
+
+# Personal scratchpad
+MEMORY.md
+
+# Allow tracked release docs and example env for nova-agent
+!apps/nova-agent/RELEASE_READY.md
+!apps/nova-agent/SHIP_READY_REPORT.md
+!apps/nova-agent/CONSISTENCY_AUDIT_REPORT.md
+!apps/nova-agent/.env.example
+
+# Vercel local project state and generated output
+.vercel
+
+.projects/cache
+.projects/vault
+.projects/state.test.json
+.projects/state.local.test.json
+.env.test
+.env
+
+# Local Verdaccio npm registry cache
+.verdaccio/
+
+# Compiled TS output leaked into package src (stray tsc without outDir).
+# All packages/* are TypeScript-authored; .js/.js.map in their src is build output.
+packages/**/src/**/*.js
+packages/**/src/**/*.js.map
+*.tsbuildinfo
+
+# Cursor IDE local config (machine-specific, not shared)
+.cursor/
+

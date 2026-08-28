@@ -6,6 +6,7 @@
 
 import type { DifficultyLevel, SubjectProgress, SubjectType, WorksheetSession } from '../types';
 import { dataStore } from './dataStore';
+import { logger } from '../utils/logger';
 
 const STORAGE_KEY = 'subject-progress';
 const STARS_TO_LEVEL_UP = 5;
@@ -53,7 +54,7 @@ export async function loadProgress(): Promise<Record<SubjectType, SubjectProgres
       return { ...createDefaultProgress(), ...parsed };
     }
   } catch (error) {
-    console.error('Failed to load progress from dataStore:', error);
+    logger.error('Failed to load progress from dataStore:', error);
   }
   return createDefaultProgress();
 }
@@ -63,7 +64,7 @@ export async function saveProgress(progress: Record<SubjectType, SubjectProgress
   try {
     await dataStore.saveUserSettings(STORAGE_KEY, JSON.stringify(progress));
   } catch (error) {
-    console.error('Failed to save progress to dataStore:', error);
+    logger.error('Failed to save progress to dataStore:', error);
   }
 }
 

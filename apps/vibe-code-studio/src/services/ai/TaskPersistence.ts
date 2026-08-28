@@ -30,19 +30,24 @@ export class TaskPersistence {
   /**
    * Saves a task's current state for later resumption
    */
-  async saveTaskState(task: AgentTask, currentStepIndex: number, userRequest: string, workspaceRoot: string): Promise<void> {
+  async saveTaskState(
+    task: AgentTask,
+    currentStepIndex: number,
+    userRequest: string,
+    workspaceRoot: string,
+  ): Promise<void> {
     try {
       const persistedTask: PersistedTask = {
         id: task.id,
         originalTask: { ...task },
         currentStepIndex,
-        completedSteps: task.steps.filter(step => step.status === 'completed'),
+        completedSteps: task.steps.filter((step) => step.status === 'completed'),
         timestamp: new Date(),
         metadata: {
           userRequest,
           workspaceRoot,
           totalSteps: task.steps.length,
-          completedStepsCount: task.steps.filter(step => step.status === 'completed').length,
+          completedStepsCount: task.steps.filter((step) => step.status === 'completed').length,
         },
       };
 
@@ -53,7 +58,9 @@ export class TaskPersistence {
         await this.saveToLocalStorage(persistedTask);
       }
 
-      logger.debug(`[TaskPersistence] Saved task state: ${task.title} (${persistedTask.metadata.completedStepsCount}/${persistedTask.metadata.totalSteps} steps completed)`);
+      logger.debug(
+        `[TaskPersistence] Saved task state: ${task.title} (${persistedTask.metadata.completedStepsCount}/${persistedTask.metadata.totalSteps} steps completed)`,
+      );
     } catch (error) {
       logger.error('[TaskPersistence] Failed to save task state:', error);
     }
@@ -80,7 +87,7 @@ export class TaskPersistence {
    */
   async getPersistedTask(taskId: string): Promise<PersistedTask | null> {
     const tasks = await this.getPersistedTasks();
-    return tasks.find(task => task.id === taskId) ?? null;
+    return tasks.find((task) => task.id === taskId) ?? null;
   }
 
   /**
@@ -89,7 +96,7 @@ export class TaskPersistence {
   async removePersistedTask(taskId: string): Promise<void> {
     try {
       const tasks = await this.getPersistedTasks();
-      const filteredTasks = tasks.filter(task => task.id !== taskId);
+      const filteredTasks = tasks.filter((task) => task.id !== taskId);
 
       if (this.fileSystemService && window.electron) {
         await this.saveAllToFileSystem(filteredTasks);
@@ -121,7 +128,9 @@ export class TaskPersistence {
         await this.saveAllToLocalStorage(sortedTasks);
       }
 
-      logger.debug(`[TaskPersistence] Cleaned up old tasks, kept ${sortedTasks.length} recent tasks`);
+      logger.debug(
+        `[TaskPersistence] Cleaned up old tasks, kept ${sortedTasks.length} recent tasks`,
+      );
     } catch (error) {
       logger.error('[TaskPersistence] Failed to cleanup old tasks:', error);
     }
@@ -131,25 +140,30 @@ export class TaskPersistence {
 
   private async saveToLocalStorage(task: PersistedTask): Promise<void> {
     const existingTasks = await this.loadFromLocalStorage();
-    const updatedTasks = existingTasks.filter(t => t.id !== task.id);
+    const updatedTasks = existingTasks.filter((t) => t.id !== task.id);
     updatedTasks.push(task);
 
     if (typeof window !== 'undefined' && window.electron?.store) {
-      await window.electron.store.set(TaskPersistence.TASK_STORAGE_KEY, JSON.stringify(updatedTasks));
-    } else if (typeof localStorage !== 'undefined') {
-      window.electronAPI.store.set(TaskPersistence.TASK_STORAGE_KEY, JSON.stringify(updatedTasks));
+      await window.electron.store.set(
+        TaskPersistence.TASK_STORAGE_KEY,
+        JSON.stringify(updatedTasks),
+      );
+    } else {
+      localStorage.setItem(TaskPersistence.TASK_STORAGE_KEY, JSON.stringify(updatedTasks));
     }
   }
 
   private async loadFromLocalStorage(): Promise<PersistedTask[]> {
     let stored: string | null = null;
     if (typeof window !== 'undefined' && window.electron?.store) {
-      stored = await window.electron.store.get(TaskPersistence.TASK_STORAGE_KEY) ?? null;
-    } else if (typeof localStorage !== 'undefined') {
-      stored = window.electronAPI.store.get(TaskPersistence.TASK_STORAGE_KEY);
+      stored = (await window.electron.store.get(TaskPersistence.TASK_STORAGE_KEY)) ?? null;
+    } else {
+      stored = localStorage.getItem(TaskPersistence.TASK_STORAGE_KEY);
     }
 
-    if (!stored) {return [];}
+    if (!stored) {
+      return [];
+    }
 
     try {
       return JSON.parse(stored);
@@ -161,13 +175,15 @@ export class TaskPersistence {
   private async saveAllToLocalStorage(tasks: PersistedTask[]): Promise<void> {
     if (typeof window !== 'undefined' && window.electron?.store) {
       await window.electron.store.set(TaskPersistence.TASK_STORAGE_KEY, JSON.stringify(tasks));
-    } else if (typeof localStorage !== 'undefined') {
-      window.electronAPI.store.set(TaskPersistence.TASK_STORAGE_KEY, JSON.stringify(tasks));
+    } else {
+      localStorage.setItem(TaskPersistence.TASK_STORAGE_KEY, JSON.stringify(tasks));
     }
   }
 
   private async saveToFileSystem(task: PersistedTask): Promise<void> {
-    if (!this.fileSystemService) {throw new Error('FileSystemService not available');}
+    if (!this.fileSystemService) {
+      throw new Error('FileSystemService not available');
+    }
 
     const tasksDir = '.deepcode/agent-tasks';
     const taskFile = `${tasksDir}/${task.id}.json`;
@@ -183,7 +199,9 @@ export class TaskPersistence {
   }
 
   private async loadFromFileSystem(): Promise<PersistedTask[]> {
-    if (!this.fileSystemService) {throw new Error('FileSystemService not available');}
+    if (!this.fileSystemService) {
+      throw new Error('FileSystemService not available');
+    }
 
     const tasksDir = '.deepcode/agent-tasks';
 
@@ -211,7 +229,9 @@ export class TaskPersistence {
   }
 
   private async saveAllToFileSystem(tasks: PersistedTask[]): Promise<void> {
-    if (!this.fileSystemService) {throw new Error('FileSystemService not available');}
+    if (!this.fileSystemService) {
+      throw new Error('FileSystemService not available');
+    }
 
     const tasksDir = '.deepcode/agent-tasks';
 

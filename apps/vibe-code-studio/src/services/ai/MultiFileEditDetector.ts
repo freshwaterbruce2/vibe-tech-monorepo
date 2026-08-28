@@ -7,7 +7,7 @@
  * - Markdown: Multiple file code blocks with file paths
  */
 
-import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
+import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
 import { logger } from '../Logger';
 
 export interface DetectionResult {
@@ -115,7 +115,8 @@ export class MultiFileEditDetector {
         return { detected: false };
       }
 
-      const changes: FileChange[] = parsed.files.map((file: any) => ({
+      interface ParsedFile { path: string; content?: string; changeType?: string; reason?: string; }
+      const changes: FileChange[] = parsed.files.map((file: ParsedFile) => ({
         path: file.path,
         originalContent: '',
         newContent: file.content || '',
@@ -135,7 +136,7 @@ export class MultiFileEditDetector {
 
       logger.info(`[MultiFileEditDetector] Detected JSON pattern with ${changes.length} files`);
       return { detected: true, plan, changes };
-    } catch (error) {
+    } catch (_error) {
       return { detected: false };
     }
   }

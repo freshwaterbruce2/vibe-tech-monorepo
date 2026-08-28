@@ -1,0 +1,5 @@
+{
+  "name": "@vibetech/health-tracker",
+  "projectType": "application",
+  "tags": ["scope:personal-tools", "type:application", "platform:web", "platform:android"]
+}

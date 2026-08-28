@@ -11,21 +11,23 @@ mod activity_monitor;
 mod context_engine;
 mod database;
 mod guidance_engine;
+mod http_server;
 mod modules;
 mod task_executor;
 mod websocket_client;
-mod http_server;
 
 use modules::{
-    db_handlers, execution, file_cleaner, filesystem, llm, memory, orchestrator, prediction_engine,
-    project, prompts, state::AgentState, state::AppState, state::Config, web, credentials, rag,
-    system_prompt, copilot, screenshot, scheduler, pattern_engine, calendar,
+    calendar, copilot, credentials, db_handlers, execution, file_cleaner, filesystem, llm, memory,
+    orchestrator, pattern_engine, prediction_engine, procedural_memory, project, prompts, rag,
+    scheduler, screenshot, state::AgentState, state::AppState, state::Config, system_prompt, web,
+    computer_use,
 };
 
 struct IpcSender(tokio::sync::mpsc::Sender<websocket_client::IpcMessage>);
 
 fn init_production_logging() -> Option<WorkerGuard> {
-    let log_dir = std::env::var("NOVA_LOG_DIR").unwrap_or_else(|_| "D:\\logs\\nova-agent".to_string());
+    let log_dir =
+        std::env::var("NOVA_LOG_DIR").unwrap_or_else(|_| "D:\\logs\\nova-agent".to_string());
     let log_dir_full = std::path::PathBuf::from(&log_dir);
 
     if !log_dir.to_uppercase().starts_with("D:\\") {
@@ -68,6 +70,14 @@ async fn send_ipc_message(
 
 #[tokio::main]
 async fn main() {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        use windows::Win32::UI::HiDpi::{
+            SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
+        };
+        let _ = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    }
+
     let _log_guard = init_production_logging();
 
     info!("Starting NOVA Agent Desktop Application");
@@ -200,8 +210,8 @@ async fn main() {
     }
 
     // Initialize prediction engine
-    let learning_db_path = PathBuf::from(&config.database_path).join("learning.db");
-    let prediction_engine = match prediction_engine::PredictionEngine::new(learning_db_path) {
+    let prediction_db_path = PathBuf::from(&config.database_path).join("agent_learning.db");
+    let prediction_engine = match prediction_engine::PredictionEngine::new(prediction_db_path) {
         Ok(engine) => {
             info!("Prediction engine initialized successfully");
             Some(engine)
@@ -213,7 +223,9 @@ async fn main() {
     };
     let prediction_engine_state = Arc::new(std::sync::Mutex::new(prediction_engine));
     let guidance_engine_state = Arc::new(guidance_engine::GuidanceEngine::new());
-    let context_engine_state = Arc::new(std::sync::Mutex::new(context_engine::ContextEngine::new(config.workspace_root.clone())));
+    let context_engine_state = Arc::new(std::sync::Mutex::new(context_engine::ContextEngine::new(
+        config.workspace_root.clone(),
+    )));
 
     tauri::Builder::default()
         .manage(config.clone())
@@ -239,7 +251,7 @@ async fn main() {
                 started_at: std::time::Instant::now(),
             });
             tauri::async_runtime::spawn(async move {
-                let port = 3000;
+                let port = http_server::bridge_port_from_env();
                 tracing::info!("Starting HTTP server for mobile bridge on port {}", port);
                 if let Err(e) = http_server::start_server(app_state_for_http, port).await {
                     tracing::error!("Failed to start HTTP server: {}", e);
@@ -247,10 +259,8 @@ async fn main() {
             });
 
             // Start task executor background service
-            let executor = task_executor::TaskExecutor::new(
-                db_for_executor,
-                Arc::new(config.clone()),
-            );
+            let executor =
+                task_executor::TaskExecutor::new(db_for_executor, Arc::new(config.clone()));
             tauri::async_runtime::spawn(async move {
                 executor.start().await;
                 info!("Task executor started with approval-gated background processing");
@@ -265,7 +275,10 @@ async fn main() {
                             match &msg {
                                 websocket_client::IpcMessage::ActivitySync { payload } => {
                                     for activity in &payload.activities {
-                                        let _ = service.log_activity(&activity.activity_type, &activity.details);
+                                        let _ = service.log_activity(
+                                            &activity.activity_type,
+                                            &activity.details,
+                                        );
                                     }
                                 }
                                 websocket_client::IpcMessage::LearningSync { payload } => {
@@ -278,19 +291,29 @@ async fn main() {
                                     }
                                 }
                                 websocket_client::IpcMessage::TaskUpdate { payload } => {
-                                    let _ = service.log_activity("task_update", &format!("{}: {}", payload.task_id, payload.status));
+                                    let _ = service.log_activity(
+                                        "task_update",
+                                        &format!("{}: {}", payload.task_id, payload.status),
+                                    );
                                 }
                                 websocket_client::IpcMessage::FileOpen { payload } => {
                                     let _ = service.log_activity("file_open", &payload.path);
                                 }
                                 websocket_client::IpcMessage::GuidanceRequest { .. } => {
-                                    let _ = service.log_activity("guidance_request", "IPC guidance");
+                                    let _ =
+                                        service.log_activity("guidance_request", "IPC guidance");
                                 }
                                 websocket_client::IpcMessage::ContextUpdate { .. } => {
                                     let _ = service.log_activity("context_update", "IPC context");
                                 }
                                 websocket_client::IpcMessage::BridgeStatus { payload } => {
-                                    let _ = service.log_activity("bridge_status", &format!("client={} connected={}", payload.client_id, payload.connected));
+                                    let _ = service.log_activity(
+                                        "bridge_status",
+                                        &format!(
+                                            "client={} connected={}",
+                                            payload.client_id, payload.connected
+                                        ),
+                                    );
                                 }
                             }
                         }
@@ -306,10 +329,10 @@ async fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             // LLM & Chat
-            llm::chat_with_agent,
-            llm::get_agent_status,
-            llm::update_capabilities,
-            llm::set_active_model,
+            llm::commands::chat_with_agent,
+            llm::commands::get_agent_status,
+            llm::commands::update_capabilities,
+            llm::commands::set_active_model,
             credentials::save_api_keys,
             credentials::get_api_key_status,
             // Filesystem
@@ -321,6 +344,13 @@ async fn main() {
             screenshot::capture_region,
             screenshot::list_screenshots,
             screenshot::delete_screenshot,
+            // Computer Use
+            computer_use::display::get_display_dimensions,
+            computer_use::display::capture_display,
+            computer_use::input::simulate_mouse_action,
+            computer_use::input::simulate_keyboard_action,
+            computer_use::window::get_focused_window,
+            computer_use::llm::call_multimodal_llm,
             // Code Execution
             execution::execute_code,
             orchestrator::orchestrate_desktop_action,
@@ -332,6 +362,10 @@ async fn main() {
             memory::consolidate_memories,
             memory::prune_memories,
             memory::get_memory_overview,
+            // Procedural Memory
+            procedural_memory::recall_procedural,
+            procedural_memory::record_procedural,
+            procedural_memory::count_procedural_patterns,
             // Project
             project::create_project,
             project::get_available_templates,
@@ -340,37 +374,40 @@ async fn main() {
             // Web
             web::web_search,
             // Copilot
-            copilot::index_codebase_command,
-            copilot::search_patterns,
-            copilot::get_copilot_stats_command,
-            copilot::use_pattern,
-            copilot::get_suggestions,
+            copilot::commands::index_codebase_command,
+            copilot::commands::search_patterns,
+            copilot::commands::get_copilot_stats_command,
+            copilot::commands::use_pattern,
+            copilot::commands::get_suggestions,
             // DB Handlers
-            db_handlers::get_trading_config,
-            db_handlers::log_activity,
-            db_handlers::request_guidance,
-            db_handlers::get_context_snapshot,
-            db_handlers::get_tasks,
-            db_handlers::get_task_by_id,
-            db_handlers::update_task_status,
-            db_handlers::get_recent_activities,
-            db_handlers::get_focus_state,
-            db_handlers::get_learning_events,
-            db_handlers::get_task_stats,
-            db_handlers::get_today_activity_count,
-            db_handlers::log_learning_event,
-            db_handlers::get_activities_in_range,
-            db_handlers::get_learning_by_outcome,
-            db_handlers::db_health_check,
-            db_handlers::get_storage_health,
-            db_handlers::create_task,
-            db_handlers::get_deep_work_data,
+            db_handlers::config::get_trading_config,
+            db_handlers::activity::log_activity,
+            db_handlers::guidance::request_guidance,
+            db_handlers::guidance::get_context_snapshot,
+            db_handlers::tasks::get_tasks,
+            db_handlers::tasks::get_task_by_id,
+            db_handlers::tasks::update_task_status,
+            db_handlers::activity::get_recent_activities,
+            db_handlers::tasks::get_focus_state,
+            db_handlers::activity::get_learning_events,
+            db_handlers::tasks::get_task_stats,
+            db_handlers::activity::get_today_activity_count,
+            db_handlers::activity::log_learning_event,
+            db_handlers::activity::get_activities_in_range,
+            db_handlers::activity::get_learning_by_outcome,
+            db_handlers::health::db_health_check,
+            db_handlers::health::get_storage_health,
+            db_handlers::tasks::create_task,
+            db_handlers::deep_work::get_deep_work_data,
             // Prediction Engine (ML-powered recommendations)
-            prediction_engine::get_task_prediction,
-            prediction_engine::get_productivity_insights,
-            prediction_engine::get_proactive_recommendations,
-            prediction_engine::assess_commit_risk_command,
-            prediction_engine::recommend_task_timing_command,
+            prediction_engine::commands::get_task_prediction,
+            prediction_engine::commands::get_productivity_insights,
+            prediction_engine::commands::get_proactive_recommendations,
+            prediction_engine::commands::assess_commit_risk_command,
+            prediction_engine::commands::recommend_task_timing_command,
+            prediction_engine::commands::execute_recommendation,
+            prediction_engine::commands::dismiss_recommendation,
+            prediction_engine::commands::get_prediction_accuracy,
             // RAG (Semantic Search)
             rag::rag_index_file,
             rag::rag_search,

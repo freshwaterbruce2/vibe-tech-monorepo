@@ -30,7 +30,7 @@ export const LoadingScreen = () => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <LoadingLogo>⚡ DeepCode</LoadingLogo>
+          <LoadingLogo>⚡ Vibe Code Studio</LoadingLogo>
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}

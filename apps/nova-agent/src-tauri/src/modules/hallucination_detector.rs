@@ -34,10 +34,7 @@ pub fn contains_hallucination_indicators(text: &str) -> bool {
 }
 
 /// Validate response against tool calls
-pub fn validate_response(
-    response: &str,
-    tool_calls_made: usize,
-) -> Result<String, String> {
+pub fn validate_response(response: &str, tool_calls_made: usize) -> Result<String, String> {
     // If no hallucination indicators, response is safe
     if !contains_hallucination_indicators(response) {
         return Ok(response.to_string());
@@ -69,7 +66,7 @@ mod tests {
 
     #[test]
     fn test_detects_hallucination() {
-        let fake_response = "✅ Created C:\\dev\\test.txt - Lines written: 10";
+        let fake_response = "✅ Created V:\\monorepo\\test.txt - Lines written: 10";
         assert!(contains_hallucination_indicators(fake_response));
     }
 
@@ -81,14 +78,14 @@ mod tests {
 
     #[test]
     fn test_validates_with_tool_calls() {
-        let response = "✅ File created successfully at C:\\dev\\test.txt";
+        let response = "✅ File created successfully at V:\\monorepo\\test.txt";
         let result = validate_response(response, 1);
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_blocks_without_tool_calls() {
-        let response = "✅ File created successfully at C:\\dev\\test.txt";
+        let response = "✅ File created successfully at V:\\monorepo\\test.txt";
         let result = validate_response(response, 0);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("HALLUCINATION BLOCKED"));

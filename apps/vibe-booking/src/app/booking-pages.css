@@ -1,0 +1,571 @@
+.searchHero {
+  background: linear-gradient(135deg, #102033 0%, #234869 100%);
+  border-radius: 8px;
+  color: white;
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.searchHero p {
+  color: #dbeafe;
+}
+
+.resultsLayout {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 280px minmax(0, 1fr);
+  margin-top: 1rem;
+}
+
+.filtersPanel,
+.hotelResult,
+.bookingPanel,
+.checkoutForm,
+.staySummary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgb(16 32 51 / 6%);
+}
+
+.filtersPanel {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  position: sticky;
+  top: 88px;
+}
+
+.panelTitle,
+.resultsToolbar label {
+  align-items: center;
+  display: flex;
+  gap: 0.45rem;
+}
+
+.panelTitle h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.checkControl {
+  align-items: center;
+  flex-direction: row;
+}
+
+.checkControl input {
+  min-height: 0;
+}
+
+.resultsColumn,
+.resultsStack {
+  display: grid;
+  gap: 1rem;
+}
+
+.resultsToolbar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+}
+
+.resultsToolbar span {
+  color: var(--muted);
+  display: block;
+  font-size: 0.9rem;
+}
+
+.hotelResult {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 280px minmax(0, 1fr);
+  overflow: hidden;
+  padding: 0.75rem;
+}
+
+.hotelImageLink {
+  border-radius: 8px;
+  min-height: 250px;
+  overflow: hidden;
+  position: relative;
+}
+
+.hotelImageLink span {
+  background: rgb(255 255 255 / 93%);
+  border-radius: 8px;
+  left: 0.65rem;
+  padding: 0.38rem 0.55rem;
+  position: absolute;
+  top: 0.65rem;
+}
+
+.hotelResultBody {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.hotelResultTopline {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.hotelResultTopline span,
+.hotelPerks span,
+.featuredMeta span {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.hotelResultHeader {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.reviewBox {
+  background: #0f2238;
+  border-radius: 8px;
+  color: white;
+  min-width: 92px;
+  padding: 0.65rem;
+  text-align: center;
+}
+
+.reviewBox strong {
+  display: block;
+  font-size: 1.2rem;
+}
+
+.reviewBox span,
+.priceDetail {
+  color: #cbd5e1;
+  display: block;
+  font-size: 0.78rem;
+}
+
+.amenityRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.amenityRow span {
+  background: var(--surface-soft);
+  border-radius: 999px;
+  color: #234869;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.35rem 0.55rem;
+}
+
+.hotelPerks {
+  color: var(--emerald);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.nightlyPrice {
+  display: inline-block;
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.totalPrice {
+  color: var(--muted);
+  display: block;
+  font-size: 0.9rem;
+  margin-top: 0.15rem;
+}
+
+.resultActions {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.propertyHero {
+  padding: 1rem 0;
+}
+
+.propertyHero p {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  gap: 0.45rem;
+}
+
+.propertyScore {
+  background: var(--text);
+  border-radius: 8px;
+  color: white;
+  padding: 0.85rem 1rem;
+  text-align: center;
+}
+
+.propertyScore strong {
+  display: block;
+  font-size: 1.5rem;
+}
+
+.galleryGrid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 2fr 1fr;
+}
+
+.galleryGrid img {
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+}
+
+.galleryLead {
+  grid-row: span 2;
+}
+
+.propertyLayout,
+.checkoutLayout {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  margin-top: 1rem;
+}
+
+.propertyDetails {
+  display: grid;
+  gap: 1rem;
+}
+
+.propertyIntro,
+.checkoutForm,
+.staySummary,
+.bookingPanel {
+  padding: 1rem;
+}
+
+.detailGrid,
+.authGrid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.bookingPanel,
+.staySummary {
+  display: grid;
+  gap: 1rem;
+  position: sticky;
+  top: 88px;
+}
+
+.bookingPanel dl,
+.staySummary dl {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+}
+
+.bookingPanel dl div,
+.staySummary dl div {
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.7rem;
+}
+
+dt {
+  color: var(--muted);
+}
+
+dd {
+  font-weight: 800;
+  margin: 0;
+  text-align: right;
+}
+
+.checkoutHeader {
+  padding: 1rem 0;
+}
+
+.secureNote {
+  align-items: center;
+  background: #e7f8f1;
+  border: 1px solid #b7ead8;
+  border-radius: 8px;
+  color: var(--emerald);
+  display: inline-flex;
+  font-weight: 800;
+  gap: 0.45rem;
+  padding: 0.65rem 0.85rem;
+}
+
+.checkoutForm {
+  display: grid;
+  gap: 1rem;
+}
+
+.formSection {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.summaryRows span {
+  background: var(--surface-soft);
+  border-radius: 8px;
+  color: #234869;
+  font-weight: 800;
+  padding: 0.55rem 0.7rem;
+}
+
+.staySummary img {
+  aspect-ratio: 16 / 10;
+  border-radius: 8px;
+}
+
+.paymentPanel,
+.confirmationPage section {
+  display: grid;
+  gap: 1rem;
+  margin: 0 auto;
+  max-width: 620px;
+  text-align: center;
+}
+
+.paymentPanel svg,
+.confirmationPage svg {
+  color: var(--primary);
+  margin: 0 auto;
+}
+
+/* Premium Enhancements & Glassmorphism */
+.filtersPanel,
+.hotelResult,
+.bookingPanel,
+.checkoutForm,
+.staySummary,
+.reviewsSection,
+.addReviewForm {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+  transition: all 0.3s ease;
+}
+
+.hotelResult:hover {
+  transform: translateY(-2px);
+  border-color: rgba(35, 72, 105, 0.4) !important;
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Promo / Discount Styling */
+.promoSection {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.promoInputGrid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+.promoInput {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+}
+
+.promoInput:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 10px rgba(0, 150, 255, 0.2);
+}
+
+.promoError {
+  color: #ff5e5e;
+  font-size: 0.85rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.promoSuccess {
+  color: #38bdf8;
+  font-size: 0.85rem;
+  margin: 0;
+  font-weight: 600;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+.discountedPrice {
+  color: #38bdf8;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.originalTotal {
+  text-decoration: line-through;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: normal;
+}
+
+.discountRow dd {
+  color: #38bdf8;
+}
+
+/* Reviews Styling */
+.reviewsSection {
+  margin-top: 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
+  border-radius: 8px;
+}
+
+.reviewsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 1.5rem;
+}
+
+.reviewsHeader h2 {
+  font-size: 1.8rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.reviewsHeader .subtitle {
+  color: var(--muted);
+  margin: 0;
+}
+
+.reviewsStats {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.overallScore {
+  background: rgba(35, 72, 105, 0.3);
+  border: 1px solid rgba(35, 72, 105, 0.5);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.overallScore strong {
+  font-size: 2rem;
+  display: block;
+  line-height: 1;
+  color: #38bdf8;
+}
+
+.overallScore span {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.reviewVolume {
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.addReviewForm {
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.addReviewForm h3 {
+  margin: 0 0 0.5rem 0;
+}
+
+.addReviewForm textarea {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  padding: 0.75rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.addReviewForm select {
+  background: #111a24;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  padding: 0.5rem;
+  width: 100%;
+}
+
+.loginPromptText {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 6px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.reviewsList {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.reviewItem {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 1.25rem;
+  border-radius: 8px;
+}
+
+.reviewItem header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.reviewAuthor {
+  display: flex;
+  flex-direction: column;
+}
+
+.reviewDate {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.reviewItemRating {
+  display: flex;
+  gap: 2px;
+}
+
+.starFilled {
+  color: #fbbf24;
+}
+
+.starEmpty {
+  color: rgba(255, 255, 255, 0.15);
+}
+
+.commentText {
+  margin: 0;
+  line-height: 1.5;
+  color: #e2e8f0;
+}
+

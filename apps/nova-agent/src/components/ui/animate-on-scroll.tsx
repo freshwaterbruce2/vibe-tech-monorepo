@@ -17,13 +17,14 @@ const AnimateOnScroll = ({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     const observer = new IntersectionObserver(
       ([entry]) => {
         // When the component is visible according to the threshold
         if (entry?.isIntersecting) {
           // Apply delay if specified
           if (delay > 0) {
-            setTimeout(() => {
+            timeoutId = setTimeout(() => {
               setIsVisible(true);
             }, delay);
           } else {
@@ -46,6 +47,7 @@ const AnimateOnScroll = ({
     }
 
     return () => {
+      if (timeoutId) clearTimeout(timeoutId);
       if (currentRef) {
         observer.unobserve(currentRef);
       }

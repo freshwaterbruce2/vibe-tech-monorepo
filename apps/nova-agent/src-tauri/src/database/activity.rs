@@ -70,7 +70,13 @@ impl DatabaseService {
                 process_name = excluded.process_name,
                 window_title = excluded.window_title,
                 process_id = excluded.process_id",
-            params![last_seen, focus_started_at, process_name, window_title, process_id],
+            params![
+                last_seen,
+                focus_started_at,
+                process_name,
+                window_title,
+                process_id
+            ],
         )?;
         Ok(())
     }

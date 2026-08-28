@@ -72,7 +72,7 @@ describe('evaluation service behavioral runner', () => {
       },
     };
 
-    const service = new EvaluationService('C:\\dev', provider);
+    const service = new EvaluationService('V:\\monorepo', provider);
     const suites = await service.runBehavioralSuites();
 
     expect(suites).toHaveLength(2);
@@ -100,7 +100,7 @@ describe('evaluation service behavioral runner', () => {
       },
     };
 
-    const service = new EvaluationService('C:\\dev', provider);
+    const service = new EvaluationService('V:\\monorepo', provider);
     const suites = await service.runBehavioralSuites();
     const webSearchSuite = suites.find(
       (suite) => suite.suite === 'behavioral-web-search-grounding',
@@ -119,7 +119,7 @@ describe('evaluation service behavioral runner', () => {
   });
 
   it('uses the scripted provider for deterministic repo-local evaluation when requested', async () => {
-    const service = new EvaluationService('C:\\dev', 'scripted');
+    const service = new EvaluationService('V:\\monorepo', 'scripted');
     const suites = await service.runBehavioralSuites();
 
     expect(suites).toHaveLength(2);

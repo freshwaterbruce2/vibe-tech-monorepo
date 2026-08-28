@@ -1,0 +1,23 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
+    "paths": {
+      "@vibetech/monetization": ["../../../node_modules/@vibetech/monetization"],
+      "@vibetech/payments": ["../../../node_modules/@vibetech/payments"],
+      "@vibetech/email": ["../../../node_modules/@vibetech/email"],
+      "@vibetech/ai": ["../../../node_modules/@vibetech/ai"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

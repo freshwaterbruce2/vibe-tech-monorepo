@@ -233,7 +233,7 @@ export const EditorStreamPanel = ({
     });
   }, [onApprove, onReject]);
 
-  const handleSettingChange = (key: keyof LiveStreamSettings, value: any) => {
+  const handleSettingChange = (key: keyof LiveStreamSettings, value: LiveStreamSettings[keyof LiveStreamSettings]) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
     liveEditorStream.updateSettings(newSettings);

@@ -24,7 +24,7 @@ if (Test-Path $globalConfig) {
 
 # Test 2: Project Config Exists
 Write-Host "[2/10] Checking project Serena configuration..." -NoNewline
-$projectConfig = "C:\dev\.serena\project.yml"
+$projectConfig = "V:\monorepo\.serena\project.yml"
 if (Test-Path $projectConfig) {
     Write-Host " PASS" -ForegroundColor Green
     $results.Passed++
@@ -35,7 +35,7 @@ if (Test-Path $projectConfig) {
 
 # Test 3: Memories Directory
 Write-Host "[3/10] Checking memories directory..." -NoNewline
-$memoriesDir = "C:\dev\.serena\memories"
+$memoriesDir = "V:\monorepo\.serena\memories"
 if (Test-Path $memoriesDir) {
     $memCount = (Get-ChildItem $memoriesDir -Filter *.md).Count
     Write-Host " PASS ($memCount memories)" -ForegroundColor Green
@@ -47,7 +47,7 @@ if (Test-Path $memoriesDir) {
 
 # Test 4: MCP Configuration
 Write-Host "[4/10] Checking .mcp.json configuration..." -NoNewline
-$mcpConfig = "C:\dev\.mcp.json"
+$mcpConfig = "V:\monorepo\.mcp.json"
 if (Test-Path $mcpConfig) {
     $content = Get-Content $mcpConfig -Raw
     if ($content -match '"serena"') {
@@ -139,7 +139,7 @@ if (Test-Path $globalConfig) {
 
 # Test 10: Rules Documentation
 Write-Host "[10/10] Checking documentation..." -NoNewline
-$rulesFile = "C:\dev\.claude\rules\serena-mcp-guide.md"
+$rulesFile = "V:\monorepo\.claude\rules\serena-mcp-guide.md"
 if (Test-Path $rulesFile) {
     Write-Host " PASS" -ForegroundColor Green
     $results.Passed++
@@ -162,7 +162,7 @@ if ($results.Failed -eq 0) {
     Write-Host "`nNext Steps:" -ForegroundColor Cyan
     Write-Host "1. Restart Claude Code to activate Serena" -ForegroundColor White
     Write-Host "2. Check dashboard: http://localhost:24282/dashboard/" -ForegroundColor White
-    Write-Host "3. Test with: 'activate the project C:\dev'" -ForegroundColor White
+    Write-Host "3. Test with: 'activate the project V:\monorepo'" -ForegroundColor White
     Write-Host "4. Browse memories: list_memories" -ForegroundColor White
 } else {
     Write-Host "`nConfiguration issues detected! " -NoNewline -ForegroundColor Red

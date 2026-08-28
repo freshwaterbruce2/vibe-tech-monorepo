@@ -15,6 +15,7 @@ import { BLAKE_CONFIG } from '../../config/blakeConfig';
 import { getAllProgress } from '../../services/progressionService';
 import { getTodayEarnings } from '../../services/tokenService';
 import type { SubjectProgress, SubjectType } from '../../types';
+import { logger } from '../../utils/logger';
 
 interface SubjectCardsProps {
   onStartWorksheet: (subject: SubjectType) => void;
@@ -23,9 +24,9 @@ interface SubjectCardsProps {
 
 const CARD_CONFIG: Record<SubjectType, { icon: typeof Zap; color: string; bgColor: string }> = {
   Math: { icon: Zap, color: 'from-yellow-500 to-orange-500', bgColor: 'bg-yellow-500/10' },
-  Science: { icon: Atom, color: 'from-fuchsia-500 to-violet-500', bgColor: 'bg-fuchsia-500/10' },
-  History: { icon: Clock, color: 'from-purple-500 to-pink-500', bgColor: 'bg-purple-500/10' },
-  Bible: { icon: Heart, color: 'from-pink-500 to-rose-500', bgColor: 'bg-pink-500/10' },
+  Science: { icon: Atom, color: 'from-sky-500 to-violet-500', bgColor: 'bg-sky-500/10' },
+  History: { icon: Clock, color: 'from-violet-500 to-sky-500', bgColor: 'bg-violet-500/10' },
+  Bible: { icon: Heart, color: 'from-sky-500 to-violet-500', bgColor: 'bg-sky-500/10' },
   'Language Arts': {
     icon: BookOpen,
     color: 'from-blue-500 to-cyan-500',
@@ -68,7 +69,7 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
         const progress = await getAllProgress();
         setAllProgress(progress);
       } catch (error) {
-        console.error('[SubjectCards] Failed to load progress:', error);
+        logger.error('[SubjectCards] Failed to load progress:', error);
       }
     };
     void load();
@@ -101,7 +102,7 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 drop-shadow-lg tracking-wide">
             Learning Realms
           </h1>
-          <Sparkles size={32} className="text-purple-500 animate-pulse" />
+          <Sparkles size={32} className="text-violet-500 animate-pulse" />
         </div>
         <p className="text-gray-300 font-medium text-base md:text-lg px-4">
           Embark on epic quests to earn stars, collect tokens, and level up! 🚀
@@ -116,8 +117,8 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
           </div>
           {todayEarnings > 0 && (
             <div className="glass-card px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs">
-              <TrendingUp size={14} className="text-fuchsia-400" />
-              <span className="text-fuchsia-400 font-medium">+{todayEarnings} today</span>
+              <TrendingUp size={14} className="text-sky-400" />
+              <span className="text-sky-400 font-medium">+{todayEarnings} today</span>
             </div>
           )}
         </div>
@@ -266,7 +267,7 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
               </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-fuchsia-400">+{dailyChallenge.reward}</div>
+              <div className="text-2xl font-bold text-sky-400">+{dailyChallenge.reward}</div>
               <div className="text-xs text-gray-400">tokens</div>
             </div>
           </div>
@@ -285,7 +286,7 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
             <span>Complete 10-question quests to earn 1–5 stars based on your score</span>
           </li>
           <li className="flex items-start gap-2">
-            <TrendingUp className="text-fuchsia-500 flex-shrink-0 mt-0.5" size={16} />
+            <TrendingUp className="text-sky-500 flex-shrink-0 mt-0.5" size={16} />
             <span>Collect 5 stars to explore new zones and unlock harder challenges</span>
           </li>
           <li className="flex items-start gap-2">

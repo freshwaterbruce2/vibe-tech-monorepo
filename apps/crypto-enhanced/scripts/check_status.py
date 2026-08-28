@@ -9,8 +9,12 @@ import sqlite3
 import sys
 import os
 
-# Add parent directory to path to import from src
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add parent directory and src/ to path to import from src
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(project_root)
+src_path = os.path.join(project_root, "src")
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
 
 from datetime import datetime, timedelta
 from src.config import Config
@@ -60,30 +64,47 @@ async def check_status():
     # DATABASE STATS
     # ======================
     try:
-        conn = sqlite3.connect('trading.db')
+        db_path = "D:/databases/crypto-enhanced/trading.db"
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
+        def _table_exists(table_name: str) -> bool:
+            cursor.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+                (table_name,),
+            )
+            return cursor.fetchone() is not None
+
         # Open positions
-        cursor.execute("SELECT COUNT(*) FROM positions WHERE status='open'")
-        open_positions = cursor.fetchone()[0]
+        if _table_exists("positions"):
+            cursor.execute("SELECT COUNT(*) FROM positions WHERE status='open'")
+            open_positions = cursor.fetchone()[0]
+        else:
+            open_positions = 0
 
         # Recent errors (last 24h)
         yesterday = (datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
-        cursor.execute("""
-            SELECT COUNT(*) FROM events
-            WHERE severity IN ('ERROR', 'CRITICAL')
-            AND timestamp >= ?
-        """, (yesterday,))
-        recent_errors = cursor.fetchone()[0]
+        if _table_exists("events"):
+            cursor.execute("""
+                SELECT COUNT(*) FROM events
+                WHERE severity IN ('ERROR', 'CRITICAL')
+                AND timestamp >= ?
+            """, (yesterday,))
+            recent_errors = cursor.fetchone()[0]
+        else:
+            recent_errors = 0
 
         # Total trades today
         today = datetime.now().strftime('%Y-%m-%d')
-        cursor.execute("""
-            SELECT COUNT(*) FROM executions
-            WHERE order_status='filled'
-            AND timestamp >= ?
-        """, (today,))
-        trades_today = cursor.fetchone()[0]
+        if _table_exists("executions"):
+            cursor.execute("""
+                SELECT COUNT(*) FROM executions
+                WHERE order_status='filled'
+                AND timestamp >= ?
+            """, (today,))
+            trades_today = cursor.fetchone()[0]
+        else:
+            trades_today = 0
 
         conn.close()
 

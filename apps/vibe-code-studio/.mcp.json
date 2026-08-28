@@ -2,11 +2,11 @@
   "mcpServers": {
     "filesystem": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "C:\\dev\\active-projects\\desktop-apps\\deepcode-editor"]
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "V:\\monorepo\\active-projects\\desktop-apps\\deepcode-editor"]
     },
     "github": {
       "command": "node",
-      "args": ["C:/dev/apps/mcp-codeberg/dist/index.js"],
+      "args": ["V:/monorepo/apps/mcp-codeberg/dist/index.js"],
       "env": {
         "GITHUB_TOKEN": "${GITHUB_TOKEN}"
       }
@@ -29,7 +29,7 @@
     },
     "desktop-commander": {
       "command": "node",
-      "args": ["C:\\\\dev\\\\apps\\\\desktop-commander-v3\\\\dist\\\\mcp.js"],
+      "args": ["V:\\\\monorepo\\\\apps\\\\desktop-commander-v3\\\\dist\\\\mcp.js"],
       "env": {
         "NODE_ENV": "production"
       },

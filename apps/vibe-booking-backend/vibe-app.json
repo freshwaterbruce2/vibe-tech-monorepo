@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:saas",
+  "projectName": "vibe-booking-backend",
+  "displayName": "Vibe Booking",
+  "archetype": "web-saas",
+  "monetization": {
+    "stripeConnected": true,
+    "firstRevenueAt": null,
+    "mrrCents": 0,
+    "currency": "usd"
+  }
+}

@@ -7,7 +7,7 @@ import * as monaco from 'monaco-editor';
 
 import { FileSystemService } from '../../services/FileSystemService';
 import { logger } from '../../services/Logger';
-import { type ParsedRules, type Rule as _Rule, RulesParser } from '../../services/RulesParser';
+import { type ParsedRules, RulesParser } from '../../services/RulesParser';
 
 import type { EditorMode, RulesFilename } from './types';
 

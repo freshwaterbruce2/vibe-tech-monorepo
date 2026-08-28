@@ -3,7 +3,7 @@ import { useCallback, useEffect } from 'react';
 import { logger } from '../services/Logger';
 import { useAIActions, useAIStore } from '../stores/useAIStore';
 import { useEditorStore, useFileActions } from '../stores/useEditorStore';
-import type { AIMessage, EditorFile } from '../types';
+import type { AIMessage, EditorFile, EditorSettings } from '../types';
 
 /**
  * Store Integration Hook - Bridges old hooks with new Zustand stores
@@ -224,7 +224,7 @@ export function useSyncStores() {
 
   // Sync AI model between stores
   useEffect(() => {
-    updateSettings({ aiModel: aiModel as any });
+    updateSettings({ aiModel: aiModel as unknown as EditorSettings['aiModel'] });
   }, [aiModel, updateSettings]);
 
   // You can add more synchronization logic here

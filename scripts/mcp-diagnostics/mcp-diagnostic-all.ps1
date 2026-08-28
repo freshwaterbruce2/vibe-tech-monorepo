@@ -146,7 +146,7 @@ Write-Host "   - Verify file permissions on server directory" -ForegroundColor G
 Write-Host "   - Ensure firewall is not blocking connections" -ForegroundColor Gray
 Write-Host ""
 Write-Host "3. For Claude CLI specifically:" -ForegroundColor Yellow
-Write-Host "   - Check config at: C:\dev\.mcp.json" -ForegroundColor Gray
+Write-Host "   - Check config at: V:\monorepo\.mcp.json" -ForegroundColor Gray
 Write-Host "   - Run: claude --debug to see inline logs" -ForegroundColor Gray
 Write-Host "   - View logs in: $cliLogDir" -ForegroundColor Gray
 Write-Host ""

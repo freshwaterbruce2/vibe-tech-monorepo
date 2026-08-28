@@ -1,5 +1,6 @@
 import { appStore } from '../utils/electronStore';
 import { SCENARIOS } from './buddyScenariosData';
+import { logger } from '../utils/logger';
 
 /**
  * Buddy Role-Play Scenarios
@@ -136,7 +137,7 @@ export function saveScenarioProgress(progress: ScenarioProgress): void {
     existing.push(progress);
     appStore.set(PROGRESS_STORAGE_KEY, JSON.stringify(existing));
   } catch (error) {
-    console.error('Failed to save scenario progress:', error);
+    logger.error('Failed to save scenario progress:', error);
   }
 }
 
@@ -145,7 +146,7 @@ export function getScenarioProgress(): ScenarioProgress[] {
     const saved = appStore.get<ScenarioProgress[]>(PROGRESS_STORAGE_KEY);
     return saved ?? [];
   } catch (error) {
-    console.warn('Failed to load scenario progress:', error);
+    logger.warn('Failed to load scenario progress:', error);
     return [];
   }
 }

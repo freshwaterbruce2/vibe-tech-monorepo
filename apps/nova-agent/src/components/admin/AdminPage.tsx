@@ -35,7 +35,7 @@ const AdminPage = () => {
             <p className="text-sm text-gray-400">Manage Nova Agent settings and configuration</p>
           </div>
         </div>
-        <Button variant="outline" onClick={handleLogout} className="gap-2">
+        <Button variant="outline" onClick={() => { void handleLogout(); }} className="gap-2">
           <LogOut className="h-4 w-4" />
           Logout
         </Button>
@@ -44,7 +44,7 @@ const AdminPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card
           className="glass-card border-[rgba(185,51,255,0.2)] cursor-pointer hover:border-[rgba(185,51,255,0.4)] transition-colors"
-          onClick={async () => navigate('/settings')}
+          onClick={() => { void navigate('/settings'); }}
         >
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-white text-lg">

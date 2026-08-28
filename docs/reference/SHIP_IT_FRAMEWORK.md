@@ -58,7 +58,7 @@ Projects that are 50-70% complete:
 - `business-booking-platform`
 - `vibe-justice`
 - `iconforge`
-- `digital-content-builder`
+- `shipping-pwa`
 
 ### Tier 3: FREEZE
 
@@ -67,7 +67,7 @@ Projects <50% complete - **FROZEN** until Tier 1 & 2 done:
 - `invoice-automation-saas`
 - `vibe-subscription-guard`
 - `symptom-tracker`
-- `monorepo-dashboard`
+- `vibetech-command-center` (formerly `monorepo-dashboard` — retired, functionality moved to command-center Control Plane)
 - All others not in Tier 1/2
 
 ---

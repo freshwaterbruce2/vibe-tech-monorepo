@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import {
   ChevronDown,
   ChevronRight,
@@ -146,7 +147,9 @@ const FileExplorer = styled.div`
   padding: ${vibeTheme.spacing[2]} 0;
 `;
 
-const FileItem = styled(motion.div)<{ level: number; selected?: boolean }>`
+const FileItem = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ level: number; selected?: boolean }>`
   display: flex;
   align-items: center;
   padding: ${vibeTheme.spacing[2]} ${vibeTheme.spacing[3]} ${vibeTheme.spacing[2]}
@@ -224,7 +227,9 @@ const EmptyState = styled.div`
   }
 `;
 
-const OpenFolderButton = styled(motion.button)`
+const OpenFolderButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   background: ${vibeTheme.gradients.primary};
   border: none;
   color: ${vibeTheme.colors.text};
@@ -667,6 +672,14 @@ const Sidebar = ({
             aria-selected={selectedFile === item.path}
             onClick={() => handleFileClick(item)}
             onContextMenu={(e) => handleFileContextMenu(e, item)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleFileClick(item);
+              }
+            }}
+            role="button"
+            tabIndex={0}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -745,6 +758,7 @@ const Sidebar = ({
                   placeholder="Search files..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  aria-label="Search files"
                 />
                 <SearchActions>
                   <IconButton

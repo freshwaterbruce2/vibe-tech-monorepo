@@ -1,0 +1,49 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@vibetech/entitlements",
+  "projectType": "library",
+  "root": "packages/entitlements",
+  "sourceRoot": "packages/entitlements/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "cache": true,
+      "options": {
+        "command": "tsc",
+        "cwd": "packages/entitlements"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run",
+        "cwd": "packages/entitlements"
+      },
+      "cache": true
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec eslint src tests --ext .ts --max-warnings 0",
+        "cwd": "packages/entitlements"
+      },
+      "cache": true
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "packages/entitlements"
+      },
+      "cache": true
+    },
+    "quality": {}
+  },
+  "tags": [
+    "type:library",
+    "scope:entitlements"
+  ]
+}

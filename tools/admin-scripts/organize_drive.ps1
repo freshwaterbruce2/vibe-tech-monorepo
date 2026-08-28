@@ -18,7 +18,7 @@
 param()
 
 $root = "D:\"
-$logFile = "C:\dev\admin_scripts\organization_log.txt"
+$logFile = "V:\monorepo\admin_scripts\organization_log.txt"
 
 function Log-Message {
   param([string]$Message)

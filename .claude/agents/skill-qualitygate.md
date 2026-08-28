@@ -16,7 +16,7 @@ permissions:
 
 ## Verification Checklist
 
-Run `C:\dev\.claude\skills\auto-skill-creator\verify-completion.ps1`:
+Run `V:\monorepo\.claude\skills\auto-skill-creator\verify-completion.ps1`:
 
 1. ✅ Pattern detected (85%+ success, 15+ occurrences)
 2. ✅ SKILL.md generated
@@ -35,13 +35,13 @@ Run `C:\dev\.claude\skills\auto-skill-creator\verify-completion.ps1`:
 
 ```powershell
 # Deploy to production location
-Copy-Item $tempSkillPath "C:\dev\.claude\skills\$skillName\" -Recurse -Force
+Copy-Item $tempSkillPath "V:\monorepo\.claude\skills\$skillName\" -Recurse -Force
 
 # Mark as approved
 $result = @{
     approved = $true
     deployedAt = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    location = "C:\dev\.claude\skills\$skillName\"
+    location = "V:\monorepo\.claude\skills\$skillName\"
 }
 ```
 
@@ -66,7 +66,7 @@ $result = @{
         "approved": true,
         "criteriaChecked": 10,
         "criteriaPassed": 10,
-        "deployedTo": "C:\dev\.claude\skills\skill-name\"
+        "deployedTo": "V:\monorepo\.claude\skills\skill-name\"
       }
     }
   }

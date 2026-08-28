@@ -110,7 +110,7 @@ The service is running but needs an OpenRouter API key to make requests:
 **Add to `.env` file:**
 
 ```bash
-cd C:/dev/backend/openrouter-proxy
+cd V:/monorepo/backend/openrouter-proxy
 echo "OPENROUTER_API_KEY=sk-or-v1-your-actual-key" > .env
 ```
 
@@ -198,10 +198,10 @@ tail -f D:\logs\openrouter-proxy\error.log
 
 ## Documentation
 
-- **Setup Guide**: `C:\dev\OPENROUTER_SETUP.md`
-- **Model Guide 2026**: `C:\dev\OPENROUTER_MODEL_GUIDE_2026.md`
-- **Integration Complete**: `C:\dev\OPENROUTER_INTEGRATION_COMPLETE.md`
-- **Proxy README**: `C:\dev\backend\openrouter-proxy\README.md`
+- **Setup Guide**: `V:\monorepo\OPENROUTER_SETUP.md`
+- **Model Guide 2026**: `V:\monorepo\OPENROUTER_MODEL_GUIDE_2026.md`
+- **Integration Complete**: `V:\monorepo\OPENROUTER_INTEGRATION_COMPLETE.md`
+- **Proxy README**: `V:\monorepo\backend\openrouter-proxy\README.md`
 
 ---
 

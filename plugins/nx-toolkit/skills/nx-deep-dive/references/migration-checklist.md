@@ -93,7 +93,7 @@ pnpm install
 pnpm nx reset
 
 # Option 2: D:\ snapshot restore
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Restore-Snapshot.ps1 -Tag "pre-nx-upgrade"
 ```
 

@@ -43,7 +43,7 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
 # Paths
-$ClaudeRoot = "C:\dev\.claude"
+$ClaudeRoot = "V:\monorepo\.claude"
 $AgentsDir = Join-Path $ClaudeRoot "agents"
 $ContextDir = Join-Path $ClaudeRoot "context"
 $ServicesDir = Join-Path $ClaudeRoot "services"
@@ -98,7 +98,7 @@ $projectAgents = $agentConfig.project_agents.PSObject.Properties
 $totalProjects = $projectAgents.Count
 
 $unmappedProjects = @()
-$appsDir = "C:\dev\apps"
+$appsDir = "V:\monorepo\apps"
 if (Test-Path $appsDir) {
     $actualProjects = Get-ChildItem -Path $appsDir -Directory | Select-Object -ExpandProperty Name
     foreach ($project in $actualProjects) {
@@ -136,7 +136,7 @@ if (Test-Path $projectsDir) {
 # Step 4: Validate services
 Write-Info "Step 4: Validating context loader services..."
 $loaderPath = Join-Path $ServicesDir "AgentContextLoader.ts"
-$ragPath = "C:\dev\packages\nova-core\src\intelligence\AgentLearningRAG.ts"
+$ragPath = "V:\monorepo\packages\nova-core\src\intelligence\AgentLearningRAG.ts"
 
 if ((Test-Path $loaderPath) -and (Test-Path $ragPath)) {
     Write-Success "Context loading infrastructure exists"

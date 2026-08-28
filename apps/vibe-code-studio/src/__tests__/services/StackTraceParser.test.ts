@@ -38,7 +38,7 @@ describe('StackTraceParser', () => {
       if (!StackTraceParser) return;
 
       const stackTrace = `Error: Cannot read property 'foo' of undefined
-    at Object.<anonymous> (C:\\dev\\test\\file.ts:25:10)
+    at Object.<anonymous> (V:\\monorepo\\test\\file.ts:25:10)
     at Module._compile (internal/modules/cjs/loader.js:1063:30)
     at Object.Module._extensions..js (internal/modules/cjs/loader.js:1092:10)`;
 
@@ -63,8 +63,8 @@ describe('StackTraceParser', () => {
       if (!StackTraceParser) return;
 
       const stackTrace = `TypeError: x is not a function
-    at test (C:\\dev\\app.ts:42:5)
-    at main (C:\\dev\\app.ts:100:3)`;
+    at test (V:\\monorepo\\app.ts:42:5)
+    at main (V:\\monorepo\\app.ts:100:3)`;
 
       const parser = new StackTraceParser();
       const parsed = parser.parse(stackTrace);
@@ -83,7 +83,7 @@ describe('StackTraceParser', () => {
       if (!StackTraceParser) return;
 
       const stackTrace = `ReferenceError: foo is not defined
-    at eval (C:\\dev\\test.js:10:1)`;
+    at eval (V:\\monorepo\\test.js:10:1)`;
 
       const parser = new StackTraceParser();
       const parsed = parser.parse(stackTrace);
@@ -153,7 +153,7 @@ processCart@https://example.com/app.js:200:15`;
       if (!StackTraceParser) return;
 
       const stackTrace = `Error: Test error
-    at <anonymous> (C:\\dev\\test.js:10:5)`;
+    at <anonymous> (V:\\monorepo\\test.js:10:5)`;
 
       const parser = new StackTraceParser();
       const parsed = parser.parse(stackTrace);
@@ -169,7 +169,7 @@ processCart@https://example.com/app.js:200:15`;
       if (!StackTraceParser) return;
 
       const stackTrace = `Error: Test error
-    at C:\\dev\\test.js:10:5`;
+    at V:\\monorepo\\test.js:10:5`;
 
       const parser = new StackTraceParser();
       const parsed = parser.parse(stackTrace);
@@ -210,9 +210,9 @@ processCart@https://example.com/app.js:200:15`;
       if (!StackTraceParser) return;
 
       const stackTrace = `Error: Test
-    at myFunction (C:\\dev\\app.js:10:5)
+    at myFunction (V:\\monorepo\\app.js:10:5)
     at Module._compile (internal/modules/cjs/loader.js:1063:30)
-    at myOtherFunction (C:\\dev\\app.js:20:10)`;
+    at myOtherFunction (V:\\monorepo\\app.js:20:10)`;
 
       const parser = new StackTraceParser();
       const parsed = parser.parse(stackTrace);
@@ -239,8 +239,8 @@ processCart@https://example.com/app.js:200:15`;
       if (!StackTraceParser) return;
 
       const stackTrace = `Error: Test
-    at first (C:\\dev\\a.js:10:5)
-    at second (C:\\dev\\b.js:20:10)`;
+    at first (V:\\monorepo\\a.js:10:5)
+    at second (V:\\monorepo\\b.js:20:10)`;
 
       const parser = new StackTraceParser();
       const parsed = parser.parse(stackTrace);
@@ -263,7 +263,7 @@ processCart@https://example.com/app.js:200:15`;
       const parsed = parser.parse(stackTrace);
 
       expect(parsed.frames).toHaveLength(3);
-      expect(parsed.frames.map(f => f.functionName)).toEqual(['frame1', 'frame2', 'frame3']);
+      expect(parsed.frames.map((f: StackFrame) => f.functionName)).toEqual(['frame1', 'frame2', 'frame3']);
     });
 
     it('should normalize file paths', () => {
@@ -354,7 +354,7 @@ processCart@https://example.com/app.js:200:15`;
       if (!StackTraceParser) return;
 
       const stackTrace = `Error: Test
-    at myFunction (C:\\dev\\app.js:10:5)
+    at myFunction (V:\\monorepo\\app.js:10:5)
     at Module._compile (internal/modules/cjs/loader.js:1063:30)
     at processTicksAndRejections (node:internal/process/task_queues:95:5)`;
 
@@ -373,10 +373,10 @@ processCart@https://example.com/app.js:200:15`;
       const parser = new StackTraceParser();
       const frame: StackFrame = {
         functionName: 'testFunc',
-        file: 'C:/dev/test.ts',
+        file: 'V:/monorepo/test.ts',
         line: 42,
         column: 10,
-        source: 'at testFunc (C:/dev/test.ts:42:10)'
+        source: 'at testFunc (V:/monorepo/test.ts:42:10)'
       };
 
       const formatted = parser.formatFrame(frame);
@@ -409,8 +409,8 @@ processCart@https://example.com/app.js:200:15`;
       if (!StackTraceParser) return;
 
       const stackTrace = `Error: Async error
-    at async loadData (C:\\dev\\api.ts:50:5)
-    at async handleRequest (C:\\dev\\handler.ts:100:10)`;
+    at async loadData (V:\\monorepo\\api.ts:50:5)
+    at async handleRequest (V:\\monorepo\\handler.ts:100:10)`;
 
       const parser = new StackTraceParser();
       const parsed = parser.parse(stackTrace);
@@ -423,8 +423,8 @@ processCart@https://example.com/app.js:200:15`;
       if (!StackTraceParser) return;
 
       const stackTrace = `UnhandledPromiseRejection: Error: Failed to fetch
-    at fetchData (C:\\dev\\api.ts:25:15)
-    at processRequest (C:\\dev\\app.ts:50:20)`;
+    at fetchData (V:\\monorepo\\api.ts:25:15)
+    at processRequest (V:\\monorepo\\app.ts:50:20)`;
 
       const parser = new StackTraceParser();
       const parsed = parser.parse(stackTrace);

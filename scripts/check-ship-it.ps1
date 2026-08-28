@@ -4,7 +4,7 @@
 Write-Host "SHIP-IT PROTOCOL ENFORCEMENT" -ForegroundColor Cyan
 Write-Host "=====================================" -ForegroundColor Cyan
 
-$shipItFile = "C:\dev\SHIP_IT_FRAMEWORK.md"
+$shipItFile = "V:\monorepo\SHIP_IT_FRAMEWORK.md"
 
 if (-not (Test-Path $shipItFile)) {
     Write-Error "SHIP_IT_FRAMEWORK.md not found!"

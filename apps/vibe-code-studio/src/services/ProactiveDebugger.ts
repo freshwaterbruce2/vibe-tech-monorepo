@@ -209,18 +209,18 @@ Provide insights as a JSON array of strings.`;
         userQuery: prompt,
         relatedFiles: [],
         conversationHistory: [],
-        workspaceContext: undefined as any
+        workspaceContext: undefined
       });
 
       // Try to parse JSON response
       try {
-        const parsed = JSON.parse(response.content);
+        const parsed = JSON.parse(response.content ?? '');
         if (Array.isArray(parsed)) {
           return parsed.slice(0, 3);
         }
       } catch {
         // Fallback: split by newlines
-        return response.content.split('\n')
+        return (response.content ?? '').split('\n')
           .filter(line => line.trim())
           .slice(0, 3);
       }

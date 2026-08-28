@@ -1,0 +1,737 @@
+{
+  "apps/vibe-code-studio/src/App.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/app/AppLayout.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/app/hooks/useAppHandlers.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/app/types.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/AIChat/AIChat.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/AIChat/MessageItem.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/AIChat/StepCard.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/AIChat/useChatState.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/AICodeEditor.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/AnalyticsDashboard.tsx": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/ApiKeySettings.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/ApprovalDialog.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/BackgroundTaskPanel.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/BrainScanPanel.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/CodeQualityPanel.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/ComponentLibrary/useComponentLibrary.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/CustomInstructionsPanel.hooks.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/CustomInstructionsPanel.tsx": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/CustomInstructionsPanel/useCustomInstructions.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/Editor.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/Editor/DiffView.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/Editor/useEditorKeyboard.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/Editor/useEditorState.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/EditorStreamPanel.tsx": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/EnhancedAgentMode/components/ErrorBoundary.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/ErrorBoundary/ModernErrorBoundary.tsx": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/ErrorBoundary/VisualPanelErrorBoundary.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/FindReplace.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/GitDiffViewer.tsx": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/GitPanel.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/GlobalSearch/index.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/GlobalSearch/types.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/GlobalSearch/useGlobalSearch.ts": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/ImpactAnalysisPanel.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/KeyboardShortcuts.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/MCPPanel.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/ModelSelector/ModelSelector.tsx": {
+    "max-len": {
+      "count": 3
+    }
+  },
+  "apps/vibe-code-studio/src/components/ModelSelectorPanel/index.tsx": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/components/ModelSelectorPanel/useModelSelector.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/MultiAgentReviewPanel.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/MultiFileEditApprovalPanel.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/PluginMarketplace.tsx": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/components/PrefetchIndicator.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/PreviewPanel.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/RemoteConnectionPanel.tsx": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/components/RulesEditor/useRulesEditor.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/ScreenshotToCodePanel.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/SemanticSearchPanel.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/Settings.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/Sidebar.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/StatusBarEnhanced.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/TaskMonitorPanel.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/TitleBar.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/VisualEditor/useVisualEditor.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/WelcomeScreen.tsx": {
+    "max-len": {
+      "count": 3
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/WorkspaceTemplatesPanel.tsx": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/shared/StatusIcon.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/ui/dialog.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/ui/dropdown-menu.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/ui/input.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/components/ui/select.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/hooks/useAIChat.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/hooks/useCodeAnalysis.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/hooks/useEditorSetup.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/hooks/useFileManager.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/hooks/useFocusTrap.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/hooks/useGit.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/hooks/useKeyboard.ts": {
+    "max-lines-per-function": {
+      "count": 4
+    }
+  },
+  "apps/vibe-code-studio/src/hooks/useRemoteConnection.ts": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/hooks/useWorkspace.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/modules/core/services/DatabaseManager.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/modules/editor/hooks/useEditorShortcuts.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/modules/editor/hooks/useEditorState.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/pages/EditorPage.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/AgentHookSystem.ts": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/services/AgentMetricsManager.ts": {
+    "max-len": {
+      "count": 4
+    }
+  },
+  "apps/vibe-code-studio/src/services/AgentMonitor.ts": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/services/AgentPerformanceOptimizer.ts": {
+    "max-len": {
+      "count": 4
+    }
+  },
+  "apps/vibe-code-studio/src/services/AgentRecoveryStrategies.ts": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/CodeExecutor.ts": {
+    "max-len": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/services/CodeQualityAnalyzer.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ContextService.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/CostTracker.ts": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/services/CustomRulesEngine.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/DatabaseService.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/DeepCodeRulesParser.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/DeepSeekService.ts": {
+    "max-len": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/services/DesignTokenManager.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/FileSystemService.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/services/ImageToCodeService.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/LiveEditorStream.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/services/MCPService.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/MCPToolRegistry.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ModelRegistry.ts": {
+    "max-len": {
+      "count": 4
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/RulesParser.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/SemanticSearchService.ts": {
+    "max-len": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/services/WorkspaceDependencyIndexer.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/WorkspaceService.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/services/WorkspaceTemplateService.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/AIResponseCache.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/DemoResponseProvider.ts": {
+    "max-lines-per-function": {
+      "count": 3
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/ExecutionEngine.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/MetacognitiveLayer.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/MultiAgentReview.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/PromptBuilder.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/ReActExecutor.ts": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 3
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/completion/ModelSelector.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/execution/SelfCorrection.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/execution/StepExecutor.ts": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/execution/TaskLifecycle.ts": {
+    "max-len": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/execution/actions/CodeActions.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/execution/actions/FileActions.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/planning/ConfidenceCalculator.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/providers/DeepSeekService.ts": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/ai/providers/GoogleGenerativeAIService.ts": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/analysis/ArchitectureAnalyzer.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/analysis/DebtAnalyzer.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/analysis/PatternAnalyzer.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/specialized-agents/AgentAnalyzer.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/specialized-agents/AgentCoordinator.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/specialized-agents/PerformanceAgent.ts": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/services/specialized-agents/SuperCodingAgent.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/tauriShim.ts": {
+    "max-len": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/services/testing/TestDiscovery.ts": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/services/testing/TestGenerator.ts": {
+    "max-len": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/services/testing/TestRunner.ts": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "apps/vibe-code-studio/src/stores/useAIStore.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/stores/useEditorStore.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/types/tasks.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/utils/ProjectStructureDetector.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/utils/errorHandler.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "apps/vibe-code-studio/src/workers/search.worker.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  }
+}

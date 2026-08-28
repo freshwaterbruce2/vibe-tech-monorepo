@@ -1,4 +1,5 @@
-import { appStore } from '../utils/electronStore';
+﻿import { appStore } from '../utils/electronStore';
+import { logger } from '../utils/logger';
 
 /**
  * Adaptive Difficulty System for Brain Games
@@ -52,9 +53,8 @@ export function saveGamePerformance(performance: GamePerformance): void {
     const updated = [...existing, performance].slice(-20);
 
     appStore.set(key, JSON.stringify(updated));
-    console.debug(`[AdaptiveDifficulty] Saved performance for ${performance.gameType}`);
   } catch (error) {
-    console.error('[AdaptiveDifficulty] Failed to save performance:', error);
+    logger.error('[AdaptiveDifficulty] Failed to save performance:', error);
   }
 }
 
@@ -70,7 +70,7 @@ export function getGameHistory(gameType: string): GamePerformance[] {
 
     return saved;
   } catch (error) {
-    console.warn('[AdaptiveDifficulty] Failed to load history:', error);
+    logger.warn('[AdaptiveDifficulty] Failed to load history:', error);
     return [];
   }
 }
@@ -268,9 +268,8 @@ export function resetGameHistory(gameType: string): void {
   try {
     const key = `${STORAGE_KEY_PREFIX}${gameType}`;
     appStore.delete(key);
-    console.debug(`[AdaptiveDifficulty] Reset history for ${gameType}`);
   } catch (error) {
-    console.error('[AdaptiveDifficulty] Failed to reset history:', error);
+    logger.error('[AdaptiveDifficulty] Failed to reset history:', error);
   }
 }
 

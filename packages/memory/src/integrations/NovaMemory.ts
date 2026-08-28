@@ -43,7 +43,7 @@ export class NovaMemory {
   async setContext(context: ProjectContext): Promise<void> {
     // Store as semantic memory (latest context)
     await this.memory.semantic.add({
-      text: `Active project: ${context.name} at ${context.path}. Current task: ${context.currentTask || 'none'}. Recent files: ${context.recentFiles.join(', ')}`,
+      text: `Active project: ${context.name} at ${context.path}. Current task: ${context.currentTask ?? 'none'}. Recent files: ${context.recentFiles.join(', ')}`,
       category: 'nova-context',
       importance: 10, // Always high importance for current context
       metadata: {
@@ -82,12 +82,12 @@ export class NovaMemory {
 
     const metadata = results[0].item.metadata;
     return {
-      name: (metadata.projectName as string) || 'unknown',
-      path: (metadata.projectPath as string) || '',
+      name: (metadata.projectName as string) ?? 'unknown',
+      path: (metadata.projectPath as string) ?? '',
       currentFile: metadata.currentFile as string | undefined,
       currentTask: metadata.currentTask as string | undefined,
-      recentFiles: (metadata.recentFiles as string[]) || [],
-      recentTasks: (metadata.recentTasks as string[]) || [],
+      recentFiles: (metadata.recentFiles as string[]) ?? [],
+      recentTasks: (metadata.recentTasks as string[]) ?? [],
       lastActive: results[0].item.created,
     };
   }
@@ -180,16 +180,22 @@ export class NovaMemory {
     return recent
       .filter(m => m.metadata?.type === 'task')
       .slice(0, limit)
-      .map(m => ({
-        id: (m.metadata!.taskId as string) || '',
-        title: m.query.replace('Task: ', ''),
-        description: m.response,
-        status: (m.metadata!.status as TaskInfo['status']) || 'pending',
-        priority: (m.metadata!.priority as TaskInfo['priority']) || 'medium',
-        created: (m.metadata!.created as number) || m.timestamp,
-        updated: m.timestamp,
-        completedAt: m.metadata!.completedAt as number | undefined,
-      }));
+      .map(m => {
+        const meta = m.metadata;
+        if (!meta) {
+          throw new Error('NovaMemory.getRecentTasks: metadata lost after filter');
+        }
+        return {
+          id: (meta.taskId as string) ?? '',
+          title: m.query.replace('Task: ', ''),
+          description: m.response,
+          status: (meta.status as TaskInfo['status']) ?? 'pending',
+          priority: (meta.priority as TaskInfo['priority']) ?? 'medium',
+          created: (meta.created as number) ?? m.timestamp,
+          updated: m.timestamp,
+          completedAt: meta.completedAt as number | undefined,
+        };
+      });
   }
 
   /**
@@ -204,7 +210,7 @@ export class NovaMemory {
       path: p.pattern.replace('nova_file_', ''),
       purpose: p.context,
       importance: 7, // Default importance
-      lastAccessed: p.lastUsed || Date.now(),
+      lastAccessed: p.lastUsed ?? Date.now(),
       accessCount: p.frequency,
     }));
   }
@@ -264,9 +270,9 @@ export class NovaMemory {
     const completionRate = tasks.length > 0 ? completedTasks.length / tasks.length : 0;
 
     // Calculate average task duration
-    const durations = completedTasks
-      .filter(t => t.completedAt)
-      .map(t => t.completedAt! - t.created);
+    const durations = completedTasks.flatMap(t =>
+      t.completedAt !== undefined ? [t.completedAt - t.created] : [],
+    );
     const avgTaskDuration = durations.length > 0
       ? durations.reduce((sum, d) => sum + d, 0) / durations.length
       : 0;
@@ -302,15 +308,21 @@ export class NovaMemory {
     return results
       .filter(r => r.item.sourceId === 'nova-agent' && r.item.metadata?.type === 'task')
       .slice(0, limit)
-      .map(r => ({
-        id: (r.item.metadata!.taskId as string) || '',
-        title: r.item.query.replace('Task: ', ''),
-        description: r.item.response,
-        status: (r.item.metadata!.status as TaskInfo['status']) || 'pending',
-        priority: (r.item.metadata!.priority as TaskInfo['priority']) || 'medium',
-        created: (r.item.metadata!.created as number) || r.item.timestamp,
-        updated: r.item.timestamp,
-        completedAt: r.item.metadata!.completedAt as number | undefined,
-      }));
+      .map(r => {
+        const meta = r.item.metadata;
+        if (!meta) {
+          throw new Error('NovaMemory.searchTasks: metadata lost after filter');
+        }
+        return {
+          id: (meta.taskId as string) ?? '',
+          title: r.item.query.replace('Task: ', ''),
+          description: r.item.response,
+          status: (meta.status as TaskInfo['status']) ?? 'pending',
+          priority: (meta.priority as TaskInfo['priority']) ?? 'medium',
+          created: (meta.created as number) ?? r.item.timestamp,
+          updated: r.item.timestamp,
+          completedAt: meta.completedAt as number | undefined,
+        };
+      });
   }
 }

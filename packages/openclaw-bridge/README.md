@@ -99,9 +99,9 @@ const taskResult = await bridge.dispatchTask({
       args: { path: './docs' },
     },
     {
-      server: 'codeberg',
-      tool: 'codeberg_search_repos',
-      args: { query: 'documentation' },
+      server: 'filesystem',
+      tool: 'read_file',
+      args: { path: './README.md' },
     },
   ],
   timeout: 120000, // 2 minutes
@@ -176,9 +176,9 @@ openclaw-dispatch call filesystem read_file --args '{"path":"./README.md"}'
 openclaw-dispatch task "<description>" --steps '[{"server":"s","tool":"t","args":{}}]'
 
 # Example: Multi-step workflow
-openclaw-dispatch task "Search and analyze repos" --steps '[
-  {"server":"codeberg","tool":"codeberg_search_repos","args":{"query":"vibetech"}},
-  {"server":"sequential-thinking","tool":"sequentialthinking","args":{"thought":"Analyze results","thoughtNumber":1}}
+openclaw-dispatch task "Inspect workspace docs" --steps '[
+  {"server":"filesystem","tool":"list_directory","args":{"path":"./docs"}},
+  {"server":"sequential-thinking","tool":"sequentialthinking","args":{"thought":"Summarize the documentation structure","thoughtNumber":1}}
 ]'
 ```
 
@@ -367,7 +367,6 @@ const bridge = new OpenClawBridge({ debug: true });
 - `@vibetech/shared-ipc` - Shared IPC schemas and types
 - `backend/ipc-bridge` - IPC Bridge server (port 5004)
 - `apps/desktop-commander-v3` - MCP server example
-- `apps/mcp-codeberg` - GitHub MCP server
 
 ---
 

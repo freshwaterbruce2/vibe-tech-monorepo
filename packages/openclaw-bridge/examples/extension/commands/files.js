@@ -87,7 +87,7 @@ function formatError(path, error) {
 
 **Examples**:
 • \`/files\` - Current directory
-• \`/files C:\\dev\` - Windows path
+• \`/files V:\\monorepo\` - Windows path
 • \`/files /home/user\` - Linux path`;
     }
 

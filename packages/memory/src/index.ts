@@ -3,12 +3,29 @@ export { MemoryManager } from './core/MemoryManager.js';
 export { DatabaseManager } from './database/DatabaseManager.js';
 export { EmbeddingService } from './embeddings/EmbeddingService.js';
 
+// Cognitive memory exports
+export { CognitiveMemoryAdapter } from './cognitive/CognitiveMemoryAdapter.js';
+export type {
+  CognitiveMemoryKind,
+  CognitiveMemoryRecord,
+  CognitiveRetrievalOptions,
+  CognitiveScoreComponents,
+  CognitiveScoringWeights,
+  CognitiveSearchResult,
+  StoreAntiPatternInput,
+  StoreOutcomeInput,
+} from './cognitive/CognitiveMemoryAdapter.js';
+
 // Store exports
 export { EpisodicStore } from './stores/EpisodicStore.js';
 export { ProceduralStore } from './stores/ProceduralStore.js';
 export { SemanticStore } from './stores/SemanticStore.js';
+export type { AddResult, EmbeddingHealth } from './stores/SemanticStore.js';
 export { WorkingMemory } from './stores/WorkingMemory.js';
 export type { WorkingMemoryConfig, WorkingMemoryItem } from './stores/WorkingMemory.js';
+
+// Error exports
+export { DimensionMismatchError } from './errors.js';
 
 // Hook exports
 export { AutoCapture } from './hooks/AutoCapture.js';
@@ -49,7 +66,11 @@ export type { MarketAnalysis, TradeDecision, TradingPattern } from './integratio
 export { GitMemory } from './integrations/GitMemory.js';
 export type { CommitInfo, GitWorkflow } from './integrations/GitMemory.js';
 export { LearningBridge } from './integrations/LearningBridge.js';
-export type { AgentContext, SyncResult } from './integrations/LearningBridge.js';
+export type {
+  AgentContext,
+  ProceduralSearchResult,
+  SyncResult,
+} from './integrations/LearningBridge.js';
 export { NovaMemory } from './integrations/NovaMemory.js';
 export type { FileReference, ProjectContext, TaskInfo } from './integrations/NovaMemory.js';
 
@@ -74,6 +95,7 @@ export type {
 // Type exports
 export type {
   EpisodicMemory,
+  EmbeddingProvider,
   MemoryConfig,
   ProceduralMemory,
   SearchResult,

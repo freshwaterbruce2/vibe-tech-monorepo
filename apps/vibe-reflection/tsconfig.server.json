@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "outDir": "./dist-server",
+    "baseUrl": ".",
+    "paths": {
+      "@vibetech/openrouter-client": ["../../packages/openrouter-client/src/index.ts"]
+    },
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["server"],
+  "exclude": ["node_modules", "dist"]
+}

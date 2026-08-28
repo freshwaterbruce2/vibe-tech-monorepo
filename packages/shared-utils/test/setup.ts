@@ -26,18 +26,18 @@ const localStorageMock = (() => {
     },
     get length() {
       return Object.keys(store).length;
-    },
+    }
   };
 })();
 
 Object.defineProperty(globalThis, 'localStorage', {
-  value: localStorageMock,
+  value: localStorageMock
 });
 
 // Mock window object for browser environment
 if (typeof window !== 'undefined') {
   Object.defineProperty(window, 'localStorage', {
-    value: localStorageMock,
+    value: localStorageMock
   });
 }
 
@@ -53,8 +53,8 @@ const cryptoMock = {
     digest: async (_algorithm: string, _data: ArrayBuffer) => {
       // Simple mock hash - returns array buffer of zeros
       return new ArrayBuffer(32);
-    },
-  },
+    }
+  }
 };
 
 // Use vi.stubGlobal instead of direct assignment (crypto is getter-only)

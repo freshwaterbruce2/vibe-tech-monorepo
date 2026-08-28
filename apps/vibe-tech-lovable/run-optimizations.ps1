@@ -8,7 +8,7 @@ Write-Host "`n*** VIBE TECH PERFORMANCE OPTIMIZATION ***" -ForegroundColor Cyan
 Write-Host "================================================`n" -ForegroundColor Cyan
 
 $ErrorActionPreference = "Stop"
-$projectRoot = "C:\dev\projects\active\web-apps\vibe-tech-lovable"
+$projectRoot = "V:\monorepo\projects\active\web-apps\vibe-tech-lovable"
 
 # Verify we're in the right directory
 if (-not (Test-Path "$projectRoot\package.json")) {

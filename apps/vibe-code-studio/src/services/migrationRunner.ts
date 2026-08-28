@@ -5,7 +5,12 @@ import { logger } from './Logger';
  * Execute a SQL migration file against the provided SQLite database instance.
  * The migration is run inside a transaction to guarantee atomicity.
  */
-export async function runMigration(db: any, migrationFile: string): Promise<void> {
+interface MigrationDb {
+  run: (sql: string) => void | Promise<void>;
+  exec: (sql: string) => void;
+}
+
+export async function runMigration(db: MigrationDb, migrationFile: string): Promise<void> {
     const electronService = new ElectronService();
     // Guard: Native API required
     if (!electronService.isElectron() && !electronService.isTauri()) {

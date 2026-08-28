@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { createLogger } from '@vibetech/logger';
 import { MemoryDecay } from '../consolidation/MemoryDecay.js';
+import { CognitiveMemoryAdapter } from '../cognitive/CognitiveMemoryAdapter.js';
 import { DatabaseManager } from '../database/DatabaseManager.js';
 import { EmbeddingService } from '../embeddings/EmbeddingService.js';
 import { EpisodicStore } from '../stores/EpisodicStore.js';
@@ -39,12 +40,23 @@ export class LatencyTracker {
     if (!buf || buf.length === 0) return null;
 
     const sorted = [...buf].sort((a, b) => a - b);
-    const idx = (pct: number) => Math.max(0, Math.ceil((pct / 100) * sorted.length) - 1);
+    const idx = (pct: number): number =>
+      Math.max(0, Math.ceil((pct / 100) * sorted.length) - 1);
+    // `sorted` is non-empty (buf.length === 0 guarded above) and `idx` is
+    // clamped into [0, sorted.length-1], so `at` never actually throws —
+    // but the narrower converts `number | undefined` → `number` without `!`.
+    const at = (pct: number): number => {
+      const v = sorted[idx(pct)];
+      if (v === undefined) {
+        throw new Error(`LatencyTracker.getStats: unexpected undefined at pct=${pct}`);
+      }
+      return v;
+    };
 
     return {
-      p50: sorted[idx(50)]!,
-      p95: sorted[idx(95)]!,
-      p99: sorted[idx(99)]!,
+      p50: at(50),
+      p95: at(95),
+      p99: at(99),
       count: sorted.length,
     };
   }
@@ -67,6 +79,7 @@ export class MemoryManager {
   public episodic!: EpisodicStore;
   public semantic!: SemanticStore;
   public procedural!: ProceduralStore;
+  public cognitive!: CognitiveMemoryAdapter;
   public decay!: MemoryDecay;
   public latency: LatencyTracker = new LatencyTracker();
 
@@ -102,6 +115,7 @@ export class MemoryManager {
     this.episodic = new EpisodicStore(db);
     this.semantic = new SemanticStore(db, this.embeddingService);
     this.procedural = new ProceduralStore(db);
+    this.cognitive = new CognitiveMemoryAdapter(db, this.embeddingService);
     this.decay = new MemoryDecay();
 
     logger.info('Memory system initialized');
@@ -114,9 +128,12 @@ export class MemoryManager {
   }
 
   /**
-   * Get system statistics
+   * Get system statistics.
+   * @param options.includeDecay - compute decay scores (default: false). This loads
+   *   every semantic memory row and can be slow on large databases; only enable when
+   *   decay stats are explicitly needed.
    */
-  getStats() {
+  getStats(options: { includeDecay?: boolean } = {}) {
     const dbStats = this.dbManager.getStats();
 
     // Count semantic rows whose stored embedding_model differs from current model (Phase 2)
@@ -154,7 +171,9 @@ export class MemoryManager {
         staleDimensionCount,
       },
       vectorExtension: this.dbManager.isVectorExtensionLoaded(),
-      decay: this.decay ? this.decay.getStats(this.dbManager.getDb()) : undefined,
+      decay: options.includeDecay && this.decay
+        ? this.decay.getStats(this.dbManager.getDb())
+        : undefined,
       latency: latencyStats,
     };
   }

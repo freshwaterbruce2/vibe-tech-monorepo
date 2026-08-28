@@ -1,17 +1,17 @@
 import { Editor as MonacoEditor } from '@monaco-editor/react';
-import { motion } from 'framer-motion';
 import type * as Monaco from 'monaco-editor';
 import type { editor } from 'monaco-editor';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import styled, { keyframes } from 'styled-components';
+import styled from 'styled-components';
 
 import { useEditorActions } from '../hooks/useEditorActions';
 import { useEditorSetup } from '../hooks/useEditorSetup';
 import { useInlineEdit } from '../hooks/useInlineEdit';
-import type { DeepSeekService } from '../services/DeepSeekService';
 import { logger } from '../services/Logger';
 import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
+import { applyEditorTheme } from '../services/theme/applyTheme';
+import { monacoThemeName } from '../services/theme/themeResolver';
 import { vibeTheme } from '../styles/theme';
 import type { EditorFile, EditorSettings, WorkspaceContext } from '../types';
 
@@ -21,11 +21,6 @@ import FileTabs from './FileTabs';
 import type { FindOptions } from './FindReplace';
 import FindReplace from './FindReplace';
 import PrefetchIndicator from './PrefetchIndicator';
-
-const pulse = keyframes`
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-`;
 
 const EditorContainer = styled.div`
   display: flex;
@@ -78,25 +73,6 @@ const MonacoContainer = styled.div`
   }
 `;
 
-const StatusOverlay = styled(motion.div) <{ visible: boolean }>`
-  position: absolute;
-  top: ${vibeTheme.spacing.md};
-  right: ${vibeTheme.spacing.md};
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.9) 0%, rgba(0, 212, 255, 0.8) 100%);
-  color: ${vibeTheme.colors.text};
-  padding: ${vibeTheme.spacing.sm} ${vibeTheme.spacing.md};
-  border-radius: ${vibeTheme.borderRadius.medium};
-  font-size: ${vibeTheme.typography.fontSize.xs};
-  font-weight: ${vibeTheme.typography.fontWeight.medium};
-  opacity: ${(props) => (props.visible ? 1 : 0)};
-  transition: all ${vibeTheme.animation.duration.normal} ease;
-  z-index: 1000;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  box-shadow: ${vibeTheme.shadows.medium}, 0 0 20px rgba(139, 92, 246, 0.4);
-  animation: ${(props) => (props.visible ? pulse : 'none')} 2s infinite;
-`;
-
 const NoFilePlaceholder = styled.div`
   display: flex;
   flex-direction: column;
@@ -124,13 +100,13 @@ interface EditorProps {
   onCloseFile: (path: string) => void;
   onSaveFile: () => void;
   onFileSelect: (file: EditorFile) => void;
-  deepSeekService?: DeepSeekService; // Optional - legacy completion provider
   aiService?: UnifiedAIService; // Primary AI service for inline completions
   workspaceContext?: WorkspaceContext;
-  getFileContext?: ((file: EditorFile) => any[]) | undefined;
+  getFileContext?: ((file: EditorFile) => unknown[]) | undefined;
   settings?: EditorSettings | undefined;
-  liveStream?: any; // PHASE 7: LiveEditorStream instance for live code streaming
-  onEditorMount?: (editor: editor.IStandaloneCodeEditor, monaco: typeof Monaco) => void; // Callback when editor mounts (for Auto-Fix)
+  liveStream?: { setEditor?: (editor: editor.IStandaloneCodeEditor) => void };
+  // Callback when editor mounts (for Auto-Fix).
+  onEditorMount?: (editor: editor.IStandaloneCodeEditor, monaco: typeof Monaco) => void;
   modelStrategy?: 'fast' | 'balanced' | 'accurate' | 'adaptive'; // Multi-model strategy
   currentAIModel?: string; // Current AI model being used
 }
@@ -142,7 +118,6 @@ const Editor = ({
   onCloseFile,
   onSaveFile,
   onFileSelect,
-  deepSeekService,
   aiService: _aiService,
   workspaceContext: _workspaceContext,
   getFileContext: _getFileContext,
@@ -150,21 +125,27 @@ const Editor = ({
   liveStream,
   onEditorMount,
   modelStrategy = 'fast',
-  currentAIModel = 'deepseek/deepseek-v3.2',
+  currentAIModel = 'moonshot/kimi-2.5-pro',
 }: EditorProps) => {
-  const [aiSuggestion] = useState('');
-  const [showAiStatus] = useState(false);
   const [findReplaceOpen, setFindReplaceOpen] = useState(false);
-  const [findMatches, setFindMatches] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  const [findMatches, setFindMatches] = useState<{ current: number; total: number }>({
+    current: 0,
+    total: 0,
+  });
   const decorationsRef = useRef<string[]>([]);
 
   // Week 3: Completion tracking state
   const [hasActiveCompletion, setHasActiveCompletion] = useState(false);
   const [showCompletionStats, setShowCompletionStats] = useState(false);
-  const [completionStats] = useState({ totalSuggestions: 0, accepted: 0, rejected: 0, avgLatency: 0 });
+  const [completionStats] = useState({
+    totalSuggestions: 0,
+    accepted: 0,
+    rejected: 0,
+    avgLatency: 0,
+  });
 
   // Week 4: Prefetch tracking state (kept for compatibility)
-  const [showPrefetchIndicator] = useState(true);
+  const [showPrefetchIndicator] = useState(false);
   const [prefetchStats] = useState({
     cacheSize: 0,
     queueSize: 0,
@@ -180,29 +161,25 @@ const Editor = ({
   const [inlineEditPos, setInlineEditPos] = useState({ top: 0, left: 0 });
 
   // Hook for editor setup and reference
-  const { editorRef, handleEditorDidMount } = useEditorSetup(file, deepSeekService, onEditorMount, liveStream);
+  const { editorRef, handleEditorDidMount } = useEditorSetup(
+    file,
+    undefined,
+    onEditorMount,
+    liveStream
+  );
 
   // Hook for inline AI editing
-  const { startInlineEdit: _startInlineEdit } = useInlineEdit(editorRef);
+  useInlineEdit(editorRef);
 
   // Hook for editor actions
-  const { toggleComment, duplicateLine, moveLineUp, moveLineDown, triggerAiCompletion } = useEditorActions(editorRef);
+  const { toggleComment, duplicateLine, moveLineUp, moveLineDown, triggerAiCompletion } =
+    useEditorActions(editorRef);
 
   // Cleanup Monacopilot on unmount (handled inside useEditorSetup)
 
-  // Custom Theme Loader
+  // Apply the active theme (preset via Shiki, legacy built-in, or custom JSON).
   useEffect(() => {
-    if (settings?.theme === 'custom' && settings?.customThemeJson) {
-      import('../utils/themeLoader').then(({ loadCustomTheme }) => {
-        loadCustomTheme('custom-user-theme', settings.customThemeJson!).then(success => {
-          if (success) {
-            import('monaco-editor').then(m => {
-              m.editor.setTheme('custom-user-theme');
-            });
-          }
-        });
-      });
-    }
+    void applyEditorTheme(settings?.theme, settings?.customThemeJson);
   }, [settings?.theme, settings?.customThemeJson]);
 
   // Find/Replace helpers
@@ -214,65 +191,65 @@ const Editor = ({
   }, [editorRef]);
 
   // Keyboard shortcuts
-  useHotkeys('ctrl+s, cmd+s', (e) => {
+  useHotkeys('ctrl+s, cmd+s', e => {
     e.preventDefault();
     onSaveFile();
   });
 
-  useHotkeys('ctrl+/, cmd+/', (e) => {
+  useHotkeys('ctrl+/, cmd+/', e => {
     e.preventDefault();
     toggleComment();
   });
 
-  useHotkeys('ctrl+d, cmd+d', (e) => {
+  useHotkeys('ctrl+d, cmd+d', e => {
     e.preventDefault();
     duplicateLine();
   });
 
-  useHotkeys('alt+up', (e) => {
+  useHotkeys('alt+up', e => {
     e.preventDefault();
     moveLineUp();
   });
 
-  useHotkeys('alt+down', (e) => {
+  useHotkeys('alt+down', e => {
     e.preventDefault();
     moveLineDown();
   });
 
-  useHotkeys('ctrl+space, cmd+space', (e) => {
+  useHotkeys('ctrl+space, cmd+space', e => {
     e.preventDefault();
     triggerAiCompletion();
   });
 
-  useHotkeys('ctrl+f, cmd+f', (e) => {
+  useHotkeys('ctrl+f, cmd+f', e => {
     e.preventDefault();
     setFindReplaceOpen(true);
   });
 
-  useHotkeys('ctrl+k, cmd+k', (e) => {
+  useHotkeys('ctrl+k, cmd+k', e => {
     e.preventDefault();
     if (editorRef.current) {
-        const position = editorRef.current.getPosition();
-        if (position) {
-            const scroller = editorRef.current.getScrolledVisiblePosition(position);
-            if (scroller) {
-                // Adjust position to be below the current line
-                setInlineEditPos({
-                    top: scroller.top + 25,
-                    left: Math.min(scroller.left, 500) // Keep it somewhat centered or left-aligned
-                });
-                setInlineEditOpen(true);
-            }
+      const position = editorRef.current.getPosition();
+      if (position) {
+        const scroller = editorRef.current.getScrolledVisiblePosition(position);
+        if (scroller) {
+          // Adjust position to be below the current line
+          setInlineEditPos({
+            top: scroller.top + 25,
+            left: Math.min(scroller.left, 500), // Keep it somewhat centered or left-aligned
+          });
+          setInlineEditOpen(true);
         }
+      }
     }
   });
 
-  useHotkeys('ctrl+h, cmd+h', (e) => {
+  useHotkeys('ctrl+h, cmd+h', e => {
     e.preventDefault();
     setFindReplaceOpen(true);
   });
 
-  useHotkeys('escape', (e) => {
+  useHotkeys('escape', e => {
     if (findReplaceOpen) {
       e.preventDefault();
       setFindReplaceOpen(false);
@@ -280,9 +257,9 @@ const Editor = ({
     }
   });
 
-  useHotkeys('ctrl+shift+s, cmd+shift+s', (e) => {
+  useHotkeys('ctrl+shift+s, cmd+shift+s', e => {
     e.preventDefault();
-    setShowCompletionStats((prev) => !prev);
+    setShowCompletionStats(prev => !prev);
   });
 
   // Placeholder for completion tracking
@@ -290,49 +267,65 @@ const Editor = ({
     // Legacy tracking placeholder
   }, []);
 
-  const handleFind = (query: string, options: FindOptions) => {
-    if (!editorRef.current) {return;}
-    const model = editorRef.current.getModel();
-    if (!model) {return;}
-    clearFindDecorations();
-
-    if (!query) {
-      setFindMatches({ current: 0, total: 0 });
-      return;
-    }
-
-    const matches = model.findMatches(
-      query,
-      true,
-      options.regex,
-      options.caseSensitive,
-      options.wholeWord ? '\\b' : null,
-      true,
-    );
-    const decorations = matches.map((match) => ({
-      range: match.range,
-      options: {
-        className: 'find-match-decoration',
-        overviewRuler: { color: 'rgba(139, 92, 246, 0.8)', position: 4 /* OverviewRulerLane.Right */ },
-      },
-    }));
-    decorationsRef.current = editorRef.current.deltaDecorations([], decorations);
-    setFindMatches({ current: matches.length > 0 ? 1 : 0, total: matches.length });
-    if (matches.length > 0) {
-      const firstMatch = matches[0];
-      if (firstMatch) {
-        editorRef.current.revealRangeInCenter(firstMatch.range);
-        editorRef.current.setSelection(firstMatch.range);
+  const handleFind = useCallback(
+    (query: string, options: FindOptions) => {
+      if (!editorRef.current) {
+        return;
       }
-    }
-  };
+      const model = editorRef.current.getModel();
+      if (!model) {
+        return;
+      }
+      clearFindDecorations();
+
+      if (!query) {
+        setFindMatches({ current: 0, total: 0 });
+        return;
+      }
+
+      const matches = model.findMatches(
+        query,
+        true,
+        options.regex,
+        options.caseSensitive,
+        options.wholeWord ? '\\b' : null,
+        true
+      );
+      const decorations = matches.map(match => ({
+        range: match.range,
+        options: {
+          className: 'find-match-decoration',
+          overviewRuler: {
+            color: 'rgba(139, 92, 246, 0.8)',
+            position: 4 /* OverviewRulerLane.Right */,
+          },
+        },
+      }));
+      decorationsRef.current = editorRef.current.deltaDecorations([], decorations);
+      setFindMatches({ current: matches.length > 0 ? 1 : 0, total: matches.length });
+      if (matches.length > 0) {
+        const firstMatch = matches[0];
+        if (firstMatch) {
+          editorRef.current.revealRangeInCenter(firstMatch.range);
+          editorRef.current.setSelection(firstMatch.range);
+        }
+      }
+    },
+    [clearFindDecorations, editorRef]
+  );
 
   const handleReplace = (query: string, replacement: string, options: FindOptions) => {
-    if (!editorRef.current) {return;}
+    if (!editorRef.current) {
+      return;
+    }
     const selection = editorRef.current.getSelection();
-    if (!selection) {return;}
+    if (!selection) {
+      return;
+    }
     const model = editorRef.current.getModel();
-    if (!model) {return;}
+    if (!model) {
+      return;
+    }
     const match = model.findMatches(
       query,
       selection,
@@ -348,9 +341,13 @@ const Editor = ({
   };
 
   const handleReplaceAll = (query: string, replacement: string, options: FindOptions) => {
-    if (!editorRef.current) {return;}
+    if (!editorRef.current) {
+      return;
+    }
     const model = editorRef.current.getModel();
-    if (!model) {return;}
+    if (!model) {
+      return;
+    }
     const matches = model.findMatches(
       query,
       true,
@@ -359,19 +356,23 @@ const Editor = ({
       options.wholeWord ? String.raw`\b` : null,
       true
     );
-    const edits = matches.map((match) => ({ range: match.range, text: replacement }));
+    const edits = matches.map(match => ({ range: match.range, text: replacement }));
     editorRef.current.executeEdits('replaceAll', edits);
     clearFindDecorations();
     setFindMatches({ current: 0, total: 0 });
   };
 
   const handleFindNext = () => {
-    if (!editorRef.current) {return;}
+    if (!editorRef.current) {
+      return;
+    }
     editorRef.current.getAction('actions.find')?.run();
   };
 
   const handleFindPrevious = () => {
-    if (!editorRef.current) {return;}
+    if (!editorRef.current) {
+      return;
+    }
     editorRef.current.getAction('editor.action.previousMatchFindAction')?.run();
   };
 
@@ -381,7 +382,12 @@ const Editor = ({
 
   return (
     <EditorContainer>
-      <FileTabs files={openFiles} activeFile={file} onFileSelect={onFileSelect} onCloseFile={onCloseFile} />
+      <FileTabs
+        files={openFiles}
+        activeFile={file}
+        onFileSelect={onFileSelect}
+        onCloseFile={onCloseFile}
+      />
 
       <MonacoContainer>
         {file ? (
@@ -389,10 +395,10 @@ const Editor = ({
             key={file.path}
             language={file.language}
             value={file.content}
-            onChange={(value) => onFileChange(value ?? '')}
+            onChange={value => onFileChange(value ?? '')}
             beforeMount={handleBeforeMount}
             onMount={handleEditorDidMount}
-            theme={settings?.theme === 'light' ? 'vs' : settings?.theme === 'custom' ? 'custom-user-theme' : 'vs-dark'}
+            theme={monacoThemeName(settings?.theme, Boolean(settings?.customThemeJson))}
             options={{
               selectOnLineNumbers: true,
               automaticLayout: true,
@@ -400,7 +406,12 @@ const Editor = ({
               fontSize: settings?.fontSize ?? 14,
               fontFamily: 'JetBrains Mono, Fira Code, Monaco, Consolas, monospace',
               fontLigatures: true,
-              minimap: { enabled: settings?.minimap !== false, maxColumn: 120, renderCharacters: false, showSlider: 'always' },
+              minimap: {
+                enabled: settings?.minimap !== false,
+                maxColumn: 120,
+                renderCharacters: false,
+                showSlider: 'mouseover',
+              },
               wordWrap: settings?.wordWrap ? 'on' : 'off',
               tabSize: settings?.tabSize ?? 2,
               lineNumbers: 'on',
@@ -418,6 +429,7 @@ const Editor = ({
               formatOnType: true,
               autoIndent: 'full',
               codeLens: true,
+              inlayHints: { enabled: 'on' },
               renderWhitespace: 'selection',
               renderLineHighlight: 'all',
               roundedSelection: true,
@@ -443,10 +455,6 @@ const Editor = ({
           </NoFilePlaceholder>
         )}
 
-        <StatusOverlay visible={showAiStatus} initial={{ opacity: 0, scale: 0.8, y: -10 }} animate={{ opacity: showAiStatus ? 1 : 0, scale: showAiStatus ? 1 : 0.8, y: showAiStatus ? 0 : -10 }} transition={{ duration: 0.3, ease: 'easeOut' }}>
-          {aiSuggestion}
-        </StatusOverlay>
-
         <FindReplace
           isOpen={findReplaceOpen}
           onClose={() => {
@@ -464,7 +472,7 @@ const Editor = ({
 
         {/* Completion Indicator */}
         <CompletionIndicator
-          isActive={true}
+          isActive={hasActiveCompletion}
           model={currentAIModel}
           strategy={modelStrategy}
           hasCompletion={hasActiveCompletion}
@@ -495,13 +503,18 @@ const Editor = ({
           <InlineEditWidget
             position={inlineEditPos}
             language={file?.language}
-            selectedCode={editorRef.current?.getModel()?.getValueInRange(editorRef.current.getSelection()!) ?? ''}
+            selectedCode={
+              editorRef.current?.getModel()?.getValueInRange(editorRef.current.getSelection()!) ??
+              ''
+            }
             onClose={() => setInlineEditOpen(false)}
-            onAccept={(newCode) => {
+            onAccept={newCode => {
               if (editorRef.current) {
                 const selection = editorRef.current.getSelection();
                 if (selection) {
-                  editorRef.current.executeEdits('inline-edit', [{ range: selection, text: newCode }]);
+                  editorRef.current.executeEdits('inline-edit', [
+                    { range: selection, text: newCode },
+                  ]);
                 }
               }
               setInlineEditOpen(false);

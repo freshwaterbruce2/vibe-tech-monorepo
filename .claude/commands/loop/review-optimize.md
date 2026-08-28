@@ -62,7 +62,7 @@ Count: total outdated, major updates, minor updates.
 ```bash
 # Find source files and count lines
 PROJECT_ROOT=$(npx nx show project PROJECT_NAME --json 2>/dev/null | grep -o '"root":"[^"]*"' | cut -d'"' -f4)
-find "C:/dev/$PROJECT_ROOT/src" -name "*.ts" -o -name "*.tsx" -o -name "*.py" -o -name "*.rs" 2>/dev/null | head -100 | while read f; do wc -l "$f"; done | sort -rn | head -10
+find "V:/monorepo/$PROJECT_ROOT/src" -name "*.ts" -o -name "*.tsx" -o -name "*.py" -o -name "*.rs" 2>/dev/null | head -100 | while read f; do wc -l "$f"; done | sort -rn | head -10
 ```
 
 Flag files > 300 lines as "large files".
@@ -73,49 +73,49 @@ Search for common anti-patterns in the project:
 
 ```bash
 # console.log statements (not in test files)
-grep -rn "console\.log" "C:/dev/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "test\|spec\|__test" | wc -l
+grep -rn "console\.log" "V:/monorepo/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "test\|spec\|__test" | wc -l
 ```
 
 ```bash
 # 'any' type usage
-grep -rn ": any" "C:/dev/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l
+grep -rn ": any" "V:/monorepo/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l
 ```
 
 ```bash
 # TODO/FIXME/HACK comments
-grep -rn "TODO\|FIXME\|HACK" "C:/dev/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null | wc -l
+grep -rn "TODO\|FIXME\|HACK" "V:/monorepo/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null | wc -l
 ```
 
 ```bash
 # Deep relative imports (../../../)
-grep -rn '"\.\./\.\./\.\.' "C:/dev/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l
+grep -rn '"\.\./\.\./\.\.' "V:/monorepo/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l
 ```
 
 ```bash
 # Hardcoded D:\ or C:\ paths in source
-grep -rn '[CD]:\\\\' "C:/dev/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null | wc -l
+grep -rn '[CD]:\\\\' "V:/monorepo/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null | wc -l
 ```
 
 #### 2d. Security Scan
 
 ```bash
 # Hardcoded secrets patterns
-grep -rn "api[_-]key\s*=\s*['\"]" "C:/dev/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null | grep -vi "process\.env\|import\|interface\|type " | wc -l
+grep -rn "api[_-]key\s*=\s*['\"]" "V:/monorepo/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null | grep -vi "process\.env\|import\|interface\|type " | wc -l
 ```
 
 ```bash
 # eval() usage
-grep -rn "eval(" "C:/dev/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l
+grep -rn "eval(" "V:/monorepo/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l
 ```
 
 ```bash
 # innerHTML usage
-grep -rn "innerHTML\|dangerouslySetInnerHTML" "C:/dev/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l
+grep -rn "innerHTML\|dangerouslySetInnerHTML" "V:/monorepo/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l
 ```
 
 ```bash
 # HTTP (non-HTTPS) URLs
-grep -rn "http://" "C:/dev/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "localhost\|127\.0\.0\.1\|0\.0\.0\.0" | wc -l
+grep -rn "http://" "V:/monorepo/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "localhost\|127\.0\.0\.1\|0\.0\.0\.0" | wc -l
 ```
 
 ### 3. Generate Report Entry

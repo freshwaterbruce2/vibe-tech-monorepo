@@ -5,6 +5,11 @@
 **Status**: PHASE 0 IN PROGRESS - AWAITING OLLAMA INSTALLATION
 **Current Phase**: Phase 0 (Prerequisites)
 
+> Current reality note (2026-04-25): this file is historical implementation
+> context. `D:\learning-system` is not dead storage, and
+> `D:\databases\agent_learning.db` is the active learning-system database.
+> Validate against `D:\databases\DB_INVENTORY.md` before archiving anything.
+
 ---
 
 ## Quick Reference
@@ -322,8 +327,8 @@ _(To be filled during implementation)_
 ## File Locations Quick Reference
 
 ### Source Code (to be created)
-- `C:\dev\packages\memory\` - Core memory library
-- `C:\dev\apps\memory-mcp\` - MCP server
+- `V:\monorepo\packages\memory\` - Core memory library
+- `V:\monorepo\apps\memory-mcp\` - MCP server
 
 ### Databases
 - `D:\databases\memory.db` - Main memory database (to be created)
@@ -334,8 +339,8 @@ _(To be filled during implementation)_
 - `D:\logs\learning-system\` - Legacy logs (existing)
 
 ### Scripts
-- `C:\dev\scripts\memory-health-check.ps1` - Health monitoring (to be created)
-- `C:\dev\scripts\version-control\` - D:\ snapshot tools (existing)
+- `V:\monorepo\scripts\memory-health-check.ps1` - Health monitoring (to be created)
+- `V:\monorepo\scripts\version-control\` - D:\ snapshot tools (existing)
 
 ### Hooks
 - `.claude/hooks/post-tool-use.ps1` - Capture tool usage (to be updated)
@@ -356,7 +361,7 @@ pnpm --filter @vibetech/memory test
 pnpm --filter memory-mcp test
 
 # Start MCP server (manual test)
-node C:\dev\apps\memory-mcp\dist\index.js
+node V:\monorepo\apps\memory-mcp\dist\index.js
 
 # Check DB
 sqlite3 D:\databases\memory.db ".tables"
@@ -369,7 +374,7 @@ curl http://localhost:11434/api/tags
 Get-Content D:\logs\memory-system\operations.log -Tail 50 -Wait
 
 # Create D:\ snapshot (before risky changes)
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Save-Snapshot.ps1 -Description "Before memory system Phase X"
 ```
 

@@ -1,6 +1,6 @@
 [package]
 name = "vibe-code-studio"
-version = "1.1.0"
+version = "1.2.1"
 description = "AI-Powered Code Editor"
 authors = ["VibeTech"]
 edition = "2021"
@@ -22,7 +22,10 @@ tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-store = "2"
-tauri-plugin-updater = "2"
+tauri-plugin-os = "2"
+tauri-plugin-window-state = "2"
+# tauri-plugin-updater intentionally removed until release signing is configured.
+# See AutoUpdateService.ts for the re-enablement checklist.
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1.40.0", features = ["rt-multi-thread", "io-util", "sync", "macros", "process"] }

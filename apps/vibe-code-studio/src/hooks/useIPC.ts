@@ -4,12 +4,12 @@ import type { IPCMessage } from '@vibetech/shared-ipc';
 
 interface UseIPCOptions {
     onMessage?: (message: IPCMessage) => void;
-    onStatusChange?: (status: any) => void;
+    onStatusChange?: (status: { connected: boolean }) => void;
 }
 
 export const useIPC = (options?: UseIPCOptions) => {
     const [lastMessage, setLastMessage] = useState<IPCMessage | null>(null);
-    const [status, setStatus] = useState<any>(null);
+    const [status, setStatus] = useState<{ connected: boolean } | null>(null);
 
     useEffect(() => {
         const unsubscribe = IpcBridge.onMessage((msg: IPCMessage) => {
@@ -17,7 +17,7 @@ export const useIPC = (options?: UseIPCOptions) => {
             options?.onMessage?.(msg);
         });
 
-        const unsubscribeStatus = IpcBridge.onStatusChange((newStatus: any) => {
+        const unsubscribeStatus = IpcBridge.onStatusChange((newStatus: { connected: boolean }) => {
             setStatus(newStatus);
             options?.onStatusChange?.(newStatus);
         });
@@ -29,16 +29,17 @@ export const useIPC = (options?: UseIPCOptions) => {
         });
 
         return () => {
-            unsubscribe();
-            unsubscribeStatus();
+            unsubscribe?.();
+            unsubscribeStatus?.();
         };
     }, [options?.onMessage, options?.onStatusChange]);
 
-    const sendMessage = useCallback((message: any) => {
+    const sendMessage = useCallback((message: unknown) => {
         // This is a generic send, we might want to add more specific ones later
         // or just use the ones already in IpcBridge
-        if ((window as any).ipcBridge?.send) {
-            (window as any).ipcBridge.send(message);
+        const ipcWindow = window as Window & { ipcBridge?: { send?: (msg: unknown) => void } };
+        if (ipcWindow.ipcBridge?.send) {
+            ipcWindow.ipcBridge.send(message);
         }
     }, []);
 

@@ -17,7 +17,7 @@ class SafetyGate:
         self.blocked_paths = config.blocked_paths
         self.max_file_size_kb = config.max_file_size_kb
         self.kill_switch = config.kill_switch
-        self.repo_root = repo_root or Path(r"C:\dev")
+        self.repo_root = repo_root or Path(r"V:\monorepo")
 
     # File-based kill switch path (operator can create this to halt all healing)
     KILL_SWITCH_FILE = Path(r"D:\self-healing\KILL_SWITCH")

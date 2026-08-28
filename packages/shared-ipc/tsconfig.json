@@ -9,7 +9,11 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "paths": {},
+    "baseUrl": ".",
+    "paths": {
+      "@vibetech/logger": ["../logger/dist/index.d.ts"],
+      "@vibetech/logger/*": ["../logger/dist/*.d.ts"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -19,5 +23,10 @@
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"],
-  "extends": "../../tsconfig.base.json"
+  "extends": "../../tsconfig.base.json",
+  "references": [
+    {
+      "path": "../logger"
+    }
+  ]
 }

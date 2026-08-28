@@ -29,33 +29,33 @@ Specialized agent for Windows 11 desktop applications using Tauri 2.x (preferred
 
 ## Projects Covered
 
-1. **nova-agent** (`C:\dev\apps\nova-agent`) - Tauri 2.x
+1. **nova-agent** (`V:\monorepo\apps\nova-agent`) - Tauri 2.x
    - Desktop AI assistant with memory
    - Project management and task tracking
    - Terminal integration
    - Database: `D:\databases\nova-agent.db`
 
-2. **vibe-code-studio** (`C:\dev\apps\vibe-code-studio`) - Electron
+2. **vibe-code-studio** (`V:\monorepo\apps\vibe-code-studio`) - Electron
    - AI-powered code editor (Cursor alternative)
    - Monaco Editor integration
    - Multi-agent system for code review
    - Git integration, terminal panel
    - Database: `D:\databases\vibe-code-studio.db`
 
-3. **vibe-justice** (`C:\dev\apps\vibe-justice`) - Tauri backend + React frontend
+3. **vibe-justice** (`V:\monorepo\apps\vibe-justice`) - Tauri backend + React frontend
    - Legal AI system with case management
    - Python FastAPI backend
    - ChromaDB for vector search
    - Database: `D:\databases\vibe-justice.db`
 
-4. **desktop-commander-v3** (`C:\dev\apps\desktop-commander-v3`)
+4. **desktop-commander-v3** (`V:\monorepo\apps\desktop-commander-v3`)
    - MCP server for desktop automation
    - PowerShell integration
    - File operations and system commands
 
-5. **advanced** (`C:\dev\apps\advanced`)
-6. **vibe-agent** (`C:\dev\apps\vibe-agent`)
-7. **prompt-engineer** (`C:\dev\apps\prompt-engineer`)
+5. **advanced** (`V:\monorepo\apps\advanced`)
+6. **vibe-agent** (`V:\monorepo\apps\vibe-agent`)
+7. **prompt-engineer** (`V:\monorepo\apps\prompt-engineer`)
 
 ## Critical Rules
 

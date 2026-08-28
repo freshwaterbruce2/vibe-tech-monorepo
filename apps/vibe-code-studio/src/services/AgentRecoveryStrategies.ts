@@ -4,7 +4,7 @@ import type { AgentCircuitBreaker } from './AgentCircuitBreaker';
 
 export interface RecoveryStrategy {
   type: 'retry' | 'circuit_breaker' | 'fallback' | 'restart' | 'load_balance';
-  condition: (error: Error, context: any) => boolean;
+  condition: (error: Error, context: Record<string, unknown>) => boolean;
   execute: (agent: BaseSpecializedAgent, request: string, context: AgentContext, cb?: AgentCircuitBreaker) => Promise<AgentResponse>;
   maxAttempts: number;
   backoffMs: number;
@@ -98,7 +98,7 @@ export class AgentRecoveryStrategies {
             content: `[Simplified Response] ${response.content}`,
             confidence: Math.max(0.3, response.confidence - 0.2)
           };
-        } catch (_error) {
+        } catch {
           return {
             content: `I apologize, but I'm experiencing technical difficulties. Please try a simpler request or contact support.`,
             confidence: 0.2,

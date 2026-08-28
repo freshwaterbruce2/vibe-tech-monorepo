@@ -10,7 +10,7 @@ const TestComponent = () => {
       justifyContent: 'center',
       flexDirection: 'column'
     }}>
-      <h1>🎉 DeepCode Editor Test</h1>
+      <h1>🎉 Vibe Code Studio Test</h1>
       <p>If you can see this, the React app is working!</p>
       <p>Time: {new Date().toLocaleTimeString()}</p>
     </div>

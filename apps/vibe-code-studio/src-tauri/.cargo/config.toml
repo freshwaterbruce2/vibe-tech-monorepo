@@ -1,2 +1,10 @@
-[target.x86_64-pc-windows-msvc]
-linker = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe"
+# Intentionally no `linker` override for x86_64-pc-windows-msvc.
+#
+# The MSVC linker (link.exe) is resolved from PATH, which the build sets up by
+# loading vcvars64 from the currently-installed Visual Studio. Pinning an absolute
+# link.exe path breaks whenever the VS install or MSVC toolset version changes — a
+# stale "VS 2022 BuildTools\...\14.44.35207\...\link.exe" path (that VS install was
+# removed) is exactly what made `tauri build` fail with "link.exe was not found".
+#
+# Keep the linker (and cl.exe/INCLUDE/LIB) coming from one consistent vcvars-provided
+# toolchain rather than mixing a pinned linker with a different compiler.

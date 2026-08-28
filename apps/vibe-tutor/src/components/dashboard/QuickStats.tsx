@@ -37,9 +37,9 @@ const QuickStats = ({ items }: QuickStatsProps) => {
       icon: CheckCircle2,
       label: 'Completed Today',
       value: completedToday,
-      color: 'text-fuchsia-400',
-      bgColor: 'bg-fuchsia-500/10',
-      borderColor: 'border-fuchsia-500/30'
+      color: 'text-sky-400',
+      bgColor: 'bg-sky-500/10',
+      borderColor: 'border-sky-500/30'
     },
     {
       icon: Clock,
@@ -61,9 +61,9 @@ const QuickStats = ({ items }: QuickStatsProps) => {
       icon: TrendingUp,
       label: 'Completion Rate',
       value: `${completionRate}%`,
-      color: 'text-purple-400',
-      bgColor: 'bg-purple-500/10',
-      borderColor: 'border-purple-500/30'
+      color: 'text-violet-400',
+      bgColor: 'bg-violet-500/10',
+      borderColor: 'border-violet-500/30'
     }
   ];
 

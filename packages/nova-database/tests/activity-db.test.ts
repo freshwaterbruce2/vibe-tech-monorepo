@@ -19,7 +19,7 @@ describe('ActivityDatabase', () => {
   describe('File Events', () => {
     it('should insert and retrieve file event', () => {
       const event = {
-        path: 'C:\\dev\\test.ts',
+        path: 'V:\\monorepo\\test.ts',
         eventType: 'create' as const,
         timestamp: Date.now(),
         project: 'test-project'
@@ -58,7 +58,7 @@ describe('ActivityDatabase', () => {
   describe('Git Events', () => {
     it('should insert and retrieve git event', () => {
       const event = {
-        repoPath: 'C:\\dev',
+        repoPath: 'V:\\monorepo',
         eventType: 'commit' as const,
         branch: 'main',
         commitHash: 'abc123',
@@ -102,7 +102,7 @@ describe('ActivityDatabase', () => {
     it('should return correct activity stats', () => {
       db.insertFileEvent({ path: 'a.ts', eventType: 'create', timestamp: Date.now() });
       db.insertFileEvent({ path: 'b.ts', eventType: 'modify', timestamp: Date.now() });
-      db.insertGitEvent({ repoPath: 'C:\\dev', eventType: 'commit', timestamp: Date.now() });
+      db.insertGitEvent({ repoPath: 'V:\\monorepo', eventType: 'commit', timestamp: Date.now() });
       db.insertProcessEvent({ name: 'node', pid: 1, eventType: 'start', timestamp: Date.now() });
 
       const stats = db.getActivityStats();

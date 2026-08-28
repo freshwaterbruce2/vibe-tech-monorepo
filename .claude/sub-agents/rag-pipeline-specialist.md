@@ -220,7 +220,7 @@ const RAG_CONFIG = {
 
 // WRONG: Never in source tree
 // const indexPath = './data/index'; // ❌
-// const indexPath = 'C:\\dev\\rag'; // ❌
+// const indexPath = 'V:\\monorepo\\rag'; // ❌
 ```
 
 ### 2. Embedding Dimension Consistency

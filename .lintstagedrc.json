@@ -1,5 +1,9 @@
 {
-  "*.{ts,tsx}": ["eslint --fix --max-warnings 0", "bash -c 'tsc --noEmit || true'"],
-  "*.{js,jsx,mjs,cjs}": ["eslint --fix --max-warnings 0"],
-  "*.{json,md,yml,yaml}": ["prettier --write"]
+  "*.{js,jsx,ts,tsx,mjs,cjs}": [
+    "node scripts/validate-paths-ast.js",
+    "pnpm exec eslint --fix --max-warnings 0 --no-warn-ignored"
+  ],
+  "*.{ts,tsx,env,json,js,config.js}": ["node scripts/check-staged-paths.js"],
+  ".env*": ["node scripts/check-staged-paths.js"],
+  "*.{json,md,yml,yaml}": ["pnpm exec prettier --write"]
 }

@@ -5,30 +5,8 @@ use tracing::{debug, info};
 const MAX_FILE_BYTES: usize = 1024 * 1024;
 const MAX_TEXT_EXTENSION_LEN: usize = 64;
 const ALLOWED_EXTENSIONS: [&str; 24] = [
-    "txt",
-    "md",
-    "json",
-    "toml",
-    "yaml",
-    "yml",
-    "rs",
-    "ts",
-    "tsx",
-    "js",
-    "jsx",
-    "mjs",
-    "css",
-    "html",
-    "htm",
-    "py",
-    "c",
-    "cpp",
-    "h",
-    "hpp",
-    "sh",
-    "ps1",
-    "bat",
-    "cmd",
+    "txt", "md", "json", "toml", "yaml", "yml", "rs", "ts", "tsx", "js", "jsx", "mjs", "css",
+    "html", "htm", "py", "c", "cpp", "h", "hpp", "sh", "ps1", "bat", "cmd",
 ];
 
 #[derive(Serialize)]
@@ -82,10 +60,7 @@ pub async fn write_file(path: String, contents: String) -> Result<WriteResult, S
     debug!("Writing to file: {}", path);
 
     let path = validate_writable_path(&path)?;
-    path_policy::validate_allowed_extension(
-        path.to_string_lossy().as_ref(),
-        &ALLOWED_EXTENSIONS,
-    )?;
+    path_policy::validate_allowed_extension(path.to_string_lossy().as_ref(), &ALLOWED_EXTENSIONS)?;
 
     if contents.len() > MAX_FILE_BYTES {
         return Err("Payload too large for write operation".to_string());
@@ -129,7 +104,11 @@ pub async fn list_directory(path: String) -> Result<String, String> {
         .map_err(|e| format!("Failed to iterate dir: {}", e))?
     {
         let ft = entry.file_type().await.map_err(|e| {
-            format!("Failed to get file type for {}: {}", entry.path().display(), e)
+            format!(
+                "Failed to get file type for {}: {}",
+                entry.path().display(),
+                e
+            )
         })?;
 
         result.push(serde_json::json!({

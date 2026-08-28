@@ -13,7 +13,7 @@ Start the Vibe-Justice legal AI platform with frontend and backend services.
 1. Check project structure:
 
    ```bash
-   cd C:\dev\apps\vibe-justice
+   cd V:\monorepo\apps\vibe-justice
    ls -la
    ```
 
@@ -34,7 +34,7 @@ Start the Vibe-Justice legal AI platform with frontend and backend services.
 3. Start frontend (React + Vite):
 
    ```bash
-   cd C:\dev\apps\vibe-justice
+   cd V:\monorepo\apps\vibe-justice
    pnpm dev
    ```
 

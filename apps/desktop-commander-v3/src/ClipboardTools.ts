@@ -54,6 +54,7 @@ export async function clearClipboard(): Promise<void> {
 	try {
 		await execAsync(
 			'powershell.exe -NoProfile -Command "Set-Clipboard -Value $null"',
+			{},
 		);
 	} catch (error) {
 		throw new Error(

@@ -132,9 +132,10 @@ export class ProjectStructureDetector {
         const packageJson = await this.parsePackageJson(packageJsonPath);
 
         // Extract main entry from package.json
-        if (packageJson.main) {
-          const mainPath = this.joinPath(workspaceRoot, packageJson.main);
-          result.packageJsonMain = packageJson.main;
+        const packageMain = packageJson.main as string | undefined;
+        if (packageMain) {
+          result.packageJsonMain = packageMain;
+          const mainPath = this.joinPath(workspaceRoot, packageMain);
           result.entryPoints.push(mainPath);
         }
 
@@ -168,8 +169,11 @@ export class ProjectStructureDetector {
   /**
    * Detect framework from package.json dependencies
    */
-  private detectFramework(packageJson: any): ProjectStructure['detectedFramework'] {
-    const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
+  private detectFramework(packageJson: Record<string, unknown>): ProjectStructure['detectedFramework'] {
+    const deps = {
+      ...(packageJson.dependencies as Record<string, string> | undefined),
+      ...(packageJson.devDependencies as Record<string, string> | undefined),
+    };
 
     if (deps['expo'] || deps['expo-router']) {return 'expo';}
     if (deps['react-native']) {return 'react-native';}
@@ -284,10 +288,10 @@ export class ProjectStructureDetector {
   /**
    * Parse package.json safely
    */
-  private async parsePackageJson(path: string): Promise<any> {
+  private async parsePackageJson(path: string): Promise<Record<string, unknown>> {
     try {
       const content = await this.fileSystemService.readFile(path);
-      return JSON.parse(content);
+      return JSON.parse(content) as Record<string, unknown>;
     } catch (error) {
       logger.error('[ProjectStructureDetector] Failed to parse package.json:', error);
       return {};

@@ -2,7 +2,6 @@
  * Performance Agent - Specialized in performance analysis and optimization
  */
 import { logger } from '../../utils/logger';
-import type { DeepSeekService } from '../DeepSeekService';
 
 import type { AgentContext, AgentResponse} from './BaseSpecializedAgent';
 import { AgentCapability,BaseSpecializedAgent } from './BaseSpecializedAgent';
@@ -29,7 +28,7 @@ export interface OptimizationSuggestion {
 }
 
 export class PerformanceAgent extends BaseSpecializedAgent {
-  constructor(deepSeekService: DeepSeekService) {
+  constructor() {
     super(
       'PerformanceAgent',
       [
@@ -39,8 +38,7 @@ export class PerformanceAgent extends BaseSpecializedAgent {
         AgentCapability.LOAD_TESTING,
         AgentCapability.CACHING,
         AgentCapability.CODE_ANALYSIS
-      ],
-      deepSeekService
+      ]
     );
   }
 

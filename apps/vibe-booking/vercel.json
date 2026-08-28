@@ -1,0 +1,15 @@
+{
+  "buildCommand": "pnpm nx build vibe-booking",
+  "outputDirectory": "dist/apps/vibe-booking",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://vibe-booking-backend-production.up.railway.app/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

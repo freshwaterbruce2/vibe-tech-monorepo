@@ -5,7 +5,6 @@ import { useEffect, useRef,useState } from 'react';
 import { Check,ChevronDown, DollarSign, Sparkles, Zap } from 'lucide-react';
 import styled from 'styled-components';
 
-// import { AIProviderManager } from '../../services/ai/AIProviderManager';
 import type { AIModel} from '../../services/ai/AIProviderInterface';
 import { AIProvider, MODEL_REGISTRY } from '../../services/ai/AIProviderInterface';
 import { vibeTheme } from '../../styles/theme';
@@ -184,7 +183,6 @@ const Badge = styled.span<{ $type: 'recommended' | 'fast' | 'smart' }>`
 const ModelSelector = ({ currentModel, onModelChange }: ModelSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  // const [providerManager] = useState(() => new AIProviderManager());
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -215,14 +213,15 @@ const ModelSelector = ({ currentModel, onModelChange }: ModelSelectorProps) => {
   const currentModelInfo = MODEL_REGISTRY[currentModel as keyof typeof MODEL_REGISTRY] as AIModel | undefined;
   const currentProviderName = currentModelInfo ? getProviderName(currentModelInfo.provider) : 'Unknown';
 
-  const groupedModels = Object.entries(MODEL_REGISTRY).reduce((acc: Record<string, any[]>, [id, model]) => {
+  type ModelWithId = AIModel & { modelId: string };
+  const groupedModels = Object.entries(MODEL_REGISTRY).reduce((acc: Record<string, ModelWithId[]>, [id, model]) => {
     const provider = model.provider as string;
     if (!acc[provider]) {
       acc[provider] = [];
     }
     acc[provider].push({ ...model, modelId: id });
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, ModelWithId[]>);
 
   const getCostIndicator = (model: AIModel) => {
     if (!model.costPerMillionInput && !model.costPerMillionOutput) {return '$';}

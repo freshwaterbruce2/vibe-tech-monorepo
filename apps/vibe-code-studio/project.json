@@ -29,9 +29,7 @@
     },
     "build": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/dist"
-      ],
+      "outputs": ["{projectRoot}/dist"],
       "cache": true,
       "options": {
         "command": "pnpm run build",
@@ -46,42 +44,16 @@
     },
     "package": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run package",
-        "cwd": "apps/vibe-code-studio"
-      }
-    },
-    "electron-build": {
-      "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
-      "cache": false,
-      "options": {
-        "command": "pnpm run package",
-        "cwd": "apps/vibe-code-studio"
-      }
-    },
-    "electron-build-win": {
-      "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
-      "cache": false,
-      "options": {
-        "command": "pnpm run release:build:win",
         "cwd": "apps/vibe-code-studio"
       }
     },
     "release-build": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/dist"
-      ],
+      "outputs": ["{projectRoot}/dist"],
       "cache": false,
       "options": {
         "command": "pnpm run release:build",
@@ -90,9 +62,7 @@
     },
     "release-build-win": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run release:build:win",
@@ -101,9 +71,7 @@
     },
     "release-build-mac": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run release:build:mac",
@@ -112,9 +80,7 @@
     },
     "release-build-linux": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run release:build:linux",
@@ -123,9 +89,7 @@
     },
     "release-dist": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/dist"
-      ],
+      "outputs": ["{projectRoot}/dist"],
       "cache": false,
       "options": {
         "command": "pnpm run release:dist",
@@ -134,9 +98,7 @@
     },
     "package-win-local": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run prepare-native-modules && pnpm run package",
@@ -150,6 +112,30 @@
         "cwd": "apps/vibe-code-studio"
       }
     },
+    "verify-production-build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-production-build.ps1",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": false
+    },
+    "signing-readiness": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-windows-signing-readiness.ps1",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": false
+    },
+    "smoke-msi": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-msi-installer.ps1",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": false
+    },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
@@ -159,6 +145,14 @@
       "cache": true
     },
     "lint-fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint:fix",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": true
+    },
+    "lint:fix": {
       "executor": "nx:run-commands",
       "options": {
         "command": "pnpm run lint:fix",
@@ -179,6 +173,7 @@
         "command": "pnpm run typecheck",
         "cwd": "apps/vibe-code-studio"
       },
+      "dependsOn": ["^build"],
       "cache": true
     },
     "test": {
@@ -189,10 +184,11 @@
       },
       "cache": true
     },
-    "test:electron": {
+    "test:coverage": {
       "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/coverage"],
       "options": {
-        "command": "pnpm run test:electron",
+        "command": "pnpm run test:coverage",
         "cwd": "apps/vibe-code-studio"
       },
       "cache": true
@@ -211,10 +207,15 @@
         "cwd": "apps/vibe-code-studio"
       }
     },
-    "quality": {}
+    "quality": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": ["pnpm run lint", "pnpm run typecheck", "pnpm run test"],
+        "parallel": false,
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": false
+    }
   },
-  "tags": [
-    "type:desktop",
-    "scope:vibe-code-studio"
-  ]
+  "tags": ["type:desktop", "scope:vibe-code-studio"]
 }

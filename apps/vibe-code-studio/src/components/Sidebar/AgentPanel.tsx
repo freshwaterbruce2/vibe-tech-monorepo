@@ -50,7 +50,7 @@ export const AgentPanel = ({
             <div className={`w-2 h-2 rounded-full ${isProcessing ? 'bg-green-500 animate-pulse' : 'bg-gray-600'}`} />
             {isProcessing ? 'Agents Active' : 'System Idle'}
           </div>
-          <button className="hover:text-white transition-colors">
+          <button className="hover:text-white transition-colors" aria-label="Open agent settings">
             <Settings2 size={14} />
           </button>
         </div>

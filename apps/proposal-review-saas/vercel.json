@@ -1,0 +1,11 @@
+{
+  "buildCommand": "pnpm run build:shared:api && pnpm run build",
+  "installCommand": "cd ../.. && pnpm install --force --frozen-lockfile --filter ./apps/proposal-review-saas...",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

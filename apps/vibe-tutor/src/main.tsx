@@ -1,5 +1,5 @@
 // Initialize electron API stub FIRST - must be before any other imports
-import './utils/electronInit';
+import './utils/electronStore';
 
 import './styles/theme.css';
 import { defineCustomElements as jeepSqlite } from 'jeep-sqlite/loader';

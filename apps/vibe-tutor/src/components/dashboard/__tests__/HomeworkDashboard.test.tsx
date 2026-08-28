@@ -134,6 +134,42 @@ describe('HomeworkDashboard', () => {
         expect(screen.queryByTestId('add-modal')).not.toBeInTheDocument();
       });
     });
+
+    it('opens add modal from onboarding action and clears the action once handled', async () => {
+      const onOnboardingActionHandled = vi.fn();
+
+      render(
+        <HomeworkDashboard
+          {...mockProps}
+          onboardingAction="open-add-homework"
+          onOnboardingActionHandled={onOnboardingActionHandled}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('add-modal')).toBeInTheDocument();
+      });
+
+      expect(onOnboardingActionHandled).toHaveBeenCalled();
+    });
+
+    it('opens task context from onboarding task-list action and clears it', async () => {
+      const onOnboardingActionHandled = vi.fn();
+
+      render(
+        <HomeworkDashboard
+          {...mockProps}
+          onboardingAction="open-task-list"
+          onOnboardingActionHandled={onOnboardingActionHandled}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('breakdown-modal')).toBeInTheDocument();
+      });
+
+      expect(onOnboardingActionHandled).toHaveBeenCalled();
+    });
   });
 
   describe('Edge Cases', () => {

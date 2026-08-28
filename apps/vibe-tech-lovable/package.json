@@ -4,17 +4,21 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build && pnpm run sync:spa-routes",
-    "build:production": "vite build --config vite.config.production.ts && pnpm run sync:spa-routes",
-    "build:dev": "vite build --mode development && pnpm run sync:spa-routes",
+    "dev": "node ../../node_modules/vite/bin/vite.js --host 127.0.0.1 --port 8082",
+    "build": "node ../../node_modules/vite/bin/vite.js build && pnpm run sync:spa-routes",
+    "build:production": "node ../../node_modules/vite/bin/vite.js build --config vite.config.production.ts && pnpm run sync:spa-routes",
+    "build:dev": "node ../../node_modules/vite/bin/vite.js build --mode development && pnpm run sync:spa-routes",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern dev-dist --ignore-pattern backend --ignore-pattern tests --ignore-pattern '*.cjs'",
-    "preview": "vite preview",
+    "preview": "node ../../node_modules/vite/bin/vite.js preview",
     "analyze": "npm run build:production && npx vite-bundle-analyzer dist",
-    "test": "playwright test",
+    "test": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
+    "test:coverage": "node ../../node_modules/vitest/vitest.mjs run --coverage --passWithNoTests",
+    "test:unit": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
+    "test:e2e": "playwright test",
     "test:ui": "playwright test --ui",
     "test:report": "playwright show-report",
     "test:debug": "playwright test --debug",
+    "server:dev": "node backend/server.mjs",
     "typecheck": "tsc --noEmit",
     "sync:spa-routes": "node scripts/create-static-route-stubs.mjs"
   },
@@ -51,8 +55,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@tanstack/react-query": "^5.95.2",
-    "@types/jest": "^30.0.0",
-    "@vibetech/shared-utils": "workspace:^1.0.0",
+    "@vibetech/core": "workspace:*",
     "@vibetech/ui": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -74,7 +77,7 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
-    "three": "^0.182.0",
+    "three": "^0.183.2",
     "vaul": "^1.1.2",
     "zod": "^4.3.6",
     "zustand": "^5.0.11"
@@ -86,6 +89,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.5.0",
     "@types/react": "19.2.10",
     "@types/react-dom": "19.2.3",
@@ -106,6 +110,6 @@
     "typescript-eslint": "^8.57.2",
     "vite": "^7.3.1",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.9"
   }
 }

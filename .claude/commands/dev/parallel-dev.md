@@ -38,7 +38,7 @@ For web development:
 !npm run dev 2>&1 | head -5
 
 For crypto monitoring:
-!cd projects/crypto-enhanced && python -c "print('Trading system ready for monitoring')"
+!cd apps/crypto-enhanced && python scripts\check_status.py
 
 ## Post-Launch Instructions
 

@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     Replaces the legacy "Second Brain" desktop script.
-    Invokes C:\dev\scripts\database-backup.ps1 with 365-day retention
+    Invokes V:\monorepo\scripts\database-backup.ps1 with 365-day retention
     and user-friendly visual feedback.
 
 .PARAMETER Interactive
@@ -21,7 +21,7 @@ $ErrorActionPreference = "Stop"
 # Configuration matches original user script preferences
 $BackupRoot = "D:\backups"
 $RetentionDays = 365
-$RobustScript = "C:\dev\scripts\database-backup.ps1"
+$RobustScript = "V:\monorepo\scripts\database-backup.ps1"
 
 # Visual Header
 Write-Host "Starting Second Brain Preservation..." -ForegroundColor Cyan

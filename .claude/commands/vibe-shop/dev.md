@@ -13,7 +13,7 @@ Start the Vibe-Shop e-commerce platform development server with hot reload.
 1. Navigate to Vibe-Shop directory:
 
    ```bash
-   cd C:\dev\apps\vibe-shop
+   cd V:\monorepo\apps\vibe-shop
    ```
 
 2. Detect framework and start appropriate server:

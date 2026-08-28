@@ -73,10 +73,10 @@ const StreakTracker = ({ items }: StreakTrackerProps) => {
           </p>
         </div>
 
-        <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 text-center">
+        <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Calendar className="w-6 h-6 text-purple-400" />
-            <span className="text-3xl font-bold text-purple-400">{longestStreak}</span>
+            <Calendar className="w-6 h-6 text-violet-400" />
+            <span className="text-3xl font-bold text-violet-400">{longestStreak}</span>
           </div>
           <p className="text-xs text-gray-400">Best Streak</p>
           <p className="text-xs text-gray-500 mt-1">
@@ -90,8 +90,8 @@ const StreakTracker = ({ items }: StreakTrackerProps) => {
       </div>
 
       {currentStreak >= 3 && (
-        <div className="mt-4 p-3 bg-fuchsia-500/10 border border-fuchsia-500/30 rounded-lg">
-          <p className="text-sm text-fuchsia-400 text-center">
+        <div className="mt-4 p-3 bg-sky-500/10 border border-sky-500/30 rounded-lg">
+          <p className="text-sm text-sky-400 text-center">
             🔥 {currentStreak} days strong! You're building great habits!
           </p>
         </div>

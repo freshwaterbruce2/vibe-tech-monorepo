@@ -1,0 +1,97 @@
+{
+  "name": "factory-verify",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/factory-verify/src",
+  "projectType": "application",
+  "implicitDependencies": [
+    "@vibetech/auth",
+    "@vibetech/analytics",
+    "ai",
+    "@vibetech/billing",
+    "email",
+    "@vibetech/emails",
+    "@vibetech/landing",
+    "monetization",
+    "payments",
+    "@vibetech/db-app"
+  ],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/factory-verify"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/factory-verify"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run preview",
+        "cwd": "apps/factory-verify"
+      }
+    },
+    "api:dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev:api",
+        "cwd": "apps/factory-verify"
+      }
+    },
+    "api:build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/server/dist"],
+      "options": {
+        "command": "pnpm run build:api",
+        "cwd": "apps/factory-verify"
+      }
+    },
+    "api:start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run start:api",
+        "cwd": "apps/factory-verify"
+      }
+    },
+    "ship:check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run ship:check",
+        "cwd": "apps/factory-verify"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test",
+        "cwd": "apps/factory-verify"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/factory-verify"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/eslint/bin/eslint.js src server/src vite.config.ts --ext .ts,.tsx --ignore-pattern \"server/src/**/*.test.ts\"",
+        "cwd": "apps/factory-verify"
+      }
+    },
+    "quality": {}
+  },
+  "tags": ["scope:web", "type:application", "factory:generated", "factory:saas"]
+}

@@ -66,7 +66,7 @@ describe('gravityClaw contract', () => {
     mockFetch().mockResolvedValue(errResp(400, { error: 'messages array is required' }));
     const { result } = renderHook(() => useGravityClaw());
     await expect(
-      act(() => result.current.sendMessage([])),
+      act(async () => result.current.sendMessage([])),
     ).rejects.toThrow('messages array is required');
   });
 
@@ -75,7 +75,7 @@ describe('gravityClaw contract', () => {
     mockFetch().mockResolvedValue(errResp(401, { error: 'Missing or invalid Gemini API key.' }));
     const { result } = renderHook(() => useGravityClaw());
     await expect(
-      act(() => result.current.sendMessage([{ role: 'user', content: 'x' }])),
+      act(async () => result.current.sendMessage([{ role: 'user', content: 'x' }])),
     ).rejects.toThrow('Missing or invalid Gemini API key.');
   });
 
@@ -87,7 +87,7 @@ describe('gravityClaw contract', () => {
     } as unknown as Response);
     const { result } = renderHook(() => useGravityClaw());
     await expect(
-      act(() => result.current.sendMessage([{ role: 'user', content: 'x' }])),
+      act(async () => result.current.sendMessage([{ role: 'user', content: 'x' }])),
     ).rejects.toThrow('HTTP 500');
   });
 
@@ -105,7 +105,8 @@ describe('gravityClaw contract', () => {
   // 7. Rapid sends abort previous — only latest resolves
   it('only the latest of three rapid sends resolves', async () => {
     let callIdx = 0;
-    mockFetch().mockImplementation((_url: string, opts: RequestInit) => {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    mockFetch().mockImplementation(async (_url: string, opts: RequestInit) => {
       callIdx++;
       const idx = callIdx;
       return new Promise((resolve, reject) => {

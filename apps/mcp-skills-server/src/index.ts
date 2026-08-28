@@ -24,6 +24,8 @@ function asTextContent(value: unknown) {
   return { content: [{ type: 'text' as const, text }] };
 }
 
+type ToolResponse = ReturnType<typeof asTextContent>;
+
 // Create MCP server
 const server = new Server(
   { name: 'mcp-skills-server', version: '1.0.0' },
@@ -34,10 +36,9 @@ const server = new Server(
 // TOOLS
 // ─────────────────────────────────────────────────────────────────────────────
 
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [
-    {
-      name: 'skills_list',
+const TOOLS = [
+  {
+    name: 'skills_list',
       description:
         `List all available agent skills from the monorepo and community repositories.
 
@@ -141,102 +142,115 @@ Note: Cache auto-refreshes on server restart, so only needed when modifying skil
         properties: {},
       },
     },
-  ],
-}));
+];
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
-  const a = (args ?? {}) as Record<string, unknown>;
+server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
 
+async function handleSkillsList(args: Record<string, unknown>): Promise<ToolResponse> {
+  const skills = await listSkills();
+  const source = String(args.source ?? 'all');
+  const filtered = source === 'all' ? skills : skills.filter((s) => s.source === source);
+
+  return asTextContent({
+    total: filtered.length,
+    skills: filtered.map((s) => ({
+      id: s.id,
+      name: s.name,
+      description: s.description.slice(0, 200),
+      source: s.source,
+    })),
+  });
+}
+
+async function handleSkillsSearch(args: Record<string, unknown>): Promise<ToolResponse> {
+  const query = String(args.query ?? '');
+  const limit = Math.min(50, Math.max(1, Number(args.limit ?? 10)));
+
+  if (!query.trim()) {
+    throw new Error(
+      'Query is required and cannot be empty. Provide keywords to search for skills. ' +
+      'Example: query="docker" or query="database design"',
+    );
+  }
+
+  const results = await searchSkills(query, limit);
+
+  return asTextContent({
+    query,
+    total: results.length,
+    results: results.map((r) => ({
+      id: r.skill.id,
+      name: r.skill.name,
+      description: r.skill.description.slice(0, 200),
+      source: r.skill.source,
+      score: r.score,
+      matchedIn: r.matchedIn,
+    })),
+  });
+}
+
+async function handleSkillsGet(args: Record<string, unknown>): Promise<ToolResponse> {
+  const id = String(args.id ?? '');
+
+  if (!id.trim()) {
+    throw new Error(
+      'Skill ID is required. Provide the exact skill folder name. ' +
+      'Use "skills_list" to browse all skills or "skills_search" to find by keyword.',
+    );
+  }
+
+  const skill = await getSkill(id);
+
+  if (!skill) {
+    throw new Error(
+      `Skill '${id}' not found. Use 'skills_search' with keywords to find available skills, ` +
+      `or 'skills_list' to browse all skills. Check spelling and try a similar ID.`,
+    );
+  }
+
+  return asTextContent({
+    id: skill.id,
+    name: skill.name,
+    description: skill.description,
+    source: skill.source,
+    content: skill.content,
+  });
+}
+
+async function handleSkillsRefresh(): Promise<ToolResponse> {
+  invalidateCache();
+  const skills = await listSkills();
+  return asTextContent({
+    message: 'Skill cache refreshed',
+    total: skills.length,
+    sources: {
+      monorepo: skills.filter((s) => s.source === 'monorepo').length,
+      community: skills.filter((s) => s.source === 'community').length,
+    },
+  });
+}
+
+async function handleSkillsTool(
+  name: string,
+  args: Record<string, unknown>,
+): Promise<ToolResponse> {
   switch (name) {
-    case 'skills_list': {
-      const skills = await listSkills();
-      const source = String(a.source ?? 'all');
-
-      const filtered = source === 'all' ? skills : skills.filter((s) => s.source === source);
-
-      return asTextContent({
-        total: filtered.length,
-        skills: filtered.map((s) => ({
-          id: s.id,
-          name: s.name,
-          description: s.description.slice(0, 200),
-          source: s.source,
-        })),
-      });
-    }
-
-    case 'skills_search': {
-      const query = String(a.query ?? '');
-      const limit = Math.min(50, Math.max(1, Number(a.limit ?? 10)));
-
-      if (!query.trim()) {
-        throw new Error(
-          'Query is required and cannot be empty. Provide keywords to search for skills. ' +
-          'Example: query="docker" or query="database design"'
-        );
-      }
-
-      const results = await searchSkills(query, limit);
-
-      return asTextContent({
-        query,
-        total: results.length,
-        results: results.map((r) => ({
-          id: r.skill.id,
-          name: r.skill.name,
-          description: r.skill.description.slice(0, 200),
-          source: r.skill.source,
-          score: r.score,
-          matchedIn: r.matchedIn,
-        })),
-      });
-    }
-
-    case 'skills_get': {
-      const id = String(a.id ?? '');
-
-      if (!id.trim()) {
-        throw new Error(
-          'Skill ID is required. Provide the exact skill folder name. ' +
-          'Use "skills_list" to browse all skills or "skills_search" to find by keyword.'
-        );
-      }
-
-      const skill = await getSkill(id);
-
-      if (!skill) {
-        throw new Error(
-          `Skill '${id}' not found. Use 'skills_search' with keywords to find available skills, ` +
-          `or 'skills_list' to browse all skills. Check spelling and try a similar ID.`
-        );
-      }
-
-      return asTextContent({
-        id: skill.id,
-        name: skill.name,
-        description: skill.description,
-        source: skill.source,
-        content: skill.content,
-      });
-    }
-
-    case 'skills_refresh': {
-      invalidateCache();
-      const skills = await listSkills();
-      return asTextContent({
-        message: 'Skill cache refreshed',
-        total: skills.length,
-        sources: {
-          monorepo: skills.filter((s) => s.source === 'monorepo').length,
-          community: skills.filter((s) => s.source === 'community').length,
-        },
-      });
-    }
-
+    case 'skills_list':
+      return handleSkillsList(args);
+    case 'skills_search':
+      return handleSkillsSearch(args);
+    case 'skills_get':
+      return handleSkillsGet(args);
+    case 'skills_refresh':
+      return handleSkillsRefresh();
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
+}
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+  return handleSkillsTool(name, (args ?? {}) as Record<string, unknown>);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -264,7 +278,11 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     throw new Error(`Invalid skill URI: ${uri}`);
   }
 
-  const id = match[1]!;
+  const id = match[1];
+  if (!id) {
+    throw new Error(`Invalid skill URI: ${uri}`);
+  }
+
   const skill = await getSkill(id);
 
   if (!skill) {

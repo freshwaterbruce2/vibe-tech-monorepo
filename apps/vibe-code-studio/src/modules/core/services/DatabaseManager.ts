@@ -18,8 +18,8 @@ export const getDatabase = async (): Promise<DatabaseService> => {
 
     // Expose to window for debugging (development only)
     if (process.env['NODE_ENV'] === 'development') {
-      (window as any).__deepcodeDB = dbService;
-      (window as any).__deepcodeDBStatus = async () => dbService?.getStatus();
+      (window as unknown as Record<string, unknown>).__deepcodeDB = dbService;
+      (window as unknown as Record<string, unknown>).__deepcodeDBStatus = async () => dbService?.getStatus();
       logger.debug('[App] Database service exposed to window.__deepcodeDB for debugging');
     }
   }

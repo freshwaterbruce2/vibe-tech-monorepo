@@ -1,25 +1,26 @@
 {
   "name": "@vibetech/mcp-testing",
   "version": "1.0.0",
+  "type": "module",
   "description": "Testing utilities for VibeTech MCP servers",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./mocks": {
       "types": "./dist/mocks/index.d.ts",
-      "import": "./dist/mocks/index.mjs",
-      "require": "./dist/mocks/index.js"
+      "import": "./dist/mocks/index.js",
+      "require": "./dist/mocks/index.cjs"
     },
     "./helpers": {
       "types": "./dist/helpers/index.d.ts",
-      "import": "./dist/helpers/index.mjs",
-      "require": "./dist/helpers/index.js"
+      "import": "./dist/helpers/index.js",
+      "require": "./dist/helpers/index.cjs"
     }
   },
   "scripts": {
@@ -32,14 +33,14 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.26.0",
-    "@vibetech/mcp-core": "workspace:^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.27.0",
+    "@vibetech/mcp-core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
     "tsup": "^8.5.1",
     "typescript": "5.9.3",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.9"
   },
   "peerDependencies": {
     "vitest": ">=1.0.0"

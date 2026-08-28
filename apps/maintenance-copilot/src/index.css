@@ -1,0 +1,242 @@
+:root {
+  --bg: #0b1220;
+  --panel: #131c2e;
+  --panel2: #0f1726;
+  --line: #1f2b40;
+  --text: #e2e8f0;
+  --muted: #8190a8;
+  --accent: #38bdf8;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.topbar h1 {
+  font-size: 22px;
+  margin: 0;
+}
+.sub {
+  color: var(--muted);
+  margin: 4px 0 0;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot.ok {
+  background: var(--ok);
+}
+.dot.bad {
+  background: var(--danger);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+@media (max-width: 820px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  min-height: 150px;
+}
+.card h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.metric {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+}
+.metric span {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 6px;
+}
+.metric.ok {
+  color: var(--ok);
+}
+.metric.danger {
+  color: var(--danger);
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 6px 0;
+}
+.ok {
+  color: var(--ok);
+  font-size: 13px;
+}
+.warnText {
+  color: var(--warn);
+  font-size: 13px;
+}
+.err {
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.out {
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  max-height: 140px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.loglist {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+.loglist li {
+  padding: 4px 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+.loglist code {
+  color: var(--accent);
+}
+
+.btn {
+  background: var(--panel2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn:hover {
+  border-color: var(--accent);
+}
+.btn.warn {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+.btn.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* Dashboard primitives (Checkpoint 1) */
+.badge {
+  font-size: 12px;
+}
+.metriccard {
+  text-align: center;
+}
+.metriclabel {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+.actionmsg {
+  color: var(--muted);
+  font-size: 13px;
+}
+.alerts {
+  margin-top: 20px;
+}
+.alerts h2 {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 640px;
+  width: 100%;
+}
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+.tab {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 14px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+.tab.active {
+  border-color: var(--accent);
+  color: var(--text);
+}

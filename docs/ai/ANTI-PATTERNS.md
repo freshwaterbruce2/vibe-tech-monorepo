@@ -10,7 +10,7 @@
 ## File Organization
 
 ❌ Files over 500 lines - Split early
-❌ Writing data/logs to C:\dev - Use D:\
+❌ Writing data/logs to V:\monorepo - Use D:\
 ❌ Relative paths in documentation
 ✅ Data/logs → D:\
 ✅ Absolute paths in docs
@@ -20,16 +20,17 @@
 ❌ `pnpm build` from repo root (ambiguous)
 ❌ Skipping `pnpm install` after git pull
 ❌ Ignoring NX cache issues
-✅ `cd apps/[name] && pnpm build`
+❌ Running Vite production builds without forcing `NODE_ENV=production` (leads to fatal `f.jsxDEV` runtime crashes due to React mismatch)
+✅ `pnpm nx build <project>` from the repo root
 ✅ Run `pnpm install` first
 ✅ `npx nx reset` if cache problems
+✅ Prepend `cross-env NODE_ENV=production` to all production build scripts in `package.json`
 
 ## Version Control
 
-❌ Codeberg references (we use GitHub)
 ❌ Committing node_modules
 ❌ Large binary files in repo
-✅ GitHub: github.com/freshwaterbruce2/Monorepo
+✅ GitHub: github.com/freshwaterbruce2/vibe-tech-monorepo
 ✅ Use .gitignore properly
 
 ## AI Agent Behavior

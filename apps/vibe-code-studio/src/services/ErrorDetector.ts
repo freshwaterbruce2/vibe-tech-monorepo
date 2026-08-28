@@ -63,11 +63,19 @@ export class ErrorDetector {
 
   private startMonitoring(): void {
     // Listen for changes in Monaco decorations (indicates errors changed)
-    const disposable = this.editor.onDidChangeModelDecorations(() => {
+    const decorationDisposable = this.editor.onDidChangeModelDecorations(() => {
       this.debouncedCheckForErrors();
     });
+    this.disposables.push(decorationDisposable);
 
-    this.disposables.push(disposable);
+    // Listen for model changes (new file opened) — re-check after a short delay
+    // to allow the language service to compute diagnostics
+    const modelDisposable = this.editor.onDidChangeModel(() => {
+      this.checkForErrors();
+      // Decorations may arrive async from the language service, so debounce a second check
+      this.debouncedCheckForErrors();
+    });
+    this.disposables.push(modelDisposable);
 
     // Initial error check (no debounce)
     this.checkForErrors();
@@ -91,10 +99,14 @@ export class ErrorDetector {
    * Check for errors in the current editor model
    */
   public checkForErrors(): void {
-    if (this.isDisposed) {return;}
+    if (this.isDisposed) {
+      return;
+    }
 
     const model = this.editor.getModel();
-    if (!model) {return;}
+    if (!model) {
+      return;
+    }
 
     // Get all markers (TypeScript and ESLint errors)
     const markers = this.monaco.editor.getModelMarkers({ resource: model.uri });
@@ -125,7 +137,7 @@ export class ErrorDetector {
 
     // Check for resolved errors
     const resolvedErrors: string[] = [];
-    for (const [errorId, _error] of this.activeErrors.entries()) {
+    for (const errorId of this.activeErrors.keys()) {
       if (!currentErrorIds.has(errorId)) {
         resolvedErrors.push(errorId);
 
@@ -148,7 +160,9 @@ export class ErrorDetector {
    * Parse console output for runtime errors
    */
   public parseConsoleOutput(output: string): void {
-    if (this.isDisposed) {return;}
+    if (this.isDisposed) {
+      return;
+    }
 
     // Pattern to match error stack traces
     const errorPattern = /(Error|TypeError|ReferenceError|SyntaxError):\s*(.+)/;
@@ -170,7 +184,7 @@ export class ErrorDetector {
           message: errorMatch[2].trim(),
           file: '',
           line: 0,
-          column: 0
+          column: 0,
         };
         stackLines.length = 0; // Reset stack
       } else if (currentError) {
@@ -245,16 +259,14 @@ export class ErrorDetector {
   /**
    * Convert Monaco marker to DetectedError
    */
-  private markerToError(
-    marker: monaco.editor.IMarker,
-    filePath: string
-  ): DetectedError {
+  private markerToError(marker: monaco.editor.IMarker, filePath: string): DetectedError {
     const type = marker.source === 'eslint' ? 'eslint' : 'typescript';
     const severity = this.monacoSeverityToString(marker.severity);
 
-    const code = typeof marker.code === 'object' && marker.code !== null
-      ? (marker.code as any).value
-      : marker.code;
+    const code =
+      typeof marker.code === 'object' && marker.code !== null
+        ? (marker.code as { value: string | number }).value
+        : marker.code;
 
     return {
       id: this.generateId(),
@@ -265,7 +277,7 @@ export class ErrorDetector {
       line: marker.startLineNumber,
       column: marker.startColumn,
       code: code?.toString(),
-      source: marker.source
+      source: marker.source,
     };
   }
 
@@ -274,8 +286,12 @@ export class ErrorDetector {
    */
   private monacoSeverityToString(severity: number): 'error' | 'warning' | 'info' {
     // Monaco.MarkerSeverity: Error = 8, Warning = 4, Info = 2, Hint = 1
-    if (severity >= 8) {return 'error';}
-    if (severity >= 4) {return 'warning';}
+    if (severity >= 8) {
+      return 'error';
+    }
+    if (severity >= 4) {
+      return 'warning';
+    }
     return 'info';
   }
 
@@ -316,7 +332,7 @@ export class ErrorDetector {
    * Generate unique ID (simple version)
    */
   private generateId(): string {
-    return `err-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `err-${crypto.randomUUID()}`;
   }
 
   /**

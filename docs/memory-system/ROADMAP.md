@@ -5,6 +5,10 @@
 **Related**: PRD.md, ARCHITECTURE.md
 **Status**: READY FOR EXECUTION
 
+> Current reality note (2026-04-25): this roadmap is historical. Do not archive
+> `D:\learning-system` Python files or `D:\databases\agent_learning.db` from
+> these tasks without first checking `D:\databases\DB_INVENTORY.md`.
+
 ---
 
 ## Executive Summary
@@ -85,7 +89,7 @@ Move-Item "D:\learning-system\.venv" "D:\learning-system\_archive\" -Force -Erro
 **Estimated Time**: 30 minutes
 
 ```bash
-# Install packages (from C:\dev root)
+# Install packages (from V:\monorepo root)
 pnpm add better-sqlite3 sqlite-vec --filter @vibetech/memory
 pnpm add ollama --filter @vibetech/memory
 pnpm add @huggingface/transformers --filter @vibetech/memory
@@ -620,7 +624,7 @@ Add remaining tools to MCP server:
 **Priority**: MEDIUM
 **Estimated Time**: 3 hours
 
-**File**: `C:\dev\scripts\memory-health-check.ps1`
+**File**: `V:\monorepo\scripts\memory-health-check.ps1`
 
 - [ ] Check DB accessibility
 - [ ] Check WAL size, checkpoint if >100MB

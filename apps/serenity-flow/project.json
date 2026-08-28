@@ -1,0 +1,58 @@
+{
+  "name": "serenity-flow",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/serenity-flow/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/serenity-flow"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/serenity-flow"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "pnpm run preview",
+        "cwd": "apps/serenity-flow"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/serenity-flow"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "command": "pnpm run lint",
+        "cwd": "apps/serenity-flow"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/serenity-flow"
+      }
+    },
+    "quality": {}
+  },
+  "tags": ["scope:web", "type:application", "product:serenity-flow", "standalone"]
+}

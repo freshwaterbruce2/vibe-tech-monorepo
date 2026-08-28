@@ -336,6 +336,6 @@ Monitor cache effectiveness:
 ## Reference
 
 - Nx Docs: <https://nx.dev/>
-- Workspace config: C:\\dev\\nx.json
+- Workspace config: V:\\monorepo\\nx.json
 - CI/CD guide: .claude/rules/ci-cd-nx.md
 - Git workflow: .claude/rules/git-workflow-incremental-merge.md

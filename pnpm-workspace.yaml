@@ -1,7 +1,18 @@
 packages:
-  - "packages/*"
-  - "packages/feature-flags/*"
-  - "apps/*"
-  - "apps/**/backend"
-  - "apps/**/frontend"
-  - "backend/*"
+  - 'packages/*'
+  - 'packages/feature-flags/*'
+  - 'apps/*'
+  - 'apps/**/backend'
+  - 'apps/**/frontend'
+  - 'apps/vibe-chess/render-backend'
+  - 'backend'
+  - 'backend/*'
+  - 'tools/*/mcp-server'
+  - 'tools/anthropic-api'
+  - 'tools/vectorshift-svg'
+  - 'tools/ralph-loop'
+  - 'tools/kimi-code-provider'
+  - 'plugins/*'
+  # Exclude backend directories that are not independent packages.
+  - '!backend/types'
+  - '!backend/llm-finetuning'

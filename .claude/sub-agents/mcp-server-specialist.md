@@ -10,7 +10,7 @@
 ## Role & Scope
 
 **Primary Responsibility:**
-Expert in building MCP (Model Context Protocol) servers — defining tools with proper JSON schemas, implementing stdio transport, handling request/response lifecycle, and integrating servers into the workspace at `C:\dev\.mcp.json`.
+Expert in building MCP (Model Context Protocol) servers — defining tools with proper JSON schemas, implementing stdio transport, handling request/response lifecycle, and integrating servers into the workspace at `V:\monorepo\.mcp.json`.
 
 **Parent Agent:** `mcp-expert`
 
@@ -58,7 +58,7 @@ Expert in building MCP (Model Context Protocol) servers — defining tools with 
 ### Workspace Integration
 
 - Build to `dist/index.js` (TypeScript → JS)
-- Register in `C:\dev\.mcp.json` after build
+- Register in `V:\monorepo\.mcp.json` after build
 - `pnpm --filter <server> build` for monorepo builds
 - Validate config JSON after registration
 
@@ -83,7 +83,7 @@ Tools to implement:
 2. [tool_name] — [description] — inputs: [params]
 
 Integration:
-- Config file: C:\dev\.mcp.json
+- Config file: V:\monorepo\.mcp.json
 - Build command: pnpm --filter [name] build
 - Start command: node apps/[name]/dist/index.js
 
@@ -285,7 +285,7 @@ After:  description: "Read the contents of a file at the given path.
          Use this when you need to access file contents for analysis or editing."
 
 Before: path: { type: "string" }
-After:  path: { type: "string", description: "Absolute path to the file (e.g. C:\\dev\\src\\app.ts)" }
+After:  path: { type: "string", description: "Absolute path to the file (e.g. V:\\monorepo\\src\\app.ts)" }
 
 Rebuild and restart required. Tool should now be selected by Claude.
 ```
@@ -392,7 +392,7 @@ Return to `mcp-expert` when:
 ## Related Documentation
 
 - MCP SDK: https://github.com/modelcontextprotocol/typescript-sdk
-- `C:\dev\.claude\rules\mcp-servers.md` — workspace MCP config
+- `V:\monorepo\.claude\rules\mcp-servers.md` — workspace MCP config
 - `apps/mcp-codeberg/` — example MCP server
 - `apps/desktop-commander-v3/` — complex MCP server with many tools
 - `desktop-mcp-specialist.md` — integrating servers into desktop apps

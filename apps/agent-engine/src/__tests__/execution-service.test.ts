@@ -38,13 +38,13 @@ function createCandidate(filesTouched: string[]): CandidateRevision {
     benchmarkScope: ['repo-local'],
     rollbackRef: 'abc123',
     branchName: 'codex/agent-engine-candidate-1',
-    worktreePath: 'C:\\dev\\.tmp\\candidate-1',
+    worktreePath: 'V:\\monorepo\\.tmp\\candidate-1',
     filesTouched,
     diffSummary: 'Adjust agent-engine services only',
     status: 'pending',
     rollback: {
       pointerRef: 'abc123',
-      pointerPath: 'C:\\dev\\.tmp\\candidate-1.json',
+      pointerPath: 'V:\\monorepo\\.tmp\\candidate-1.json',
       status: 'ready',
     },
   };
@@ -144,7 +144,7 @@ describe('execution service promotion flow', () => {
     expect(result.promotionDecision?.reasons.join('\n')).toContain('forbidden area');
     expect(harness.memoryClient.logAntiPattern).toHaveBeenCalledTimes(1);
     expect(harness.worktreeService.remove).toHaveBeenCalledWith(
-      'C:\\dev\\.tmp\\candidate-1',
+      'V:\\monorepo\\.tmp\\candidate-1',
       'codex/agent-engine-candidate-1',
     );
   });

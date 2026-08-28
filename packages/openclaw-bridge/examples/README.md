@@ -34,7 +34,8 @@ examples/
 
 2. **IPC Bridge running**:
    ```bash
-   pnpm --filter ipc-bridge dev
+   cd V:\monorepo
+   pnpm --filter @vibetech/openclaw-bridge dev
    ```
 
 3. **Bridge package built**:
@@ -51,7 +52,7 @@ examples/
 
 ```powershell
 # Windows
-cd C:\dev\packages\openclaw-bridge\examples
+cd V:\monorepo\packages\openclaw-bridge\examples
 .\install.ps1
 ```
 
@@ -115,7 +116,7 @@ Expected response:
 ```
 /mcp help
 /files
-/files C:\dev
+/files V:\monorepo
 /search vibetech
 /screenshot
 ```
@@ -127,7 +128,7 @@ Expected response:
 | Command | Description | Example |
 |---------|-------------|---------|
 | `/mcp` | Call any MCP tool | `/mcp filesystem list_directory {"path":"./"}` |
-| `/files` | List files/dirs | `/files C:\dev` |
+| `/files` | List files/dirs | `/files V:\monorepo` |
 | `/search` | Search GitHub | `/search vibetech --limit 10` |
 | `/screenshot` | Take screenshot (Windows) | `/screenshot capture.png` |
 
@@ -180,7 +181,8 @@ Edit `~/.openclaw/openclaw.json`:
 
 ```bash
 # Start IPC Bridge
-pnpm --filter ipc-bridge dev
+cd V:\monorepo
+pnpm --filter @vibetech/openclaw-bridge dev
 
 # Test bridge connection
 openclaw-dispatch ping
@@ -230,7 +232,8 @@ tail -f ~/.openclaw/logs/vibetech-bridge.log
 **Solution:**
 ```bash
 # Start IPC Bridge
-pnpm --filter ipc-bridge dev
+cd V:\monorepo
+pnpm --filter @vibetech/openclaw-bridge dev
 
 # Verify port 5004 available
 netstat -an | findstr 5004
@@ -240,7 +243,7 @@ netstat -an | findstr 5004
 
 **Solution:**
 1. Check manifest syntax: Validate `manifest.json`
-2. Verify dependencies: `npm list @vibetech/openclaw-bridge`
+2. Verify dependencies: `pnpm list --filter @vibetech/openclaw-bridge`
 3. Check OpenClaw version: `openclaw --version` (should be 2026.2.19-2+)
 
 ---
@@ -250,12 +253,12 @@ netstat -an | findstr 5004
 ### Example 1: List Files
 
 ```
-/files C:\dev
+/files V:\monorepo
 ```
 
 Response:
 ```
-📁 C:\dev
+📁 V:\monorepo
 
 📂 Directories (3):
   • apps/
@@ -280,10 +283,10 @@ Response:
 ```
 🔍 Search Results for "vibetech" (5)
 
-1. freshwaterbruce2/Monorepo
-   VibeTech Nx monorepo with 52+ projects
+1. freshwaterbruce2/vibe-tech-monorepo
+   VibeTech Nx monorepo with 60+ projects
    ⭐ 15 | 🍴 3 | 📝 TypeScript
-   🔗 https://github.com/freshwaterbruce2/Monorepo
+   🔗 https://github.com/freshwaterbruce2/vibe-tech-monorepo
 
 ...
 ```
@@ -325,7 +328,7 @@ MIT - See main package LICENSE
 ## 🔗 Links
 
 - [OpenClaw GitHub](https://github.com/openclaw/openclaw)
-- [VibeTech Monorepo](https://github.com/freshwaterbruce2/Monorepo)
+- [VibeTech Monorepo](https://github.com/freshwaterbruce2/vibe-tech-monorepo)
 - [MCP Protocol Docs](https://modelcontextprotocol.io/)
 
 ---

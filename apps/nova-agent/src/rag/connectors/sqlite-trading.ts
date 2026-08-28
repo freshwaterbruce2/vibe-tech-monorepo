@@ -48,14 +48,14 @@ export class TradingConnector {
     ).all() as Array<{ name: string }>;
 
     return tables.map((t) => {
-      const columns = this.db!.prepare(`PRAGMA table_info('${t.name}')`).all() as Array<{
+      const columns = this.db?.prepare(`PRAGMA table_info('${t.name}')`).all() as Array<{
         name: string;
         type: string;
         notnull: number;
         pk: number;
-      }>;
+      }> ?? [];
 
-      const countRow = this.db!.prepare(`SELECT COUNT(*) as count FROM "${t.name}"`).get() as { count: number };
+      const countRow = this.db?.prepare(`SELECT COUNT(*) as count FROM "${t.name}"`).get() as { count: number } | undefined;
 
       return {
         tableName: t.name,
@@ -65,7 +65,7 @@ export class TradingConnector {
           nullable: c.notnull === 0,
           primaryKey: c.pk > 0,
         })),
-        rowCount: countRow.count,
+        rowCount: countRow?.count ?? 0,
       };
     });
   }

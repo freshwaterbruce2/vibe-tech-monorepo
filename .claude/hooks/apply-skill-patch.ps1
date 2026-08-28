@@ -1,8 +1,8 @@
 # Apply skill-recommender patch to user-prompt-submit.ps1
 # Run this once to add skill-recommender integration
 
-$TargetFile = "C:\dev\.claude\hooks\user-prompt-submit.ps1"
-$BackupFile = "C:\dev\.claude\hooks\user-prompt-submit.ps1.pre-patch"
+$TargetFile = "V:\monorepo\.claude\hooks\user-prompt-submit.ps1"
+$BackupFile = "V:\monorepo\.claude\hooks\user-prompt-submit.ps1.pre-patch"
 
 # Read current content
 $Content = Get-Content $TargetFile -Raw
@@ -29,7 +29,7 @@ $NewBlock = @'
     # Suggests relevant skills based on project and prompt keywords
     # ============================================================================
     if ($PromptAnalysis.is_task -or $PromptAnalysis.is_error -or $PromptAnalysis.complexity -ge 3) {
-        $SkillRecommenderPath = "C:\dev\.claude\hooks\skill-recommender.ps1"
+        $SkillRecommenderPath = "V:\monorepo\.claude\hooks\skill-recommender.ps1"
         if (Test-Path $SkillRecommenderPath) {
             try {
                 & $SkillRecommenderPath -Project $CurrentProject -Prompt $UserPrompt -Intent $PromptAnalysis.category

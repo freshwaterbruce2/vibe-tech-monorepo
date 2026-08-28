@@ -99,8 +99,18 @@ describe('MigrationService - Integration Tests', () => {
       id: 'pl1',
       name: 'Focus Music',
       tracks: [
-        { id: 't1', title: 'Calm Piano', artist: 'Artist 1', duration: 240 } as unknown as LocalTrack,
-        { id: 't2', title: 'Study Beats', artist: 'Artist 2', duration: 180 } as unknown as LocalTrack,
+        {
+          id: 't1',
+          title: 'Calm Piano',
+          artist: 'Artist 1',
+          duration: 240,
+        } as unknown as LocalTrack,
+        {
+          id: 't2',
+          title: 'Study Beats',
+          artist: 'Artist 2',
+          duration: 180,
+        } as unknown as LocalTrack,
       ],
     },
   ];
@@ -121,7 +131,9 @@ describe('MigrationService - Integration Tests', () => {
     });
 
     // Mock database connection
-    vi.mocked(databaseService.getConnection).mockReturnValue(mockDatabase as unknown as SQLiteDBConnection);
+    vi.mocked(databaseService.getConnection).mockReturnValue(
+      mockDatabase as unknown as SQLiteDBConnection,
+    );
     vi.mocked(databaseService.initialize).mockResolvedValue(undefined);
   });
 
@@ -463,10 +475,15 @@ describe('MigrationService - Integration Tests', () => {
 
       await expect(service.performMigration()).rejects.toThrow();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[Migration] FAILED:', expect.any(Error));
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[Migration] Your data is safe in the backup.');
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        '[Migration] To restore, call: migrationService.restoreFromBackup()',
+        '[ERROR] [Migration] FAILED:',
+        expect.any(Error),
+      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[ERROR] [Migration] Your data is safe in the backup.',
+      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[ERROR] [Migration] To restore, call: migrationService.restoreFromBackup()',
       );
 
       consoleErrorSpy.mockRestore();
@@ -576,16 +593,18 @@ describe('MigrationService - Integration Tests', () => {
 
       await service.performMigration();
 
-      // Verify rewards were inserted
+      // Verify rewards were inserted (cost mapped onto points_required)
       expect(mockDatabase.run).toHaveBeenCalledWith(
         expect.stringContaining('INSERT OR REPLACE INTO rewards'),
         ['rw1', '15 min gaming', 50, 'Extra 15 minutes of gaming time', 0],
       );
 
-      // Verify claimed reward was marked as claimed
+      // Verify the claim queue was migrated into the user_settings JSON list
+      // (a reward can be claimed while still in the catalog, so claims are not
+      // represented by the catalog `claimed` flag).
       expect(mockDatabase.run).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE rewards SET claimed = 1'),
-        expect.arrayContaining([claimedRewards[0]!.claimedAt, 'rw1']),
+        expect.stringContaining('INSERT OR REPLACE INTO user_settings'),
+        ['claimedRewards', JSON.stringify(claimedRewards)],
       );
     });
 

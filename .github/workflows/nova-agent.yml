@@ -1,0 +1,208 @@
+# Nova Agent CI Pipeline
+# General lint, typecheck, test, e2e, and optional Tauri build for nova-agent.
+
+name: Nova Agent CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/nova-agent/**'
+      - '.github/workflows/nova-agent.yml'
+      - 'packages/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/nova-agent/**'
+      - 'packages/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nova-agent-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10.33.0'
+  NODE_OPTIONS: '--max-old-space-size=4096'
+  NX_DAEMON: 'false'
+  NX_NO_CLOUD: 'true'
+  NX_SKIP_REMOTE_CACHE: 'true'
+  # CI runners have no V:\ — override the .npmrc developer-local store-dir to a
+  # sibling of the workspace (same volume, so hard-linking stays valid, but
+  # outside the checkout so nx does not infer phantom projects from the store).
+  # NB: runner.temp is unavailable in workflow-level env; github.workspace is.
+  npm_config_store_dir: '${{ github.workspace }}-pnpm-store'
+
+jobs:
+  quality:
+    name: Quality (lint / typecheck / unit test)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Cache pnpm store
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Cache node_modules
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: cd apps/nova-agent && pnpm run lint
+
+      # Workspace packages with composite: true must be built before
+      # dependent projects can typecheck against them.
+      - name: Build workspace dependencies
+        run: |
+          pnpm --dir packages/openrouter-client run build
+          pnpm --dir packages/shared-utils run build
+          pnpm --dir packages/inngest-client run build
+
+      - name: Typecheck
+        run: cd apps/nova-agent && pnpm run typecheck
+
+      # Run through Nx (not a raw `pnpm run test`) so the `test` target's
+      # `dependsOn: ["^build"]` (nx.json targetDefaults) builds the FULL
+      # transitive workspace-dependency closure first — including
+      # @vibetech/shared-config, which the manual build step above does not
+      # cover. Vitest then resolves every workspace package's dist/ entry.
+      - name: Unit tests
+        run: pnpm nx test nova-agent
+
+  e2e:
+    name: E2E Tests
+    runs-on: windows-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Cache pnpm store
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace dependencies
+        run: |
+          pnpm --dir packages/openrouter-client run build
+          pnpm --dir packages/shared-utils run build
+          pnpm --dir packages/inngest-client run build
+          pnpm --dir packages/logger run build
+          pnpm --dir packages/shared-config run build
+
+      - name: Install Playwright Chromium
+        run: cd apps/nova-agent && pnpm exec playwright install chromium
+
+      # Playwright starts its own Vite dev server (dev:web) via webServer config,
+      # so a separate build:frontend step is unnecessary and only adds CI time.
+      - name: Run E2E tests
+        run: cd apps/nova-agent && pnpm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: nova-agent-e2e-report
+          path: apps/nova-agent/playwright-report/
+          retention-days: 7
+
+  build:
+    name: Tauri Build
+    runs-on: windows-latest
+    needs: quality
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
+        with:
+          toolchain: stable
+
+      # lance-encoding (via lancedb) compiles .proto files at build time and
+      # needs the protoc binary — absent on vanilla windows-latest runners.
+      - name: Install protoc (required by lance-encoding/prost-build)
+        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
+        with:
+          version: '26.x'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache pnpm store
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      # NOTE: If the runner sets CARGO_TARGET_DIR globally (e.g. to D:\cargo-targets),
+      # this cache path must be updated to match. The default path below is correct
+      # for vanilla GitHub Actions windows-latest runners.
+      - name: Cache Rust target
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2.9.1
+        with:
+          workspaces: apps/nova-agent/src-tauri -> target
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Tauri app
+        run: cd apps/nova-agent && pnpm tauri build
+
+      # NOTE: On local dev machines with a global cargo target-dir config
+      # (e.g. target-dir = "D:/cargo-targets"), build output lands under
+      # D:\cargo-targets\release\bundle\ instead of src-tauri/target/release/bundle/.
+      # In CI the default path below is correct unless the same global config is added.
+      - name: Upload installers
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: nova-agent-installers
+          path: apps/nova-agent/src-tauri/target/release/bundle/
+          retention-days: 14

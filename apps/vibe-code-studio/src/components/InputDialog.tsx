@@ -325,6 +325,7 @@ export const InputDialog = ({
           placeholder={placeholder}
           defaultValue={defaultValue}
           $hasError={!!error}
+          aria-label={title}
         />
 
         {error && <ErrorMessage>{error}</ErrorMessage>}

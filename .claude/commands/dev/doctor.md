@@ -113,8 +113,8 @@ Write-Host "=== NODE MODULES HEALTH ===" -ForegroundColor Cyan
 Write-Host ""
 
 # Check root node_modules
-if (Test-Path "C:\dev\node_modules") {
-    $nodeModulesSize = (Get-ChildItem "C:\dev\node_modules" -Recurse -ErrorAction SilentlyContinue |
+if (Test-Path "V:\monorepo\node_modules") {
+    $nodeModulesSize = (Get-ChildItem "V:\monorepo\node_modules" -Recurse -ErrorAction SilentlyContinue |
         Measure-Object -Property Length -Sum).Sum / 1GB
     Write-Host "✅ Root node_modules exists" -ForegroundColor Green
     Write-Host "   Size: $([math]::Round($nodeModulesSize, 2)) GB" -ForegroundColor Gray
@@ -147,7 +147,7 @@ Write-Host ""
 Write-Host "=== MCP SERVERS ===" -ForegroundColor Cyan
 Write-Host ""
 
-$mcpConfig = "C:\dev\.mcp.json"
+$mcpConfig = "V:\monorepo\.mcp.json"
 if (Test-Path $mcpConfig) {
     Write-Host "✅ MCP config found: .mcp.json" -ForegroundColor Green
 
@@ -189,7 +189,7 @@ if (Test-Path $tradingDb) {
     }
 
     # Check recent logs
-    $logPath = "C:\dev\projects\crypto-enhanced\logs\trading.log"
+    $logPath = "V:\monorepo\apps\crypto-enhanced\logs\trading.log"
     if (Test-Path $logPath) {
         Write-Host "📄 Recent log entries:" -ForegroundColor Cyan
         Get-Content $logPath -Tail 3 | ForEach-Object { Write-Host "   $_" -ForegroundColor Gray }
@@ -208,9 +208,9 @@ Write-Host "=== RECENT TEST RESULTS ===" -ForegroundColor Cyan
 Write-Host ""
 
 $testPaths = @(
-    "C:\dev\projects\active\desktop-apps\deepcode-editor\test_output.txt",
-    "C:\dev\projects\active\desktop-apps\deepcode-editor\PROJECT_STATUS.md",
-    "C:\dev\test-results"
+    "V:\monorepo\apps\vibe-code-studio\test_output.txt",
+    "V:\monorepo\apps\vibe-code-studio\PROJECT_STATUS.md",
+    "V:\monorepo\test-results"
 )
 
 $foundTests = $false
@@ -252,7 +252,7 @@ $issues = @()
 $warnings = @()
 
 # Check for critical issues
-if (-not (Test-Path "C:\dev\node_modules")) { $issues += "Missing node_modules - run 'pnpm install'" }
+if (-not (Test-Path "V:\monorepo\node_modules")) { $issues += "Missing node_modules - run 'pnpm install'" }
 if ($uncommittedCount -gt 20) { $warnings += "$uncommittedCount uncommitted files (consider committing)" }
 if (-not (Test-Path $tradingDb)) { $issues += "Trading database missing at $tradingDb" }
 

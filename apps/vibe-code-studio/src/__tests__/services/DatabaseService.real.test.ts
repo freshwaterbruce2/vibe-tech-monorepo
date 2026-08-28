@@ -1,12 +1,25 @@
 /**
  * DatabaseService Integration Tests with Real In-Memory SQLite
  *
+ * ⚠️ ARCHIVED / SKIPPED: These tests depend on `better-sqlite3`, which was used
+ * in the legacy Electron build. Vibe Code Studio has migrated to Tauri 2, where
+ * the database layer lives in Rust (`rusqlite`) and is accessed via IPC.
+ * Until an integration test harness for the Tauri-backed DB is built, these
+ * tests remain skipped as a reference for the previous architecture.
+ *
  * Uses real better-sqlite3 in-memory database for confident testing
  * Following TDD best practices for database services
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { ChatMessage, CodeSnippet, Setting } from '../../services/DatabaseService';
+import type { ChatMessage, CodeSnippet } from '../../services/DatabaseService';
+
+// Local shape for the `settings` key-value table (no exported type in DatabaseService)
+interface Setting {
+  key: string;
+  value: string;
+  updated_at?: Date;
+}
 // Safe import of better-sqlite3 with fallback mock
 // Using dynamic import for optional native module
 let Database: any;

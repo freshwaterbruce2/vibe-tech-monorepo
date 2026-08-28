@@ -1,0 +1,36 @@
+import {
+  canUseFeature,
+  setTenantPlan,
+  type FeatureKey,
+  type PlanLevel,
+} from '@vibetech/monetization';
+
+export const GENERATED_TENANT_ID = 'generated-<%= projectName %>-demo';
+
+export const GENERATED_FEATURES = {
+  premiumRoute: '<%= prd.features[0] ? prd.features[0].key : "analytics.revenue" %>' as FeatureKey,
+  aiAssistant: '<%= prd.features[1] ? prd.features[1].key : "ai.assistant" %>' as FeatureKey,
+  <% prd.features.forEach(function(feat, idx) { %>
+  <% if (idx >= 2) { %>
+  <%= feat.key.replace(/[^a-zA-Z0-9]/g, '_') %>: '<%= feat.key %>' as FeatureKey,
+  <% } %>
+  <% }); %>
+} as const satisfies Record<string, FeatureKey>;
+
+const PLAN_LEVELS = [
+  <% prd.pricingTiers.forEach(function(tier) { %>
+  '<%= tier.key %>',
+  <% }); %>
+] as const;
+
+const isPlanLevel = (value: string): value is PlanLevel =>
+  (PLAN_LEVELS as readonly string[]).includes(value);
+
+export function resolveGeneratedPlan(value: unknown): PlanLevel {
+  return typeof value === 'string' && isPlanLevel(value) ? value : 'free';
+}
+
+export function hasFeature(plan: PlanLevel, featureKey: FeatureKey): boolean {
+  setTenantPlan(GENERATED_TENANT_ID, plan);
+  return canUseFeature(GENERATED_TENANT_ID, featureKey);
+}

@@ -3,6 +3,8 @@
  * Monitors and optimizes app performance, memory usage, and bundle size
  */
 
+import { logger } from '../utils/logger';
+
 export interface PerformanceMetrics {
   loadTime: number;
   memoryUsage: number;
@@ -139,7 +141,7 @@ export class PerformanceOptimizationService {
         const longTaskObserver = new PerformanceObserver((list) => {
           for (const entry of list.getEntries()) {
             if (entry.duration > 50) {
-              console.warn('Long task detected:', {
+              logger.warn('Long task detected:', {
                 duration: entry.duration,
                 name: entry.name,
               });
@@ -160,7 +162,7 @@ export class PerformanceOptimizationService {
             if ('value' in entry) {
               const shift = entry as unknown as LayoutShift;
               if (shift.value > 0.1) {
-                console.warn('Layout shift detected:', shift.value);
+                logger.warn('Layout shift detected:', shift.value);
               }
             }
           }
@@ -259,27 +261,6 @@ export class PerformanceOptimizationService {
         img.decoding = 'async';
       }
     });
-  }
-
-  /**
-   * Cached fetch — use this instead of window.cachedFetch.
-   * Call via performanceService.cachedFetch(url, options).
-   */
-  private readonly _fetchCache = new Map<string, { data: unknown; timestamp: number }>();
-  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-  async cachedFetch(url: string, options?: RequestInit): Promise<Response> {
-    const cacheKey = `${url}_${JSON.stringify(options)}`;
-    const cached = this._fetchCache.get(cacheKey);
-
-    if (cached && Date.now() - cached.timestamp < PerformanceOptimizationService.CACHE_DURATION) {
-      this.metrics.cacheHits++;
-      return Promise.resolve(cached.data as Response);
-    }
-
-    this.metrics.cacheMisses++;
-    const response = await fetch(url, options);
-    return response;
   }
 
   /**

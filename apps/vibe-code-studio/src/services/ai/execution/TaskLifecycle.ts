@@ -249,11 +249,12 @@ export class TaskLifecycleManager {
             logger.debug('[TaskLifecycle] 🔍 Checking if auto-synthesis needed...');
 
             // Collect all steps with AI-generated content
-            const stepsWithAIContent = task.steps.filter(step =>
-                step.status === 'completed' &&
-                step.result?.success &&
-                (step.result.data as any)?.generatedCode
-            );
+            const stepsWithAIContent = task.steps.filter(step => {
+                const d = step.result?.data;
+                return step.status === 'completed' &&
+                    step.result?.success &&
+                    typeof d === 'object' && d !== null && 'generatedCode' in d;
+            });
 
             // Only synthesize if we have 2+ AI-analyzed files
             if (stepsWithAIContent.length < 2) {
@@ -265,9 +266,12 @@ export class TaskLifecycleManager {
 
             // Collect file paths and reviews
             const fileAnalyses = stepsWithAIContent.map(step => {
-                const data = step.result!.data as any;
-                const filePath = data?.filePath ?? data?.analysis?.filePath ?? 'unknown';
-                const review = data?.generatedCode ?? data?.analysis?.aiReview ?? '';
+                const data = step.result!.data as Record<string, unknown>;
+                const analysis = typeof data?.['analysis'] === 'object' && data['analysis'] !== null
+                    ? data['analysis'] as Record<string, unknown>
+                    : undefined;
+                const filePath = (data?.['filePath'] as string | undefined) ?? (analysis?.['filePath'] as string | undefined) ?? 'unknown';
+                const review = (data?.['generatedCode'] as string | undefined) ?? (analysis?.['aiReview'] as string | undefined) ?? '';
                 return `\n### ${filePath}\n${review}`;
             }).join('\n\n---\n');
 

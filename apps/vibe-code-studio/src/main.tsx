@@ -12,6 +12,7 @@ import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import App from './App';
 import { ProductionErrorBoundary } from './components/ErrorBoundary/ProductionErrorBoundary';
 import { installTauriShim } from './services/tauriShim';
+import { logger } from './services/Logger';
 
 import './styles/loading.css';
 import './index.css';
@@ -51,14 +52,17 @@ if (!root) {
 
 // Install Tauri shim before rendering (polyfills window.electron in Tauri mode)
 // Must complete before render because many components access window.electron synchronously.
-// 3-second timeout prevents the app from hanging forever if a plugin import fails.
+// 10-second timeout prevents the app from hanging forever if a plugin import fails.
+let shimTimeoutId: ReturnType<typeof setTimeout>;
 const shimWithTimeout = Promise.race([
   installTauriShim(),
-  new Promise<void>((resolve) => setTimeout(() => {
-    console.warn('[TauriShim] Installation timed out after 10s — rendering without shim');
-    resolve();
-  }, 10000)),
-]);
+  new Promise<void>((resolve) => {
+    shimTimeoutId = setTimeout(() => {
+      logger.warn('[TauriShim] Installation timed out after 10s — rendering without shim');
+      resolve();
+    }, 10000);
+  }),
+]).finally(() => clearTimeout(shimTimeoutId));
 
 shimWithTimeout.then(() => {
   ReactDOM.createRoot(root).render(
@@ -68,9 +72,11 @@ shimWithTimeout.then(() => {
       </ErrorBoundary>
     </StrictMode>
   );
-  (window as any).__APP_MOUNTED__ = true;
+  (window as unknown as Record<string, unknown>).__APP_MOUNTED__ = true;
 }).catch((err) => {
-  console.error('[TauriShim] Fatal error:', err);
+  const errMsg = err instanceof Error ? err.message : String(err);
+  const errStack = err instanceof Error ? err.stack : '';
+  logger.error(`[TauriShim] Fatal error: ${errMsg}\nStack: ${errStack}`);
   ReactDOM.createRoot(root).render(
     <StrictMode>
       <ErrorBoundary>
@@ -78,5 +84,5 @@ shimWithTimeout.then(() => {
       </ErrorBoundary>
     </StrictMode>
   );
-  (window as any).__APP_MOUNTED__ = true;
+  (window as unknown as Record<string, unknown>).__APP_MOUNTED__ = true;
 });

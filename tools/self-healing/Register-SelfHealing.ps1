@@ -25,7 +25,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$RepoRoot = "C:\dev"
+$RepoRoot = "V:\monorepo"
 $PythonExe = (Get-Command python -ErrorAction SilentlyContinue).Source
 
 if (-not $PythonExe) {

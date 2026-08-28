@@ -4,6 +4,7 @@
  * Ensures MCP Learning Dashboard queries show correct real-time data
  */
 
+import { logger } from '../utils/logger';
 import { Capacitor } from '@capacitor/core';
 import type {
   Achievement,
@@ -21,6 +22,34 @@ import { databaseService } from './databaseService';
 import { migrationService } from './migrationService';
 
 import { appStore } from '../utils/electronStore';
+
+// Cap persisted chat history so a long-running conversation cannot grow storage
+// without bound. Keeps the most recent messages.
+const CHAT_HISTORY_CAP = 200;
+
+function stringifyUserSetting(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'boolean' || typeof value === 'number') return String(value);
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function getUserSettingFromStore(key: string): string {
+  try {
+    if (typeof window !== 'undefined' && window.electronAPI?.store?.get) {
+      return stringifyUserSetting(window.electronAPI.store.get(key));
+    }
+  } catch {
+    // Fall back to appStore below.
+  }
+
+  return stringifyUserSetting(appStore.get<unknown>(key));
+}
 
 export class DataStore {
   private initialized = false;
@@ -43,23 +72,18 @@ export class DataStore {
     this.initializePromise = (async () => {
       try {
         if (this.useSQLite) {
-          console.debug('Initializing SQLite database at D:\\databases\\vibe-tutor.db');
           await databaseService.initialize();
 
           // Check if migration is needed
           const migrated = await migrationService.isMigrationComplete();
           if (!migrated) {
-            console.debug('Performing one-time migration from localStorage to SQLite...');
             await migrationService.performMigration();
-            console.debug('Migration complete. All data now in D:\\databases\\vibe-tutor.db');
           }
-        } else {
-          console.debug('Using localStorage (web platform)');
         }
 
         this.initialized = true;
       } catch (error) {
-        console.error('Failed to initialize data store:', error);
+        logger.error('Failed to initialize data store:', error);
         // Fallback to localStorage
         this.useSQLite = false;
         this.initialized = true;
@@ -83,10 +107,13 @@ export class DataStore {
 
   async saveHomeworkItems(items: HomeworkItem[]): Promise<void> {
     if (this.useSQLite) {
-      // Save each item to SQLite
-      for (const item of items) {
-        await databaseService.saveHomeworkItem(item);
-      }
+      // Persist all items atomically so a mid-batch failure can't leave the
+      // homework list partially written.
+      await databaseService.runInTransaction(async () => {
+        for (const item of items) {
+          await databaseService.saveHomeworkItem(item);
+        }
+      });
     } else {
       appStore.set('homeworkItems', JSON.stringify(items));
     }
@@ -213,9 +240,13 @@ export class DataStore {
     if (this.useSQLite) {
       const db = databaseService.getConnection();
       if (db) {
+        // The rewards table is the parent-defined catalog. Map the SQLite
+        // `points_required` column onto the app-canonical `cost` field — the
+        // rest of the app reads `reward.cost`, so returning `pointsRequired`
+        // made every reward un-claimable (cost: undefined) on SQLite platforms.
         const result = await db.query(`
-          SELECT id, name, points_required as pointsRequired, description, claimed
-          FROM rewards WHERE claimed = 0
+          SELECT id, name, points_required as cost, description
+          FROM rewards
         `);
         return result.values ?? [];
       }
@@ -230,13 +261,20 @@ export class DataStore {
       const db = databaseService.getConnection();
       if (db) {
         for (const reward of rewards) {
+          // Upsert the catalog row, mapping `cost` -> `points_required`.
+          // ON CONFLICT preserves the existing `claimed` column instead of
+          // force-resetting it to 0 (which previously could silently revoke a
+          // claimed reward on any catalog edit).
           await db.run(
             `
-            INSERT OR REPLACE INTO rewards
-            (id, name, points_required, description, claimed)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO rewards (id, name, points_required, description, claimed)
+            VALUES (?, ?, ?, ?, 0)
+            ON CONFLICT(id) DO UPDATE SET
+              name = excluded.name,
+              points_required = excluded.points_required,
+              description = excluded.description
           `,
-            [reward.id, reward.name, reward.pointsRequired, reward.description ?? '', 0],
+            [reward.id, reward.name, reward.cost, reward.description ?? ''],
           );
         }
       }
@@ -249,12 +287,15 @@ export class DataStore {
     if (this.useSQLite) {
       const db = databaseService.getConnection();
       if (db) {
-        const result = await db.query(`
-          SELECT id, name, points_required as pointsRequired,
-                 description, claimed_at as claimedAt
-          FROM rewards WHERE claimed = 1
-        `);
-        return result.values ?? [];
+        // Pending parent-approval claims are stored as their own JSON list. A
+        // reward can be claimed while still in the catalog, so a single
+        // `claimed` flag on the catalog row cannot represent the claim queue.
+        const result = await db.query(
+          `SELECT value FROM user_settings WHERE key = 'claimedRewards'`,
+        );
+        if (result.values && result.values.length > 0) {
+          return JSON.parse(result.values[0].value) as ClaimedReward[];
+        }
       }
       return [];
     } else {
@@ -262,28 +303,23 @@ export class DataStore {
     }
   }
 
-  async claimReward(rewardId: string): Promise<void> {
+  async saveClaimedRewards(claimed: ClaimedReward[]): Promise<void> {
     if (this.useSQLite) {
       const db = databaseService.getConnection();
       if (db) {
-        await db.run(`UPDATE rewards SET claimed = 1, claimed_at = ? WHERE id = ?`, [
-          new Date().toISOString(),
-          rewardId,
+        await db.run(`
+          CREATE TABLE IF NOT EXISTS user_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+          )
+        `);
+        await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
+          'claimedRewards',
+          JSON.stringify(claimed),
         ]);
       }
     } else {
-      const rewards = await this.getRewards();
-      const claimedRewards = await this.getClaimedRewards();
-      const reward = rewards.find((r) => r.id === rewardId);
-      if (reward) {
-        const now = Date.now();
-        claimedRewards.push({
-          ...reward,
-          claimedDate: now,
-          claimedAt: new Date(now).toISOString(),
-        });
-        appStore.set('claimedRewards', JSON.stringify(claimedRewards));
-      }
+      appStore.set('claimedRewards', JSON.stringify(claimed));
     }
   }
 
@@ -340,13 +376,27 @@ export class DataStore {
     if (this.useSQLite) {
       const db = databaseService.getConnection();
       if (db) {
+        // learning_sessions stores only a subset of columns, so build complete
+        // FocusSession objects from the row. id/startTime/endTime/completed
+        // were previously dropped, corrupting the round-trip.
         const result = await db.query(`
-          SELECT duration_minutes as duration, focus_score as points,
-                 session_date as completedAt
+          SELECT id, duration_minutes, focus_score, session_date
           FROM learning_sessions WHERE session_type = 'focus'
           ORDER BY session_date DESC
         `);
-        return result.values ?? [];
+        return (result.values ?? []).map((row: Record<string, unknown>) => {
+          const duration = Number(row.duration_minutes ?? 0);
+          const parsed = row.session_date ? Date.parse(String(row.session_date)) : NaN;
+          const startTime = Number.isNaN(parsed) ? Date.now() : parsed;
+          return {
+            id: String(row.id ?? ''),
+            startTime,
+            endTime: startTime + duration * 60000,
+            duration,
+            completed: true,
+            points: Number(row.focus_score ?? 0),
+          } satisfies FocusSession;
+        });
       }
       return [];
     } else {
@@ -419,7 +469,7 @@ export class DataStore {
       }
       return '';
     } else {
-      return appStore.get(key) ?? '';
+      return getUserSettingFromStore(key);
     }
   }
 
@@ -447,9 +497,6 @@ export class DataStore {
 
   async getChatHistory(type: 'tutor' | 'friend'): Promise<ChatMessage[]> {
     const key = `chat-history-${type}`;
-    console.debug(
-      `[DataStore] getChatHistory called with type="${type}", key="${key}", useSQLite=${this.useSQLite}`,
-    );
 
     if (this.useSQLite) {
       const db = databaseService.getConnection();
@@ -458,28 +505,20 @@ export class DataStore {
         const result = await db.query(`SELECT value FROM user_settings WHERE key = ?`, [key]);
         if (result.values && result.values.length > 0) {
           const messages = JSON.parse(result.values[0].value) as ChatMessage[];
-          console.debug(
-            `[DataStore] Loaded ${messages.length} messages from SQLite for key="${key}"`,
-          );
           return messages;
         }
       }
-      console.debug(`[DataStore] No messages found in SQLite for key="${key}"`);
       return [];
     } else {
       const messages = appStore.get<ChatMessage[]>(key) ?? [];
-      console.debug(
-        `[DataStore] Loaded ${messages.length} messages from localStorage for key="${key}"`,
-      );
       return messages;
     }
   }
 
   async saveChatHistory(type: 'tutor' | 'friend', messages: ChatMessage[]): Promise<void> {
     const key = `chat-history-${type}`;
-    console.debug(
-      `[DataStore] saveChatHistory called with type="${type}", key="${key}", messages.length=${messages.length}, useSQLite=${this.useSQLite}`,
-    );
+    const capped =
+      messages.length > CHAT_HISTORY_CAP ? messages.slice(-CHAT_HISTORY_CAP) : messages;
 
     if (this.useSQLite) {
       const db = databaseService.getConnection();
@@ -492,13 +531,11 @@ export class DataStore {
         `);
         await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
           key,
-          JSON.stringify(messages),
+          JSON.stringify(capped),
         ]);
-        console.debug(`[DataStore] Saved ${messages.length} messages to SQLite for key="${key}"`);
       }
     } else {
-      appStore.set(key, JSON.stringify(messages));
-      console.debug(`[DataStore] Saved ${messages.length} messages to localStorage for key="${key}"`);
+      appStore.set(key, JSON.stringify(capped));
     }
   }
 

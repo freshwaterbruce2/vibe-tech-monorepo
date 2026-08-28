@@ -1,8 +1,8 @@
-# DevAutomation PowerShell Module for C:\dev Monorepo
+# DevAutomation PowerShell Module for V:\monorepo Monorepo
 # Based on 2025 Solo Developer Best Practices
 
 # Module variables
-$script:MonorepoRoot = "C:\dev"
+$script:MonorepoRoot = "V:\monorepo"
 $script:DataRoot = "D:\"
 $script:LogPath = "D:\logs\dev-automation"
 
@@ -238,7 +238,7 @@ function Start-MonitoringDashboard {
 function New-SymbolicLink {
     <#
     .SYNOPSIS
-    Creates symbolic links between C:\dev and D:\ for large files
+    Creates symbolic links between V:\monorepo and D:\ for large files
     #>
     param(
         [Parameter(Mandatory)]

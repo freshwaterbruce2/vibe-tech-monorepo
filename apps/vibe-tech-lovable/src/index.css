@@ -1,6 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "./styles/tokens.css";
+@import "./styles/theme/theme-variables.css";
+@import "./styles/components/glass.css";
+@import "./styles/components/particles.css";
+@import "./styles/components/site-background.css";
+@config "../tailwind.config.ts";
 
 @layer base {
   :root {
@@ -47,23 +51,6 @@
   }
   body {
     color: hsl(var(--foreground));
-    background-color: hsl(var(--background));
     background-color: var(--vibe-bg-deep);
-    background-image: url('https://grainy-gradients.vercel.app/noise.svg');
-    background-blend-mode: overlay;
-    opacity: 1;
-  }
-
-  body::after {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: url('https://grainy-gradients.vercel.app/noise.svg');
-    opacity: var(--vibe-neural-grain);
-    pointer-events: none;
-    z-index: 9999;
   }
 }

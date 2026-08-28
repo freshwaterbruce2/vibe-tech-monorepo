@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { HookContext } from '../../services/AgentHookSystem';
 
 describe('AgentHookSystem', () => {
   let AgentHookSystem: any;
@@ -320,8 +321,8 @@ describe('AgentHookSystem', () => {
 
       const hookSystem = new AgentHookSystem();
 
-      const validationHook = hookSystem.createValidationHook((ctx) => {
-        return ctx.task !== undefined;
+      const validationHook = hookSystem.createValidationHook((ctx: HookContext) => {
+        return ctx['task'] !== undefined;
       });
 
       hookSystem.registerPreHook('test-agent', validationHook);

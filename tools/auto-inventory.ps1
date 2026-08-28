@@ -5,7 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$scriptPath = 'C:\dev\scripts\monorepo-sync-audit.mjs'
+$scriptPath = 'V:\monorepo\scripts\monorepo-sync-audit.mjs'
 
 if (-not (Test-Path -LiteralPath $scriptPath)) {
     throw "Nx audit script not found: $scriptPath"

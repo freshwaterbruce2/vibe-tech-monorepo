@@ -35,7 +35,7 @@ Advanced Nx monorepo toolkit plugin for Claude Code. Provides dependency managem
 
 ```bash
 # Install as local plugin
-claude --plugin-dir C:\dev\plugins\nx-toolkit
+claude --plugin-dir V:\monorepo\plugins\nx-toolkit
 ```
 
 Or add to your Claude Code settings to load automatically.

@@ -1,0 +1,21 @@
+node_modules
+dist
+.tmp
+.gateway-build
+
+# Tauri / Rust build output
+src-tauri/target
+
+# compiled sidecar binaries (produced by pnpm build:gateway)
+src-tauri/binaries/*
+!src-tauri/binaries/.gitkeep
+
+# `tauri icon` emits a full multi-platform set; this is a Windows-only desktop
+# app, so ignore the unused macOS/iOS/Android/Appx outputs (keep only the
+# Windows icons referenced by src-tauri/tauri.conf.json).
+src-tauri/icons/icon.icns
+src-tauri/icons/64x64.png
+src-tauri/icons/Square*Logo.png
+src-tauri/icons/StoreLogo.png
+src-tauri/icons/android/
+src-tauri/icons/ios/

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
+  Brain,
   Bug,
   Code,
   FileText,
@@ -18,6 +19,16 @@ import {
 } from 'lucide-react';
 
 import { logger } from '../services/Logger';
+import { useAgentManagerCommands } from './useAgentManagerCommands';
+import { useAgentsMdCommands } from './useAgentsMdCommands';
+import { useArtifactCommands } from './useArtifactCommands';
+import { useBrowserCommands } from './useBrowserCommands';
+import { useKnowledgeCommands } from './useKnowledgeCommands';
+import { usePlanModeCommands } from './usePlanModeCommands';
+import { useScheduleCommands } from './useScheduleCommands';
+import { useSettingsSyncCommands } from './useSettingsSyncCommands';
+import { useTestExplorerCommands } from './useTestExplorerCommands';
+import { useTaskCommands } from './useTaskCommands';
 
 interface Command {
   id: string;
@@ -47,14 +58,35 @@ interface UseAICommandPaletteProps {
   onAIAddComments?: () => void;
   onAIGenerateComponent?: () => void;
   onFormatDocument?: () => void;
+  onOpenBrainScan?: () => void;
   currentFile?: string | null;
 }
 
 export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const taskCommands = useTaskCommands();
+  const agentsMdCommands = useAgentsMdCommands();
+  const scheduleCommands = useScheduleCommands();
+  const artifactCommands = useArtifactCommands();
+  const planModeCommands = usePlanModeCommands();
+  const settingsSyncCommands = useSettingsSyncCommands();
+  const knowledgeCommands = useKnowledgeCommands();
+  const testExplorerCommands = useTestExplorerCommands();
+  const agentManagerCommands = useAgentManagerCommands();
+  const browserCommands = useBrowserCommands({ onToggleAIChat: props.onToggleAIChat });
 
   // Build comprehensive command list
   const commands: Command[] = [
+    ...taskCommands,
+    ...agentsMdCommands,
+    ...scheduleCommands,
+    ...artifactCommands,
+    ...planModeCommands,
+    ...settingsSyncCommands,
+    ...knowledgeCommands,
+    ...testExplorerCommands,
+    ...agentManagerCommands,
+    ...browserCommands,
     // File Operations
     {
       id: 'file-new',
@@ -222,6 +254,16 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
       keywords: ['toggle', 'ai', 'chat', 'assistant'],
     },
 
+    {
+      id: 'view-learning-memory',
+      title: 'View Learning Memory',
+      description: "Inspect the agent's learned patterns (Brain Scan)",
+      icon: <Brain size={18} />,
+      action: () => props.onOpenBrainScan?.(),
+      category: 'View',
+      keywords: ['learning', 'memory', 'brain', 'patterns', 'strategy', 'scan'],
+    },
+
     // Settings
     {
       id: 'settings-open',
@@ -236,7 +278,7 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
   ];
 
   const toggleCommandPalette = useCallback(() => {
-    setCommandPaletteOpen((prev) => !prev);
+    setCommandPaletteOpen(prev => !prev);
   }, []);
 
   return {

@@ -158,14 +158,11 @@ Start-Sleep -Milliseconds 50
  * Type text string using keyboard simulation
  */
 export async function keyboardType(text: string): Promise<void> {
-	// Use SendKeys for typing text
-	const escapedText = text
-		.replaceAll("{", "{{")
-		.replaceAll("}", "}}")
-		.replaceAll("+", "{+}")
-		.replaceAll("^", "{^}")
-		.replaceAll("%", "{%}")
-		.replaceAll("~", "{~}");
+	// Single-pass escape: avoids double-escaping when braces appear alongside metacharacters
+	const metaMap: Record<string, string> = {
+		'{': '{{}', '}': '{}}', '+': '{+}', '^': '{^}', '%': '{%}', '~': '{~}',
+	};
+	const escapedText = text.replace(/[{}+^%~]/g, (ch) => metaMap[ch] ?? ch);
 
 	const psScript = `
 Add-Type -AssemblyName System.Windows.Forms

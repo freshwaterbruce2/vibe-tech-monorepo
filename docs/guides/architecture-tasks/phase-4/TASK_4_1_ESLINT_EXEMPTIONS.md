@@ -1,4 +1,4 @@
-﻿# Task 4.1: ESLint Exemption Removal
+# Task 4.1: ESLint Exemption Removal
 
 ## ðŸ“‹ Task Details
 
@@ -18,11 +18,10 @@ Reduce ESLint exemptions from 50+ to <25.
 
 Priority order:
 1. desktop-commander-v3
-2. clawdbot-desktop
-3. vibetech-shared
-4. invoice-automation-saas
-5. prompt-engineer
-6. vibe-code-studio
+2. shared
+3. invoice-automation-saas
+4. prompt-engineer
+5. vibe-code-studio
 
 ## ðŸ”§ Execution Steps
 

@@ -116,7 +116,7 @@ if ($remainingProcesses) {
 # Step 4: Cleanup lock files
 Write-Host "`n[STEP 4] Cleaning up lock files..." -ForegroundColor Yellow
 $lockFiles = @(
-    "C:\dev\apps\crypto-enhanced\*.lock*",
+    "V:\monorepo\apps\crypto-enhanced\*.lock*",
     "$env:TEMP\*trading*.lock*",
     "$env:TEMP\*trading*.pid*",
     "$env:TEMP\*kraken*.lock*"

@@ -15,7 +15,7 @@ try {
     Write-Host "⚠️  OpenRouter Proxy not running, starting it..." -ForegroundColor Yellow
     
     # Start OpenRouter Proxy in new window
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd C:\dev\backend\openrouter-proxy; Write-Host '🔌 Starting OpenRouter Proxy...' -ForegroundColor Cyan; pnpm dev"
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd V:\monorepo\backend\openrouter-proxy; Write-Host '🔌 Starting OpenRouter Proxy...' -ForegroundColor Cyan; pnpm dev"
     
     Write-Host "⏳ Waiting for proxy to start..." -ForegroundColor Yellow
     Start-Sleep -Seconds 5
@@ -37,7 +37,7 @@ Write-Host "🎯 Starting Nova Agent..." -ForegroundColor Cyan
 Write-Host ""
 
 # Navigate to Nova Agent directory
-cd C:\dev\apps\nova-agent
+cd V:\monorepo\apps\nova-agent
 
 # Check .env configuration
 if (Test-Path "src-tauri\.env") {
@@ -56,5 +56,4 @@ Write-Host "🚀 Launching Nova Agent (Tauri)..." -ForegroundColor Cyan
 Write-Host ""
 
 # Start Nova Agent
-pnpm tauri dev
-
+pnpm run dev

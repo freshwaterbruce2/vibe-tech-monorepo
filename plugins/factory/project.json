@@ -1,0 +1,44 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@vibetech/factory",
+  "projectType": "library",
+  "root": "plugins/factory",
+  "sourceRoot": "plugins/factory/src",
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/eslint/bin/eslint.js src --ext .js --ignore-pattern \"src/generators/**/files/**\"",
+        "cwd": "plugins/factory"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node -e \"require('./src/index.js'); console.log('factory plugin load ok')\"",
+        "cwd": "plugins/factory"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "command": "node -e \"require('./src/index.js'); console.log('factory plugin typecheck ok')\"",
+        "cwd": "plugins/factory"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "command": "node -e \"require('./src/index.js'); console.log('factory plugin is source-only')\"",
+        "cwd": "plugins/factory"
+      }
+    },
+    "quality": {}
+  },
+  "tags": [
+    "scope:tooling",
+    "type:plugin"
+  ]
+}

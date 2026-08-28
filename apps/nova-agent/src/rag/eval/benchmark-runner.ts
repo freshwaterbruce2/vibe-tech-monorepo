@@ -13,10 +13,16 @@ import { RAGRetriever } from '../retriever.js';
 import { RAGReranker } from '../reranker.js';
 import { RAGIndexer } from '../indexer.js';
 import { DEFAULT_RAG_CONFIG } from '../types.js';
-import type { RAGConfig, SearchResult } from '../types.js';
+import type { RAGConfig } from '../types.js';
 import { loadGoldenQueries } from './golden-queries-loader.js';
 import { computeAllMetrics, aggregateMetrics, p95Latency } from './metrics.js';
-import { generateRunId, saveRun, saveBaseline, loadBaseline, saveSweepSummary } from './results-store.js';
+import {
+  generateRunId,
+  saveRun,
+  saveBaseline,
+  loadBaseline,
+  saveSweepSummary,
+} from './results-store.js';
 import type {
   BenchmarkRun,
   EvalConfig,
@@ -69,6 +75,59 @@ function parseArgs(): CLIArgs {
 
 // ─── Core Evaluation ────────────────────────────────────────────────────────
 
+async function evaluateQuery(
+  retriever: RAGRetriever,
+  reranker: RAGReranker,
+  table: Awaited<ReturnType<Awaited<ReturnType<typeof connect>>['openTable']>>,
+  judgment: import('./types.js').RelevanceJudgment,
+  config: EvalConfig,
+  maxK: number,
+): Promise<QueryEvalResult> {
+  const start = Date.now();
+
+  // Run retrieval pipeline (cache disabled for honest measurement)
+  const candidates = await retriever.search(table, {
+    text: judgment.queryText,
+    limit: maxK,
+  });
+
+  const reranked = await reranker.rerank(candidates, judgment.queryText, maxK);
+  const latencyMs = Date.now() - start;
+
+  // Extract file paths (deduplicate, keep first occurrence per file)
+  const seen = new Set<string>();
+  const resultFilePaths: string[] = [];
+  const resultScores: number[] = [];
+
+  for (const r of reranked.results) {
+    if (!seen.has(r.chunk.filePath)) {
+      seen.add(r.chunk.filePath);
+      resultFilePaths.push(r.chunk.filePath);
+      resultScores.push(r.score);
+    }
+  }
+
+  // Compute metrics
+  const metrics = computeAllMetrics(resultFilePaths, judgment, config.evalAtK);
+
+  // Live progress
+  const ndcg5 = metrics.find((m) => m.k === 5)?.ndcg ?? 0;
+  const mrr = metrics.find((m) => m.k === 5)?.mrr ?? 0;
+  process.stdout.write(
+    `  [${judgment.queryId}] NDCG@5=${ndcg5.toFixed(3)} MRR=${mrr.toFixed(3)} ${latencyMs}ms\n`,
+  );
+
+  return {
+    queryId: judgment.queryId,
+    queryText: judgment.queryText,
+    category: judgment.category,
+    metrics,
+    latencyMs,
+    resultFilePaths,
+    resultScores,
+  };
+}
+
 async function evaluateConfig(
   config: EvalConfig,
   queries: import('./types.js').RelevanceJudgment[],
@@ -95,49 +154,7 @@ async function evaluateConfig(
   console.log(`\n  Running ${queries.length} queries (config: ${config.label})...\n`);
 
   for (const judgment of queries) {
-    const start = Date.now();
-
-    // Run retrieval pipeline (cache disabled for honest measurement)
-    const candidates = await retriever.search(table, {
-      text: judgment.queryText,
-      limit: maxK,
-    });
-
-    const reranked = await reranker.rerank(candidates, judgment.queryText, maxK);
-    const latencyMs = Date.now() - start;
-
-    // Extract file paths (deduplicate, keep first occurrence per file)
-    const seen = new Set<string>();
-    const resultFilePaths: string[] = [];
-    const resultScores: number[] = [];
-
-    for (const r of reranked.results) {
-      if (!seen.has(r.chunk.filePath)) {
-        seen.add(r.chunk.filePath);
-        resultFilePaths.push(r.chunk.filePath);
-        resultScores.push(r.score);
-      }
-    }
-
-    // Compute metrics
-    const metrics = computeAllMetrics(resultFilePaths, judgment, config.evalAtK);
-
-    results.push({
-      queryId: judgment.queryId,
-      queryText: judgment.queryText,
-      category: judgment.category,
-      metrics,
-      latencyMs,
-      resultFilePaths,
-      resultScores,
-    });
-
-    // Live progress
-    const ndcg5 = metrics.find((m) => m.k === 5)?.ndcg ?? 0;
-    const mrr = metrics.find((m) => m.k === 5)?.mrr ?? 0;
-    process.stdout.write(
-      `  [${judgment.queryId}] NDCG@5=${ndcg5.toFixed(3)} MRR=${mrr.toFixed(3)} ${latencyMs}ms\n`,
-    );
+    results.push(await evaluateQuery(retriever, reranker, table, judgment, config, maxK));
   }
 
   // Aggregate
@@ -170,7 +187,9 @@ function printRunSummary(run: BenchmarkRun): void {
   console.log(`  Run: ${run.runId}  Label: ${run.label}`);
   console.log(`${'═'.repeat(60)}`);
   console.log(`  Queries: ${run.results.length}`);
-  console.log(`  Latency: mean=${run.aggregate.meanLatencyMs.toFixed(0)}ms  p95=${run.aggregate.p95LatencyMs.toFixed(0)}ms`);
+  console.log(
+    `  Latency: mean=${run.aggregate.meanLatencyMs.toFixed(0)}ms  p95=${run.aggregate.p95LatencyMs.toFixed(0)}ms`,
+  );
   console.log(`  Embedding calls: ${run.aggregate.embeddingCalls}\n`);
 
   console.log('  K     Precision  Recall    NDCG      MRR');
@@ -213,57 +232,46 @@ function printComparison(baseline: BenchmarkRun, current: BenchmarkRun): void {
 
 // ─── Sweep Mode ─────────────────────────────────────────────────────────────
 
-async function runSweep(
-  param: SweepParam,
-  queries: import('./types.js').RelevanceJudgment[],
-): Promise<void> {
-  const values = SWEEP_RANGES[param];
-  console.log(`\n  Sweeping ${param}: [${values.join(', ')}]\n`);
+async function buildSweepConfig(param: SweepParam, value: number): Promise<EvalConfig> {
+  const config: EvalConfig = {
+    ragConfigOverrides: {},
+    evalAtK: [5, 10, 20],
+    label: `${param}=${value}`,
+  };
 
-  const sweepResults: Array<{ label: string; aggregate: BenchmarkRun['aggregate'] }> = [];
-
-  for (const value of values) {
-    const config: EvalConfig = {
-      ragConfigOverrides: {},
-      evalAtK: [5, 10, 20],
-      label: `${param}=${value}`,
-    };
-
-    // Apply the sweep parameter
-    switch (param) {
-      case 'rrf-k':
-        config.rrfK = value;
-        break;
-      case 'pool-size':
-        config.searchPoolSize = value;
-        break;
-      case 'chunk-size':
-        config.ragConfigOverrides.maxChunkTokens = value;
-        break;
-      case 'overlap':
-        config.ragConfigOverrides.chunkOverlapTokens = value;
-        break;
-    }
-
-    // For chunk-size and overlap sweeps, we need to re-index
-    if (param === 'chunk-size' || param === 'overlap') {
-      console.log(`  Re-indexing with ${param}=${value}...`);
-      const ragConfig = { ...DEFAULT_RAG_CONFIG, ...config.ragConfigOverrides };
-      const indexer = new RAGIndexer(ragConfig);
-      await indexer.init();
-      await indexer.index();
-    }
-
-    const run = await evaluateConfig(config, queries);
-    saveRun(run);
-    printRunSummary(run);
-
-    sweepResults.push({ label: run.label, aggregate: run.aggregate });
+  // Apply the sweep parameter
+  switch (param) {
+    case 'rrf-k':
+      config.rrfK = value;
+      break;
+    case 'pool-size':
+      config.searchPoolSize = value;
+      break;
+    case 'chunk-size':
+      config.ragConfigOverrides.maxChunkTokens = value;
+      break;
+    case 'overlap':
+      config.ragConfigOverrides.chunkOverlapTokens = value;
+      break;
   }
 
-  saveSweepSummary(param, sweepResults);
+  // For chunk-size and overlap sweeps, we need to re-index
+  if (param === 'chunk-size' || param === 'overlap') {
+    console.log(`  Re-indexing with ${param}=${value}...`);
+    const ragConfig = { ...DEFAULT_RAG_CONFIG, ...config.ragConfigOverrides };
+    const indexer = new RAGIndexer(ragConfig);
+    await indexer.init();
+    await indexer.index();
+  }
 
-  // Print sweep comparison table
+  return config;
+}
+
+function printSweepTable(
+  param: SweepParam,
+  values: readonly number[],
+  sweepResults: Array<{ label: string; aggregate: BenchmarkRun['aggregate'] }>,
+): void {
   console.log(`\n${'═'.repeat(70)}`);
   console.log(`  Sweep Results: ${param}`);
   console.log(`${'═'.repeat(70)}`);
@@ -274,17 +282,47 @@ async function runSweep(
 
   for (const k of [5, 10, 20]) {
     for (const metric of ['ndcg', 'precision', 'recall', 'mrr'] as const) {
-      const row = [`${metric}@${k}`, ...sweepResults.map((sr) => {
-        const m = sr.aggregate.perK.find((p) => p.k === k);
-        return m ? m[metric].toFixed(3) : 'N/A';
-      })];
+      const row = [
+        `${metric}@${k}`,
+        ...sweepResults.map((sr) => {
+          const m = sr.aggregate.perK.find((p) => p.k === k);
+          return m ? m[metric].toFixed(3) : 'N/A';
+        }),
+      ];
       console.log('  ' + row.map((c) => String(c).padEnd(14)).join(''));
     }
   }
 
-  const latRow = ['latency_p95', ...sweepResults.map((sr) => `${sr.aggregate.p95LatencyMs.toFixed(0)}ms`)];
+  const latRow = [
+    'latency_p95',
+    ...sweepResults.map((sr) => `${sr.aggregate.p95LatencyMs.toFixed(0)}ms`),
+  ];
   console.log('  ' + latRow.map((c) => String(c).padEnd(14)).join(''));
   console.log();
+}
+
+async function runSweep(
+  param: SweepParam,
+  queries: import('./types.js').RelevanceJudgment[],
+): Promise<void> {
+  const values = SWEEP_RANGES[param];
+  console.log(`\n  Sweeping ${param}: [${values.join(', ')}]\n`);
+
+  const sweepResults: Array<{ label: string; aggregate: BenchmarkRun['aggregate'] }> = [];
+
+  for (const value of values) {
+    const config = await buildSweepConfig(param, value);
+
+    const run = await evaluateConfig(config, queries);
+    saveRun(run);
+    printRunSummary(run);
+
+    sweepResults.push({ label: run.label, aggregate: run.aggregate });
+  }
+
+  saveSweepSummary(param, sweepResults);
+
+  printSweepTable(param, values, sweepResults);
 }
 
 // ─── Main ───────────────────────────────────────────────────────────────────
@@ -315,7 +353,9 @@ async function main(): Promise<void> {
     const indexer = new RAGIndexer(DEFAULT_RAG_CONFIG);
     await indexer.init();
     const indexResult = await indexer.index();
-    console.log(`  Indexed: ${indexResult.filesProcessed} files, ${indexResult.chunksCreated} chunks\n`);
+    console.log(
+      `  Indexed: ${indexResult.filesProcessed} files, ${indexResult.chunksCreated} chunks\n`,
+    );
   }
 
   const run = await evaluateConfig(config, queries);

@@ -1,0 +1,55 @@
+{
+  "name": "avatar-render-engine",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/avatar-render-engine/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": ["scope:avatar", "type:library", "platform:render"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/avatar-render-engine",
+        "main": "packages/avatar-render-engine/src/index.ts",
+        "tsConfig": "packages/avatar-render-engine/tsconfig.lib.json",
+        "assets": ["packages/avatar-render-engine/*.md"]
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "packages/avatar-render-engine/**/*.ts",
+          "packages/avatar-render-engine/**/*.tsx"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/typescript/bin/tsc -p tsconfig.lib.json --noEmit",
+        "cwd": "packages/avatar-render-engine"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "vitest run --config vitest.config.mts",
+        "cwd": "packages/avatar-render-engine"
+      }
+    }
+  }
+}

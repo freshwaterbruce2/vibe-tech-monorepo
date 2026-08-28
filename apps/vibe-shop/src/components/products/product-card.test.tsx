@@ -120,7 +120,7 @@ describe('ProductCard', () => {
   it('renders "View Deal" button with affiliate link', () => {
     render(<ProductCard product={mockProduct} />);
     const viewDealLink = screen.getByText('View Deal').closest('a');
-    expect(viewDealLink).toHaveAttribute('href', 'https://example.com/affiliate');
+    expect(viewDealLink).toHaveAttribute('href', '/api/click/prod-1');
     expect(viewDealLink).toHaveAttribute('target', '_blank');
     expect(viewDealLink).toHaveAttribute('rel', 'noopener noreferrer sponsored');
   });

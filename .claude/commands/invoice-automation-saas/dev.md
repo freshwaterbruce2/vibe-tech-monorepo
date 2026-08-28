@@ -13,7 +13,7 @@ Start the Invoice Automation SaaS platform development server with hot reload.
 1. Navigate to Invoice Automation directory:
 
    ```bash
-   cd C:\dev\apps\invoice-automation-saas
+   cd V:\monorepo\apps\invoice-automation-saas
    ```
 
 2. Install dependencies if needed:

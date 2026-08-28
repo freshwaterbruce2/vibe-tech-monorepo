@@ -5,8 +5,7 @@
  * via IPC (see `electron/main.ts`), including DeepSeek→HF Router hedged fallback.
  */
 import { logger } from '../../services/Logger';
-import type {
-  IAIProvider} from './AIProviderInterface';
+import type { IAIProvider } from './AIProviderInterface';
 import {
   AIProvider,
   type AIModel,
@@ -18,8 +17,27 @@ import {
 } from './AIProviderInterface';
 import { LocalProvider } from './providers/LocalProvider';
 
+/**
+ * Narrowed view of `window.electron.ipc` used by this module.
+ * The global `WindowElectron.ipc` is optional and uses broad signatures;
+ * this local alias is used after we have asserted IPC is available to avoid
+ * repeated non-null assertions throughout the class.
+ *
+ * `on` retains an `any[]` rest parameter because the Electron preload bridge
+ * is an external boundary where the exact message type cannot be verified at
+ * compile time — the real narrowing happens inside the listener via the
+ * `FromMainMessage` discriminated union.
+ */
+interface ElectronIpcBridge {
+  send(channel: string, data?: unknown): void;
+  on(channel: string, func: (...args: any[]) => void): (() => void) | void;
+}
+
 type MainAIChatRole = 'system' | 'user' | 'assistant';
-interface MainAIChatMessage { role: MainAIChatRole; content: string }
+interface MainAIChatMessage {
+  role: MainAIChatRole;
+  content: string;
+}
 
 interface MainAIRequestPayload {
   messages: MainAIChatMessage[];
@@ -53,13 +71,25 @@ type MainAIStreamDone =
   | { success: true; provider: 'deepseek' | 'hfRouter' | 'local'; model: string }
   | { success: false; error: string };
 
+type MainProvider = 'deepseek' | 'hfRouter' | 'local';
+
+interface MainCompletionResponse {
+  provider: MainProvider;
+  model: string;
+  content: string;
+}
+
+interface PendingCompletionResult extends MainCompletionResponse {
+  requestId: string;
+}
+
 type FromMainMessage =
-  | { type: 'ai:complete:result'; requestId: string } & MainAICompleteResult
+  | ({ type: 'ai:complete:result'; requestId: string } & MainAICompleteResult)
   | { type: 'ai:stream:chunk'; requestId: string; chunk: string; provider: 'deepseek' | 'hfRouter' }
-  | { type: 'ai:stream:done'; requestId: string } & MainAIStreamDone;
+  | ({ type: 'ai:stream:done'; requestId: string } & MainAIStreamDone);
 
 interface PendingCompletion {
-  resolve: (result: { requestId: string; provider: 'deepseek' | 'hfRouter' | 'local'; model: string; content: string }) => void;
+  resolve: (result: PendingCompletionResult) => void;
   reject: (err: Error) => void;
   cleanup: () => void;
 }
@@ -73,13 +103,23 @@ interface PendingStream {
 }
 
 function createRequestId(): string {
-  const cryptoObj = (globalThis as any).crypto;
-  if (cryptoObj?.randomUUID) return cryptoObj.randomUUID();
-  return `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  return `req_${crypto.randomUUID()}`;
 }
 
 function isElectronIpcAvailable(): boolean {
-  return typeof window !== 'undefined' && !!(window as any).electron?.ipc?.send && !!(window as any).electron?.ipc?.on;
+  // `window.electron` is declared globally in `src/types/electron.d.ts`.
+  return (
+    typeof window !== 'undefined' && !!window.electron?.ipc?.send && !!window.electron?.ipc?.on
+  );
+}
+
+/**
+ * Returns `window.electron.ipc` as the narrowed `ElectronIpcBridge` type.
+ * Only call this after `assertMainProcessIpcAvailable()` has passed.
+ */
+function getElectronIpc(): ElectronIpcBridge {
+  // Non-null assertion is safe here — guarded by assertMainProcessIpcAvailable.
+  return window.electron!.ipc as ElectronIpcBridge;
 }
 
 function assertMainProcessIpcAvailable() {
@@ -88,67 +128,95 @@ function assertMainProcessIpcAvailable() {
   }
 }
 
-function createAsyncChunkQueue(): PendingStream & { iterable: AsyncIterable<string> } {
-  const chunks: string[] = [];
-  let done = false;
-  let failure: Error | null = null;
-  let pending: { resolve: (r: IteratorResult<string>) => void; reject: (e: Error) => void } | null = null;
+/** Sentinel returned by an async iterator when the sequence is exhausted. */
+const ITERATOR_DONE: IteratorReturnResult<undefined> = { value: undefined, done: true };
 
-  const iterable: AsyncIterable<string> = {
+interface PendingIteratorResolver {
+  resolve: (result: IteratorResult<string, undefined>) => void;
+  reject: (error: Error) => void;
+}
+
+interface ChunkQueueState {
+  chunks: string[];
+  done: boolean;
+  failure: Error | null;
+  pending: PendingIteratorResolver | null;
+}
+
+function resolvePendingDone(state: ChunkQueueState): void {
+  if (!state.pending) return;
+  state.pending.resolve(ITERATOR_DONE);
+  state.pending = null;
+}
+
+function resolvePendingChunk(state: ChunkQueueState, chunk: string): boolean {
+  if (!state.pending) return false;
+  state.pending.resolve({ value: chunk, done: false });
+  state.pending = null;
+  return true;
+}
+
+function rejectPending(state: ChunkQueueState, error: Error): void {
+  if (!state.pending) return;
+  state.pending.reject(error);
+  state.pending = null;
+}
+
+function createChunkIterable(state: ChunkQueueState): AsyncIterable<string> {
+  return {
     [Symbol.asyncIterator]() {
       return {
-        async next(): Promise<IteratorResult<string>> {
-          if (failure) return Promise.reject(failure);
-          if (chunks.length > 0) return Promise.resolve({ value: chunks.shift()!, done: false });
-          if (done) return Promise.resolve({ value: undefined as any, done: true });
-          return new Promise<IteratorResult<string>>((resolve, reject) => {
-            pending = { resolve, reject: reject as any };
+        async next(): Promise<IteratorResult<string, undefined>> {
+          if (state.failure) return Promise.reject(state.failure);
+          if (state.chunks.length > 0) {
+            return Promise.resolve({ value: state.chunks.shift()!, done: false });
+          }
+          if (state.done) return Promise.resolve(ITERATOR_DONE);
+          return new Promise<IteratorResult<string, undefined>>((resolve, reject) => {
+            state.pending = { resolve, reject };
           });
         },
-        async return(): Promise<IteratorResult<string>> {
-          done = true;
-          if (pending) {
-            pending.resolve({ value: undefined as any, done: true });
-            pending = null;
-          }
-          return Promise.resolve({ value: undefined as any, done: true });
+        async return(): Promise<IteratorResult<string, undefined>> {
+          state.done = true;
+          resolvePendingDone(state);
+          return Promise.resolve(ITERATOR_DONE);
         },
       };
     },
   };
+}
+
+function createAsyncChunkQueue(): PendingStream & { iterable: AsyncIterable<string> } {
+  const state: ChunkQueueState = {
+    chunks: [],
+    done: false,
+    failure: null,
+    pending: null,
+  };
 
   return {
-    iterable,
+    iterable: createChunkIterable(state),
     push(chunk: string) {
-      if (done || failure) return;
-      if (pending) {
-        pending.resolve({ value: chunk, done: false });
-        pending = null;
-        return;
+      if (state.done || state.failure) return;
+      if (!resolvePendingChunk(state, chunk)) {
+        state.chunks.push(chunk);
       }
-      chunks.push(chunk);
     },
     close() {
-      if (done || failure) return;
-      done = true;
-      if (pending) {
-        pending.resolve({ value: undefined as any, done: true });
-        pending = null;
-      }
+      if (state.done || state.failure) return;
+      state.done = true;
+      resolvePendingDone(state);
     },
-    fail(err: Error) {
-      if (done || failure) return;
-      failure = err;
-      if (pending) {
-        pending.reject(err);
-        pending = null;
-      }
+    fail(error: Error) {
+      if (state.done || state.failure) return;
+      state.failure = error;
+      rejectPending(state, error);
     },
     setDone(nextDone: boolean) {
-      done = nextDone;
+      state.done = nextDone;
     },
     isDone() {
-      return done;
+      return state.done;
     },
   };
 }
@@ -243,10 +311,15 @@ export class AIProviderManager {
 
     // Production integration should use IPC-based calls below (DeepSeek/HF Router).
     // This method remains a safe placeholder for unit tests and future expansion.
-    throw new Error(`Provider ${providerConfig.provider} completion not implemented via direct call. Use completeViaMain.`);
+    throw new Error(
+      `Provider ${providerConfig.provider} completion not implemented via direct call. Use completeViaMain.`
+    );
   }
 
-  async streamComplete(modelId: string, options: CompletionOptions): Promise<AsyncGenerator<StreamCompletionResponse>> {
+  async streamComplete(
+    modelId: string,
+    options: CompletionOptions
+  ): Promise<AsyncGenerator<StreamCompletionResponse>> {
     const model = MODEL_REGISTRY[modelId];
     if (!model) {
       throw new Error(`Unknown model: ${modelId}`);
@@ -265,7 +338,9 @@ export class AIProviderManager {
       throw new Error(`Provider ${model.provider} not configured`);
     }
 
-    throw new Error(`Provider ${providerConfig.provider} streaming not implemented via direct call. Use streamViaMain.`);
+    throw new Error(
+      `Provider ${providerConfig.provider} streaming not implemented via direct call. Use streamViaMain.`
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -274,69 +349,73 @@ export class AIProviderManager {
   async completeViaMain(
     payload: MainAIRequestPayload,
     signal?: AbortSignal
-  ): Promise<{ provider: 'deepseek' | 'hfRouter' | 'local'; model: string; content: string }> {
+  ): Promise<MainCompletionResponse> {
     assertMainProcessIpcAvailable();
     AIProviderManager.ensureMainListener();
 
     const requestId = createRequestId();
-    const electronIpc = (window as any).electron.ipc;
-
-    let abortHandler: (() => void) | undefined;
-    try {
-      return await new Promise<{ provider: 'deepseek' | 'hfRouter' | 'local'; model: string; content: string }>((resolve, reject) => {
-        const cleanup = () => {
-          AIProviderManager.pendingCompletions.delete(requestId);
-          if (signal && abortHandler) {
-            signal.removeEventListener('abort', abortHandler);
-          }
-        };
-
-        AIProviderManager.pendingCompletions.set(requestId, {
-          resolve: (result) => {
-            cleanup();
-            resolve(result);
-          },
-          reject: (err) => {
-            cleanup();
-            reject(err);
-          },
-          cleanup,
-        });
-
-        abortHandler = () => {
-          try {
-            electronIpc.send('toMain', { type: 'ai:abort', requestId });
-          } catch {
-            // ignore
-          }
-          cleanup();
-          reject(new DOMException('Aborted', 'AbortError'));
-        };
-
-        if (signal) {
-          if (signal.aborted) {
-            abortHandler();
-            return;
-          }
-          signal.addEventListener('abort', abortHandler, { once: true });
-        }
-
-        electronIpc.send('toMain', { type: 'ai:complete', requestId, payload });
-      });
-    } finally {
-      // Ensure the abort listener is removed even if the promise rejects early.
-      if (signal && abortHandler) {
-        signal.removeEventListener('abort', abortHandler);
-      }
-    }
+    const electronIpc = getElectronIpc();
+    return this.awaitMainCompletion(requestId, electronIpc, payload, signal);
   }
 
-  async *streamViaMain(payload: MainAIRequestPayload, signal?: AbortSignal): AsyncGenerator<string> {
+  private awaitMainCompletion(
+    requestId: string,
+    electronIpc: ElectronIpcBridge,
+    payload: MainAIRequestPayload,
+    signal?: AbortSignal
+  ): Promise<MainCompletionResponse> {
+    let abortHandler: (() => void) | undefined;
+    return new Promise<MainCompletionResponse>((resolve, reject) => {
+      const cleanup = () => {
+        AIProviderManager.pendingCompletions.delete(requestId);
+        if (signal && abortHandler) {
+          signal.removeEventListener('abort', abortHandler);
+        }
+      };
+
+      AIProviderManager.pendingCompletions.set(requestId, {
+        resolve: result => {
+          cleanup();
+          resolve({ provider: result.provider, model: result.model, content: result.content });
+        },
+        reject: error => {
+          cleanup();
+          reject(error);
+        },
+        cleanup,
+      });
+
+      abortHandler = () => {
+        try {
+          electronIpc.send('toMain', { type: 'ai:abort', requestId });
+        } catch {
+          // ignore
+        }
+        cleanup();
+        reject(new DOMException('Aborted', 'AbortError'));
+      };
+
+      if (signal) {
+        if (signal.aborted) {
+          abortHandler();
+          return;
+        }
+        signal.addEventListener('abort', abortHandler, { once: true });
+      }
+
+      electronIpc.send('toMain', { type: 'ai:complete', requestId, payload });
+    });
+  }
+
+  async *streamViaMain(
+    payload: MainAIRequestPayload,
+    signal?: AbortSignal
+  ): AsyncGenerator<string> {
     assertMainProcessIpcAvailable();
     AIProviderManager.ensureMainListener();
 
     const requestId = createRequestId();
-    const electronIpc = (window as any).electron.ipc;
+    const electronIpc = getElectronIpc();
     const queue = createAsyncChunkQueue();
 
     AIProviderManager.pendingStreams.set(requestId, queue);
@@ -351,7 +430,7 @@ export class AIProviderManager {
 
     const abortHandler = () => {
       abortInMain();
-      queue.fail(new DOMException('Aborted', 'AbortError') as any);
+      queue.fail(new DOMException('Aborted', 'AbortError'));
     };
 
     if (signal) {
@@ -362,7 +441,11 @@ export class AIProviderManager {
       }
     }
 
-    electronIpc.send('toMain', { type: 'ai:stream:start', requestId, payload: { ...payload, stream: true } });
+    electronIpc.send('toMain', {
+      type: 'ai:stream:start',
+      requestId,
+      payload: { ...payload, stream: true },
+    });
 
     try {
       for await (const chunk of queue.iterable) {
@@ -385,48 +468,48 @@ export class AIProviderManager {
     if (AIProviderManager.listenerInstalled) return;
     if (!isElectronIpcAvailable()) return;
 
-    const electronIpc = (window as any).electron.ipc;
+    const electronIpc = getElectronIpc();
     electronIpc.on('fromMain', (msg: FromMainMessage) => {
       try {
+        // `msg` is already typed as `FromMainMessage` (a discriminated union); no
+        // further runtime narrowing on `.type` / `.requestId` is necessary here.
         if (!msg || typeof msg !== 'object') return;
-        if (!('type' in msg) || typeof (msg as any).type !== 'string') return;
-        if (!('requestId' in msg) || typeof (msg as any).requestId !== 'string') return;
 
-        const message = msg as FromMainMessage;
-
-        if (message.type === 'ai:complete:result') {
-          const pending = AIProviderManager.pendingCompletions.get(message.requestId);
+        if (msg.type === 'ai:complete:result') {
+          const pending = AIProviderManager.pendingCompletions.get(msg.requestId);
           if (!pending) return;
           pending.cleanup();
 
-          if (message.success) {
+          if (msg.success) {
             pending.resolve({
-              requestId: message.requestId,
-              provider: message.provider,
-              model: message.model,
-              content: message.content,
+              requestId: msg.requestId,
+              provider: msg.provider,
+              model: msg.model,
+              content: msg.content,
             });
           } else {
-            pending.reject(new Error((message as any).error));
+            // Narrowed to `{ success: false; error: string }` by the discriminant.
+            pending.reject(new Error(msg.error));
           }
           return;
         }
 
-        if (message.type === 'ai:stream:chunk') {
-          const stream = AIProviderManager.pendingStreams.get(message.requestId);
+        if (msg.type === 'ai:stream:chunk') {
+          const stream = AIProviderManager.pendingStreams.get(msg.requestId);
           if (!stream) return;
-          stream.push(message.chunk);
+          stream.push(msg.chunk);
           return;
         }
 
-        if (message.type === 'ai:stream:done') {
-          const stream = AIProviderManager.pendingStreams.get(message.requestId);
+        if (msg.type === 'ai:stream:done') {
+          const stream = AIProviderManager.pendingStreams.get(msg.requestId);
           if (!stream) return;
-          if (message.success) {
+          if (msg.success) {
             stream.setDone(true);
             stream.close();
           } else {
-            stream.fail(new Error((message as any).error));
+            // Narrowed to `{ success: false; error: string }` by the discriminant.
+            stream.fail(new Error(msg.error));
           }
         }
       } catch (err) {

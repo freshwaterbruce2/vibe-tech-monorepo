@@ -1,5 +1,6 @@
-import { useReducer, useEffect, useCallback } from 'react';
+import { useReducer, useEffect, useCallback, useRef } from 'react';
 import type { SetStateAction } from 'react';
+import { logger } from '../utils/logger';
 import { dataStore } from '../services/dataStore';
 import type { Reward, ClaimedReward } from '../types';
 
@@ -60,6 +61,10 @@ export const useRewards = () => {
     claimedRewards: [],
   });
 
+  // Guards the persistence effects so the initial empty state isn't written
+  // back over stored data before the async load resolves.
+  const hasLoadedRef = useRef(false);
+
   // Load rewards and claimed rewards from dataStore on mount
   useEffect(() => {
     const loadData = async () => {
@@ -73,16 +78,26 @@ export const useRewards = () => {
           payload: { rewards: loadedRewards, claimedRewards: loadedClaimed },
         });
       } catch (error) {
-        console.error('[useRewards] Failed to load data:', error);
+        logger.error('[useRewards] Failed to load data:', error);
+      } finally {
+        hasLoadedRef.current = true;
       }
     };
     void loadData();
   }, []);
 
-  // Persist rewards to dataStore whenever they change
+  // Persist the reward catalog whenever it changes (after the initial load).
   useEffect(() => {
-    dataStore.saveRewards(state.rewards).catch(console.error);
+    if (!hasLoadedRef.current) return;
+    dataStore.saveRewards(state.rewards).catch((e) => logger.error(e));
   }, [state.rewards]);
+
+  // Persist the pending-claim queue whenever it changes. Without this, claimed
+  // rewards were lost on reload and the parent approve/deny path was unreachable.
+  useEffect(() => {
+    if (!hasLoadedRef.current) return;
+    dataStore.saveClaimedRewards(state.claimedRewards).catch((e) => logger.error(e));
+  }, [state.claimedRewards]);
 
   /**
    * Claim a reward if user has enough points
@@ -91,7 +106,7 @@ export const useRewards = () => {
   const claimReward = (rewardId: string, currentPoints: number): number => {
     const reward = state.rewards.find((r) => r.id === rewardId);
     if (!reward) {
-      console.error('[useRewards] Reward not found:', rewardId);
+      logger.error('[useRewards] Reward not found:', rewardId);
       return 0;
     }
 
@@ -114,7 +129,7 @@ export const useRewards = () => {
   const handleRewardApproval = (claimedRewardId: string, isApproved: boolean): number => {
     const rewardToHandle = state.claimedRewards.find((r) => r.id === claimedRewardId);
     if (!rewardToHandle) {
-      console.error('[useRewards] Claimed reward not found:', claimedRewardId);
+      logger.error('[useRewards] Claimed reward not found:', claimedRewardId);
       return 0;
     }
 
@@ -129,17 +144,20 @@ export const useRewards = () => {
    * Update rewards list (for parent dashboard)
    * Supports both direct array and callback pattern for React setState compatibility
    */
-  const updateRewards = useCallback((action: SetStateAction<Reward[]>): void => {
-    if (typeof action === 'function') {
-      // Callback pattern: action(prevState) => newState
-      // We need to get current state to pass to callback
-      const newRewards = action(state.rewards);
-      dispatch({ type: 'UPDATE_REWARDS', payload: newRewards });
-    } else {
-      // Direct array pattern
-      dispatch({ type: 'UPDATE_REWARDS', payload: action });
-    }
-  }, [state.rewards]);
+  const updateRewards = useCallback(
+    (action: SetStateAction<Reward[]>): void => {
+      if (typeof action === 'function') {
+        // Callback pattern: action(prevState) => newState
+        // We need to get current state to pass to callback
+        const newRewards = action(state.rewards);
+        dispatch({ type: 'UPDATE_REWARDS', payload: newRewards });
+      } else {
+        // Direct array pattern
+        dispatch({ type: 'UPDATE_REWARDS', payload: action });
+      }
+    },
+    [state.rewards],
+  );
 
   return {
     rewards: state.rewards,

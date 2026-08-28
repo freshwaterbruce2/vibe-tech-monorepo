@@ -2,7 +2,7 @@
  * PathValidator - Strict path validation with allow-list for Desktop Commander V3
  *
  * Allowed paths:
- * - C:\dev - Development work (read/write)
+ * - V:\monorepo - Development work (read/write)
  * - D:\ - Databases, learning system, large files (read/write)
  * - C:\Users\fresh_zxae3v6\OneDrive - Read-only access
  */
@@ -19,13 +19,15 @@ interface AllowedPath {
 	allowRead: boolean;
 	allowWrite: boolean;
 	type: PathType;
+	/** Permit soft-blocked build dirs (e.g. dist) under this root */
+	allowBuildArtifacts?: boolean;
 }
 
 // Define allowed paths with their permissions
 const ALLOWED_PATHS: AllowedPath[] = [
 	{
-		path: "C:\\dev",
-		normalized: "c:\\dev",
+		path: "V:\\monorepo",
+		normalized: "V:\\monorepo",
 		allowRead: true,
 		allowWrite: true,
 		type: "dev",
@@ -36,6 +38,7 @@ const ALLOWED_PATHS: AllowedPath[] = [
 		allowRead: true,
 		allowWrite: true,
 		type: "data",
+		allowBuildArtifacts: true,
 	},
 	{
 		path: "C:\\Users\\fresh_zxae3v6\\OneDrive",
@@ -44,29 +47,83 @@ const ALLOWED_PATHS: AllowedPath[] = [
 		allowWrite: false, // Read-only
 		type: "onedrive",
 	},
+	{
+		path: "V:\\monorepo",
+		normalized: "v:\\monorepo",
+		allowBuildArtifacts: true,
+		allowRead: true,
+		allowWrite: true,
+		type: "dev",
+	},
 ];
 
 /**
- * Normalize a path to lowercase with consistent separators
+ * Patterns that are always blocked regardless of allowed-path membership
+ */
+const HARD_BLOCKED_PATTERNS = ["node_modules", ".git"];
+const SOFT_BLOCKED_PATTERNS = ["dist"];
+
+/**
+ * Global override: when permission is explicitly granted via the
+ * DC_ALLOW_BLOCKED_PATHS env var (set in the MCP launch env), all pattern
+ * blocks are lifted. Off by default.
+ */
+function isBlockOverrideEnabled(): boolean {
+	const v = (process.env.DC_ALLOW_BLOCKED_PATHS ?? "").toLowerCase();
+	return v === "1" || v === "true" || v === "yes";
+}
+
+/**
+ * Check if a path contains a blocked pattern segment
+ */
+export function isPathBlocked(inputPath: string): boolean {
+	// Explicit permission lifts all pattern blocks
+	if (isBlockOverrideEnabled()) {
+		return false;
+	}
+
+	const segments = inputPath.replace(/\//g, "\\").split("\\");
+
+	// node_modules and .git are blocked under every allowed root
+	if (HARD_BLOCKED_PATTERNS.some((pattern) => segments.includes(pattern))) {
+		return true;
+	}
+
+	// dist (build output) allowed only under roots flagged allowBuildArtifacts
+	// (V:\monorepo, D:\); blocked elsewhere
+	if (SOFT_BLOCKED_PATTERNS.some((pattern) => segments.includes(pattern))) {
+		return !findAllowedPath(inputPath)?.allowBuildArtifacts;
+	}
+
+	return false;
+}
+
+/**
+ * Normalize a path with consistent separators (case preserved)
  */
 export function normalizePath(inputPath: string): string {
-	// Resolve to absolute path
-	const resolved = path.resolve(inputPath);
-	// Normalize slashes and lowercase for Windows comparison
-	return resolved.toLowerCase().replace(/\//g, "\\");
+	// Resolve to absolute path (preserves case for display)
+	return path.resolve(inputPath).replace(/\//g, "\\");
+}
+
+/**
+ * Lowercase helper used only for allow-list comparisons
+ */
+function normalizeForComparison(inputPath: string): string {
+	return normalizePath(inputPath).toLowerCase();
 }
 
 /**
  * Check if a path is under an allowed directory
  */
 function findAllowedPath(inputPath: string): AllowedPath | null {
-	const normalized = normalizePath(inputPath);
+	const normalized = normalizeForComparison(inputPath);
 
 	for (const allowed of ALLOWED_PATHS) {
 		// Check if the normalized path starts with the allowed path
 		if (normalized.startsWith(allowed.normalized)) {
 			// Ensure it's actually a subdirectory, not just a prefix match
-			// e.g., "c:\develop" should not match "c:\dev"
+			// e.g., "c:\develop" should not match "V:\monorepo"
 			const remainder = normalized.slice(allowed.normalized.length);
 
 			// If remainder is empty, it's an exact match
@@ -124,6 +181,12 @@ export function getPathType(inputPath: string): PathType {
 export function validatePath(inputPath: string, mode: PathMode): string {
 	const normalized = normalizePath(inputPath);
 
+	if (isPathBlocked(inputPath)) {
+		throw new Error(
+			`Access denied: ${inputPath} contains a blocked path segment (node_modules/.git always; dist outside V:\\ and D:\\ (set DC_ALLOW_BLOCKED_PATHS=1 to override)).`,
+		);
+	}
+
 	if (!isPathAllowed(inputPath, mode)) {
 		const pathType = getPathType(inputPath);
 
@@ -136,7 +199,7 @@ export function validatePath(inputPath: string, mode: PathMode): string {
 		if (pathType === "unknown") {
 			throw new Error(
 				`Access denied: ${inputPath}. Path is outside allowed directories. ` +
-					`Allowed: C:\\dev, D:\\, C:\\Users\\fresh_zxae3v6\\OneDrive (read-only)`,
+					`Allowed: V:\\monorepo, D:\\, C:\\Users\\fresh_zxae3v6\\OneDrive (read-only)`,
 			);
 		}
 

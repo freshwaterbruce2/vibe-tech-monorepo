@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { logger } from '../../utils/logger';
 
 interface Props {
   children: ReactNode;
@@ -37,7 +38,7 @@ class RouteErrorBoundary extends Component<Props, State> {
     const { routeName, onError } = this.props;
 
     // Log to console with route context
-    console.error(`[ErrorBoundary${routeName ? ` - ${routeName}` : ''}]:`, error, errorInfo);
+    logger.error(`[ErrorBoundary${routeName ? ` - ${routeName}` : ''}]:`, error, errorInfo);
 
     // Store error details for display
     this.setState({ error, errorInfo });

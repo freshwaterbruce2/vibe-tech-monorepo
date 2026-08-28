@@ -7,7 +7,7 @@ Write-Host "=== Jujutsu Setup Finalization ===" -ForegroundColor Cyan
 Write-Host ""
 
 # Ensure jj is in PATH
-$env:PATH = "C:\dev\tools\jujutsu;$env:PATH"
+$env:PATH = "V:\monorepo\tools\jujutsu;$env:PATH"
 
 # Step 1: Check snapshot status
 Write-Host "[1/5] Checking D:\ snapshot status..." -ForegroundColor Yellow
@@ -30,7 +30,7 @@ Write-Host ""
 
 # Step 2: Remove Git lock
 Write-Host "[2/5] Removing Git index lock..." -ForegroundColor Yellow
-$lockFile = "C:\dev\.git\index.lock"
+$lockFile = "V:\monorepo\.git\index.lock"
 if (Test-Path $lockFile) {
     Remove-Item $lockFile -Force
     Write-Host "✓ Lock file removed" -ForegroundColor Green
@@ -42,7 +42,7 @@ Write-Host ""
 
 # Step 3: Initialize Jujutsu
 Write-Host "[3/5] Initializing Jujutsu in colocated mode..." -ForegroundColor Yellow
-Set-Location "C:\dev"
+Set-Location "V:\monorepo"
 
 $jjStatus = jj status 2>&1
 if ($LASTEXITCODE -ne 0) {

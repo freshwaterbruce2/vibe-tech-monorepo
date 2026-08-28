@@ -1,0 +1,26 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "apps/prior-auth-pro/Dockerfile",
+    "watchPatterns": [
+      "apps/prior-auth-pro/**",
+      "plugins/factory/**",
+      "packages/openrouter-client/**",
+      "packages/ai/**",
+      "packages/monetization/**",
+      "packages/auth/**",
+      "packages/analytics/**",
+      "packages/billing/**",
+      "packages/emails/**",
+      "packages/entitlements/**",
+      "packages/feature-flags/core/**",
+      "packages/landing/**"
+    ]
+  },
+  "deploy": {
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 120,
+    "restartPolicyType": "ON_FAILURE"
+  }
+}

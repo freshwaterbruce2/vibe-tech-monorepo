@@ -88,6 +88,14 @@ async function requestUrl(
 	const maxBytes = options.maxBytes ?? 1024 * 1024;
 
 	return new Promise((resolve, reject) => {
+		let settled = false;
+		const settle = (result: FetchResult) => {
+			if (!settled) { settled = true; resolve(result); }
+		};
+		const fail = (err: Error) => {
+			if (!settled) { settled = true; reject(err); }
+		};
+
 		const req = transport.request(
 			parsed,
 			{
@@ -110,26 +118,33 @@ async function requestUrl(
 					if (received > maxBytes) {
 						truncated = true;
 						res.destroy();
+						settle({
+							ok: status >= 200 && status < 300,
+							status,
+							statusText,
+							headers: res.headers,
+							body: Buffer.concat(chunks).toString("utf-8"),
+							truncated,
+						});
 						return;
 					}
 					chunks.push(chunk);
 				});
 
 				res.on("end", () => {
-					const body = Buffer.concat(chunks).toString("utf-8");
-					resolve({
+					settle({
 						ok: status >= 200 && status < 300,
 						status,
 						statusText,
 						headers: res.headers,
-						body,
+						body: Buffer.concat(chunks).toString("utf-8"),
 						truncated,
 					});
 				});
 			},
 		);
 
-		req.on("error", (error) => reject(error));
+		req.on("error", fail);
 		req.setTimeout(timeoutMs, () => {
 			req.destroy(new Error("Request timed out"));
 		});

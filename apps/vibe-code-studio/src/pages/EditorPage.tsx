@@ -3,7 +3,6 @@ import styled from 'styled-components';
 import Editor from '../components/Editor';
 import Settings from '../components/Settings';
 import Sidebar from '../components/Sidebar';
-import { DeepSeekService as _DeepSeekService } from '../services/DeepSeekService';
 import { useEditorStore } from '../stores/useEditorStore';
 import { vibeTheme } from '../styles/theme';
 
@@ -61,11 +60,11 @@ const EditorPage: React.FC = () => {
           onCloseFile={() => { }}
           onSaveFile={() => { }}
           onFileSelect={() => { }}
-          aiService={{} as any} // Mock for legacy page
+          aiService={undefined}
           workspaceContext={undefined}
           getFileContext={() => []}
           settings={settings}
-          liveStream={{} as any}
+          liveStream={undefined}
           onEditorMount={() => {}}
         />
       )}

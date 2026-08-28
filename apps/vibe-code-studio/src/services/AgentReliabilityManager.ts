@@ -28,8 +28,12 @@ export interface HealthIssue {
 
 export interface RecoveryStrategy {
   type: 'retry' | 'circuit_breaker' | 'fallback' | 'restart' | 'load_balance';
-  condition: (error: Error, context: any) => boolean;
-  execute: (agent: BaseSpecializedAgent, request: string, context: AgentContext) => Promise<AgentResponse>;
+  condition: (error: Error, context: AgentContext) => boolean;
+  execute: (
+    agent: BaseSpecializedAgent,
+    request: string,
+    context: AgentContext
+  ) => Promise<AgentResponse>;
   maxAttempts: number;
   backoffMs: number;
 }
@@ -53,7 +57,7 @@ export class AgentReliabilityManager extends EventEmitter {
   private failureHistory: Map<string, Array<{
     timestamp: Date;
     error: string;
-    context: any;
+    context: AgentContext;
     recovered: boolean;
     recoveryTime?: number;
   }>> = new Map();
@@ -70,6 +74,7 @@ export class AgentReliabilityManager extends EventEmitter {
   private readonly CIRCUIT_BREAKER_THRESHOLD = 5;
   private readonly CIRCUIT_BREAKER_TIMEOUT = 60000; // 1 minute
   private readonly MAX_CONSECUTIVE_FAILURES = 3;
+  private healthInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     super();
@@ -81,22 +86,26 @@ export class AgentReliabilityManager extends EventEmitter {
    * Initialize built-in recovery strategies
    */
   private initializeRecoveryStrategies(): void {
-    // Retry strategy for transient failures
-    this.recoveryStrategies.push({
+    this.recoveryStrategies.push(this.createRetryRecoveryStrategy());
+    this.recoveryStrategies.push(this.createCircuitBreakerRecoveryStrategy());
+    this.recoveryStrategies.push(this.createFallbackRecoveryStrategy());
+  }
+
+  private createRetryRecoveryStrategy(): RecoveryStrategy {
+    return {
       type: 'retry',
-      condition: (error: Error) => {
-        return error.message.includes('timeout') || 
-               error.message.includes('network') ||
-               error.message.includes('temporary');
-      },
+      condition: (error: Error) => (
+        error.message.includes('timeout') ||
+        error.message.includes('network') ||
+        error.message.includes('temporary')
+      ),
       execute: async (agent: BaseSpecializedAgent, request: string, context: AgentContext) => {
-        // Simple retry with exponential backoff
         let lastError: Error | null = null;
         for (let attempt = 1; attempt <= 3; attempt++) {
           try {
             const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
             if (attempt > 1) {
-              await new Promise(resolve => setTimeout(resolve, delay));
+              await new Promise((resolve) => setTimeout(resolve, delay));
             }
             return await agent.process(request, context);
           } catch (error) {
@@ -107,23 +116,22 @@ export class AgentReliabilityManager extends EventEmitter {
         throw lastError;
       },
       maxAttempts: 3,
-      backoffMs: 1000
-    });
+      backoffMs: 1000,
+    };
+  }
 
-    // Circuit breaker for repeated failures
-    this.recoveryStrategies.push({
+  private createCircuitBreakerRecoveryStrategy(): RecoveryStrategy {
+    return {
       type: 'circuit_breaker',
-      condition: (error: Error) => {
-        return error.message.includes('service unavailable') ||
-               error.message.includes('connection refused');
-      },
+      condition: (error: Error) => (
+        error.message.includes('service unavailable') ||
+        error.message.includes('connection refused')
+      ),
       execute: async (agent: BaseSpecializedAgent, request: string, context: AgentContext) => {
         const agentId = agent.getName();
         const breaker = this.circuitBreakers.get(agentId);
-        
         if (breaker?.isOpen) {
           if (breaker.halfOpenTime && Date.now() > breaker.halfOpenTime.getTime()) {
-            // Half-open state: try one request
             try {
               const response = await agent.process(request, context);
               this.resetCircuitBreaker(agentId);
@@ -132,50 +140,44 @@ export class AgentReliabilityManager extends EventEmitter {
               this.openCircuitBreaker(agentId);
               throw new Error(`Circuit breaker open for agent ${agentId}: ${error}`);
             }
-          } else {
-            throw new Error(`Circuit breaker open for agent ${agentId}`);
           }
+          throw new Error(`Circuit breaker open for agent ${agentId}`);
         }
-
         return await agent.process(request, context);
       },
       maxAttempts: 1,
-      backoffMs: 0
-    });
+      backoffMs: 0,
+    };
+  }
 
-    // Fallback strategy using simplified request
-    this.recoveryStrategies.push({
+  private createFallbackRecoveryStrategy(): RecoveryStrategy {
+    return {
       type: 'fallback',
-      condition: (error: Error) => {
-        return error.message.includes('complexity') ||
-               error.message.includes('resource');
-      },
+      condition: (error: Error) => (
+        error.message.includes('complexity') || error.message.includes('resource')
+      ),
       execute: async (agent: BaseSpecializedAgent, request: string, context: AgentContext) => {
-        // Simplify the request and context
         const simplifiedRequest = this.simplifyRequest(request);
         const simplifiedContext = this.simplifyContext(context);
-        
         logger.info(`Using fallback strategy for agent ${agent.getName()}`);
-        
         try {
           const response = await agent.process(simplifiedRequest, simplifiedContext);
           return {
             ...response,
             content: `[Simplified Response] ${response.content}`,
-            confidence: Math.max(0.3, response.confidence - 0.2)
+            confidence: Math.max(0.3, response.confidence - 0.2),
           };
-        } catch (_error) {
-          // Ultimate fallback: return a basic response
+        } catch {
           return {
-            content: `I apologize, but I'm experiencing technical difficulties. Please try a simpler request or contact support.`,
+            content: 'I apologize, but I\'m experiencing technical difficulties. Please try a simpler request or contact support.',
             confidence: 0.2,
-            reasoning: 'Fallback response due to agent failure'
+            reasoning: 'Fallback response due to agent failure',
           };
         }
       },
       maxAttempts: 1,
-      backoffMs: 0
-    });
+      backoffMs: 0,
+    };
   }
 
   /**
@@ -259,7 +261,12 @@ export class AgentReliabilityManager extends EventEmitter {
   /**
    * Record failed agent execution
    */
-  private recordFailure(agentId: string, error: Error, context: any, _responseTime: number): void {
+  private recordFailure(
+    agentId: string,
+    error: Error,
+    context: AgentContext,
+    _responseTime: number,
+  ): void {
     const metrics = this.getOrCreateMetrics(agentId);
     metrics.totalRequests++;
     metrics.failedRequests++;
@@ -498,7 +505,7 @@ export class AgentReliabilityManager extends EventEmitter {
    * Health monitoring
    */
   private startHealthMonitoring(): void {
-    setInterval(() => {
+    this.healthInterval = setInterval(() => {
       this.performHealthChecks();
       this.calculateReliabilityMetrics();
       this.cleanupOldData();
@@ -538,17 +545,24 @@ export class AgentReliabilityManager extends EventEmitter {
             intervals.push(current.timestamp.getTime() - previous.timestamp.getTime());
           }
         }
-        metrics.mtbf = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length / 1000 / 60; // minutes
+        const totalIntervalMs = intervals.reduce((sum, interval) => sum + interval, 0);
+        metrics.mtbf = totalIntervalMs / intervals.length / 1000 / 60; // minutes
       }
 
       // Calculate MTTR (Mean Time To Recovery)
       const recoveredFailures = history.filter(f => f.recovered && f.recoveryTime);
       if (recoveredFailures.length > 0) {
-        metrics.mttr = recoveredFailures.reduce((sum, f) => sum + (f.recoveryTime ?? 0), 0) / recoveredFailures.length / 1000; // seconds
+        const totalRecoveryMs = recoveredFailures.reduce(
+          (sum, f) => sum + (f.recoveryTime ?? 0),
+          0,
+        );
+        metrics.mttr = totalRecoveryMs / recoveredFailures.length / 1000; // seconds
       }
 
       // Update uptime
-      metrics.uptime = metrics.totalRequests > 0 ? metrics.successfulRequests / metrics.totalRequests : 1.0;
+      metrics.uptime = metrics.totalRequests > 0
+        ? metrics.successfulRequests / metrics.totalRequests
+        : 1.0;
     }
   }
 
@@ -642,5 +656,13 @@ export class AgentReliabilityManager extends EventEmitter {
     this.failureHistory.clear();
     this.circuitBreakers.clear();
     this.reliabilityMetrics.clear();
+  }
+
+  destroy(): void {
+    if (this.healthInterval) {
+      clearInterval(this.healthInterval);
+      this.healthInterval = null;
+    }
+    this.reset();
   }
 }

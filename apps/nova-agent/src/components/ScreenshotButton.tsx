@@ -80,7 +80,7 @@ export function ScreenshotButton({
 
 	return (
 		<Button
-			onClick={handleScreenshot}
+			onClick={() => { void handleScreenshot(); }}
 			disabled={isCapturing || isAnalyzing}
 			className="bg-purple-500 hover:bg-purple-600 text-white shadow-lg shadow-purple-500/20 relative overflow-hidden"
 			size="icon"

@@ -7,14 +7,14 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm tauri dev",
+        "command": "node ../../node_modules/@tauri-apps/cli/tauri.js dev --config src-tauri/tauri.dev.conf.json",
         "cwd": "apps/nova-agent"
       }
     },
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm tauri build",
+        "command": "node ../../node_modules/@tauri-apps/cli/tauri.js build",
         "cwd": "apps/nova-agent"
       },
       "outputs": [
@@ -25,7 +25,7 @@
     "build:frontend": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vite build",
+        "command": "cross-env NODE_ENV=production node ../../node_modules/vite/bin/vite.js build",
         "cwd": "apps/nova-agent"
       },
       "outputs": [
@@ -35,8 +35,8 @@
     "build:rust": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cargo build --release",
-        "cwd": "apps/nova-agent/src-tauri"
+        "command": "node ../../scripts/invoke-nova-rust.mjs build-release",
+        "cwd": "apps/nova-agent"
       },
       "outputs": [
         "{projectRoot}/src-tauri/target/release"
@@ -45,42 +45,48 @@
     "check:rust": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cargo check",
-        "cwd": "apps/nova-agent/src-tauri"
+        "command": "node ../../scripts/invoke-nova-rust.mjs check",
+        "cwd": "apps/nova-agent"
+      }
+    },
+    "check:rust-lines": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/check-line-limits.mjs --all --include-untracked --max 500 --path apps/nova-agent/src-tauri/src --include-ext .rs"
       }
     },
     "test:rust": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cargo test",
-        "cwd": "apps/nova-agent/src-tauri"
+        "command": "node ../../scripts/invoke-nova-rust.mjs test",
+        "cwd": "apps/nova-agent"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "eslint \"src/**/*.{ts,tsx}\" --ignore-pattern \"src/**/*.test.ts\" --ignore-pattern \"src/**/*.test.tsx\" --ignore-pattern \"src/**/__tests__/**\" --ignore-pattern \"src/test/**\" --ignore-pattern \"src/tests/**\"",
+        "command": "node ../../node_modules/eslint/bin/eslint.js \"src/**/*.{ts,tsx}\" --ignore-pattern \"src/**/*.test.ts\" --ignore-pattern \"src/**/*.test.tsx\" --ignore-pattern \"src/**/__tests__/**\" --ignore-pattern \"src/test/**\" --ignore-pattern \"src/tests/**\"",
         "cwd": "apps/nova-agent"
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --noEmit",
+        "command": "node ../../node_modules/typescript/bin/tsc --noEmit",
         "cwd": "apps/nova-agent"
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run",
+        "command": "node ../../node_modules/vitest/vitest.mjs run",
         "cwd": "apps/nova-agent"
       }
     },
     "test:coverage": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --coverage",
+        "command": "node ../../node_modules/vitest/vitest.mjs run --coverage",
         "cwd": "apps/nova-agent"
       }
     },

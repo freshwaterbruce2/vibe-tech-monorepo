@@ -1,7 +1,7 @@
 /**
  * DatabaseService - Centralized database integration
  *
- * Integrates DeepCode Editor with the centralized D:\\databases\\database.db
+ * Integrates Vibe Code Studio with the centralized D:\\databases\\vibe_studio.db
  * following monorepo best practices.
  *
  * Features:
@@ -25,9 +25,9 @@ import { runMigration } from './migrationRunner';
 // -----------------------------------------------------------------------------
 const getDatabasePath = (): string => {
   // Detect Electron environment - use unified hub DB
-  if (typeof window !== 'undefined' && (window as any).electron?.isElectron) {
-    // Always use D:\databases\database.db for unified integration
-    const centralized = import.meta.env.VITE_DATABASE_PATH || 'D:\\databases\\database.db';
+  if (typeof window !== 'undefined' && window.electron?.isElectron) {
+    // Always use D:\databases\vibe_studio.db for unified integration
+    const centralized = import.meta.env.VITE_DATABASE_PATH || 'D:\\databases\\vibe_studio.db';
     logger.debug(`[DatabaseService] Using unified hub DB at ${centralized}`);
     return centralized;
   }
@@ -82,11 +82,34 @@ export interface StrategyMemoryRecord {
   created_at?: Date;
 }
 
+// Electron IPC proxy shape (async, used in renderer)
+export interface ElectronDbProxy {
+  initialize: () => Promise<{ success: boolean; error?: string }>;
+  query: (
+    sql: string,
+    params?: unknown[],
+  ) => Promise<{ success: boolean; data: unknown; error?: string }>;
+  close?: () => void;
+}
+
+// sql.js Database shape (sync, used in web mode)
+export interface SqlJsDb {
+  run: (sql: string, params?: unknown[]) => void;
+  exec: (sql: string, params?: unknown[]) => Array<{ values: unknown[] }>;
+  prepare: (sql: string) => {
+    run: (...args: unknown[]) => void;
+    get: (key: string) => { value?: string } | undefined;
+  };
+  export: () => Uint8Array;
+}
+
+type DatabaseHandle = ElectronDbProxy | SqlJsDb;
+
 // -----------------------------------------------------------------------------
 // DatabaseService Implementation
 // -----------------------------------------------------------------------------
 export class DatabaseService {
-  private db: any = null;
+  private db: DatabaseHandle | null = null;
   private isElectron: boolean = false;
   private useFallback: boolean = false;
   private initialized: boolean = false;
@@ -97,7 +120,17 @@ export class DatabaseService {
 
   /** Detect Electron runtime */
   private detectElectron(): boolean {
-    return typeof window !== 'undefined' && !!(window as any).electron?.isElectron;
+    return typeof window !== 'undefined' && !!window.electron?.isElectron;
+  }
+
+  /** Cast db to the Electron IPC proxy — only call when isElectron is true */
+  private get edb(): ElectronDbProxy {
+    return this.db as ElectronDbProxy;
+  }
+
+  /** Cast db to the sql.js handle — only call when !isElectron */
+  private get sdb(): SqlJsDb {
+    return this.db as SqlJsDb;
   }
 
   /** Public initializer */
@@ -124,7 +157,7 @@ export class DatabaseService {
       // Electron – use IPC to access better-sqlite3 in main process
       // DO NOT import better-sqlite3 directly in renderer (causes "module is not defined")
       try {
-        const electron = (window as any).electron;
+        const electron = window.electron;
         if (electron?.db?.initialize) {
           const result = await electron.db.initialize();
           if (result.success) {
@@ -161,7 +194,7 @@ export class DatabaseService {
       return;
     }
     try {
-      await runMigration(this.db, '001_initial_schema.sql');
+      await runMigration(this.sdb, '001_initial_schema.sql');
       logger.info('[DatabaseService] Schema initialized via migration');
     } catch (e) {
       logger.error('[DatabaseService] Schema migration failed', e);
@@ -181,10 +214,17 @@ export class DatabaseService {
     aiResponse: string,
     model: string,
     tokens?: number,
-    context?: any
+    context?: Record<string, unknown>,
   ): Promise<number | null> {
     if (this.useFallback) {
-      return await this.saveChatMessageFallback(workspace, userMessage, aiResponse, model, tokens, context);
+      return await this.saveChatMessageFallback(
+        workspace,
+        userMessage,
+        aiResponse,
+        model,
+        tokens,
+        context,
+      );
     }
     // Use 'chat_messages' table to match electron/database-handler.ts
     const sql = `INSERT INTO chat_messages (workspace_path, user_message, ai_response, model_used, tokens_used, workspace_context)
@@ -192,11 +232,18 @@ export class DatabaseService {
     const ctx = context ? JSON.stringify(context) : null;
     try {
       if (this.isElectron) {
-        const result = await this.db.query(sql, [workspace, userMessage, aiResponse, model, tokens ?? null, ctx]);
+        const result = await this.edb.query(sql, [
+          workspace,
+          userMessage,
+          aiResponse,
+          model,
+          tokens ?? null,
+          ctx,
+        ]);
         // result.data contains the RunResult object from better-sqlite3
-        return result.success ? (result.data.lastInsertRowid as number) : null;
+        return result.success ? (result.data as { lastInsertRowid: number }).lastInsertRowid : null;
       } else {
-        this.db.run(sql, [workspace, userMessage, aiResponse, model, tokens ?? null, ctx]);
+        this.sdb.run(sql, [workspace, userMessage, aiResponse, model, tokens ?? null, ctx]);
         await this.saveToLocalStorage();
         return 1;
       }
@@ -214,16 +261,18 @@ export class DatabaseService {
     const sql = `SELECT * FROM chat_messages WHERE workspace_path = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?`;
     try {
       if (this.isElectron) {
-        const result = await this.db.query(sql, [workspace, limit, offset]);
+        const result = await this.edb.query(sql, [workspace, limit, offset]);
         // result.data contains the array of rows
         if (result.success && Array.isArray(result.data)) {
-          return result.data.map((row: any) => this.parseChatMessage(row));
+          return (result.data as Record<string, unknown>[]).map((row) =>
+            this.parseChatMessage(row),
+          );
         }
         return [];
       } else {
-        const result = this.db.exec(sql, [workspace, limit, offset]);
+        const result = this.sdb.exec(sql, [workspace, limit, offset]);
         if (!result[0]) return [];
-        return result[0].values.map((row: any[]) => this.parseChatMessage(row));
+        return (result[0].values as unknown[][]).map((row) => this.parseChatMessage(row));
       }
     } catch (e) {
       logger.error('[DatabaseService] getChatHistory error', e);
@@ -240,73 +289,99 @@ export class DatabaseService {
     aiResponse: string,
     model: string,
     tokens?: number,
-    context?: any
+    context?: Record<string, unknown>,
   ): Promise<number> {
-    const key = `${STORAGE_FALLBACK_PREFIX}chat_${workspace}`;
-    let stored = '[]';
-    if (typeof window !== 'undefined' && window.electron?.store) {
-      stored = await window.electron.store.get(key) ?? '[]';
-    } else if (typeof localStorage !== 'undefined') {
-      stored = window.electronAPI.store.get(key) ?? '[]';
-    }
-    const msgs: ChatMessage[] = JSON.parse(stored);
-    const newMsg: ChatMessage = {
-      id: Date.now(),
-      timestamp: new Date(),
-      workspace_path: workspace,
-      user_message: userMessage,
-      ai_response: aiResponse,
-      model_used: model,
-      tokens_used: tokens ?? null,
-      workspace_context: context ? JSON.stringify(context) : null,
-    };
-    msgs.push(newMsg);
+    try {
+      const key = `${STORAGE_FALLBACK_PREFIX}chat_${workspace}`;
+      let stored = '[]';
+      if (typeof window !== 'undefined' && window.electron?.store) {
+        stored = (await window.electron.store.get(key)) ?? '[]';
+      } else {
+        stored = localStorage.getItem(key) ?? '[]';
+      }
+      const msgs: ChatMessage[] = JSON.parse(stored);
+      const newMsg: ChatMessage = {
+        id: Date.now(),
+        timestamp: new Date(),
+        workspace_path: workspace,
+        user_message: userMessage,
+        ai_response: aiResponse,
+        model_used: model,
+        tokens_used: tokens ?? null,
+        workspace_context: context ? JSON.stringify(context) : null,
+      };
+      msgs.push(newMsg);
 
-    if (typeof window !== 'undefined' && window.electron?.store) {
-      await window.electron.store.set(key, JSON.stringify(msgs));
-    } else if (typeof localStorage !== 'undefined') {
-      window.electronAPI.store.set(key, JSON.stringify(msgs));
+      if (typeof window !== 'undefined' && window.electron?.store) {
+        await window.electron.store.set(key, JSON.stringify(msgs));
+      } else {
+        localStorage.setItem(key, JSON.stringify(msgs));
+      }
+      return newMsg.id!;
+    } catch (e) {
+      logger.error('[DatabaseService] saveChatMessageFallback failed', e);
+      return 0;
     }
-    return newMsg.id!;
   }
 
-  private async getChatHistoryFallback(workspace: string, limit: number, offset: number): Promise<ChatMessage[]> {
-    const key = `${STORAGE_FALLBACK_PREFIX}chat_${workspace}`;
-    let stored = '[]';
-    if (typeof window !== 'undefined' && window.electron?.store) {
-      stored = await window.electron.store.get(key) ?? '[]';
-    } else if (typeof localStorage !== 'undefined') {
-      stored = window.electronAPI.store.get(key) ?? '[]';
+  private async getChatHistoryFallback(
+    workspace: string,
+    limit: number,
+    offset: number,
+  ): Promise<ChatMessage[]> {
+    try {
+      const key = `${STORAGE_FALLBACK_PREFIX}chat_${workspace}`;
+      let stored = '[]';
+      if (typeof window !== 'undefined' && window.electron?.store) {
+        stored = (await window.electron.store.get(key)) ?? '[]';
+      } else {
+        stored = localStorage.getItem(key) ?? '[]';
+      }
+      const msgs: ChatMessage[] = JSON.parse(stored);
+      return msgs.slice(offset, offset + limit);
+    } catch (e) {
+      logger.error('[DatabaseService] getChatHistoryFallback failed', e);
+      return [];
     }
-    const msgs: ChatMessage[] = JSON.parse(stored);
-    return msgs.slice(offset, offset + limit);
   }
 
   // -------------------------------------------------------------------------
   // Utility parsers
   // -------------------------------------------------------------------------
-  private parseChatMessage(row: any): ChatMessage {
+  private parseChatMessage(row: unknown[] | Record<string, unknown>): ChatMessage {
+    let workspaceContext: unknown = null;
+    try {
+      if (Array.isArray(row) && row[7]) {
+        workspaceContext = JSON.parse(row[7] as string);
+      } else if (!Array.isArray(row) && row['workspace_context']) {
+        workspaceContext = JSON.parse(row['workspace_context'] as string);
+      }
+    } catch (e) {
+      logger.warn('[DatabaseService] Failed to parse workspace_context', e);
+      workspaceContext = null;
+    }
+
     if (Array.isArray(row)) {
       return {
-        id: row[0],
-        timestamp: new Date(row[1]),
-        workspace_path: row[2],
-        user_message: row[3],
-        ai_response: row[4],
-        model_used: row[5],
-        tokens_used: row[6] ?? null,
-        workspace_context: row[7] ? JSON.parse(row[7]) : null,
+        id: row[0] as number | undefined,
+        timestamp: new Date(row[1] as string),
+        workspace_path: row[2] as string,
+        user_message: row[3] as string,
+        ai_response: row[4] as string,
+        model_used: row[5] as string,
+        tokens_used: (row[6] as number | null | undefined) ?? null,
+        workspace_context: workspaceContext as string | null | undefined,
       };
     }
     return {
-      id: row.id,
-      timestamp: new Date(row.timestamp),
-      workspace_path: row.workspace_path,
-      user_message: row.user_message,
-      ai_response: row.ai_response,
-      model_used: row.model_used,
-      tokens_used: row.tokens_used ?? null,
-      workspace_context: row.workspace_context ? JSON.parse(row.workspace_context) : null,
+      id: row['id'] as number | undefined,
+      timestamp: new Date(row['timestamp'] as string),
+      workspace_path: row['workspace_path'] as string,
+      user_message: row['user_message'] as string,
+      ai_response: row['ai_response'] as string,
+      model_used: row['model_used'] as string,
+      tokens_used: (row['tokens_used'] as number | null | undefined) ?? null,
+      workspace_context: workspaceContext as string | null | undefined,
     };
   }
 
@@ -314,14 +389,14 @@ export class DatabaseService {
   // Persistence for sql.js (optional)
   // -------------------------------------------------------------------------
   private async saveToLocalStorage(): Promise<void> {
-    if (this.isElectron || !this.db || typeof this.db.export !== 'function') return;
+    if (this.isElectron || !this.db) return;
     try {
-      const data = this.db.export();
+      const data = this.sdb.export();
       const base64 = btoa(String.fromCharCode(...data));
       if (typeof window !== 'undefined' && window.electron?.store) {
         await window.electron.store.set('deepcode_database_blob', base64);
-      } else if (typeof localStorage !== 'undefined') {
-        window.electronAPI.store.set('deepcode_database_blob', base64);
+      } else {
+        localStorage.setItem('deepcode_database_blob', base64);
       }
     } catch (e) {
       logger.error('[DatabaseService] saveToLocalStorage failed', e);
@@ -340,66 +415,75 @@ export class DatabaseService {
 
   async getSetting(key: string): Promise<string | null> {
     if (this.useFallback) {
-      if (typeof window !== 'undefined' && window.electron?.store) {
-        return await window.electron.store.get(`${STORAGE_FALLBACK_PREFIX}setting_${key}`) ?? null;
+      try {
+        if (typeof window !== 'undefined' && window.electron?.store) {
+          return (
+            (await window.electron.store.get(`${STORAGE_FALLBACK_PREFIX}setting_${key}`)) ?? null
+          );
+        }
+        return localStorage.getItem(`${STORAGE_FALLBACK_PREFIX}setting_${key}`);
+      } catch (e) {
+        logger.warn('[DatabaseService] getSetting fallback failed', e);
+        return null;
       }
-      if (typeof localStorage !== 'undefined') {
-        return window.electronAPI.store.get(`${STORAGE_FALLBACK_PREFIX}setting_${key}`);
-      }
-      return null;
     }
 
     try {
       if (this.isElectron) {
-        const result = await this.db.query('SELECT value FROM settings WHERE key = ?', [key]);
+        const result = await this.edb.query('SELECT value FROM settings WHERE key = ?', [key]);
         // result.data contains the array of rows for SELECT queries
         if (result.success && Array.isArray(result.data) && result.data.length > 0) {
-          return result.data[0].value;
+          return (result.data[0] as { value?: string }).value ?? null;
         }
         return null;
       }
-      const stmt = this.db.prepare('SELECT value FROM settings WHERE key = ?');
+      const stmt = this.sdb.prepare('SELECT value FROM settings WHERE key = ?');
       const row = stmt.get(key) as { value?: string } | undefined;
       return row?.value ?? null;
     } catch (error) {
       logger.warn('[DatabaseService] getSetting failed, using fallback', error);
       if (typeof window !== 'undefined' && window.electron?.store) {
-        return await window.electron.store.get(`${STORAGE_FALLBACK_PREFIX}setting_${key}`) ?? null;
+        return (
+          (await window.electron.store.get(`${STORAGE_FALLBACK_PREFIX}setting_${key}`)) ?? null
+        );
       }
-      if (typeof localStorage !== 'undefined') {
-        return window.electronAPI.store.get(`${STORAGE_FALLBACK_PREFIX}setting_${key}`);
-      }
-      return null;
+      return localStorage.getItem(`${STORAGE_FALLBACK_PREFIX}setting_${key}`);
     }
   }
 
   async logEvent(eventType: string, data: Record<string, unknown>): Promise<void> {
     if (this.useFallback) {
-      const key = `${STORAGE_FALLBACK_PREFIX}events`;
-      let existing: any[] = [];
+      try {
+        const key = `${STORAGE_FALLBACK_PREFIX}events`;
+        let existing: Array<Record<string, unknown>> = [];
 
-      if (typeof window !== 'undefined' && window.electron?.store) {
-        const stored = await window.electron.store.get(key) ?? '[]';
-        existing = JSON.parse(stored);
-        existing.push({ eventType, data, timestamp: new Date().toISOString() });
-        await window.electron.store.set(key, JSON.stringify(existing));
-      } else if (typeof localStorage !== 'undefined') {
-        existing = JSON.parse(window.electronAPI.store.get(key) ?? '[]');
-        existing.push({ eventType, data, timestamp: new Date().toISOString() });
-        window.electronAPI.store.set(key, JSON.stringify(existing));
+        if (typeof window !== 'undefined' && window.electron?.store) {
+          const stored = (await window.electron.store.get(key)) ?? '[]';
+          existing = JSON.parse(stored);
+          existing.push({ eventType, data, timestamp: new Date().toISOString() });
+          await window.electron.store.set(key, JSON.stringify(existing));
+        } else {
+          existing = JSON.parse(localStorage.getItem(key) ?? '[]');
+          existing.push({ eventType, data, timestamp: new Date().toISOString() });
+          localStorage.setItem(key, JSON.stringify(existing));
+        }
+      } catch (e) {
+        logger.warn('[DatabaseService] logEvent fallback failed', e);
       }
       return;
     }
 
     try {
       if (this.isElectron) {
-        await this.db.query(
+        await this.edb.query(
           'INSERT INTO analytics_events (event_type, event_data, timestamp) VALUES (?, ?, ?)',
-          [eventType, JSON.stringify(data || {}), new Date().toISOString()]
+          [eventType, JSON.stringify(data || {}), new Date().toISOString()],
         );
         return;
       }
-      const stmt = this.db.prepare('INSERT INTO analytics_events (event_type, event_data, timestamp) VALUES (?, ?, ?)');
+      const stmt = this.sdb.prepare(
+        'INSERT INTO analytics_events (event_type, event_data, timestamp) VALUES (?, ?, ?)',
+      );
       stmt.run(eventType, JSON.stringify(data || {}), new Date().toISOString());
     } catch (error) {
       logger.warn('[DatabaseService] logEvent failed, ignoring', error);
@@ -413,9 +497,9 @@ export class DatabaseService {
       let legacy: string | null = null;
 
       if (typeof window !== 'undefined' && window.electron?.store) {
-        legacy = await window.electron.store.get(legacyKey) ?? null;
-      } else if (typeof localStorage !== 'undefined') {
-        legacy = window.electronAPI.store.get(legacyKey);
+        legacy = (await window.electron.store.get(legacyKey)) ?? null;
+      } else {
+        legacy = localStorage.getItem(legacyKey);
       }
 
       if (!legacy) {
@@ -430,15 +514,15 @@ export class DatabaseService {
           // Electron: use IPC query method
           for (const entry of parsed) {
             try {
-              await this.db.query(
+              await this.edb.query(
                 'INSERT INTO strategy_memory (pattern_hash, pattern_data, success_rate, usage_count, created_at) VALUES (?, ?, ?, ?, ?)',
                 [
                   entry['pattern_hash'] ?? '',
                   JSON.stringify(entry['pattern_data'] ?? {}),
                   entry['success_rate'] ?? 0,
                   entry['usage_count'] ?? 0,
-                  entry['created_at'] ?? new Date().toISOString()
-                ]
+                  entry['created_at'] ?? new Date().toISOString(),
+                ],
               );
               migrated++;
             } catch (err) {
@@ -447,17 +531,17 @@ export class DatabaseService {
           }
         } else {
           // sql.js: use prepare/run pattern
-          const stmt = this.db.prepare(
-            'INSERT INTO strategy_memory (pattern_hash, pattern_data, success_rate, usage_count, created_at) VALUES (?, ?, ?, ?, ?)'
+          const stmt = this.sdb.prepare(
+            'INSERT INTO strategy_memory (pattern_hash, pattern_data, success_rate, usage_count, created_at) VALUES (?, ?, ?, ?, ?)',
           );
-          parsed.forEach((entry: any) => {
+          parsed.forEach((entry: Record<string, unknown>) => {
             try {
               stmt.run(
                 entry.pattern_hash ?? '',
                 JSON.stringify(entry.pattern_data ?? {}),
                 entry.success_rate ?? 0,
                 entry.usage_count ?? 0,
-                entry.created_at ?? new Date().toISOString()
+                entry.created_at ?? new Date().toISOString(),
               );
               migrated++;
             } catch (err) {
@@ -468,8 +552,8 @@ export class DatabaseService {
 
         if (typeof window !== 'undefined' && window.electron?.store) {
           await window.electron.store.delete(legacyKey);
-        } else if (typeof localStorage !== 'undefined') {
-          window.electronAPI.store.delete(legacyKey);
+        } else {
+          localStorage.removeItem(legacyKey);
         }
         return { migrated };
       }
@@ -484,8 +568,8 @@ export class DatabaseService {
   // Cleanup
   // -------------------------------------------------------------------------
   async close(): Promise<void> {
-    if (this.db && this.isElectron && typeof this.db.close === 'function') {
-      this.db.close();
+    if (this.db && this.isElectron && this.edb.close) {
+      this.edb.close();
       logger.debug('[DatabaseService] Database connection closed');
     }
   }

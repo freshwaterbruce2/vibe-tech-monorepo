@@ -1,4 +1,3 @@
-// import { AgentTask, TaskResult as AgentResult } from './AutonomousAgent';
 // Fallback interfaces
 import { logger } from '../services/Logger';
 
@@ -10,7 +9,7 @@ interface AgentTask {
 
 interface AgentResult {
   success: boolean;
-  data?: any;
+  data?: Record<string, unknown>;
   error?: string;
 }
 
@@ -34,7 +33,7 @@ export interface AgentSession {
     output: number;
   };
   cost: number;
-  state: Record<string, any>;
+  state: Record<string, unknown>;
 }
 
 export interface SessionCheckpoint {
@@ -94,13 +93,13 @@ export class SessionManager {
     return agentSession;
   }
 
-  updateAgentState(sessionId: string, agentId: string, state: Record<string, any>) {
+  updateAgentState(sessionId: string, agentId: string, state: Record<string, unknown>) {
     const session = this.sessions.get(sessionId);
     if (!session) {
       return;
     }
 
-    const agent = session.agents.find((a) => a.agentId === agentId);
+    const agent = session.agents.find(a => a.agentId === agentId);
     if (agent) {
       agent.state = { ...agent.state, ...state };
       this.persistSession(session);
@@ -135,8 +134,8 @@ export class SessionManager {
   }
 
   restoreFromCheckpoint(checkpointId: string): Session | null {
-    for (const [_sessionId, checkpoints] of this.checkpoints) {
-      const checkpoint = checkpoints.find((c) => c.checkpointId === checkpointId);
+    for (const checkpoints of this.checkpoints.values()) {
+      const checkpoint = checkpoints.find(c => c.checkpointId === checkpointId);
       if (checkpoint) {
         const restoredSession = JSON.parse(JSON.stringify(checkpoint.state));
         restoredSession.id = this.generateSessionId(); // New session ID
@@ -174,7 +173,7 @@ export class SessionManager {
 
     const successRate =
       session.agents.reduce((sum, agent) => {
-        const successful = agent.results.filter((r) => r.success).length;
+        const successful = agent.results.filter(r => r.success).length;
         return sum + (agent.tasks.length > 0 ? successful / agent.tasks.length : 0);
       }, 0) / session.agents.length;
 
@@ -188,11 +187,11 @@ export class SessionManager {
   }
 
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `session_${crypto.randomUUID()}`;
   }
 
   private generateCheckpointId(): string {
-    return `checkpoint_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `checkpoint_${crypto.randomUUID()}`;
   }
 
   private persistSession(session: Session) {

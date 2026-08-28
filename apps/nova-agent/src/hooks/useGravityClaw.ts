@@ -5,17 +5,74 @@ const GRAVITY_CLAW_URL =
 
 /** Model sent to GravityClaw — override with VITE_GRAVITY_CLAW_MODEL env var */
 const GRAVITY_CLAW_MODEL =
-  (import.meta.env.VITE_GRAVITY_CLAW_MODEL as string | undefined) ?? 'gemini-3.1-pro-preview-customtools';
+  (import.meta.env.VITE_GRAVITY_CLAW_MODEL as string | undefined) ??
+  'gemini-3.1-pro-preview-customtools';
 
 export interface GCMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
+interface SendMessageOpts {
+  model?: string;
+  onChunk?: (chunk: string) => void;
+}
+
+async function postChat(
+  messages: GCMessage[],
+  model: string,
+  signal: AbortSignal,
+): Promise<Response> {
+  const res = await fetch(`${GRAVITY_CLAW_URL}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages, model }),
+    signal,
+  });
+
+  if (!res.ok) {
+    let errMsg = `HTTP ${res.status}`;
+    try {
+      const errBody = (await res.json()) as { error?: string };
+      if (errBody.error) errMsg = errBody.error;
+    } catch {
+      // ignore parse error
+    }
+    throw new Error(errMsg);
+  }
+
+  return res;
+}
+
+async function readStream(res: Response, onChunk?: (chunk: string) => void): Promise<string> {
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error('No response body from GravityClaw');
+
+  const decoder = new TextDecoder();
+  let full = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    full += chunk;
+    onChunk?.(chunk);
+  }
+
+  // Flush any remaining bytes buffered in the decoder
+  const tail = decoder.decode();
+  if (tail) {
+    full += tail;
+    onChunk?.(tail);
+  }
+
+  return full;
+}
+
 interface UseGravityClawReturn {
   sendMessage: (
     messages: GCMessage[],
-    opts?: { model?: string; onChunk?: (chunk: string) => void }
+    opts?: { model?: string; onChunk?: (chunk: string) => void },
   ) => Promise<string>;
   isStreaming: boolean;
   abort: () => void;
@@ -30,7 +87,7 @@ export function useGravityClaw(): UseGravityClawReturn {
   const sendMessage = useCallback(
     async (
       messages: GCMessage[],
-      { model = GRAVITY_CLAW_MODEL, onChunk }: { model?: string; onChunk?: (chunk: string) => void } = {}
+      { model = GRAVITY_CLAW_MODEL, onChunk }: SendMessageOpts = {},
     ): Promise<string> => {
       abortRef.current?.abort();
       const ac = new AbortController();
@@ -38,45 +95,14 @@ export function useGravityClaw(): UseGravityClawReturn {
       setIsStreaming(true);
 
       try {
-        const res = await fetch(`${GRAVITY_CLAW_URL}/api/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages, model }),
-          signal: ac.signal,
-        });
-
-        if (!res.ok) {
-          let errMsg = `HTTP ${res.status}`;
-          try {
-            const errBody = (await res.json()) as { error?: string };
-            if (errBody.error) errMsg = errBody.error;
-          } catch {
-            // ignore parse error
-          }
-          throw new Error(errMsg);
-        }
-
-        const reader = res.body?.getReader();
-        if (!reader) throw new Error('No response body from GravityClaw');
-
-        const decoder = new TextDecoder();
-        let full = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          full += chunk;
-          onChunk?.(chunk);
-        }
-
-        return full;
+        const res = await postChat(messages, model, ac.signal);
+        return await readStream(res, onChunk);
       } finally {
         setIsStreaming(false);
         abortRef.current = null;
       }
     },
-    []
+    [],
   );
 
   const abort = useCallback(() => {

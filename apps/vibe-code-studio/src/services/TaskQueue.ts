@@ -3,19 +3,17 @@
  * Manages task execution with priority ordering and concurrency control
  */
 import type {
-    BackgroundTask,
-    TaskExecutor,
-    TaskFilter,
-    TaskNotification,
-    TaskProgress,
-    TaskQueueOptions,
-    TaskStats,
-    TaskType
-} from '@vibetech/types/tasks';
-import {
-    TaskPriority,
-    TaskStatus
-} from '@vibetech/types/tasks';
+  BackgroundTask,
+  TaskExecutor,
+  TaskFilter,
+  TaskNotification,
+  TaskProgress,
+  TaskQueueOptions,
+  TaskResult,
+  TaskStats,
+  TaskType,
+} from '@vibetech/types';
+import { TaskPriority, TaskStatus } from '@vibetech/types';
 
 import { logger } from '../services/Logger';
 
@@ -69,7 +67,7 @@ export class TaskQueue {
       priority?: TaskPriority;
       cancelable?: boolean;
       pausable?: boolean;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     } = {}
   ): string {
     if (this.tasks.size >= this.options.maxQueueSize) {
@@ -102,7 +100,9 @@ export class TaskQueue {
       showToast: false,
     });
 
-    this.persistState().catch(err => logger.error('Failed to persist state after adding task', err));
+    this.persistState().catch(err =>
+      logger.error('Failed to persist state after adding task', err)
+    );
     return task.id;
   }
 
@@ -111,7 +111,9 @@ export class TaskQueue {
    */
   async cancelTask(taskId: string): Promise<boolean> {
     const task = this.tasks.get(taskId);
-    if (!task) { return false; }
+    if (!task) {
+      return false;
+    }
 
     if (!task.cancelable) {
       throw new Error('Task is not cancelable');
@@ -147,7 +149,9 @@ export class TaskQueue {
    */
   async pauseTask(taskId: string): Promise<boolean> {
     const task = this.tasks.get(taskId);
-    if (task?.status !== TaskStatus.RUNNING) { return false; }
+    if (task?.status !== TaskStatus.RUNNING) {
+      return false;
+    }
 
     if (!task.pausable) {
       throw new Error('Task is not pausable');
@@ -179,7 +183,9 @@ export class TaskQueue {
    */
   async resumeTask(taskId: string): Promise<boolean> {
     const task = this.tasks.get(taskId);
-    if (task?.status !== TaskStatus.PAUSED) { return false; }
+    if (task?.status !== TaskStatus.PAUSED) {
+      return false;
+    }
 
     task.status = TaskStatus.QUEUED;
 
@@ -211,20 +217,18 @@ export class TaskQueue {
 
     if (filter) {
       if (filter.status) {
-        tasks = tasks.filter((t) => filter.status!.includes(t.status));
+        tasks = tasks.filter(t => filter.status!.includes(t.status));
       }
       if (filter.type) {
-        tasks = tasks.filter((t) => filter.type!.includes(t.type));
+        tasks = tasks.filter(t => filter.type!.includes(t.type));
       }
       if (filter.priority) {
-        tasks = tasks.filter((t) => filter.priority!.includes(t.priority));
+        tasks = tasks.filter(t => filter.priority!.includes(t.priority));
       }
       if (filter.searchTerm) {
         const term = filter.searchTerm.toLowerCase();
         tasks = tasks.filter(
-          (t) =>
-            t.name.toLowerCase().includes(term) ||
-            t.description?.toLowerCase().includes(term)
+          t => t.name.toLowerCase().includes(term) || t.description?.toLowerCase().includes(term)
         );
       }
     }
@@ -237,11 +241,14 @@ export class TaskQueue {
    */
   getStats(): TaskStats {
     const tasks = Array.from(this.tasks.values());
-    const completedTasks = [...this.taskHistory, ...tasks.filter(t => t.status === TaskStatus.COMPLETED)];
+    const completedTasks = [
+      ...this.taskHistory,
+      ...tasks.filter(t => t.status === TaskStatus.COMPLETED),
+    ];
 
     const completionTimes = completedTasks
-      .filter((t) => t.startedAt && t.completedAt)
-      .map((t) => t.completedAt!.getTime() - t.startedAt!.getTime());
+      .filter(t => t.startedAt && t.completedAt)
+      .map(t => t.completedAt!.getTime() - t.startedAt!.getTime());
 
     const averageCompletionTime =
       completionTimes.length > 0
@@ -250,11 +257,11 @@ export class TaskQueue {
 
     return {
       total: tasks.length,
-      queued: tasks.filter((t) => t.status === TaskStatus.QUEUED).length,
-      running: tasks.filter((t) => t.status === TaskStatus.RUNNING).length,
-      completed: tasks.filter((t) => t.status === TaskStatus.COMPLETED).length,
-      failed: tasks.filter((t) => t.status === TaskStatus.FAILED).length,
-      canceled: tasks.filter((t) => t.status === TaskStatus.CANCELED).length,
+      queued: tasks.filter(t => t.status === TaskStatus.QUEUED).length,
+      running: tasks.filter(t => t.status === TaskStatus.RUNNING).length,
+      completed: tasks.filter(t => t.status === TaskStatus.COMPLETED).length,
+      failed: tasks.filter(t => t.status === TaskStatus.FAILED).length,
+      canceled: tasks.filter(t => t.status === TaskStatus.CANCELED).length,
       averageCompletionTime,
     };
   }
@@ -280,7 +287,7 @@ export class TaskQueue {
       }
     });
 
-    completedIds.forEach((id) => this.tasks.delete(id));
+    completedIds.forEach(id => this.tasks.delete(id));
     this.persistState();
   }
 
@@ -288,7 +295,7 @@ export class TaskQueue {
    * Clear all tasks
    */
   clearAll(): void {
-    this.tasks.forEach((task) => {
+    this.tasks.forEach(task => {
       if (task.status === TaskStatus.RUNNING) {
         this.cancelTask(task.id);
       }
@@ -334,7 +341,9 @@ export class TaskQueue {
 
     // Get next task by priority
     const nextTask = this.getNextTask();
-    if (!nextTask) { return; }
+    if (!nextTask) {
+      return;
+    }
 
     // Execute task
     await this.executeTask(nextTask);
@@ -342,7 +351,7 @@ export class TaskQueue {
 
   private getNextTask(): BackgroundTask | null {
     const queuedTasks = Array.from(this.tasks.values())
-      .filter((t) => t.status === TaskStatus.QUEUED)
+      .filter(t => t.status === TaskStatus.QUEUED)
       .sort((a, b) => {
         // Sort by priority (higher first), then by creation time (earlier first)
         if (a.priority !== b.priority) {
@@ -393,75 +402,80 @@ export class TaskQueue {
         this.persistState();
       });
 
-      task.result = result;
-      task.status = result.success ? TaskStatus.COMPLETED : TaskStatus.FAILED;
-      task.completedAt = new Date();
+      this.finishTask(task, result);
+    } catch (error) {
+      this.handleTaskFailure(task, error);
+    }
+  }
+
+  private finishTask(task: BackgroundTask, result: TaskResult): void {
+    task.result = result;
+    task.status = result.success ? TaskStatus.COMPLETED : TaskStatus.FAILED;
+    task.completedAt = new Date();
+
+    this.notify({
+      taskId: task.id,
+      taskName: task.name,
+      type: result.success ? 'completed' : 'failed',
+      message: result.success
+        ? `Task "${task.name}" completed successfully`
+        : `Task "${task.name}" failed: ${result.error}`,
+      timestamp: new Date(),
+      showToast: true,
+    });
+
+    this.runningTasks.delete(task.id);
+    this.moveToHistory(task);
+    this.persistState();
+  }
+
+  private handleTaskFailure(task: BackgroundTask, error: unknown): void {
+    task.status = TaskStatus.FAILED;
+    task.result = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+    task.completedAt = new Date();
+
+    // Retry if enabled and under max retries
+    if (this.options.retryFailedTasks && task.retryCount < task.maxRetries) {
+      task.retryCount++;
+      task.status = TaskStatus.QUEUED;
+      // Reset timestamps for retry
+      (task as BackgroundTask & { startedAt?: Date }).startedAt = undefined;
+      (task as BackgroundTask & { completedAt?: Date }).completedAt = undefined;
 
       this.notify({
         taskId: task.id,
         taskName: task.name,
-        type: result.success ? 'completed' : 'failed',
-        message: result.success
-          ? `Task "${task.name}" completed successfully`
-          : `Task "${task.name}" failed: ${result.error}`,
+        type: 'progress',
+        message: `Task "${task.name}" failed, retrying (${task.retryCount}/${task.maxRetries})`,
+        timestamp: new Date(),
+        showToast: false,
+      });
+    } else {
+      this.notify({
+        taskId: task.id,
+        taskName: task.name,
+        type: 'failed',
+        message: `Task "${task.name}" failed: ${task.result.error}`,
         timestamp: new Date(),
         showToast: true,
       });
 
-      this.runningTasks.delete(task.id);
       this.moveToHistory(task);
-      this.persistState();
-    } catch (error) {
-      task.status = TaskStatus.FAILED;
-      task.result = {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-      task.completedAt = new Date();
-
-      // Retry if enabled and under max retries
-      if (
-        this.options.retryFailedTasks &&
-        task.retryCount < task.maxRetries
-      ) {
-        task.retryCount++;
-        task.status = TaskStatus.QUEUED;
-        // Reset timestamps for retry
-        (task as any).startedAt = undefined;
-        (task as any).completedAt = undefined;
-
-        this.notify({
-          taskId: task.id,
-          taskName: task.name,
-          type: 'progress',
-          message: `Task "${task.name}" failed, retrying (${task.retryCount}/${task.maxRetries})`,
-          timestamp: new Date(),
-          showToast: false,
-        });
-      } else {
-        this.notify({
-          taskId: task.id,
-          taskName: task.name,
-          type: 'failed',
-          message: `Task "${task.name}" failed: ${task.result.error}`,
-          timestamp: new Date(),
-          showToast: true,
-        });
-
-        this.moveToHistory(task);
-      }
-
-      this.runningTasks.delete(task.id);
-      this.persistState();
     }
+
+    this.runningTasks.delete(task.id);
+    this.persistState();
   }
 
   private notify(notification: TaskNotification): void {
-    this.listeners.forEach((listener) => listener(notification));
+    this.listeners.forEach(listener => listener(notification));
   }
 
   private generateId(): string {
-    return `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `task_${crypto.randomUUID()}`;
   }
 
   private moveToHistory(task: BackgroundTask): void {
@@ -473,7 +487,9 @@ export class TaskQueue {
   }
 
   private async persistState(): Promise<void> {
-    if (!this.options.enablePersistence) { return; }
+    if (!this.options.enablePersistence) {
+      return;
+    }
 
     try {
       const state = {
@@ -484,8 +500,8 @@ export class TaskQueue {
 
       if (typeof window !== 'undefined' && window.electron?.store) {
         await window.electron.store.set('deepcode_task_queue', JSON.stringify(state));
-      } else if (typeof localStorage !== 'undefined') {
-        window.electronAPI.store.set('deepcode_task_queue', JSON.stringify(state));
+      } else {
+        localStorage.setItem('deepcode_task_queue', JSON.stringify(state));
       }
     } catch (error) {
       logger.error('Failed to persist task queue state:', error);
@@ -496,21 +512,27 @@ export class TaskQueue {
     try {
       let stored: string | null = null;
       if (typeof window !== 'undefined' && window.electron?.store) {
-        stored = await window.electron.store.get('deepcode_task_queue') ?? null;
-      } else if (typeof localStorage !== 'undefined') {
-        stored = window.electronAPI.store.get('deepcode_task_queue');
+        stored = (await window.electron.store.get('deepcode_task_queue')) ?? null;
+      } else {
+        stored = localStorage.getItem('deepcode_task_queue');
       }
 
-      if (!stored) { return; }
+      if (!stored) {
+        return;
+      }
 
       const state = JSON.parse(stored);
 
       // Restore tasks
-      state.tasks?.forEach(([id, task]: [string, any]) => {
+      state.tasks?.forEach(([id, task]: [string, BackgroundTask]) => {
         // Convert date strings back to Date objects
         task.createdAt = new Date(task.createdAt);
-        if (task.startedAt) { task.startedAt = new Date(task.startedAt); }
-        if (task.completedAt) { task.completedAt = new Date(task.completedAt); }
+        if (task.startedAt) {
+          task.startedAt = new Date(task.startedAt);
+        }
+        if (task.completedAt) {
+          task.completedAt = new Date(task.completedAt);
+        }
 
         // Reset running tasks to queued on reload
         if (task.status === TaskStatus.RUNNING) {
@@ -523,7 +545,7 @@ export class TaskQueue {
 
       // Restore history
       if (state.history) {
-        this.taskHistory = state.history.map((task: any) => ({
+        this.taskHistory = state.history.map((task: BackgroundTask) => ({
           ...task,
           createdAt: new Date(task.createdAt),
           startedAt: task.startedAt ? new Date(task.startedAt) : undefined,

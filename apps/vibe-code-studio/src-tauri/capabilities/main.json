@@ -5,7 +5,15 @@
   "permissions": [
     "core:default",
     "shell:allow-open",
-    "shell:allow-execute",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        { "name": "cmd", "cmd": "cmd", "args": true },
+        { "name": "exec-cmd", "cmd": "powershell", "args": true },
+        { "name": "ssh", "cmd": "ssh", "args": true },
+        { "name": "vcs-backend", "sidecar": true, "args": true }
+      ]
+    },
     "dialog:default",
     "dialog:allow-open",
     "dialog:allow-save",
@@ -28,7 +36,7 @@
         { "path": "$DOCUMENT/**" },
         { "path": "$HOME/**" },
         { "path": "$APPDATA/**" },
-        { "path": "C:\\dev\\**" },
+        { "path": "V:\\monorepo\\**" },
         { "path": "D:\\databases\\**" },
         { "path": "D:\\logs\\**" },
         { "path": "D:\\data\\**" },
@@ -40,9 +48,6 @@
     "store:allow-set",
     "store:allow-delete",
     "store:allow-save",
-    "store:allow-load",
-    "updater:default",
-    "updater:allow-check",
-    "updater:allow-download-and-install"
+    "store:allow-load"
   ]
 }

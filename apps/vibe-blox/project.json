@@ -1,0 +1,141 @@
+{
+  "name": "vibe-blox",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/vibe-blox/src",
+  "tags": [
+    "type:app",
+    "platform:web",
+    "scope:vibe-blox"
+  ],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibe-blox dev"
+        ],
+        "cwd": "apps/vibe-blox"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibe-blox build"
+        ],
+        "cwd": "apps/vibe-blox"
+      },
+      "configurations": {
+        "production": {
+          "optimization": true,
+          "sourceMap": false
+        }
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibe-blox preview"
+        ],
+        "cwd": "apps/vibe-blox"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "default",
+        "{projectRoot}/**/*.{ts,tsx}"
+      ],
+      "outputs": [],
+      "options": {
+        "command": "powershell -Command \"$env:ESLINT_USE_FLAT_CONFIG='false'; node ..\\\\..\\\\node_modules\\\\eslint\\\\bin\\\\eslint.js . --ext ts,tsx --report-unused-disable-directives\"",
+        "cwd": "apps/vibe-blox"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "default",
+        "{projectRoot}/**/*.{ts,tsx}"
+      ],
+      "outputs": [],
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibe-blox typecheck"
+        ],
+        "cwd": "apps/vibe-blox"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "default",
+        "{projectRoot}/**/*.{ts,tsx}",
+        "{projectRoot}/**/*.test.{ts,tsx}"
+      ],
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibe-blox test"
+        ],
+        "cwd": "apps/vibe-blox"
+      }
+    },
+    "server": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibe-blox server"
+        ],
+        "cwd": "apps/vibe-blox"
+      }
+    },
+    "db:migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibe-blox db:migrate"
+        ],
+        "cwd": "apps/vibe-blox"
+      }
+    },
+    "db:seed": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "db:migrate"
+      ],
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibe-blox db:seed"
+        ],
+        "cwd": "apps/vibe-blox"
+      }
+    },
+    "quality": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibe-blox quality"
+        ],
+        "cwd": "apps/vibe-blox"
+      }
+    }
+  }
+}

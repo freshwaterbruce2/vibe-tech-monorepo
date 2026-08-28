@@ -261,8 +261,10 @@ export class MemoryConsolidator {
       totalMemories: previewResult.preserved + previewResult.merged,
       potentialDuplicates: previewResult.merged,
       averageSimilarity:
-        previewResult.deletions.reduce((sum, d) => sum + d.similarity, 0) /
-        (previewResult.deletions.length || 1),
+        previewResult.deletions.length === 0
+          ? 0
+          : previewResult.deletions.reduce((sum, d) => sum + d.similarity, 0) /
+            previewResult.deletions.length,
     };
   }
 }

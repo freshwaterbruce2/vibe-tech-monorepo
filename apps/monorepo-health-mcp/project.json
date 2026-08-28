@@ -1,0 +1,42 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "monorepo-health-mcp",
+  "projectType": "application",
+  "root": "apps/monorepo-health-mcp",
+  "sourceRoot": "apps/monorepo-health-mcp/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-script",
+      "options": { "script": "dev" },
+      "cache": false
+    },
+    "build": {
+      "executor": "nx:run-script",
+      "options": { "script": "build" },
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true
+    },
+    "lint": {
+      "executor": "nx:run-script",
+      "options": { "script": "lint" },
+      "cache": true
+    },
+    "test": {
+      "executor": "nx:run-script",
+      "options": { "script": "test" },
+      "cache": true
+    },
+    "test:coverage": {
+      "executor": "nx:run-script",
+      "options": { "script": "test:coverage" },
+      "outputs": ["{projectRoot}/coverage"],
+      "cache": true
+    },
+    "typecheck": {
+      "executor": "nx:run-script",
+      "options": { "script": "typecheck" },
+      "cache": true
+    }
+  },
+  "tags": ["scope:mcp", "type:mcp-server", "language:typescript"]
+}

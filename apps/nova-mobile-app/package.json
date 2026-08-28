@@ -23,13 +23,14 @@
     "@react-navigation/native": "^7.2.1",
     "@react-navigation/native-stack": "^7.14.9",
     "expo": "~54.0.33",
-    "expo-device": "^55.0.10",
-    "expo-haptics": "~55.0.9",
-    "expo-local-authentication": "~55.0.9",
-    "expo-notifications": "^55.0.13",
-    "expo-secure-store": "~55.0.9",
-    "expo-speech": "~55.0.9",
-    "expo-status-bar": "~55.0.4",
+    "expo-constants": "~18.0.13",
+    "expo-device": "~8.0.10",
+    "expo-haptics": "~15.0.8",
+    "expo-local-authentication": "~17.0.8",
+    "expo-notifications": "~0.32.17",
+    "expo-secure-store": "~15.0.8",
+    "expo-speech": "~14.0.8",
+    "expo-status-bar": "~3.0.9",
     "lucide-react-native": "^0.563.0",
     "memoize-one": "^6.0.0",
     "react": "19.2.4",
@@ -42,8 +43,9 @@
   "devDependencies": {
     "@babel/core": "^7.29.0",
     "@types/react": "19.2.10",
+    "eslint": "^9.39.4",
     "typescript": "5.9.3",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.9"
   },
   "private": true
 }

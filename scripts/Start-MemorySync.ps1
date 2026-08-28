@@ -47,7 +47,7 @@ foreach ($package in $requiredPackages) {
 }
 
 # Create the watcher script if it doesn't exist
-$watcherScript = "C:\dev\memory_watcher.py"
+$watcherScript = "V:\monorepo\memory_watcher.py"
 if (-not (Test-Path $watcherScript)) {
     @'
 #!/usr/bin/env python3
@@ -230,7 +230,7 @@ class MemorySyncHandler(FileSystemEventHandler):
             self.log(f"Auto-commit error: {e}", 'error')
 
 def main():
-    config_path = r"C:\dev\memory_sync.yaml"
+    config_path = r"V:\monorepo\memory_sync.yaml"
 
     if not os.path.exists(config_path):
         print(f"❌ Config file not found: {config_path}")
@@ -309,7 +309,7 @@ if ($Silent) {
 } else {
     Write-Host "[STARTING] Memory Sync..." -ForegroundColor Cyan
     Write-Host "   Memory Bank: $memoryRoot" -ForegroundColor Gray
-    Write-Host "   Config: C:\dev\memory_sync.yaml" -ForegroundColor Gray
+    Write-Host "   Config: V:\monorepo\memory_sync.yaml" -ForegroundColor Gray
     Write-Host "" -ForegroundColor Gray
     python $watcherScript
 }
@@ -319,8 +319,8 @@ if ($RunOnStartup) {
     $startupPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\MemorySync.bat"
     $startupContent = @"
 @echo off
-cd /d C:\dev
-powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File "C:\dev\Start-MemorySync.ps1" -Silent
+cd /d V:\monorepo
+powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File "V:\monorepo\Start-MemorySync.ps1" -Silent
 "@
     $startupContent | Out-File -FilePath $startupPath -Encoding ASCII
     Write-Host "[OK] Added to Windows startup" -ForegroundColor Green

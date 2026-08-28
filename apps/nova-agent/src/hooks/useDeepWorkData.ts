@@ -29,7 +29,7 @@ export function useDeepWorkData() {
 	};
 
 	useEffect(() => {
-		fetchData();
+		void fetchData();
 	}, []);
 
 	return { stats, sessions, isLoading, error, refetch: fetchData };

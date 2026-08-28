@@ -1,4 +1,5 @@
 import { useReducer, useEffect } from 'react';
+import { logger } from '../utils/logger';
 import { dataStore } from '../services/dataStore';
 import { checkAndUnlockAchievements, AchievementEvent } from '../services/achievementService';
 import type { Achievement } from '../types';
@@ -65,7 +66,7 @@ export const useAchievements = (options: UseAchievementsOptions = {}) => {
           payload: { achievements: loadedAchievements },
         });
       } catch (error) {
-        console.error('[useAchievements] Failed to load data:', error);
+        logger.error('[useAchievements] Failed to load data:', error);
       }
     };
     void loadData();
@@ -94,7 +95,7 @@ export const useAchievements = (options: UseAchievementsOptions = {}) => {
         }
       }
     } catch (error) {
-      console.error('[useAchievements] Failed to handle achievement event:', error);
+      logger.error('[useAchievements] Failed to handle achievement event:', error);
     }
   };
 

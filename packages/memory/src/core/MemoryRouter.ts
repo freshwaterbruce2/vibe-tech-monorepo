@@ -141,19 +141,29 @@ export class MemoryRouter {
       importance?: number;
       forceType?: MemoryType;
     },
-  ): Promise<{ type: MemoryType; id?: number; decision: RouteDecision }> {
+  ): Promise<{
+    type: MemoryType;
+    id?: number;
+    decision: RouteDecision;
+    semanticStatus?: 'inserted' | 'merged' | 'rejected_duplicate';
+  }> {
     const decision = options?.forceType
       ? { type: options.forceType, confidence: 1, reason: 'Forced type' }
       : this.classify(text);
 
     switch (decision.type) {
       case 'semantic': {
-        const id = await manager.semantic.add({
+        const result = await manager.semantic.add({
           text,
           category: options?.category,
           importance: options?.importance ?? this.defaultImportance,
         });
-        return { type: 'semantic', id, decision };
+        if (result.status === 'rejected_duplicate') {
+          return { type: 'semantic', decision, semanticStatus: result.status };
+        }
+
+        const id = result.status === 'inserted' ? result.id : result.existingId;
+        return { type: 'semantic', id, decision, semanticStatus: result.status };
       }
 
       case 'episodic': {

@@ -6,6 +6,7 @@
 import { AlertCircle, Bug, RefreshCw, Send } from 'lucide-react';
 import { Component, useState, type ComponentType, type ErrorInfo, type ReactElement, type ReactNode } from 'react';
 import styled from 'styled-components';
+import { logger } from '../../../services/Logger';
 
 /** Props for the ErrorBoundary component */
 export interface ErrorBoundaryProps {
@@ -184,7 +185,7 @@ function DefaultErrorFallback({
       await sendReport();
       setReportSent(true);
     } catch (err) {
-      console.error('Failed to send error report:', err);
+      logger.error('Failed to send error report:', err);
     } finally {
       setReportSending(false);
     }
@@ -278,7 +279,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log error to console in development
     if (process.env['NODE_ENV'] === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
+      logger.error('ErrorBoundary caught an error:', error, errorInfo);
     }
 
     // Update state with error info
@@ -297,9 +298,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
    * Logs the error to an external error tracking service
    */
   private logErrorToService = (error: Error, errorInfo: ErrorInfo): void => {
+    type WindowWithTracking = Window & {
+      Sentry?: { captureException: (err: Error, ctx: unknown) => void };
+      analytics?: { track: (event: string, data: unknown) => void };
+    };
+    const trackedWindow = (typeof window !== 'undefined' ? window : undefined) as WindowWithTracking | undefined;
+
     // Integration with error tracking services like Sentry
-    if (typeof window !== 'undefined' && (window as any).Sentry) {
-      (window as any).Sentry.captureException(error, {
+    if (trackedWindow?.Sentry) {
+      trackedWindow.Sentry.captureException(error, {
         contexts: {
           react: {
             componentStack: errorInfo.componentStack,
@@ -309,8 +316,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
 
     // Log to custom analytics
-    if (typeof window !== 'undefined' && (window as any).analytics) {
-      (window as any).analytics.track('Error Boundary Triggered', {
+    if (trackedWindow?.analytics) {
+      trackedWindow.analytics.track('Error Boundary Triggered', {
         error: error.message,
         stack: error.stack,
         componentStack: errorInfo.componentStack,
@@ -351,7 +358,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       this.setState({ reportSent: true });
     } catch (err) {
-      console.error('Failed to send error report:', err);
+      logger.error('Failed to send error report:', err);
       throw err;
     } finally {
       this.setState({ reportSending: false });

@@ -1,0 +1,14 @@
+{
+  "displayName": "Vibe-Tech",
+  "projectName": "serenity-flow",
+  "description": "An elegant, AI-guided coloring sanctuary for mindfulness",
+  "version": "1.0.0",
+  "category": "health",
+  "icon": "/app-icons/serenity-flow.png",
+  "launch": "pnpm dev",
+  "port": 3002,
+  "type": "web",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

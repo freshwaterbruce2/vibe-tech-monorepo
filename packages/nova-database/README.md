@@ -31,7 +31,7 @@ const events = activityDb.getFileEvents({ projects: ['my-app'] });
 const contextDb = new ContextDatabase('D:\\databases\\nova_context.db');
 contextDb.insertProject({
     name: 'my-app',
-    path: 'C:\\dev\\apps\\my-app',
+    path: 'V:\\monorepo\\apps\\my-app',
     type: 'web-app',
     frameworks: ['react', 'vite'],
     lastActive: Date.now(),

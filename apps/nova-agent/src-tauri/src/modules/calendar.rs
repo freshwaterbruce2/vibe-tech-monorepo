@@ -23,12 +23,12 @@ impl CalendarStore {
     pub fn new() -> Self {
         let file_path = PathBuf::from("D:\\databases\\nova_calendar.json");
         let events = if file_path.exists() {
-             match fs::read_to_string(&file_path) {
-                 Ok(content) => serde_json::from_str(&content).unwrap_or_else(|_| Vec::new()),
-                 Err(_) => Vec::new(),
-             }
+            match fs::read_to_string(&file_path) {
+                Ok(content) => serde_json::from_str(&content).unwrap_or_else(|_| Vec::new()),
+                Err(_) => Vec::new(),
+            }
         } else {
-             Vec::new()
+            Vec::new()
         };
 
         Self {
@@ -45,7 +45,8 @@ impl CalendarStore {
 }
 
 // Global state for calendar
-pub static CALENDAR_STORE: std::sync::LazyLock<CalendarStore> = std::sync::LazyLock::new(CalendarStore::new);
+pub static CALENDAR_STORE: std::sync::LazyLock<CalendarStore> =
+    std::sync::LazyLock::new(CalendarStore::new);
 
 #[command]
 pub async fn get_calendar_events() -> Result<Vec<Event>, String> {

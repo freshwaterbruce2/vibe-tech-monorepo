@@ -4,6 +4,12 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import { Command, Search } from 'lucide-react';
 import styled from 'styled-components';
 
+import {
+  filterPaletteCommands,
+  groupPaletteCommands,
+  useWorkspaceSymbolMode,
+} from '../hooks/useWorkspaceSymbolMode';
+import { SYMBOL_QUERY_PREFIX } from '../services/lsp/workspaceSymbols';
 import { vibeTheme } from '../styles/theme';
 
 interface Command {
@@ -21,6 +27,11 @@ export interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
   commands: Command[];
+  /**
+   * Live provider for `#` symbol-mode searches (spec 07 AC #6). Defaults to the
+   * LSP workspace-symbol search; injectable for tests.
+   */
+  onSymbolQuery?: (query: string) => Promise<Command[]>;
 }
 
 const Overlay = styled.div<{ $isOpen: boolean }>`
@@ -31,7 +42,7 @@ const Overlay = styled.div<{ $isOpen: boolean }>`
   bottom: 0;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
-  display: ${(props) => (props.$isOpen ? 'flex' : 'none')};
+  display: ${props => (props.$isOpen ? 'flex' : 'none')};
   align-items: flex-start;
   justify-content: center;
   padding-top: 10vh;
@@ -107,7 +118,7 @@ const CommandItem = styled.div<{ $isActive: boolean }>`
   border-radius: ${vibeTheme.borderRadius.medium};
   cursor: pointer;
   transition: all ${vibeTheme.animation.duration.fast} ease;
-  background: ${(props) => (props.$isActive ? 'rgba(139, 92, 246, 0.2)' : 'transparent')};
+  background: ${props => (props.$isActive ? 'rgba(139, 92, 246, 0.2)' : 'transparent')};
 
   &:hover {
     background: rgba(139, 92, 246, 0.1);
@@ -161,99 +172,108 @@ const Key = styled.kbd`
   color: ${vibeTheme.colors.textSecondary};
 `;
 
-export const CommandPalette = ({ isOpen, onClose, commands }: CommandPaletteProps) => {
+export const CommandPalette = ({
+  isOpen,
+  onClose,
+  commands,
+  onSymbolQuery,
+}: CommandPaletteProps) => {
   const [search, setSearch] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const filteredCommands = commands.filter((cmd) => {
-    const searchLower = search.toLowerCase();
-    return (
-      cmd.title.toLowerCase().includes(searchLower) ||
-      cmd.description?.toLowerCase().includes(searchLower) ||
-      cmd.category?.toLowerCase().includes(searchLower) ||
-      cmd.keywords?.some(keyword => keyword.toLowerCase().includes(searchLower))
-    );
+  // Ctrl+T symbol quick-open (spec 07 AC #6): the hook owns its own open
+  // state for that path, so no host wiring is required to reach symbol mode.
+  const { open, symbolMode, symbolResults, selfOpen, closeSelf } = useWorkspaceSymbolMode({
+    isOpen,
+    search,
+    enterSymbolMode: () => {
+      setSearch(SYMBOL_QUERY_PREFIX);
+      setActiveIndex(0);
+      inputRef.current?.focus();
+    },
+    onSymbolQuery,
   });
 
-  const groupedCommands = filteredCommands.reduce(
-    (acc, cmd) => {
-      const category = cmd.category ?? 'General';
-      if (!acc[category]) {
-        acc[category] = [];
-      }
-      acc[category].push(cmd);
-      return acc;
-    },
-    {} as Record<string, Command[]>
-  );
+  const handleClose = () => {
+    closeSelf();
+    onClose();
+  };
+
+  // Symbol mode bypasses the client-side filter — the language server already
+  // fuzzy-matched the query, and its hits need not contain the raw substring.
+  const filteredCommands: Command[] = symbolMode
+    ? symbolResults
+    : filterPaletteCommands(commands, search);
+
+  const groupedCommands = groupPaletteCommands(filteredCommands);
 
   useEffect(() => {
-    if (isOpen && inputRef.current) {
+    if (open && inputRef.current) {
       inputRef.current.focus();
-      setSearch('');
+      setSearch(selfOpen ? SYMBOL_QUERY_PREFIX : '');
       setActiveIndex(0);
     }
-  }, [isOpen]);
+  }, [open, selfOpen]);
 
   useHotkeys(
     'up',
-    (e) => {
-      if (isOpen) {
+    e => {
+      if (open) {
         e.preventDefault();
-        setActiveIndex((prev) => Math.max(0, prev - 1));
+        setActiveIndex(prev => Math.max(0, prev - 1));
       }
     },
-    [isOpen]
+    [open]
   );
 
   useHotkeys(
     'down',
-    (e) => {
-      if (isOpen) {
+    e => {
+      if (open) {
         e.preventDefault();
-        setActiveIndex((prev) => Math.min(filteredCommands.length - 1, prev + 1));
+        setActiveIndex(prev => Math.min(filteredCommands.length - 1, prev + 1));
       }
     },
-    [isOpen, filteredCommands.length]
+    [open, filteredCommands.length]
   );
 
   useHotkeys(
     'enter',
-    (e) => {
-      if (isOpen && filteredCommands[activeIndex]) {
+    e => {
+      if (open && filteredCommands[activeIndex]) {
         e.preventDefault();
         filteredCommands[activeIndex].action();
-        onClose();
+        handleClose();
       }
     },
-    [isOpen, filteredCommands, activeIndex, onClose]
+    [open, filteredCommands, activeIndex, onClose]
   );
 
   useHotkeys(
     'escape',
-    (e) => {
-      if (isOpen) {
+    e => {
+      if (open) {
         e.preventDefault();
-        onClose();
+        handleClose();
       }
     },
-    [isOpen, onClose]
+    [open, onClose]
   );
 
   const formatShortcut = (shortcut: string) => {
     return shortcut.split('+').map((key, i) => <Key key={i}>{key}</Key>);
   };
 
-  if (!isOpen) {
+  if (!open) {
     return null;
   }
 
   let commandIndex = 0;
 
   return (
-    <Overlay $isOpen={isOpen} onClick={onClose}>
-      <Container onClick={(e) => e.stopPropagation()}>
+    <Overlay $isOpen={open} onClick={handleClose}>
+      <Container onClick={e => e.stopPropagation()}>
         <SearchContainer>
           <SearchIcon />
           <SearchInput
@@ -261,44 +281,56 @@ export const CommandPalette = ({ isOpen, onClose, commands }: CommandPaletteProp
             type="text"
             placeholder="Type a command or search..."
             value={search}
-            onChange={(e) => {
+            onChange={e => {
               setSearch(e.target.value);
               setActiveIndex(0);
             }}
+            aria-label="Search commands"
           />
         </SearchContainer>
 
         <CommandList>
-          {Object.entries(groupedCommands).map(([category, categoryCommands]: [string, Command[]]) => (
-            <div key={category}>
-              <CommandCategory>{category}</CommandCategory>
-              {categoryCommands.map((cmd) => {
-                const currentIndex = commandIndex++;
-                return (
-                  <CommandItem
-                    key={cmd.id}
-                    $isActive={currentIndex === activeIndex}
-                    onClick={() => {
-                      cmd.action();
-                      onClose();
-                    }}
-                    onMouseEnter={() => setActiveIndex(currentIndex)}
-                  >
-                    <CommandIcon>{cmd.icon ?? <Command />}</CommandIcon>
-                    <CommandContent>
-                      <CommandTitle>{cmd.title}</CommandTitle>
-                      {cmd.description && (
-                        <CommandDescription>{cmd.description}</CommandDescription>
+          {Object.entries(groupedCommands).map(
+            ([category, categoryCommands]: [string, Command[]]) => (
+              <div key={category}>
+                <CommandCategory>{category}</CommandCategory>
+                {categoryCommands.map(cmd => {
+                  const currentIndex = commandIndex++;
+                  return (
+                    <CommandItem
+                      key={cmd.id}
+                      $isActive={currentIndex === activeIndex}
+                      onClick={() => {
+                        cmd.action();
+                        handleClose();
+                      }}
+                      onMouseEnter={() => setActiveIndex(currentIndex)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          cmd.action();
+                          handleClose();
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <CommandIcon>{cmd.icon ?? <Command />}</CommandIcon>
+                      <CommandContent>
+                        <CommandTitle>{cmd.title}</CommandTitle>
+                        {cmd.description && (
+                          <CommandDescription>{cmd.description}</CommandDescription>
+                        )}
+                      </CommandContent>
+                      {cmd.shortcut && (
+                        <CommandShortcut>{formatShortcut(cmd.shortcut)}</CommandShortcut>
                       )}
-                    </CommandContent>
-                    {cmd.shortcut && (
-                      <CommandShortcut>{formatShortcut(cmd.shortcut)}</CommandShortcut>
-                    )}
-                  </CommandItem>
-                );
-              })}
-            </div>
-          ))}
+                    </CommandItem>
+                  );
+                })}
+              </div>
+            )
+          )}
         </CommandList>
       </Container>
     </Overlay>

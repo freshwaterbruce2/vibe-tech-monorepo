@@ -8,6 +8,13 @@ import type { Table } from '@lancedb/lancedb';
 import { RAGEmbedder } from './embedder.js';
 import type { Chunk, RerankCandidate, SearchQuery, SearchResult, RAGConfig } from './types.js';
 
+/** Shape of rows returned by LanceDB vector/FTS searches */
+interface LanceDBRow {
+  _distance?: number;
+  _score?: number;
+  [key: string]: unknown;
+}
+
 const DEFAULT_LIMIT = 5;
 
 export class RAGRetriever {
@@ -64,20 +71,18 @@ export class RAGRetriever {
     // Merge into rerank candidates
     const candidateMap = new Map<string, RerankCandidate>();
 
-    for (let i = 0; i < vectorResults.length; i++) {
-      const row = vectorResults[i];
+    vectorResults.forEach((row, i) => {
       const chunk = rowToChunk(row);
       candidateMap.set(chunk.id, {
         chunk,
         vectorRank: i + 1,
-        ftsRank: 0, // Will be filled if also in FTS results
+        ftsRank: 0,
         vectorScore: row._distance != null ? 1 / (1 + row._distance) : 0,
         ftsScore: 0,
       });
-    }
+    });
 
-    for (let i = 0; i < ftsResults.length; i++) {
-      const row = ftsResults[i];
+    ftsResults.forEach((row, i) => {
       const chunk = rowToChunk(row);
       const existing = candidateMap.get(chunk.id);
 
@@ -93,7 +98,7 @@ export class RAGRetriever {
           ftsScore: row._score ?? 0,
         });
       }
-    }
+    });
 
     let candidates = Array.from(candidateMap.values());
 
@@ -108,7 +113,7 @@ export class RAGRetriever {
    */
   async vectorSearchOnly(table: Table, queryText: string, limit: number): Promise<SearchResult[]> {
     const rows = await this.vectorSearch(table, queryText, limit);
-    return rows.map((row, i) => ({
+    return rows.map((row, _i) => ({
       chunk: rowToChunk(row),
       score: row._distance != null ? 1 / (1 + row._distance) : 0,
       vectorScore: row._distance != null ? 1 / (1 + row._distance) : 0,
@@ -156,7 +161,7 @@ export class RAGRetriever {
     queryText: string,
     limit: number,
     precomputedVector?: number[],
-  ): Promise<any[]> {
+  ): Promise<LanceDBRow[]> {
     try {
       const vector =
         precomputedVector ?? (await this.embedder.embed(queryText)).vector;
@@ -173,7 +178,7 @@ export class RAGRetriever {
     }
   }
 
-  private async ftsSearch(table: Table, queryText: string, limit: number): Promise<any[]> {
+  private async ftsSearch(table: Table, queryText: string, limit: number): Promise<LanceDBRow[]> {
     try {
       // LanceDB full-text search
       const results = await table
@@ -220,7 +225,7 @@ export class RAGRetriever {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function rowToChunk(row: Record<string, unknown>): Chunk {
+function rowToChunk(row: LanceDBRow): Chunk {
   return {
     id: row.id as string,
     filePath: row.filePath as string,
@@ -228,7 +233,7 @@ function rowToChunk(row: Record<string, unknown>): Chunk {
     type: row.type as Chunk['type'],
     startLine: row.startLine as number,
     endLine: row.endLine as number,
-    symbolName: (row.symbolName as string | undefined) || undefined,
+    symbolName: (row.symbolName as string | undefined) ?? undefined,
     language: row.language as Chunk['language'],
     tokenCount: row.tokenCount as number,
     createdAt: row.createdAt as number,

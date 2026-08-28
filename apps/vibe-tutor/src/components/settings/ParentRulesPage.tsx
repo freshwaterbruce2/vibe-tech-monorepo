@@ -2,6 +2,7 @@ import { Clock, Lock, Palette, Save, Shield, Unlock, X } from 'lucide-react';
 import { useState } from 'react';
 
 import { appStore } from '../../utils/electronStore';
+import { logger } from '../../utils/logger';
 
 interface ParentRulesPageProps {
   onClose?: () => void;
@@ -91,13 +92,13 @@ const ParentRulesPage = ({ onClose }: ParentRulesPageProps) => {
       alert('Rules saved successfully!');
       if (onClose) onClose();
     } catch (error) {
-      console.error('Failed to save parent rules:', error);
+      logger.error('Failed to save parent rules:', error);
       alert('Failed to save rules. Please try again.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-violet-900 via-blue-900 to-sky-900 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="glass-card p-6">
           {/* Header */}
@@ -128,7 +129,7 @@ const ParentRulesPage = ({ onClose }: ParentRulesPageProps) => {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   {firstThenEnabled ? (
-                    <Lock className="w-6 h-6 text-fuchsia-400" />
+                    <Lock className="w-6 h-6 text-sky-400" />
                   ) : (
                     <Unlock className="w-6 h-6 text-red-400" />
                   )}
@@ -270,6 +271,8 @@ const ParentRulesPage = ({ onClose }: ParentRulesPageProps) => {
                       Animation Level
                     </label>
                     <select
+                      id="animation-level"
+                      name="animation-level"
                       aria-label="Animation level"
                       value={animationLevel}
                       onChange={(e) =>

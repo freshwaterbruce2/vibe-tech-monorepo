@@ -1,6 +1,6 @@
 {
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "name": "trendmart",
+  "name": "vibe-shop",
   "projectType": "application",
   "sourceRoot": "apps/vibe-shop/src",
   "targets": {
@@ -18,7 +18,11 @@
       ],
       "options": {
         "command": "pnpm run build",
-        "cwd": "apps/vibe-shop"
+        "cwd": "apps/vibe-shop",
+        "env": {
+          "NODE_ENV": "production",
+          "SKIP_ENV_VALIDATION": "true"
+        }
       }
     },
     "start": {
@@ -63,6 +67,21 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "tsc --noEmit",
+        "cwd": "apps/vibe-shop"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test",
+        "cwd": "apps/vibe-shop"
+      }
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/coverage"],
+      "options": {
+        "command": "pnpm run test:coverage",
         "cwd": "apps/vibe-shop"
       }
     },

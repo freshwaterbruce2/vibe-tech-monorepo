@@ -9,7 +9,7 @@
 ## Step 1: Run Automated Classifier
 
 ```powershell
-# From C:\dev
+# From V:\monorepo
 powershell -File .claude/scripts/Classify-Errors.ps1 -ProjectPath "apps/nova-agent"
 ```
 
@@ -20,7 +20,7 @@ powershell -File .claude/scripts/Classify-Errors.ps1 -ProjectPath "apps/nova-age
 The Finisher v2.0 - Error Classifier
 ═══════════════════════════════════════
 
-🔍 Analyzing errors in: C:\dev\apps\nova-agent
+🔍 Analyzing errors in: V:\monorepo\apps\nova-agent
 
 Running TypeScript check...
 Running ESLint check...

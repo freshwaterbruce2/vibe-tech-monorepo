@@ -94,7 +94,7 @@ export class IPCBridgeServer {
     }
 
     this.wss.on('connection', (ws: WebSocket, req) => {
-      const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const clientId = `client-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
       const clientIp = req.socket.remoteAddress;
 
       if (this.bridgeSecret) {
@@ -108,11 +108,13 @@ export class IPCBridgeServer {
 
       console.log(`\n✅ New connection: ${clientId} from ${clientIp}`);
       this.stats.clientConnections++;
+      const connectedAt = Date.now();
 
       this.clients.set(clientId, {
         ws,
         source: null,
-        lastSeen: Date.now(),
+        connectedAt,
+        lastSeen: connectedAt,
         messageCount: 0,
       });
 
@@ -225,6 +227,33 @@ export class IPCBridgeServer {
     }
 
     const path = resolveRequestPath(req);
+    if (path === '/api/launch-nova') {
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        });
+        res.end();
+        return;
+      }
+
+      import('child_process').then(({ exec }) => {
+        exec('pnpm nx run nova-agent:start', { cwd: process.cwd() }, (err) => {
+          if (err) {
+            console.error('Failed to launch Nova Agent:', err);
+          }
+        });
+      });
+
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      });
+      res.end(JSON.stringify({ ok: true, message: 'Launching Nova Agent...' }));
+      return;
+    }
+
     if (path === '/healthz' || path === '/health') {
       createHealthHandler(wss)(req, res);
       return;
@@ -396,7 +425,8 @@ export class IPCBridgeServer {
         id: clientId,
         source: client.source ?? 'unknown',
         messageCount: client.messageCount,
-        connected: Date.now() - (client.lastSeen - client.messageCount * 100),
+        connected: client.connectedAt,
+        lastSeen: client.lastSeen,
       });
     }
     return {

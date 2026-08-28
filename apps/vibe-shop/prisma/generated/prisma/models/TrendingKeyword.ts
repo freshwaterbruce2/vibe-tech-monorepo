@@ -199,7 +199,7 @@ export type TrendingKeywordGroupByOutputType = {
   _max: TrendingKeywordMaxAggregateOutputType | null
 }
 
-type GetTrendingKeywordGroupByPayload<T extends TrendingKeywordGroupByArgs> = Prisma.PrismaPromise<
+export type GetTrendingKeywordGroupByPayload<T extends TrendingKeywordGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<TrendingKeywordGroupByOutputType, T['by']> &
       {
@@ -1209,6 +1209,11 @@ export type TrendingKeywordFindManyArgs<ExtArgs extends runtime.Types.Extensions
    * Skip the first `n` TrendingKeywords.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of TrendingKeywords.
+   */
   distinct?: Prisma.TrendingKeywordScalarFieldEnum | Prisma.TrendingKeywordScalarFieldEnum[]
 }
 

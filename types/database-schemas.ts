@@ -74,7 +74,7 @@ export interface Interaction {
 	id: number;
 	timestamp: string;
 	agent_name: string; // 'desktop-commander', 'nova-agent', etc.
-	project_path?: string; // C:\dev\apps\crypto-enhanced
+	project_path?: string; // V:\monorepo\apps\crypto-enhanced
 	tool_name: string; // 'bash_tool', 'read_file', etc.
 	input_context?: string; // User's input/request
 	output_result?: string; // Tool's output

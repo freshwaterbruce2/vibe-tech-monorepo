@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { breakDownTask } from '../../services/breakdownService';
 import { LightningIcon } from '../ui/icons/LightningIcon';
+import StudyTextTools from '../features/StudyTextTools';
 
 interface TaskBreakdownProps {
   taskTitle: string;
@@ -52,14 +53,20 @@ const TaskBreakdown = ({ taskTitle, subject }: TaskBreakdownProps) => {
       {error && <p className="text-[var(--error-accent)]">{error}</p>}
       
       {!isLoading && !error && (
-        <ul className="space-y-3">
-          {steps.map((step, index) => (
-            <li key={index} className="flex items-start">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[var(--secondary-accent)] text-background-main font-bold text-sm mr-4 mt-0.5 flex-shrink-0">{index + 1}</span>
-              <p className="text-text-primary">{step}</p>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="space-y-3">
+            {steps.map((step, index) => (
+              <li key={index} className="flex items-start">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[var(--secondary-accent)] text-background-main font-bold text-sm mr-4 mt-0.5 flex-shrink-0">{index + 1}</span>
+                <p className="text-text-primary">{step}</p>
+              </li>
+            ))}
+          </ul>
+          <StudyTextTools
+            text={steps.join('\n')}
+            context={`Homework assignment: ${taskTitle} (${subject})`}
+          />
+        </>
       )}
     </div>
   );

@@ -26,7 +26,7 @@ export function renderElement(element: UIElement): React.ReactElement {
       );
     case 'input':
       return (
-        <input type="text" placeholder={(element.props['placeholder'] as string) || 'Enter text...'} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb', width: '100%' }} />
+        <input type="text" placeholder={(element.props['placeholder'] as string) || 'Enter text...'} aria-label="Text input" style={{ padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb', width: '100%' }} />
       );
     case 'text':
       return <p style={{ margin: 0, fontSize: '14px', color: '#1f2937' }}>{(element.props['content'] as string) || 'Text content'}</p>;

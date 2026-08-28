@@ -12,7 +12,7 @@ Users were stuck on the Context Aware Guide page with only a "Refresh" button.
 
 ## SOLUTION
 
-### Changes Made to C:\dev\apps\nova-agent\src\pages\ContextGuide.tsx
+### Changes Made to V:\monorepo\apps\nova-agent\src\pages\ContextGuide.tsx
 
 **1. Added Imports:**
 
@@ -99,7 +99,7 @@ const navigate = useNavigate();
 
 ## FILES MODIFIED
 
-**C:\dev\apps\nova-agent\src\pages\ContextGuide.tsx**
+**V:\monorepo\apps\nova-agent\src\pages\ContextGuide.tsx**
 
 - Lines added: 6 (imports + button)
 - Total size: 376 lines (was 364, +12 lines)

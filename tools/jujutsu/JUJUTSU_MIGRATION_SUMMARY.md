@@ -19,13 +19,13 @@
 ### 2. Jujutsu Installed
 
 - **Version:** v0.37.0 (latest)
-- **Location:** `C:\dev\tools\jujutsu\`
+- **Location:** `V:\monorepo\tools\jujutsu\`
 - **Method:** Direct download from GitHub (admin-free)
 - **Verification:** `jj --version` ✓
 
 ### 3. System PATH Updated
 
-- **Added:** `C:\dev\tools\jujutsu` to User PATH
+- **Added:** `V:\monorepo\tools\jujutsu` to User PATH
 - **Persistent:** Yes (survives reboot)
 - **Current Session:** Active
 
@@ -66,10 +66,10 @@ Once snapshot completes:
 
 ```powershell
 # Remove stale lock (if needed)
-Remove-Item 'C:\dev\.git\index.lock' -Force -ErrorAction SilentlyContinue
+Remove-Item 'V:\monorepo\.git\index.lock' -Force -ErrorAction SilentlyContinue
 
 # Initialize Jujutsu
-cd C:\dev
+cd V:\monorepo
 jj git init --colocate
 
 # Verify
@@ -124,7 +124,7 @@ The snapshot will complete soon. Once it does:
 Test-Path 'D:\repositories\vibetech\snapshots\20260120-095025\metadata.json'
 
 # If True, proceed with initialization
-cd C:\dev
+cd V:\monorepo
 pwsh -Command "Remove-Item '.git\index.lock' -Force -ErrorAction SilentlyContinue"
 jj git init --colocate
 jj status
@@ -139,10 +139,10 @@ If you don't want to wait:
 Stop-Process -Name git -Force
 
 # Remove lock
-Remove-Item 'C:\dev\.git\index.lock' -Force
+Remove-Item 'V:\monorepo\.git\index.lock' -Force
 
 # Initialize Jujutsu
-cd C:\dev
+cd V:\monorepo
 jj git init --colocate
 ```
 
@@ -157,7 +157,7 @@ Even before finalization, you can start learning:
 ### Read the Guide
 
 ```bash
-code C:\dev\.claude\rules\jujutsu-guide.md
+code V:\monorepo\.claude\rules\jujutsu-guide.md
 ```
 
 ### Watch Jujutsu Tutorial
@@ -271,7 +271,7 @@ jj undo  # If it doesn't work
 
 ```powershell
 # Force remove lock
-Remove-Item 'C:\dev\.git\index.lock' -Force
+Remove-Item 'V:\monorepo\.git\index.lock' -Force
 
 # Kill Git processes if needed
 Stop-Process -Name git -Force
@@ -282,7 +282,7 @@ Stop-Process -Name git -Force
 ```powershell
 # Restart PowerShell to reload PATH
 # Or add to current session:
-$env:PATH = "C:\dev\tools\jujutsu;$env:PATH"
+$env:PATH = "V:\monorepo\tools\jujutsu;$env:PATH"
 ```
 
 ---

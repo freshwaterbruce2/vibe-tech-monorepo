@@ -33,19 +33,19 @@ Use existing `auto-sync-deps.ps1` script for intelligent synchronization:
 
 ```powershell
 # Dry run - show what would change
-C:\dev\scripts\auto-sync-deps.ps1 -DryRun 1
+V:\monorepo\scripts\auto-sync-deps.ps1 -DryRun 1
 
 # Sync all dependencies
-C:\dev\scripts\auto-sync-deps.ps1
+V:\monorepo\scripts\auto-sync-deps.ps1
 
 # Sync only version conflicts
-C:\dev\scripts\auto-sync-deps.ps1 -SyncType "versions"
+V:\monorepo\scripts\auto-sync-deps.ps1 -SyncType "versions"
 
 # Sync security updates only
-C:\dev\scripts\auto-sync-deps.ps1 -SyncType "security"
+V:\monorepo\scripts\auto-sync-deps.ps1 -SyncType "security"
 
 # Force sync without confirmation
-C:\dev\scripts\auto-sync-deps.ps1 -Force 1
+V:\monorepo\scripts\auto-sync-deps.ps1 -Force 1
 ```
 
 ### 2. One-at-a-Time Updates
@@ -176,9 +176,9 @@ pnpm nx affected -t typecheck --parallel=3
 pnpm nx affected -t build --parallel=3
 
 # Synchronization
-powershell C:\dev\scripts\auto-sync-deps.ps1 -DryRun 1
-powershell C:\dev\scripts\auto-sync-deps.ps1 -SyncType security
-powershell C:\dev\scripts\auto-sync-deps.ps1
+powershell V:\monorepo\scripts\auto-sync-deps.ps1 -DryRun 1
+powershell V:\monorepo\scripts\auto-sync-deps.ps1 -SyncType security
+powershell V:\monorepo\scripts\auto-sync-deps.ps1
 
 # Rollback
 git checkout -- package.json pnpm-lock.yaml
@@ -194,7 +194,7 @@ pnpm install
 pnpm audit
 
 # 2. Auto-fix security issues
-powershell C:\dev\scripts\auto-sync-deps.ps1 -SyncType security
+powershell V:\monorepo\scripts\auto-sync-deps.ps1 -SyncType security
 
 # 3. Test affected projects
 pnpm nx affected -t test --parallel=3
@@ -228,12 +228,12 @@ git checkout -- package.json pnpm-lock.yaml
 
 ```bash
 # 1. Detect conflicts
-powershell C:\dev\scripts\auto-sync-deps.ps1 -DryRun 1
+powershell V:\monorepo\scripts\auto-sync-deps.ps1 -DryRun 1
 
 # 2. Review proposed changes
 
 # 3. Apply sync
-powershell C:\dev\scripts\auto-sync-deps.ps1
+powershell V:\monorepo\scripts\auto-sync-deps.ps1
 
 # 4. Test all affected
 pnpm nx affected -t test --parallel=3
@@ -256,7 +256,7 @@ Severity: HIGH (3 vulnerabilities)
 - semver: 7.3.5 → 7.5.4 (fixes ReDOS)
 
 Action: Update immediately
-Command: powershell C:\dev\scripts\auto-sync-deps.ps1 -SyncType security
+Command: powershell V:\monorepo\scripts\auto-sync-deps.ps1 -SyncType security
 ```
 
 ### Priority 2: Major Version Updates (BREAKING)
@@ -363,13 +363,13 @@ This agent CALLS the existing PowerShell script:
 
 ```powershell
 # Dry run before actual sync
-C:\dev\scripts\auto-sync-deps.ps1 -DryRun 1
+V:\monorepo\scripts\auto-sync-deps.ps1 -DryRun 1
 
 # Apply sync
-C:\dev\scripts\auto-sync-deps.ps1
+V:\monorepo\scripts\auto-sync-deps.ps1
 
 # Security only
-C:\dev\scripts\auto-sync-deps.ps1 -SyncType security
+V:\monorepo\scripts\auto-sync-deps.ps1 -SyncType security
 ```
 
 ### With Pre-Commit Quality Gate
@@ -385,7 +385,7 @@ After updates, validate TypeScript types across all projects.
 Before major updates, create safety snapshot:
 
 ```powershell
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Save-Snapshot.ps1 -Description "Before react 19 upgrade" -Tag "pre-react19"
 ```
 

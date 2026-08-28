@@ -9,20 +9,23 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Load bot token from Gravity Claw .env
-$envFile = "C:\dev\apps\gravity-claw\.env"
-if (-not (Test-Path $envFile)) {
-    Write-Error "Gravity Claw .env not found at $envFile"
-    exit 1
-}
-
-$envContent = Get-Content $envFile
-$botToken = ($envContent | Where-Object { $_ -match '^TELEGRAM_BOT_TOKEN=' }) -replace '^TELEGRAM_BOT_TOKEN=', ''
-$chatId = ($envContent | Where-Object { $_ -match '^TELEGRAM_ALLOWED_USER_IDS=' }) -replace '^TELEGRAM_ALLOWED_USER_IDS=', ''
+# Load Telegram bot credentials. Prefer environment variables; fall back to a root
+# .env (V:\monorepo\.env). Notifications are optional — never hard-fail the heal run.
+$botToken = $env:TELEGRAM_BOT_TOKEN
+$chatId   = $env:TELEGRAM_ALLOWED_USER_IDS
 
 if (-not $botToken -or -not $chatId) {
-    Write-Error "Missing TELEGRAM_BOT_TOKEN or TELEGRAM_ALLOWED_USER_IDS in .env"
-    exit 1
+    $envFile = "V:\monorepo\.env"
+    if (Test-Path $envFile) {
+        $envContent = Get-Content $envFile
+        if (-not $botToken) { $botToken = ($envContent | Where-Object { $_ -match '^TELEGRAM_BOT_TOKEN=' }) -replace '^TELEGRAM_BOT_TOKEN=', '' }
+        if (-not $chatId)   { $chatId   = ($envContent | Where-Object { $_ -match '^TELEGRAM_ALLOWED_USER_IDS=' }) -replace '^TELEGRAM_ALLOWED_USER_IDS=', '' }
+    }
+}
+
+if (-not $botToken -or -not $chatId) {
+    Write-Warning "Telegram not configured (set TELEGRAM_BOT_TOKEN + TELEGRAM_ALLOWED_USER_IDS env vars or V:\monorepo\.env). Skipping notification."
+    exit 0
 }
 
 # Parse report JSON
