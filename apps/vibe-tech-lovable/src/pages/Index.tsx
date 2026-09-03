@@ -2,36 +2,19 @@
 import { useEffect } from "react";
 import PageLayout from "@/components/layout/PageLayout";
 import HeroSection from "@/components/home/HeroSection";
-import ServicesSection from "@/components/home/ServicesSection";
-import PortfolioSection from "@/components/home/PortfolioSection";
-import BlogSection from "@/components/home/BlogSection";
-import CtaSection from "@/components/home/CtaSection";
 
 const Index = () => {
   useEffect(() => {
-    document.title = "Vibe Tech | Project Front Door";
+    document.title = "Vibe Tech LLC | Apps on Google Play";
   }, []);
 
   return (
-      <PageLayout
-        title="Home"
-      description="Vibe-Tech.org is the front door for the Vibe-Tech project suite, including Vibe Tutor, Chessmaster Academy, Proposal Review, Clinic Autopilot, Invoice Automation, and new AI business tools."
-      keywords="vibe tech, vibe tutor, chessmaster academy, proposal review, clinic automation, invoice automation, micro saas, AI business tools, Bruce Freshwater"
+    <PageLayout
+      title="Vibe Tech LLC"
+      description="Vibe Tech LLC ships Android apps: Vibe Tutor ($2.99, homework help for teens) and Chess Master ($1.99, 3D chess with AI tutor). Custom websites and apps available."
+      keywords="vibe tech, vibe tutor, chess master, android apps, google play, homework help, chess app, Bruce Freshwater"
     >
-      {/* Hero Section */}
       <HeroSection />
-
-      {/* Services Section */}
-      <ServicesSection />
-
-      {/* Portfolio Highlights */}
-      <PortfolioSection />
-
-      {/* Latest Blog Posts */}
-      <BlogSection />
-
-      {/* CTA Section */}
-      <CtaSection />
     </PageLayout>
   );
 };
