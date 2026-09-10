@@ -188,7 +188,7 @@ IMPORTANT: Use ONLY the parameter names specified above. Do NOT invent new param
 function getSystemAndBrowserActionDocs(): string {
   return `11. run_tests - Execute tests
     Optional params: { testPattern: string, rootPath: string }
-    Example: { "type": "run_tests", "params": { "testPattern": "*.test.ts", "rootPath": "C:\\\\project" } }
+    Example: { "type": "run_tests", "params": { "command": "pnpm test", "cwd": "C:\\\\project" } }
 
 12. git_commit - Create git commit
     Required params: { message: string }

@@ -309,6 +309,7 @@ export class OpenRouterService implements IAIService {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
+      signal: request.signal,
     });
 
     if (!response.ok) {
@@ -366,6 +367,7 @@ export class OpenRouterService implements IAIService {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
+      signal: options?.signal,
     });
 
     if (!response.ok || !response.body) {

@@ -54,6 +54,7 @@ import { useEffect } from 'react';
 import { LandingPage } from '@vibetech/landing';
 import { authService, type UserWithPlan } from '../services/AuthService';
 import { AuthModal } from '../components/AuthModal';
+import { activeAIUsageMode } from '../services/AIUsageMode';
 import { vibeStudioLandingContent } from './landingContent';
 
 // Styled Components
@@ -89,6 +90,7 @@ export function AppLayout() {
   const [workspaceRefreshKey, setWorkspaceRefreshKey] = useState(0);
   const [user, setUser] = useState<UserWithPlan | null>(authService.getCurrentUser());
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [guestWorkspace, setGuestWorkspace] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null);
 
   // Check user session and subscribe
@@ -109,7 +111,11 @@ export function AppLayout() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
-      if (hash === '#login') {
+      if (hash === '#byok') {
+        setGuestWorkspace(true);
+        if (activeAIUsageMode === 'subscription') ui.setSettingsOpen(true);
+        setAuthModalMode(null);
+      } else if (hash === '#login') {
         setAuthModalMode('login');
       } else if (hash === '#signup') {
         setAuthModalMode('signup');
@@ -138,7 +144,7 @@ export function AppLayout() {
     [ws.workspaceFolder, ws.currentFile?.path, ws.openFiles]
   );
 
-  if (!sessionChecked) {
+  if (!sessionChecked && !guestWorkspace) {
     return (
       <div
         style={{
@@ -156,7 +162,7 @@ export function AppLayout() {
     );
   }
 
-  if (!user) {
+  if (!user && !guestWorkspace) {
     return (
       <>
         <LandingPage content={vibeStudioLandingContent} />

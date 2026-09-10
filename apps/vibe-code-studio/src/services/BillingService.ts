@@ -1,35 +1,65 @@
-import { authService } from './AuthService';
-import { logger } from './Logger';
+import { isTauri } from '@tauri-apps/api/core';
+import { backendBaseUrl } from './AIUsageMode';
+
+export interface BillingStatus {
+  ok: boolean;
+  plan: string;
+  subscription: {
+    status: string;
+    currentPeriodEnd: string | null;
+    cancelAtPeriodEnd: boolean;
+  } | null;
+  managedAI: {
+    available: boolean;
+    configured: boolean;
+    limit: number;
+    used: number;
+    remaining: number;
+    resetsAt: string | null;
+    models: string[];
+    maxTokens: number;
+  };
+  checkoutAvailable: boolean;
+  portalAvailable: boolean;
+}
 
 class BillingService {
-  async triggerCheckout(): Promise<void> {
-    const user = authService.getCurrentUser();
-    if (!user) {
-      throw new Error('You must be logged in to upgrade to Pro.');
+  private async request<T>(path: string, method = 'GET'): Promise<T> {
+    const response = await fetch(`${backendBaseUrl}/api/billing/${path}`, {
+      method,
+      credentials: 'include',
+    });
+    const data = await response.json();
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || 'Billing is unavailable. Please try again.');
     }
+    return data as T;
+  }
 
-    try {
-      const res = await fetch('http://localhost:5004/api/billing/checkout', {
-        method: 'POST',
-        credentials: 'include',
-      });
+  getStatus(): Promise<BillingStatus> {
+    return this.request<BillingStatus>('status');
+  }
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to initialize billing session');
-      }
-
-      const data = await res.json();
-      if (data.ok && data.url) {
-        // Redirect the user to the Stripe Checkout page
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL returned from backend server');
-      }
-    } catch (err: any) {
-      logger.error('[BillingService] Checkout error:', err);
-      throw new Error(err.message || 'Billing error');
+  private async openSession(path: 'checkout' | 'portal'): Promise<void> {
+    const data = await this.request<{ ok: boolean; url: string }>(path, 'POST');
+    const url = new URL(data.url);
+    const expectedHost = path === 'checkout' ? 'checkout.stripe.com' : 'billing.stripe.com';
+    if (url.protocol !== 'https:' || url.hostname !== expectedHost) {
+      throw new Error('The billing service returned an invalid payment link.');
     }
+    if (isTauri()) {
+      const { open } = await import('@tauri-apps/plugin-shell');
+      await open(url.href);
+    } else if (!window.open(url.href, '_blank')) {
+      throw new Error('Allow pop-ups to open the secure billing page, then try again.');
+    }
+  }
+
+  triggerCheckout(): Promise<void> {
+    return this.openSession('checkout');
+  }
+  openPortal(): Promise<void> {
+    return this.openSession('portal');
   }
 }
 

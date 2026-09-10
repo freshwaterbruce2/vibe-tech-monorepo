@@ -10,6 +10,7 @@ import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
 
 import App from './App';
+import { initializeAIUsageMode } from './services/AIUsageMode';
 import { ProductionErrorBoundary } from './components/ErrorBoundary/ProductionErrorBoundary';
 import { installTauriShim } from './services/tauriShim';
 import { logger } from './services/Logger';
@@ -64,7 +65,7 @@ const shimWithTimeout = Promise.race([
   }),
 ]).finally(() => clearTimeout(shimTimeoutId));
 
-shimWithTimeout.then(() => {
+shimWithTimeout.then(() => initializeAIUsageMode()).then(() => {
   ReactDOM.createRoot(root).render(
     <StrictMode>
       <ErrorBoundary>
@@ -77,12 +78,5 @@ shimWithTimeout.then(() => {
   const errMsg = err instanceof Error ? err.message : String(err);
   const errStack = err instanceof Error ? err.stack : '';
   logger.error(`[TauriShim] Fatal error: ${errMsg}\nStack: ${errStack}`);
-  ReactDOM.createRoot(root).render(
-    <StrictMode>
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>
-    </StrictMode>
-  );
-  (window as unknown as Record<string, unknown>).__APP_MOUNTED__ = true;
+  ReactDOM.createRoot(root).render(<div role="alert">The app could not read its startup settings. Close and reopen it before using AI.</div>);
 });

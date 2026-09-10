@@ -145,7 +145,9 @@ export class AgentOrchestrator {
     this.activeTasks.set(taskId, task);
 
     try {
+      context.signal?.throwIfAborted();
       const coordination = await this.analyzeAndCoordinate(request, context);
+      context.signal?.throwIfAborted();
       const selectedAgents = coordination.agents;
       task.requiredAgents = selectedAgents;
       task.assignedAgents = selectedAgents;
@@ -156,6 +158,7 @@ export class AgentOrchestrator {
         context,
         coordination.strategy
       );
+      context.signal?.throwIfAborted();
       const response = this.synthesizeResponse(request, agentResponses, coordination);
       this.markTaskCompleted(task, agentResponses);
       const totalTime = Date.now() - startTime;
@@ -165,6 +168,7 @@ export class AgentOrchestrator {
     } catch (error) {
       logger.error('Request processing failed:', error);
       this.markTaskFailed(taskId);
+      this.activeTasks.delete(taskId);
       this.recordPerformance(request, [], Date.now() - startTime, false);
       throw error;
     }
@@ -490,6 +494,7 @@ export class AgentOrchestrator {
     const enhancedContext = { ...context };
 
     for (const agentKey of agentKeys) {
+      context.signal?.throwIfAborted();
       const agent = this.agents.get(agentKey);
       if (agent) {
         try {
@@ -521,6 +526,7 @@ export class AgentOrchestrator {
     context: AgentContext
   ): Promise<Record<string, AgentResponse>> {
     const promises = agentKeys.map(async agentKey => {
+      context.signal?.throwIfAborted();
       const agent = this.agents.get(agentKey);
       if (!agent) {
         return null;
@@ -585,6 +591,7 @@ export class AgentOrchestrator {
 
       // Execute other agents in parallel with enhanced context
       const remainingAgents = agentKeys.filter(key => key !== techLeadKey);
+      context.signal?.throwIfAborted();
       const remainingResponses = await this.executeParallel(
         remainingAgents,
         request,

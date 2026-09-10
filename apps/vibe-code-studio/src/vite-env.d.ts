@@ -12,6 +12,7 @@ interface ImportMetaEnv {
   readonly REACT_APP_DEEPSEEK_BASE_URL?: string;
   readonly VITE_APP_TITLE?: string;
   readonly VITE_ELECTRON_ENTRY?: string;
+  readonly VITE_BACKEND_URL?: string;
   readonly VITE_AI_PROXY_URL?: string;
   readonly VITE_USE_AI_PROXY?: string;
   readonly VITE_ENABLE_TELEMETRY?: string;

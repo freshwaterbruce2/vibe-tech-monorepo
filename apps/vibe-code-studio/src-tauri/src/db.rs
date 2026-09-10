@@ -7,7 +7,7 @@ pub struct DbState {
     pub conn: Mutex<Option<Connection>>,
 }
 
-fn get_db_path() -> PathBuf {
+pub(crate) fn get_db_path() -> Result<PathBuf, String> {
     // App-specific override ONLY. We deliberately do NOT honor the generic
     // DATABASE_PATH here: other monorepo apps consume it (vibe-invoice, vibe-justice),
     // and a stray DATABASE_PATH=...\database.db would point VCS at the wrong file,
@@ -15,7 +15,7 @@ fn get_db_path() -> PathBuf {
     // vibe-blox VIBEBLOX_DATABASE_PATH convention. Unset => canonical default below.
     if let Ok(env_path) = std::env::var("VCS_DATABASE_PATH") {
         if !env_path.trim().is_empty() {
-            return PathBuf::from(env_path);
+            return Ok(PathBuf::from(env_path));
         }
     }
 
@@ -23,20 +23,20 @@ fn get_db_path() -> PathBuf {
     if cfg!(target_os = "windows") {
         let d_path = PathBuf::from(r"D:\databases\vibe_studio.db");
         if d_path.parent().map(|p| p.exists()).unwrap_or(false) {
-            return d_path;
+            return Ok(d_path);
         }
     }
     // Fallback to user data directory
-    dirs::data_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
+    Ok(dirs::data_dir()
+        .ok_or_else(|| "Application data directory is unavailable. Set VCS_DATABASE_PATH.".to_string())?
         .join("vibe-code-studio")
-        .join("vibe_studio.db")
+        .join("vibe_studio.db"))
 }
 
 fn ensure_connection(state: &DbState) -> Result<(), String> {
     let mut guard = state.conn.lock().map_err(|e| e.to_string())?;
     if guard.is_none() {
-        let db_path = get_db_path();
+        let db_path = get_db_path()?;
 
         // Ensure parent directory exists
         if let Some(parent) = db_path.parent() {

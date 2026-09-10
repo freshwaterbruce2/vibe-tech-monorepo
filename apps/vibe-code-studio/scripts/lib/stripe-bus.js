@@ -37,6 +37,11 @@ function upsertCustomer(db, customerId, userId, email) {
 }
 
 function mirrorStripeSubscription(db, sub, fallbackCustomerId, fallbackUserId, fallbackEmail) {
+  if (sub.metadata?.app !== 'vibe-code-studio') return;
+  if (!process.env.VCS_STRIPE_PRO_PRICE_ID || !sub.items?.data?.some(item => item.price?.id === process.env.VCS_STRIPE_PRO_PRICE_ID)) {
+    db.prepare("UPDATE stripe_subscriptions SET status = 'unpaid', updated_at = datetime('now') WHERE id = ?").run(sub.id);
+    return;
+  }
   const customerId = readStripeObjectId(sub.customer) || fallbackCustomerId;
   const userId = (sub.metadata && sub.metadata.userId) || fallbackUserId || null;
   const email = (sub.metadata && sub.metadata.userEmail) || fallbackEmail || null;
@@ -45,8 +50,9 @@ function mirrorStripeSubscription(db, sub, fallbackCustomerId, fallbackUserId, f
 
   upsertCustomer(db, customerId, userId, email);
 
-  const periodEnd = sub.current_period_end
-    ? new Date(sub.current_period_end * 1000).toISOString()
+  const periodEndSeconds = sub.current_period_end || sub.items?.data?.[0]?.current_period_end;
+  const periodEnd = periodEndSeconds
+    ? new Date(periodEndSeconds * 1000).toISOString()
     : null;
   const mrr = deriveStripeSubscriptionMrr(sub);
 
@@ -69,6 +75,7 @@ function mirrorStripeSubscription(db, sub, fallbackCustomerId, fallbackUserId, f
 
 async function handleCheckoutCompleted(db, event) {
   const session = event.data.object;
+  if (session.metadata?.app !== 'vibe-code-studio') return;
   if (session.mode !== 'subscription' || !session.customer || !session.subscription) {
     return;
   }
@@ -84,30 +91,25 @@ async function handleCheckoutCompleted(db, event) {
   upsertCustomer(db, customerId, userId, email);
 
   if (subscriptionId) {
-    try {
-      const stripe = getStripeClient();
-      const sub = await stripe.subscriptions.retrieve(subscriptionId);
-      mirrorStripeSubscription(db, sub, customerId, userId, email);
-    } catch (err) {
-      console.error('[Backend] Failed to retrieve subscription details:', err);
-    }
+    const stripe = getStripeClient();
+    const sub = await stripe.subscriptions.retrieve(subscriptionId);
+    mirrorStripeSubscription(db, sub, customerId, userId, email);
   }
 }
 
-function markSubscriptionCanceled(db, sub) {
-  db.prepare(`
-    UPDATE stripe_subscriptions
-    SET status = ?, current_period_end = ?, cancel_at_period_end = ?, monthly_mrr_cents = 0, updated_at = datetime('now')
-    WHERE id = ?
-  `).run('canceled', null, 0, sub.id);
-}
-
 function buildHandlers(db) {
+  // Stripe delivery order is not guaranteed. Read current state for every
+  // subscription event so delayed retries cannot restore canceled access.
+  const refresh = async event => {
+    if (event.data.object.metadata?.app !== 'vibe-code-studio') return;
+    const sub = await getStripeClient().subscriptions.retrieve(event.data.object.id);
+    mirrorStripeSubscription(db, sub);
+  };
   return {
     'checkout.session.completed': (event) => handleCheckoutCompleted(db, event),
-    'customer.subscription.created': (event) => mirrorStripeSubscription(db, event.data.object),
-    'customer.subscription.updated': (event) => mirrorStripeSubscription(db, event.data.object),
-    'customer.subscription.deleted': (event) => markSubscriptionCanceled(db, event.data.object),
+    'customer.subscription.created': refresh,
+    'customer.subscription.updated': refresh,
+    'customer.subscription.deleted': refresh,
   };
 }
 

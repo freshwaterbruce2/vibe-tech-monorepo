@@ -13,7 +13,7 @@ import { BackendProxyService } from './providers/BackendProxyService';
 
 // Proxy mode (default ON): client-side keys never exist, so provider readiness is
 // the proxy's reachability + server key config, not a local key. Mirrors AIProviderFactory.
-const USE_AI_PROXY = import.meta.env['VITE_USE_AI_PROXY'] !== 'false';
+import { activeAIUsageMode, useAIProxy as USE_AI_PROXY } from '../AIUsageMode';
 
 export interface GenerationSession {
   id: string;
@@ -233,7 +233,8 @@ export class UnifiedAIService {
   ): Promise<AICompletionResponse & { provider: string }> {
     const controller = new AbortController();
     if (request.signal) {
-      request.signal.addEventListener('abort', () => controller.abort());
+      if (request.signal.aborted) controller.abort();
+      else request.signal.addEventListener('abort', () => controller.abort(), { once: true });
     }
     this.activeControllers.add(controller);
 
@@ -264,9 +265,12 @@ export class UnifiedAIService {
       // Get the provider for the current model
       const modelInfo = MODEL_REGISTRY[requestedModel];
       if (!modelInfo) {
+        if (activeAIUsageMode === 'subscription') {
+          throw new Error('This model is unavailable. Select an included model in Settings.');
+        }
         logger.warn(`[UnifiedAI] Unknown model: ${requestedModel}, using demo mode`);
         return {
-          content: `Demo mode: Model "${requestedModel}" not found. Please select a valid model from Settings.`,
+          content: `Model "${requestedModel}" not found. Please select a valid model from Settings.`,
           usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
           provider: 'demo',
         };
@@ -313,6 +317,7 @@ export class UnifiedAIService {
     currentFile?: object;
     relatedFiles?: object[];
     conversationHistory?: object[];
+    signal?: AbortSignal;
   }): Promise<AICompletionResponse> {
     const messages: ChatMessage[] = [];
 
@@ -331,6 +336,7 @@ export class UnifiedAIService {
       model: this.currentModel,
       maxTokens: context.maxTokens ?? 2000,
       temperature: context.temperature ?? 0.3,
+      signal: context.signal,
     };
 
     return this.complete(request);
@@ -506,6 +512,7 @@ export class UnifiedAIService {
         return;
       }
       logger.error('[UnifiedAI] Streaming failed:', error);
+      if (activeAIUsageMode === 'subscription') throw error;
       // Fallback to non-streaming
       const response = await this.complete(request);
       yield response.content;

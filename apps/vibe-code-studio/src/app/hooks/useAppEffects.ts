@@ -8,6 +8,7 @@ import { useEffect, useRef } from 'react';
 import { getDatabase, getDbInitError } from '../../modules/core/services/DatabaseManager';
 
 import { logger } from '../../services/Logger';
+import { authService } from '../../services/AuthService';
 import { telemetry } from '../../services/TelemetryService';
 import type { DbStatus } from '../types';
 import { AIProviderFactory } from '../../services/ai/AIProviderFactory';
@@ -17,7 +18,7 @@ import { syncStoredApiKeysToBackend } from '../../services/ai/backendKeySync';
 
 // Proxy mode (default ON): the backend injects provider keys, so providers are
 // initialized without a client-side key. Must match AIProviderFactory.
-const USE_AI_PROXY = import.meta.env['VITE_USE_AI_PROXY'] !== 'false';
+import { activeAIUsageMode, backendBaseUrl, useAIProxy as USE_AI_PROXY } from '../../services/AIUsageMode';
 
 export interface UseAppEffectsProps {
   // Notification handlers
@@ -196,7 +197,7 @@ async function waitForBackendReady(maxAttempts = 10, delayMs = 1500): Promise<bo
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 2000);
-      const res = await fetch('http://localhost:5004/api/ai/health', {
+      const res = await fetch(`${backendBaseUrl}/api/ai/health`, {
         credentials: 'include',
         signal: controller.signal,
       });
@@ -227,7 +228,7 @@ export function useAIProviderInit() {
       // keyed backend. Init-before-sync marks every provider unavailable.
       void (async () => {
         await waitForBackendReady();
-        await syncStoredApiKeysToBackend(SecureApiKeyManager.getInstance(logger));
+        if (activeAIUsageMode === 'byok') await syncStoredApiKeysToBackend(SecureApiKeyManager.getInstance(logger));
         await initAIProviders();
       })();
     } else {
@@ -237,6 +238,7 @@ export function useAIProviderInit() {
     // Listen for API key updates from Settings UI. Same ordering: the key must
     // reach the backend before the provider re-validates against it.
     const handleKeyUpdate = (e: Event) => {
+      if (activeAIUsageMode === 'subscription') return;
       if (USE_AI_PROXY) {
         void (async () => {
           await syncStoredApiKeysToBackend(SecureApiKeyManager.getInstance(logger), 0);
@@ -247,8 +249,19 @@ export function useAIProviderInit() {
       }
     };
 
+    const unsubscribe = authService.subscribe(() => {
+      if (activeAIUsageMode === 'subscription') void initAIProviders();
+    });
+    const handleSubscriptionUpdate = () => {
+      if (activeAIUsageMode === 'subscription') void initAIProviders();
+    };
+    window.addEventListener('subscriptionStatusUpdated', handleSubscriptionUpdate);
     window.addEventListener('apiKeyUpdated', handleKeyUpdate);
-    return () => window.removeEventListener('apiKeyUpdated', handleKeyUpdate);
+    return () => {
+      unsubscribe();
+      window.removeEventListener('subscriptionStatusUpdated', handleSubscriptionUpdate);
+      window.removeEventListener('apiKeyUpdated', handleKeyUpdate);
+    };
   }, []);
 }
 

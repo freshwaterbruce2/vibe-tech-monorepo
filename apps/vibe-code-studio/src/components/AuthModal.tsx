@@ -242,6 +242,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose }) =>
             <Label>Password</Label>
             <Input
               type="password"
+              minLength={mode === 'signup' ? 12 : undefined}
+              title={mode === 'signup' ? 'Use at least 12 characters' : undefined}
               required
               placeholder="••••••••"
               value={password}

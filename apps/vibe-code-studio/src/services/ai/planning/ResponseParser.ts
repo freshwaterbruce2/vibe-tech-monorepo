@@ -28,10 +28,7 @@ const VALID_ACTION_TYPES: ActionType[] = [
 ];
 
 /** Actions that should require approval */
-const DESTRUCTIVE_ACTIONS: ActionType[] = ['delete_file', 'write_file', 'git_commit'];
-
-/** Dangerous command patterns */
-const DANGEROUS_COMMANDS = ['rm', 'del', 'format', 'shutdown', 'reboot'];
+const DESTRUCTIVE_ACTIONS: ActionType[] = ['delete_file', 'write_file', 'edit_file', 'git_commit'];
 
 /**
  * Parses AI response into structured AgentTask
@@ -151,8 +148,8 @@ function buildTaskFromParsed(
       description: step.description,
       action,
       status: 'pending' as const,
-      // System safety fills in when the AI omits an explicit approval choice
-      requiresApproval: step.requiresApproval ?? systemRequiresApproval,
+      // Model output cannot disable system safety
+      requiresApproval: systemRequiresApproval || step.requiresApproval === true,
       retryCount: 0,
       maxRetries: step.maxRetries ?? 3,
     };
@@ -231,13 +228,8 @@ export function shouldRequireApproval(
     return true;
   }
 
-  // Require approval for commands that could be dangerous
-  if (action.type === 'run_command') {
-    const command = (action.params['command'] as string) || '';
-    if (DANGEROUS_COMMANDS.some(cmd => command.toLowerCase().includes(cmd))) {
-      return true;
-    }
-  }
+  // Project scripts and shell commands can execute arbitrary code.
+  if (action.type === 'run_command' || action.type === 'run_tests') return true;
 
   // If option requires approval for all, return true
   if (options?.requireApprovalForAll) {

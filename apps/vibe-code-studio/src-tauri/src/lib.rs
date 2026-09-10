@@ -66,11 +66,17 @@ fn spawn_backend_sidecar(app: &tauri::App) -> Result<(), Box<dyn std::error::Err
         script.exists()
     ));
 
+    // Resolve once using the same policy as Rust database commands. Never force
+    // an absent developer drive on a customer's machine or split their state.
+    let database_path = db::get_db_path().map_err(std::io::Error::other)?;
+    if let Some(parent) = database_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
     let sidecar = app
         .shell()
         .sidecar("vcs-backend")?
         .args([script_arg])
-        .env("VCS_DATABASE_PATH", "D:\\databases\\vibe_studio.db")
+        .env("VCS_DATABASE_PATH", database_path.to_string_lossy().to_string())
         .env("NODE_ENV", "production");
     vcs_diag("sidecar command built");
 

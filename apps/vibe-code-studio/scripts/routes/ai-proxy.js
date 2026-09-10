@@ -1,15 +1,7 @@
 /**
- * AI proxy routes - server-side key custody for Vibe Code Studio.
- *
- * Keeps provider API keys on the SERVER (never in the client bundle) and gates
- * every call behind an authenticated session. The renderer points each provider
- * at /api/ai/<provider>/... with NO Authorization header; this proxy injects the
- * server key and forwards the request verbatim (transparent passthrough), so the
- * renderer keeps full control of model ids and request format.
- *
- * Admin use works today via the operator's keys in the backend .env. Per-user /
- * paid access plugs in at the subscription gate marked below (the backend already
- * tracks Stripe subscriptions in stripe_subscriptions).
+ * Local authenticated BYOK custody and paid OpenRouter proxy.
+ * Subscription calls use operator-only credentials after authoritative entitlement,
+ * model and monthly request checks. User keys never become subscription fallback.
  */
 
 import { spawn } from 'node:child_process';
@@ -18,6 +10,7 @@ import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
 import { readJsonBody } from '../lib/http-helpers.js';
+import { managedConfig, subscriptionFor, isEntitled, reserveRequest, validateManagedBody } from '../lib/managed-ai.js';
 
 // Each upstream resolves its key from the first matching env var. Operators set
 // keys under different names (e.g. Kimi/Moonshot ships as KIMI_API_KEY), so we
@@ -40,17 +33,11 @@ const UPSTREAM = {
 // Runtime key custody: keys pushed by the renderer (Settings -> save) live here,
 // in memory only — never written to disk by the server. Restarts are re-synced
 // by the app on boot. Takes precedence over env vars so the UI stays in control.
-const runtimeKeys = Object.create(null);
+const runtimeKeys = new Map();
 
-/** Runtime-pushed key first, then the first non-empty candidate env var. */
-function resolveUpstreamKey(cfg, providerName) {
-  const pushed = providerName ? runtimeKeys[providerName] : undefined;
-  if (pushed && pushed.trim()) return pushed.trim();
-  for (const name of cfg.envKeys) {
-    const val = process.env[name];
-    if (val && val.trim()) return val.trim();
-  }
-  return undefined;
+/** Per-user local BYOK keys never fall back to operator credentials. */
+function resolveUpstreamKey(cfg, providerName, userId) {
+  return runtimeKeys.get(String(userId))?.[providerName];
 }
 
 /** True when the request originates from this machine (the app's own webview). */
@@ -314,11 +301,12 @@ export async function registerAiProxyRoutes(req, res, ctx) {
   const segments = url.pathname.split('/').filter(Boolean); // [api, ai, <provider>, ...rest]
   const provider = segments[2];
 
-  // Health: which providers have a server key configured (no auth required).
+  // Health reports only keys belonging to the current authenticated user.
   if (url.pathname === '/api/ai/health' && req.method === 'GET') {
+    const user = getSessionUser(req, ctx);
     const configured = {};
     for (const [name, cfg] of Object.entries(UPSTREAM)) {
-      configured[name] = Boolean(resolveUpstreamKey(cfg, name));
+      configured[name] = Boolean(resolveUpstreamKey(cfg, name, user?.sub));
     }
     sendJson(res, 200, { ok: true, configured });
     return;
@@ -327,12 +315,14 @@ export async function registerAiProxyRoutes(req, res, ctx) {
   // Key custody: the renderer pushes provider keys saved in Settings so the
   // proxy can authenticate upstream. Loopback-only; keys stay in memory.
   // Body: { provider: 'openrouter'|'moonshot'|'google', key: string }
-  // An empty key clears the runtime entry (env fallback still applies).
+  // An empty key clears this user's runtime entry.
   if (url.pathname === '/api/ai/keys' && req.method === 'POST') {
-    if (!isLoopbackRequest(req)) {
+    if (process.env.VCS_MANAGED_AI_ENABLED === 'true' || !isLoopbackRequest(req)) {
       sendJson(res, 403, { error: 'Key updates are only accepted from this machine.' });
       return;
     }
+    const user = getSessionUser(req, ctx);
+    if (!user) { sendJson(res, 401, { error: 'Sign in before using the local key proxy.' }); return; }
     const body = await readJsonBody(ctx.getBody, res);
     if (!body) return;
     const keyProvider = String(body?.provider ?? '').toLowerCase();
@@ -341,14 +331,14 @@ export async function registerAiProxyRoutes(req, res, ctx) {
       return;
     }
     const key = typeof body?.key === 'string' ? body.key.trim() : '';
-    if (key) {
-      runtimeKeys[keyProvider] = key;
-    } else {
-      delete runtimeKeys[keyProvider];
-    }
+    if (key.length > 4096) { sendJson(res, 400, { error: 'Invalid API key.' }); return; }
+    const keys = runtimeKeys.get(String(user.sub)) || Object.create(null);
+    if (key) keys[keyProvider] = key;
+    else delete keys[keyProvider];
+    runtimeKeys.set(String(user.sub), keys);
     const configured = {};
     for (const [name, cfg] of Object.entries(UPSTREAM)) {
-      configured[name] = Boolean(resolveUpstreamKey(cfg, name));
+      configured[name] = Boolean(resolveUpstreamKey(cfg, name, user.sub));
     }
     sendJson(res, 200, { ok: true, configured });
     return;
@@ -367,24 +357,43 @@ export async function registerAiProxyRoutes(req, res, ctx) {
     return;
   }
 
-  const apiKey = resolveUpstreamKey(upstream, provider);
+  const mode = req.headers['x-ai-mode'] || 'byok';
+  if (!['byok', 'subscription'].includes(mode)) {
+    sendJson(res, 400, { error: 'Invalid AI billing mode.' }); return;
+  }
+  let apiKey = resolveUpstreamKey(upstream, provider, user.sub);
+  let getBody = ctx.getBody;
+  if (mode === 'subscription') {
+    const config = managedConfig();
+    if (!config.configured) { sendJson(res, 503, { error: 'Managed AI is not configured.' }); return; }
+    if (!isEntitled(subscriptionFor(ctx.db, user.sub))) {
+      sendJson(res, 402, { error: 'An active subscription is required. You can also use your own key.' }); return;
+    }
+    if (provider !== 'openrouter' || url.pathname !== '/api/ai/openrouter/api/v1/chat/completions' || req.method !== 'POST' || url.search) {
+      sendJson(res, 400, { error: 'This endpoint is not included in managed AI.' }); return;
+    }
+    const body = await readJsonBody(ctx.getBody, res);
+    if (!body) return;
+    const error = validateManagedBody(body, config);
+    if (error) { sendJson(res, 400, { error }); return; }
+    const managedBody = { model: body.model, messages: body.messages,
+      max_completion_tokens: body.max_completion_tokens || body.max_tokens || config.maxTokens,
+      stream: body.stream === true,
+      ...(body.tools ? { tools: body.tools, tool_choice: body.tool_choice } : {}) };
+    if (!reserveRequest(ctx.db, user.sub, config.limit)) {
+      sendJson(res, 429, { error: 'Monthly AI allowance reached. Switch to your own key or wait for the next UTC calendar month.' }); return;
+    }
+    apiKey = process.env.OPENROUTER_API_KEY;
+    getBody = async () => JSON.stringify(managedBody);
+  } else if (process.env.VCS_MANAGED_AI_ENABLED === 'true' || !isLoopbackRequest(req)) {
+    sendJson(res, 403, { error: 'Bring-your-own-key proxy is local only.' }); return;
+  }
   if (!apiKey) {
     sendJson(res, 503, {
-      error: `AI provider "${provider}" is not configured on the server.`,
-      hint: `Save an API key in Settings, or set one of [${upstream.envKeys.join(', ')}] in the backend environment/.env.`,
+      error: `Save your own ${provider} API key in Settings before using AI.`,
     });
     return;
   }
-
-  // --- Subscription gate seam (per-user / paid model) ----------------------
-  // Admins (operator keys) pass through. Paying users get checked here:
-  //   const sub = ctx.db.prepare(`SELECT s.plan FROM stripe_subscriptions s
-  //     JOIN stripe_customers c ON s.customer_id = c.id
-  //     WHERE c.user_id = ? AND s.status IN ('active','trialing')`).get(user.sub);
-  //   if (!user.isAdmin && (!sub || sub.plan === 'free')) {
-  //     sendJson(res, 402, { error: 'Subscription required for AI access.' }); return;
-  //   }
-  // ------------------------------------------------------------------------
 
   // Rebuild the upstream path: drop the '/api/ai/<provider>' prefix.
   const rest = `/${segments.slice(3).join('/')}`;
@@ -393,7 +402,7 @@ export async function registerAiProxyRoutes(req, res, ctx) {
     targetUrl,
     provider,
     apiKey,
-    getBody: ctx.getBody,
+    getBody,
     userSub: user.sub,
   });
 }
