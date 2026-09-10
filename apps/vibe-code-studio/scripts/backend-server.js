@@ -5,6 +5,10 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import Database from 'better-sqlite3';
+import { randomBytes } from 'node:crypto';
+import { initializeUsage } from './lib/managed-ai.js';
+import { rateAllowed } from './lib/request-limits.js';
+import { resolveDatabasePath } from './lib/database-path.js';
 
 import { handleLspUpgrade } from './routes/lsp-relay.js';
 import { resolveServer } from './lib/lsp-servers.js';
@@ -39,7 +43,8 @@ for (const envPath of envPaths) {
 
 // Fallback AUTH_SECRET if still missing or too short
 if (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.length < 32) {
-  process.env.AUTH_SECRET = 'default_vibe_studio_secret_32_chars_long';
+  if (process.env.VCS_MANAGED_AI_ENABLED === 'true') throw new Error('Managed hosting requires AUTH_SECRET (at least 32 characters).');
+  process.env.AUTH_SECRET = randomBytes(48).toString('hex');
 }
 import { parseSessionToken, getSessionCookieName } from '@vibetech/auth';
 import { parseCookies } from './lib/http-helpers.js';
@@ -47,23 +52,31 @@ import { createWebhookBus } from './lib/stripe-bus.js';
 import { routeAppRequest } from './routes/app-routes.js';
 import { registerAiProxyRoutes } from './routes/ai-proxy.js';
 
-const PORT = 5004;
+const PORT = Number(process.env.PORT || 5004);
 // App-specific override ONLY — deliberately NOT the generic DATABASE_PATH, which other
 // monorepo apps set (a stray value would split state from the Tauri side, src-tauri/src/db.rs).
 // Unset => canonical default. Mirrors get_db_path() in db.rs.
-const DB_PATH = process.env.VCS_DATABASE_PATH || 'D:\\databases\\vibe_studio.db';
+const DB_PATH = resolveDatabasePath();
 
 // -----------------------------------------------------------------------------
 // Database Initialization (Safe, WAL mode, non-destructive)
 // -----------------------------------------------------------------------------
 let db;
 try {
+  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
+  db.pragma('busy_timeout = 5000');
+  initializeUsage(db);
 
   // Safely seed custom tables for Stripe billing integration
   db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL UNIQUE,
+      password_hash BLOB NOT NULL, password_salt BLOB, full_name TEXT,
+      company_name TEXT, subscription_tier TEXT NOT NULL DEFAULT 'free'
+    );
     CREATE TABLE IF NOT EXISTS stripe_customers (
       id TEXT PRIMARY KEY,
       user_id TEXT,
@@ -108,6 +121,7 @@ const stripeWebhookBus = createWebhookBus(db);
 function isAllowedOrigin(origin) {
   if (!origin) return false;
   try {
+    if ((process.env.VCS_ALLOWED_ORIGINS || '').split(',').map(value => value.trim()).includes(origin)) return true;
     const url = new URL(origin);
     if (url.protocol === 'tauri:') return true;
     return (
@@ -126,7 +140,7 @@ function applyCors(req, res) {
   res.setHeader('Access-Control-Allow-Origin', allowOrigin);
   res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-plan');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-plan, x-ai-mode');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 }
 
@@ -134,7 +148,11 @@ function applyCors(req, res) {
 // Combined HTTP + WS Server
 // -----------------------------------------------------------------------------
 const server = http.createServer(async (req, res) => {
+  try {
   applyCors(req, res);
+  if (req.headers.origin && !isAllowedOrigin(req.headers.origin)) {
+    res.writeHead(403); res.end('Origin is not allowed'); return;
+  }
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -143,14 +161,23 @@ const server = http.createServer(async (req, res) => {
   }
 
   const getBody = () =>
-    new Promise(resolve => {
+    new Promise((resolve, reject) => {
       let body = '';
-      req.on('data', chunk => (body += chunk));
+      req.on('data', chunk => {
+        body += chunk;
+        if (body.length > 1_000_000) { reject(new Error('Request too large')); req.destroy(); }
+      });
+      req.on('error', reject);
       req.on('end', () => resolve(body));
     });
 
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = parsedUrl.pathname;
+  if (req.method === 'POST' && pathname !== '/api/webhooks/stripe' &&
+      !rateAllowed(`${req.socket.remoteAddress}:${pathname.startsWith('/api/auth/') ? 'auth' : 'api'}`)) {
+    res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '60' });
+    res.end(JSON.stringify({ error: 'Too many requests. Try again in a minute.' })); return;
+  }
 
   // Auth / billing / webhook routes (register, login, me, logout, checkout, stripe).
   if (await routeAppRequest(req, res, pathname, { db, getBody, stripeWebhookBus })) {
@@ -183,6 +210,13 @@ const server = http.createServer(async (req, res) => {
   // Fallback 404
   res.writeHead(404, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ error: 'Not Found' }));
+  } catch (err) {
+    console.error('[Backend] Request failed:', err);
+    if (!res.headersSent && !res.destroyed) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Request failed.' }));
+    } else if (!res.writableEnded) res.destroy();
+  }
 });
 
 // -----------------------------------------------------------------------------
@@ -222,6 +256,7 @@ const lspResolveOpts = {
 };
 
 server.on('upgrade', (request, socket, head) => {
+  if (process.env.VCS_MANAGED_AI_ENABLED === 'true') { socket.destroy(); return; }
   const pathname = (request.url || '').split('?')[0];
   if (pathname.startsWith('/lsp/')) {
     handleLspUpgrade(request, socket, head, {
@@ -237,7 +272,7 @@ server.on('upgrade', (request, socket, head) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, process.env.VCS_MANAGED_AI_ENABLED === 'true' ? '0.0.0.0' : '127.0.0.1', () => {
   console.log(`\n[Backend] 🚀 Local Backend Server running on port ${PORT}`);
   console.log('[Backend] Waiting for Vibe Code Studio to connect...\n');
 });

@@ -14,11 +14,13 @@ import {
   getSessionCookieName,
 } from '@vibetech/auth';
 import {
-  buildCheckoutSession,
   resolveStripeWebhookEvent,
   getStripeClient,
 } from '@vibetech/billing';
 import { parseCookies, serializeCookie, readJsonBody } from '../lib/http-helpers.js';
+
+import { handleBilling } from './billing.js';
+import { subscriptionFor, isEntitled } from '../lib/managed-ai.js';
 
 const WEEK_SECONDS = 60 * 60 * 24 * 7;
 
@@ -52,16 +54,10 @@ function setSessionCookie(res, authUser) {
 }
 
 /** Resolve the active plan from Stripe state, falling back to the user's tier. */
-function resolvePlan(db, email, fallbackTier) {
-  const subRow = db
-    .prepare(
-      `SELECT s.plan FROM stripe_subscriptions s
-       JOIN stripe_customers c ON s.customer_id = c.id
-       WHERE c.email = ? AND s.status IN ('active', 'trialing')
-       ORDER BY s.updated_at DESC LIMIT 1`
-    )
-    .get(email);
-  return subRow ? subRow.plan : fallbackTier || 'free';
+function resolvePlan(db, email) {
+  const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  const sub = user && subscriptionFor(db, user.id);
+  return isEntitled(sub) ? sub.plan : 'free';
 }
 
 /** Verify a password against either legacy bcrypt or scrypt storage. */
@@ -89,9 +85,13 @@ async function handleRegister(req, res, ctx) {
   const body = await readJsonBody(ctx.getBody, res);
   if (!body) return;
 
-  const { email, password, fullName, companyName } = body;
-  if (!email || !password) {
-    sendJson(res, 400, { error: 'Email and password are required' });
+  const { password, fullName, companyName } = body;
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254 ||
+      typeof password !== 'string' || password.length < 12 || password.length > 1024 ||
+      (fullName != null && (typeof fullName !== 'string' || fullName.length > 200)) ||
+      (companyName != null && (typeof companyName !== 'string' || companyName.length > 200))) {
+    sendJson(res, 400, { error: 'Use a valid email and a password of 12 to 1024 characters.' });
     return;
   }
 
@@ -122,7 +122,7 @@ async function handleRegister(req, res, ctx) {
     sendJson(res, 200, { ok: true, user: { ...authUser, plan: 'free' } });
   } catch (err) {
     console.error('[Backend] Registration error:', err);
-    sendJson(res, 500, { error: 'Internal server error', details: err.message });
+    sendJson(res, 500, { error: 'Internal server error' });
   }
 }
 
@@ -130,8 +130,9 @@ async function handleLogin(req, res, ctx) {
   const body = await readJsonBody(ctx.getBody, res);
   if (!body) return;
 
-  const { email, password } = body;
-  if (!email || !password) {
+  const { password } = body;
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+  if (!email || email.length > 254 || typeof password !== 'string' || !password || password.length > 1024) {
     sendJson(res, 400, { error: 'Email and password are required' });
     return;
   }
@@ -154,7 +155,7 @@ async function handleLogin(req, res, ctx) {
     sendJson(res, 200, { ok: true, user: { ...authUser, plan } });
   } catch (err) {
     console.error('[Backend] Login error:', err);
-    sendJson(res, 500, { error: 'Internal server error', details: err.message });
+    sendJson(res, 500, { error: 'Internal server error' });
   }
 }
 
@@ -194,7 +195,7 @@ function handleMe(req, res, ctx) {
     });
   } catch (err) {
     console.error('[Backend] Me error:', err);
-    sendJson(res, 500, { error: 'Internal server error', details: err.message });
+    sendJson(res, 500, { error: 'Internal server error' });
   }
 }
 
@@ -212,59 +213,13 @@ function handleLogout(req, res) {
   sendJson(res, 200, { ok: true });
 }
 
-async function handleCheckout(req, res, ctx) {
-  const token = parseCookies(req.headers.cookie)[getSessionCookieName()];
-  if (!token) {
-    sendJson(res, 401, { error: 'Unauthorized' });
-    return;
-  }
-
-  try {
-    const parsed = parseSessionToken(token);
-    if (!parsed || !parsed.sub) {
-      sendJson(res, 401, { error: 'Unauthorized' });
-      return;
-    }
-
-    const userRow = ctx.db.prepare('SELECT * FROM users WHERE id = ?').get(parsed.sub);
-    if (!userRow) {
-      sendJson(res, 401, { error: 'User not found' });
-      return;
-    }
-
-    const customerRow = ctx.db
-      .prepare('SELECT id FROM stripe_customers WHERE user_id = ?')
-      .get(userRow.id);
-    const existingCustomerId = customerRow ? customerRow.id : undefined;
-    const baseUrl = req.headers.referer
-      ? new URL(req.headers.referer).origin
-      : 'http://localhost:5174';
-
-    const session = await buildCheckoutSession({
-      currency: 'USD',
-      successUrl: `${baseUrl}/#billing/success`,
-      cancelUrl: `${baseUrl}/#billing/canceled`,
-      customerId: existingCustomerId,
-      customerEmail: existingCustomerId ? undefined : userRow.email,
-      metadata: {
-        app: 'vibe-code-studio',
-        plan: 'pro',
-        userId: String(userRow.id),
-        userEmail: userRow.email,
-      },
-      lineItems: [{ name: 'Vibe Code Studio Pro', unitAmount: 19, quantity: 1 }],
-    });
-    sendJson(res, 200, { ok: true, url: session.url, sessionId: session.id });
-  } catch (err) {
-    console.error('[Backend] Checkout error:', err);
-    sendJson(res, 500, { error: 'Stripe checkout configuration error', details: err.message });
-  }
-}
-
 async function handleStripeWebhook(req, res, ctx) {
   const rawBody = await ctx.getBody();
   const signature = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    sendJson(res, 503, { error: 'Webhook verification is not configured.' }); return;
+  }
 
   let event;
   try {
@@ -273,11 +228,11 @@ async function handleStripeWebhook(req, res, ctx) {
       signature,
       secret: webhookSecret,
       stripeClient: getStripeClient(),
-      allowUnsigned: !webhookSecret,
+      allowUnsigned: false,
     });
   } catch (err) {
     console.error('[Backend] Webhook verification failed:', err);
-    sendJson(res, 400, { error: 'Webhook signature verification failed', details: err.message });
+    sendJson(res, 400, { error: 'Webhook signature verification failed' });
     return;
   }
 
@@ -286,7 +241,7 @@ async function handleStripeWebhook(req, res, ctx) {
     sendJson(res, 200, { ok: true, handled: result.handled, skipped: result.skipped });
   } catch (err) {
     console.error('[Backend] Webhook processing failed:', err);
-    sendJson(res, 500, { error: 'Webhook processing failed', details: err.message });
+    sendJson(res, 500, { error: 'Webhook processing failed' });
   }
 }
 
@@ -316,9 +271,11 @@ export async function routeAppRequest(req, res, pathname, ctx) {
     return true;
   }
   if (pathname === '/api/billing/checkout' && post) {
-    await handleCheckout(req, res, ctx);
+    await handleBilling(req, res, ctx, 'checkout');
     return true;
   }
+  if (pathname === '/api/billing/status' && get) { await handleBilling(req, res, ctx, 'status'); return true; }
+  if (pathname === '/api/billing/portal' && post) { await handleBilling(req, res, ctx, 'portal'); return true; }
   if (pathname === '/api/webhooks/stripe' && post) {
     await handleStripeWebhook(req, res, ctx);
     return true;

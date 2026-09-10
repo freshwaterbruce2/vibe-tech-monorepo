@@ -1,82 +1,85 @@
-/**
- * Marketing landing-page content for the unauthenticated Vibe Code Studio shell.
- *
- * Extracted from AppLayout.tsx (static config, not layout logic) to keep that file
- * within the 500 +/- 100 line target.
- */
 import { createDefaultLandingContent } from '@vibetech/landing';
 
 export const vibeStudioLandingContent = createDefaultLandingContent({
   productName: 'Vibe Code Studio',
-  badge: 'VIBE CODE STUDIO • NEURAL INTERFACE',
-  title: 'Next-generation AI-powered code editor where innovation meets elegant design',
-  subtitle: 'Resurrect your workflows with context-aware AI assistant, proactive error fixing, multi-agent orchestrations, and a premium developer environment.',
-  primaryAction: { label: 'Get Started Free', href: '#signup' },
-  secondaryAction: { label: 'Sign In', href: '#login' },
-  previewLabel: 'What\'s Included',
+  badge: 'YOUR CODE. YOUR AI CHOICE.',
+  title: 'Build with AI on your terms',
+  subtitle:
+    'A code editor with AI chat, project context, and tools for reviewing changes. Bring your own OpenRouter key or choose subscription AI when available.',
+  primaryAction: { label: 'Open editor and choose AI plan', href: '#byok' },
+  secondaryAction: { label: 'Sign in for subscription AI', href: '#login' },
+  previewLabel: 'Your workspace',
   previewItems: [
-    '⚡ Proactive AI Autocomplete',
-    '🧠 Full Codebase Semantic Search',
-    '🛠️ Real-time Auto-Fix & Debugging',
-    '🤝 Multi-Agent Swarm Orchestrator'
+    'Code editing',
+    'AI assistant chat',
+    'Project context',
+    'Review suggested changes',
   ],
-  featuresHeading: 'Engineered for Elite Developers',
-  featuresSubheading: 'Built on Tauri 2.0 with a high-performance SQLite WAL storage engine.',
+  featuresHeading: 'From idea to reviewed code',
+  featuresSubheading: 'Keep your files and AI assistance together in one workspace.',
   features: [
     {
-      title: 'Context-Aware AI Chat',
-      description: 'Interact with your codebase. Vibe Code Studio understands file relationships, test suites, and project dependencies.'
+      title: 'Chat about your project',
+      description: 'Ask for explanations and changes with relevant project files as context.',
     },
     {
-      title: 'Auto-Fix Proactive Debugger',
-      description: 'Errors are caught and resolved before you hit compile. Generate unit tests and refactor with single-click diff approval.'
+      title: 'Review AI suggestions',
+      description: 'Inspect suggested edits and test the results before relying on them.',
     },
     {
-      title: 'Monetized App Factory',
-      description: 'Integrated with Stripe billing, secure scrypt/bcrypt authentication, and real-time entitlements gating.'
-    }
+      title: 'Choose how you pay for AI',
+      description:
+        'Use your OpenRouter key, or sign in for a subscription with a defined usage allowance.',
+    },
   ],
-  pricingHeading: 'Simple, Flexible Pricing',
-  pricingSubheading: 'Unlock the full power of context-aware multi-agent development.',
+  pricingHeading: 'Two ways to use AI',
+  pricingSubheading:
+    'Choose in Settings. Switching payment options takes effect on your next app launch.',
   tiers: [
     {
-      name: 'Free Tier',
-      price: '$0',
-      subtitle: 'For evaluation and personal projects',
+      name: 'Bring your own key',
+      price: 'Provider billed',
+      subtitle: 'Pay OpenRouter directly for your usage',
       features: [
-        'Core editor workspace',
-        'Basic AI chat assistant (10 messages/day)',
-        'Local SQLite storage mode',
-        'Standard theme library'
-      ]
+        'Open the editor without a subscription account',
+        'Add your OpenRouter key in Settings',
+        'Your provider manages AI usage and charges',
+        'Keep control of your provider account',
+      ],
     },
     {
-      name: 'Pro Tier',
-      price: '$19',
-      subtitle: 'Per month, billed monthly',
-      featured: true,
+      name: 'Subscription AI',
+      price: 'See checkout',
+      subtitle: 'Available when the managed service is configured',
       features: [
-        'Unlimited AI chat assistant queries',
-        'Proactive AI autocomplete',
-        'Multi-agent execution engine',
-        'Custom workspace rules & parser',
-        'Priority feature flags & telemetry'
-      ]
-    }
+        'Sign in to check availability',
+        'Defined AI request allowance and included models',
+        'View remaining usage in Settings',
+        'Manage billing and cancellation',
+        'No automatic charges to your personal key',
+      ],
+    },
   ],
-  faqHeading: 'Frequently Asked Questions',
-  faqSubheading: 'Everything you need to know about plans and security.',
+  faqHeading: 'Plans and privacy',
+  faqSubheading: 'Know where your requests go and how usage is paid for.',
   faqs: [
     {
-      question: 'Is my codebase secure?',
-      answer: 'Yes. All state is saved locally in D:\\databases\\vibe_studio.db. We support local models and secure proxy channels.'
+      question: 'Where does my code go?',
+      answer:
+        'AI requests send your prompt and selected project context to the AI provider. Subscription requests also pass through the managed service. Review context before sending sensitive material.',
     },
     {
-      question: 'How do I upgrade to Pro?',
-      answer: 'Click the upgrade action to initiate a Stripe session. Once processed via the Stripe Webhook Bus, your features will unlock instantly.'
-    }
+      question: 'What happens when my subscription allowance runs out?',
+      answer:
+        'Subscription AI requests stop. You can wait for the allowance to reset or explicitly choose your own key in Settings and reopen the app. Your personal key is never used automatically as a backup.',
+    },
+    {
+      question: 'How do I subscribe or cancel?',
+      answer:
+        'Open AI Plan & Account in Settings. Sign in, refresh availability, and use subscription checkout or Manage billing. Checkout shows the actual price and terms before you pay.',
+    },
   ],
-  ctaHeading: 'Ready to elevate your development environment?',
-  ctaBody: 'Create a free account or upgrade to Pro to start shipping with advanced agent intelligence.',
-  ctaAction: { label: 'Get Started Now', href: '#signup' }
+  ctaHeading: 'Start with your own workspace',
+  ctaBody: 'Open the editor and configure your OpenRouter key in Settings.',
+  ctaAction: { label: 'Open editor', href: '#byok' },
 });

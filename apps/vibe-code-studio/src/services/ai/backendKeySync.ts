@@ -26,6 +26,7 @@ export async function pushApiKeyToBackend(provider: string, key: string): Promis
   try {
     const res = await fetch(KEYS_ENDPOINT, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ provider: normalized, key }),
     });

@@ -597,27 +597,16 @@
     }
   },
   "apps/vibe-code-studio/src/services/ai/execution/StepExecutor.ts": {
-    "max-len": {
-      "count": 2
-    },
     "max-lines-per-function": {
       "count": 1
     }
   },
   "apps/vibe-code-studio/src/services/ai/execution/TaskLifecycle.ts": {
-    "max-len": {
-      "count": 3
-    },
     "max-lines-per-function": {
       "count": 2
     }
   },
   "apps/vibe-code-studio/src/services/ai/execution/actions/CodeActions.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "apps/vibe-code-studio/src/services/ai/execution/actions/FileActions.ts": {
     "max-lines-per-function": {
       "count": 1
     }

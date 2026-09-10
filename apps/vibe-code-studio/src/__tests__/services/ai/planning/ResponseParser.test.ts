@@ -154,14 +154,14 @@ describe('shouldRequireApproval', () => {
     expect(shouldRequireApproval({ type: 'git_commit', params: {} })).toBe(true);
   });
 
-  it('flags dangerous commands and passes safe ones', () => {
+  it('requires approval for every executable command', () => {
     expect(shouldRequireApproval({ type: 'run_command', params: { command: 'rm -rf /' } })).toBe(
       true
     );
     expect(shouldRequireApproval({ type: 'run_command', params: { command: 'pnpm build' } })).toBe(
-      false
+      true
     );
-    expect(shouldRequireApproval({ type: 'run_command', params: {} })).toBe(false);
+    expect(shouldRequireApproval({ type: 'run_command', params: {} })).toBe(true);
   });
 
   it('honors requireApprovalForAll', () => {

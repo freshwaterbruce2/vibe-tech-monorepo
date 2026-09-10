@@ -46,6 +46,7 @@ export enum AgentCapability {
 }
 
 export interface AgentContext {
+  signal?: AbortSignal;
   workspaceRoot?: string;
   currentFile?: string;
   selectedText?: string;
@@ -147,6 +148,7 @@ export abstract class BaseSpecializedAgent {
    * Main processing method with enhanced context awareness and learning
    */
   async process(request: string, context: AgentContext = {}): Promise<AgentResponse> {
+    context.signal?.throwIfAborted();
     const startTime = Date.now();
     const memoryId = this.generateMemoryId();
 
@@ -167,16 +169,9 @@ export abstract class BaseSpecializedAgent {
       }
 
       // Process with AI service
-      const aiResponse = await this.aiService.sendContextualMessage({
-        userQuery: prompt,
-        currentFile: enhancedContext.currentFile
-          ? {
-              path: enhancedContext.currentFile,
-              content: '',
-            }
-          : undefined,
-      });
+      const aiResponse = await this.requestAIResponse(prompt, enhancedContext);
 
+      context.signal?.throwIfAborted();
       // Analyze and enhance response
       const response = this.analyzeResponse(aiResponse.content, enhancedContext);
 
@@ -203,6 +198,7 @@ export abstract class BaseSpecializedAgent {
 
       return enhancedResponse;
     } catch (error) {
+      context.signal?.throwIfAborted();
       logger.error(`Agent ${this.name} processing failed:`, error);
 
       // Store failed attempt for learning
@@ -223,6 +219,13 @@ export abstract class BaseSpecializedAgent {
   /**
    * Enhanced context analysis with codebase understanding
    */
+  private requestAIResponse(prompt: string, context: AgentContext) {
+    return this.aiService.sendContextualMessage({
+      userQuery: prompt,
+      signal: context.signal,
+      currentFile: context.currentFile ? { path: context.currentFile, content: '' } : undefined,
+    });
+  }
   private async enhanceContext(context: AgentContext, request: string): Promise<AgentContext> {
     const enhanced: AgentContext = { ...context };
 

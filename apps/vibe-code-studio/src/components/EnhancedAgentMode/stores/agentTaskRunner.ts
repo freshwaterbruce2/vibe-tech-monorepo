@@ -7,8 +7,8 @@
  */
 import type { Draft } from 'immer';
 import type {
-    AgentOrchestrator,
-    OrchestratorResponse
+  AgentOrchestrator,
+  OrchestratorResponse,
 } from '../../../services/specialized-agents/AgentOrchestrator';
 import type { AgentContext } from '../../../services/specialized-agents/BaseSpecializedAgent';
 import { unifiedAI } from '../../../services/ai/UnifiedAIService';
@@ -18,7 +18,7 @@ import type { AgentModeStore } from './agentModeStore';
 
 // Proxy mode (default ON): mirrors AIProviderFactory / UnifiedAIService. Drives the
 // accurate "backend down vs no server key" pre-flight message below.
-const USE_AI_PROXY = import.meta.env['VITE_USE_AI_PROXY'] !== 'false';
+import { activeAIUsageMode, useAIProxy as USE_AI_PROXY } from '../../../services/AIUsageMode';
 
 export type AgentSet = (recipe: (state: Draft<AgentModeStore>) => void) => void;
 export type AgentGet = () => AgentModeStore;
@@ -27,6 +27,7 @@ type AddLog = AgentModeStore['addLog'];
 export interface TaskRunnerDeps {
   readonly set: AgentSet;
   readonly get: AgentGet;
+  readonly signal?: AbortSignal;
 }
 
 /**
@@ -41,11 +42,13 @@ async function ensureProviderConfigured(set: AgentSet, addLog: AddLog): Promise<
 
   // Give an accurate reason instead of a blanket "add an API key": in proxy mode
   // the real cause is usually a down backend or a server missing its provider key.
-  let message =
-    'No AI provider configured. Add a Kimi (Moonshot), Google, or OpenRouter API key in Settings.';
-  let hint =
-    'Open Settings (gear icon), add an API key for Kimi (Moonshot), Google, or OpenRouter, then run again.';
-  if (USE_AI_PROXY) {
+  let message = 'No AI provider configured. Add your OpenRouter API key in Settings.';
+  let hint = 'Open Settings (gear icon), add your OpenRouter key, then run again.';
+  if (activeAIUsageMode === 'subscription') {
+    message = 'Subscription AI is unavailable for this account.';
+    hint =
+      'Open Settings → AI Plan & Account to sign in and refresh your subscription and allowance.';
+  } else if (USE_AI_PROXY) {
     const health = await new BackendProxyService().health();
     if (!health.reachable) {
       message = 'AI backend (localhost:5004) is not running. Start the backend, then run again.';
@@ -56,7 +59,7 @@ async function ensureProviderConfigured(set: AgentSet, addLog: AddLog): Promise<
       hint = 'Add a provider key to the backend environment, restart it, then run again.';
     }
   }
-  set((state) => {
+  set(state => {
     state.status = 'error';
     state.currentProgress = message;
   });
@@ -89,8 +92,9 @@ function recordAgentResponses(
 ): void {
   const newActiveAgents: string[] = [];
   Object.entries(result.agentResponses).forEach(([agentKey, response]) => {
-    const agentInfo = orchestrator.getAvailableAgents()
-      .find((a) => a.name.toLowerCase().includes(agentKey));
+    const agentInfo = orchestrator
+      .getAvailableAgents()
+      .find(a => a.name.toLowerCase().includes(agentKey));
     const agentName = agentInfo?.name ?? agentKey;
 
     addLog('agent', 'Response received', agentName, {
@@ -102,7 +106,7 @@ function recordAgentResponses(
     newActiveAgents.push(agentName);
   });
 
-  set((state) => {
+  set(state => {
     state.activeAgents = newActiveAgents;
   });
 }
@@ -111,10 +115,7 @@ function recordAgentResponses(
 function logCoordinationAndPerformance(result: OrchestratorResponse, addLog: AddLog): void {
   if (result.coordination) {
     const confidence = Math.round(result.coordination.confidence * 100);
-    addLog(
-      'coordination',
-      `Strategy: ${result.coordination.strategy} (${confidence}% confidence)`
-    );
+    addLog('coordination', `Strategy: ${result.coordination.strategy} (${confidence}% confidence)`);
     addLog('coordination', `Reasoning: ${result.coordination.reasoning}`);
   }
 
@@ -140,23 +141,24 @@ async function runOrchestration(
   const { set, get } = deps;
 
   // Phase 1: Analysis
-  set((state) => {
+  set(state => {
     state.status = 'analyzing';
     state.currentProgress = 'Analyzing task requirements and selecting optimal agents...';
   });
   addLog('info', 'Analyzing task requirements...');
 
   // Phase 2: Coordination
-  set((state) => {
+  set(state => {
     state.status = 'coordinating';
     state.currentProgress = 'Coordinating multi-agent response strategy...';
   });
   addLog('coordination', 'Coordinating multi-agent strategy...');
 
-  const context = buildContext(get().workspaceContext);
+  const context = { ...buildContext(get().workspaceContext), signal: deps.signal };
+  deps.signal?.throwIfAborted();
 
   // Phase 3: Execution
-  set((state) => {
+  set(state => {
     state.status = 'executing';
     state.currentProgress = 'Executing coordinated multi-agent analysis...';
   });
@@ -182,15 +184,18 @@ function finalizeRun(
   const responses = Object.values(result.agentResponses);
   // Fallback responses are stamped confidence 0.3 by BaseSpecializedAgent; real
   // answers clamp to >= 0.5. Count fallbacks to detect hollow runs.
-  const fallbackCount = responses.filter((r) => r.confidence <= 0.3).length;
+  const fallbackCount = responses.filter(r => r.confidence <= 0.3).length;
   if (responses.length > 0 && fallbackCount === responses.length) {
-    set((state) => {
+    set(state => {
       state.status = 'error';
       state.currentProgress =
         'Agents got no usable AI response. Check your API key and selected model in Settings.';
     });
     addLog('error', 'No usable AI response: every agent returned a placeholder.');
-    addLog('info', 'Verify your Kimi/Google/OpenRouter key and selected model in Settings, then retry.');
+    addLog(
+      'info',
+      'Verify your Kimi/Google/OpenRouter key and selected model in Settings, then retry.'
+    );
     return undefined;
   }
 
@@ -203,7 +208,7 @@ function finalizeRun(
     );
   }
 
-  set((state) => {
+  set(state => {
     state.status = 'completed';
     state.currentProgress =
       fallbackCount > 0
@@ -237,7 +242,7 @@ function handleRunError(error: unknown, get: AgentGet, set: AgentSet, addLog: Ad
     recoveryHint = 'API error. Check your API key configuration.';
   }
 
-  set((state) => {
+  set(state => {
     state.status = 'error';
     state.lastError = errorObj;
     state.currentProgress = `Task failed (${errorCategory}): ${recoveryHint}`;
@@ -261,14 +266,12 @@ function handleRunError(error: unknown, get: AgentGet, set: AgentSet, addLog: Ad
  * executeTask: guards, provider pre-flight, orchestration, hollow-run detection,
  * and categorized error recovery.
  */
-export async function executeAgentTask(
-  deps: TaskRunnerDeps
-): Promise<OrchestratorResponse | undefined> {
+async function executeCurrentTask(deps: TaskRunnerDeps): Promise<OrchestratorResponse | undefined> {
   const { set, get } = deps;
   const { task, workspaceContext, orchestrator, addLog } = get();
 
   if (!task.trim()) {
-    set((state) => {
+    set(state => {
       state.status = 'error';
       state.currentProgress = 'Enter a task description before running the agent.';
     });
@@ -276,7 +279,7 @@ export async function executeAgentTask(
     return undefined;
   }
   if (!orchestrator) {
-    set((state) => {
+    set(state => {
       state.status = 'error';
       state.currentProgress = 'Agent orchestrator unavailable. Reopen Agent Mode and retry.';
     });
@@ -285,9 +288,10 @@ export async function executeAgentTask(
   }
 
   if (!(await ensureProviderConfigured(set, addLog))) return undefined;
+  deps.signal?.throwIfAborted();
 
   // Reset state for new execution
-  set((state) => {
+  set(state => {
     state.status = 'analyzing';
     state.logs = [];
     state.activeAgents = [];
@@ -303,4 +307,59 @@ export async function executeAgentTask(
   } catch (error) {
     return handleRunError(error, get, set, addLog);
   }
+}
+
+// The getter identifies a store instance; controllers stay out of persisted state.
+const activeRuns = new WeakMap<AgentGet, AbortController>();
+
+export function cancelAgentTask(get: AgentGet): void {
+  activeRuns.get(get)?.abort();
+  activeRuns.delete(get);
+}
+
+export async function executeAgentTask(
+  deps: TaskRunnerDeps
+): Promise<OrchestratorResponse | undefined> {
+  cancelAgentTask(deps.get);
+  const controller = new AbortController();
+  activeRuns.set(deps.get, controller);
+  const current = () => activeRuns.get(deps.get) === controller && !controller.signal.aborted;
+  const addLog: AddLog = (...args) => {
+    if (current()) deps.get().addLog(...args);
+  };
+  const guarded: TaskRunnerDeps = {
+    signal: controller.signal,
+    set: recipe => {
+      if (current()) deps.set(recipe);
+    },
+    get: () => ({ ...deps.get(), addLog }),
+  };
+  try {
+    const result = await executeCurrentTask(guarded);
+    return current() ? result : undefined;
+  } catch (error) {
+    if (controller.signal.aborted) return undefined;
+    throw error;
+  } finally {
+    if (activeRuns.get(deps.get) === controller) activeRuns.delete(deps.get);
+  }
+}
+export async function waitForAgentRetry(get: AgentGet, delay: number): Promise<boolean> {
+  cancelAgentTask(get);
+  const controller = new AbortController();
+  activeRuns.set(get, controller);
+  await new Promise<void>(resolve => {
+    const timer = setTimeout(resolve, delay);
+    controller.signal.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      { once: true }
+    );
+  });
+  const current = activeRuns.get(get) === controller && !controller.signal.aborted;
+  if (current) activeRuns.delete(get);
+  return current;
 }

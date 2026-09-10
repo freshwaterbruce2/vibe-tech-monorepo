@@ -20,7 +20,7 @@ import type {
   WorkspaceContextInfo,
 } from '../types';
 import type { AgentGet, AgentSet } from './agentTaskRunner';
-import { executeAgentTask } from './agentTaskRunner';
+import { cancelAgentTask, executeAgentTask, waitForAgentRetry } from './agentTaskRunner';
 
 /** Performance report structure */
 interface PerformanceReport {
@@ -159,7 +159,7 @@ const createTaskActions = (set: AgentSet, get: AgentGet) => ({
 
     // Add exponential backoff delay
     const delay = Math.min(1000 * 2 ** retryCount, 10000);
-    await new Promise(resolve => setTimeout(resolve, delay));
+    if (!(await waitForAgentRetry(get, delay))) return undefined;
 
     return executeTask();
   },
@@ -176,6 +176,7 @@ const createTaskActions = (set: AgentSet, get: AgentGet) => ({
 /** Stop / reset task execution state. */
 const createLifecycleActions = (set: AgentSet, get: AgentGet) => ({
   stopTask: () => {
+    cancelAgentTask(get);
     set(state => {
       state.status = 'idle';
       state.currentProgress = '';
@@ -184,6 +185,7 @@ const createLifecycleActions = (set: AgentSet, get: AgentGet) => ({
   },
 
   resetTask: () => {
+    cancelAgentTask(get);
     set(state => {
       state.status = 'idle';
       state.logs = [];

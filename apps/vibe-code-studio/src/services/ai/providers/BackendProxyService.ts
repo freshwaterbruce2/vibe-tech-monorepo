@@ -17,6 +17,8 @@
  */
 
 import { logger } from '../../Logger';
+import { activeAIUsageMode, backendBaseUrl } from '../../AIUsageMode';
+import { billingService } from '../../BillingService';
 import type {
   AIChatOptions,
   AICompletionRequest,
@@ -81,7 +83,10 @@ export class BackendProxyService implements IAIService {
   private configuredCache: { value: Record<string, boolean>; at: number } | null = null;
 
   constructor(config?: { baseUrl?: string }) {
-    this.baseUrl = config?.baseUrl ?? import.meta.env['VITE_AI_PROXY_URL'] ?? DEFAULT_BASE_URL;
+    this.baseUrl =
+      activeAIUsageMode === 'subscription'
+        ? `${backendBaseUrl}/api/ai`
+        : (config?.baseUrl ?? import.meta.env['VITE_AI_PROXY_URL'] ?? DEFAULT_BASE_URL);
   }
 
   /**
@@ -92,10 +97,10 @@ export class BackendProxyService implements IAIService {
    * no sidecar and the extra fetch would only break fetch-mock ordering.
    */
   private configuredSnapshot(): Record<string, boolean> | null {
-    if (import.meta.env['VITEST']) return null;
+    if (activeAIUsageMode === 'subscription' || import.meta.env['VITEST']) return null;
     const now = Date.now();
     if (!this.configuredCache || now - this.configuredCache.at > 30_000) {
-      void this.refreshConfigured();
+      if (activeAIUsageMode === 'byok') void this.refreshConfigured();
     }
     return this.configuredCache?.value ?? null;
   }
@@ -140,7 +145,7 @@ export class BackendProxyService implements IAIService {
    */
   async initialize(): Promise<void> {
     logger.info(`[BackendProxy] Using AI proxy at ${this.baseUrl}`);
-    void this.refreshConfigured();
+    if (activeAIUsageMode === 'byok') void this.refreshConfigured();
   }
 
   /**
@@ -183,6 +188,7 @@ export class BackendProxyService implements IAIService {
    */
   private buildRoute(model: string, configured?: Record<string, boolean> | null): ProxyRoute {
     const provider = this.resolveProvider(model);
+    if (activeAIUsageMode === 'subscription') return this.buildOpenRouterRoute(model);
     const openRouterAvailable = configured?.['openrouter'] === true;
 
     if (provider === AIProvider.MOONSHOT) {
@@ -306,23 +312,35 @@ export class BackendProxyService implements IAIService {
   private trackController(signal?: AbortSignal): AbortController {
     const controller = new AbortController();
     if (signal) {
-      signal.addEventListener('abort', () => controller.abort());
+      if (signal.aborted) controller.abort();
+      else signal.addEventListener('abort', () => controller.abort(), { once: true });
     }
     this.activeControllers.add(controller);
     return controller;
   }
 
   /** POST one chat request to a route (body shaped per the route's provider). */
-  private postChat(
+  private async postChat(
     route: ProxyRoute,
     messages: ChatMessage[],
     options: { temperature?: number; maxTokens?: number; stream: boolean },
     controller: AbortController
   ): Promise<Response> {
     const body = this.buildBody(messages, route, options);
+    if (activeAIUsageMode === 'subscription') {
+      const { managedAI } = await billingService.getStatus();
+      if (!managedAI.available)
+        throw new Error(
+          'Subscription AI is unavailable. Check your plan and allowance in Settings.'
+        );
+      if (!Number.isFinite(managedAI.maxTokens) || managedAI.maxTokens <= 0)
+        throw new Error('Subscription output allowance is unavailable.');
+      body.max_tokens = Math.min(body.max_tokens ?? managedAI.maxTokens, managedAI.maxTokens);
+    }
+    controller.signal.throwIfAborted();
     return fetch(route.url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-ai-mode': activeAIUsageMode },
       credentials: 'include',
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -528,6 +546,13 @@ export class BackendProxyService implements IAIService {
    * with zero keys configured is NOT actually usable.
    */
   async validateConnection(): Promise<boolean> {
+    if (activeAIUsageMode === 'subscription') {
+      try {
+        return (await billingService.getStatus()).managedAI.available;
+      } catch {
+        return false;
+      }
+    }
     const { reachable, anyConfigured } = await this.health();
     return reachable && anyConfigured;
   }
@@ -536,6 +561,12 @@ export class BackendProxyService implements IAIService {
    * All models in the registry are reachable via the proxy.
    */
   async getAvailableModels(): Promise<AIModel[]> {
+    if (activeAIUsageMode === 'subscription') {
+      const status = await billingService.getStatus();
+      return Object.values(MODEL_REGISTRY).filter(model =>
+        status.managedAI.models.includes(OpenRouterService.resolveModelId(model.id))
+      );
+    }
     return Object.values(MODEL_REGISTRY);
   }
 

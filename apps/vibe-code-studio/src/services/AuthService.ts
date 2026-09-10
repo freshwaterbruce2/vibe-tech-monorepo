@@ -1,6 +1,7 @@
 import type { AuthUser } from '@vibetech/auth';
 
 import { logger } from './Logger';
+import { backendBaseUrl } from './AIUsageMode';
 
 export interface UserWithPlan extends AuthUser {
   plan: string;
@@ -12,7 +13,7 @@ class AuthService {
 
   async init(): Promise<UserWithPlan | null> {
     try {
-      const res = await fetch('http://localhost:5004/api/auth/me', {
+      const res = await fetch(`${backendBaseUrl}/api/auth/me`, {
         credentials: 'include',
       });
       if (res.ok) {
@@ -32,7 +33,7 @@ class AuthService {
   }
 
   async login(email: string, password: string): Promise<UserWithPlan | null> {
-    const res = await fetch('http://localhost:5004/api/auth/login', {
+    const res = await fetch(`${backendBaseUrl}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -61,7 +62,7 @@ class AuthService {
     fullName?: string,
     companyName?: string,
   ): Promise<UserWithPlan | null> {
-    const res = await fetch('http://localhost:5004/api/auth/register', {
+    const res = await fetch(`${backendBaseUrl}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -86,7 +87,7 @@ class AuthService {
 
   async logout(): Promise<void> {
     try {
-      await fetch('http://localhost:5004/api/auth/logout', {
+      await fetch(`${backendBaseUrl}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });

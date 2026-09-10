@@ -25,7 +25,7 @@ import { OpenRouterService } from './providers/OpenRouterService';
 // Proxy mode (default ON): route all AI calls through the backend proxy so the
 // server injects provider keys (no client-side keys). Set VITE_USE_AI_PROXY=false
 // for direct BYOK mode.
-const USE_AI_PROXY = import.meta.env['VITE_USE_AI_PROXY'] !== 'false';
+import { useAIProxy as USE_AI_PROXY } from '../AIUsageMode';
 
 export interface ProviderStatus {
   provider: AIProvider;
