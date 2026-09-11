@@ -43,7 +43,7 @@ const Webmcp = () => {
 
       const data = await response.json();
       setScanResult(data);
-    } catch (err) {
+    } catch {
       setError('Scan failed. Check the URL and try again.');
     } finally {
       setScanning(false);

@@ -45,7 +45,7 @@ async function checkUrl(url: string): Promise<CheckResult> {
     }
 
     return { status: 'fail', details: `HTTP ${response.status}` };
-  } catch (error) {
+  } catch {
     return { status: 'unknown', details: 'Request failed or timed out' };
   }
 }
@@ -70,7 +70,7 @@ async function checkRobotsTxt(baseUrl: string): Promise<CheckResult> {
     }
 
     return { status: 'pass', details: 'Found' };
-  } catch (error) {
+  } catch {
     return { status: 'unknown', details: 'Request failed' };
   }
 }
@@ -96,7 +96,7 @@ async function checkJsonLd(baseUrl: string): Promise<CheckResult> {
     }
 
     return { status: 'fail', details: 'No structured data found' };
-  } catch (error) {
+  } catch {
     return { status: 'unknown', details: 'Request failed' };
   }
 }
@@ -128,7 +128,7 @@ export default async function handler(request: Request) {
         throw new Error('Invalid protocol');
       }
       baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
-    } catch (error) {
+    } catch {
       return new Response(JSON.stringify({ error: 'Invalid URL' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -181,7 +181,7 @@ export default async function handler(request: Request) {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (error) {
+  } catch {
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
