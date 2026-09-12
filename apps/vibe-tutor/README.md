@@ -1,3 +1,21 @@
+> ## Status: FROZEN / PARKED (Reference Only)
+>
+> This tree within `vibe-tech-monorepo` is preserved **strictly as a code archive and reference repository**.
+>
+> - **Active development** of Vibe Tutor lives in the standalone product workspace: `C:\projects\Vibe-Tutor`
+> - **Live production store baseline** is preserved in: `C:\projects\Vibe-Tutor-STORE-1.5.17`
+> - Per `C:\projects\PRODUCT_BOUNDARIES.md`, do **not** perform active development, experimental builds, or app store packaging from this monorepo tree.
+> - Code may **only** be pulled or referenced from here — this checkout is not a live product workspace.
+
+> ## Status: FROZEN / PARKED (Reference Only)
+>
+> This tree within `vibe-tech-monorepo` is preserved strictly as a **code archive and reference repository**.
+>
+> - **Active development** of Vibe Tutor is maintained in the standalone product workspace `C:\projects\Vibe-Tutor`.
+> - **Live production store baseline** is preserved in `C:\projects\Vibe-Tutor-STORE-1.5.17`.
+> - Per `C:\projects\PRODUCT_BOUNDARIES.md`, do **not** perform active development, experimental builds, or app store packaging directly from this monorepo tree.
+> - Code may only be **pulled / referenced** from here.
+
 <div align="center">
 <img width="1200" height="475" alt="Vibe-Tutor Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
