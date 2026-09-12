@@ -16,7 +16,7 @@ describe('package MathAdventureGame durable encounter award', () => {
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { frame.callback = callback; return 1; });
     vi.stubGlobal('cancelAnimationFrame', vi.fn());
     let settle: ((value: boolean) => void) | undefined;
-    const award = vi.fn<Award>(() => new Promise<boolean>((resolve) => { settle = resolve; }));
+    const award = vi.fn<Award>(async () => new Promise<boolean>((resolve) => { settle = resolve; }));
     render(<MathAdventureGame onEarnTokens={award} />);
     const selectLaneA = () => {
       const button = screen.getAllByRole('button').find((node) => node.textContent?.trim().startsWith('A'));

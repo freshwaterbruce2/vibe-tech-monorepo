@@ -115,7 +115,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
               {currentPattern.options.map((option, index) => (
                 <button
                   key={index}
-                  onClick={() => handleAnswer(option)}
+                  onClick={async () => handleAnswer(option)}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500
                            p-8 rounded-2xl transform hover:scale-105 transition-all duration-200
                            shadow-lg hover:shadow-2xl flex items-center justify-center"

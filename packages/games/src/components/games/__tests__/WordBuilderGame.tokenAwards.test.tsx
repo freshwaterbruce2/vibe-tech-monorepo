@@ -14,7 +14,7 @@ describe('package WordBuilderGame durable award', () => {
     // values preserve its letter order instead of relying on engine sort behavior.
     vi.spyOn(Math, 'random').mockImplementationOnce(() => 0).mockReturnValue(0.5);
     let settle: ((value: boolean) => void) | undefined;
-    const award = vi.fn<Award>(() => new Promise<boolean>((resolve) => { settle = resolve; }));
+    const award = vi.fn<Award>(async () => new Promise<boolean>((resolve) => { settle = resolve; }));
     const { container } = render(<WordBuilderGame onEarnTokens={award} />);
     const choose = (letter: string) => {
       const button = Array.from(container.querySelectorAll('button:not([disabled])')).find(

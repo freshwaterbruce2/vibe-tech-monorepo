@@ -18,7 +18,7 @@ type Award = (amount: number, awardKey: string) => Promise<boolean>;
 describe('package MusicNotesGame durable award', () => {
   it('does not advance while pending and retries the same note key after rejection', async () => {
     let settle: ((value: boolean) => void) | undefined;
-    const award = vi.fn<Award>(() => new Promise<boolean>((resolve) => { settle = resolve; }));
+    const award = vi.fn<Award>(async () => new Promise<boolean>((resolve) => { settle = resolve; }));
     render(<MusicNotesGame onEarnTokens={award} />);
     fireEvent.click(screen.getByRole('button', { name: 'C' }));
     fireEvent.click(screen.getByRole('button', { name: 'C' }));

@@ -11,7 +11,7 @@ type Award = (amount: number, key: string) => Promise<boolean>;
 describe('package usePatternQuestGame durable award', () => {
   it('does not advance a correct pattern until accepted and retries its stable key after rejection', async () => {
     let settle: ((value: boolean) => void) | undefined;
-    const award = vi.fn<Award>(() => new Promise<boolean>((resolve) => { settle = resolve; }));
+    const award = vi.fn<Award>(async () => new Promise<boolean>((resolve) => { settle = resolve; }));
     const { result } = renderHook(() => usePatternQuestGame({ onEarnTokens: award }));
     const answer = result.current.currentPattern?.answer;
     expect(answer).toBeTruthy();

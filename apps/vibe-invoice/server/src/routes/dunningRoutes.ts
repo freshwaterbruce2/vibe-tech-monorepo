@@ -202,7 +202,7 @@ export const registerDunningRoutes = (
       .prepare('SELECT id, user_id FROM invoices WHERE id = ?')
       .get(body.invoiceId) as { id: string; user_id: string } | undefined
 
-    if (!row || row.user_id !== userId) {
+    if (row?.user_id !== userId) {
       return reply.code(404).send({ error: 'Invoice not found' })
     }
 

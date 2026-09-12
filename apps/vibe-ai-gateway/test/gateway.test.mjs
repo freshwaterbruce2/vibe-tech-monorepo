@@ -143,7 +143,7 @@ test('server: full end-to-end HTTP completions endpoint works with auth & routin
   const server = await new Promise((resolve) => {
     const s = app.listen(0, () => resolve(s));
   });
-  const port = server.address().port;
+  const {port} = server.address();
   const baseUrl = `http://127.0.0.1:${port}`;
 
   try {

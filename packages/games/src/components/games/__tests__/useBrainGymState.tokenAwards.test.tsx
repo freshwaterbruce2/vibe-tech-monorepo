@@ -27,7 +27,7 @@ describe('useBrainGymState durable token awards', () => {
 
   it('does not publish completion stats before a pending award accepts and retries with the same ID', async () => {
     let settle: ((value: boolean) => void) | undefined;
-    const onEarnTokens = vi.fn<AwardTokens>(() => new Promise<boolean>((resolve) => { settle = resolve; }));
+    const onEarnTokens = vi.fn<AwardTokens>(async () => new Promise<boolean>((resolve) => { settle = resolve; }));
     const { result } = renderHook(() => useBrainGymState({ userTokens: 0, onEarnTokens, onClose: vi.fn() }));
 
     await act(async () => { result.current.launchGame('memory'); });

@@ -229,7 +229,7 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
         gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: 10,
       }}>
         {options.map((label) => (
-          <button key={label} style={optionStyle(label)} onClick={() => handleAnswer(label)}>
+          <button key={label} style={optionStyle(label)} onClick={async () => handleAnswer(label)}>
             {label}
           </button>
         ))}

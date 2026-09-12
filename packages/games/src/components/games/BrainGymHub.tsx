@@ -76,7 +76,7 @@ export default function BrainGymHub(props: BrainGymHubProps) {
         if (awarded) continuousGameTokensRef.current += amount;
         return awarded;
       },
-      onClose: () => closeActiveGame(),
+      onClose: async () => closeActiveGame(),
     };
     return (
       <Suspense fallback={fallback}>
