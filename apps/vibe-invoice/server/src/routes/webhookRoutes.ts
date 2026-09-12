@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import type Database from 'better-sqlite3'
 import type { FastifyInstance } from 'fastify'
 import type Stripe from 'stripe'
@@ -10,6 +11,10 @@ import {
   type StripeWebhookEventLike,
   verifyWebhookSignature,
 } from '../payments/stripeAdapter.js'
+import {
+  squarePaymentService,
+  type SquareWebhookPayload,
+} from '../payments/squarePaymentService.js'
 
 interface InvoiceRow {
   id: string
@@ -21,6 +26,14 @@ const getWebhookSecret = (): string => {
   const secret = process.env.STRIPE_WEBHOOK_SECRET
   if (!secret) {
     throw new Error('STRIPE_WEBHOOK_SECRET is not set')
+  }
+  return secret
+}
+
+const getSquareWebhookSecret = (): string => {
+  const secret = process.env.SQUARE_WEBHOOK_SECRET
+  if (!secret) {
+    throw new Error('SQUARE_WEBHOOK_SECRET is not set')
   }
   return secret
 }
@@ -162,6 +175,202 @@ export const registerWebhookRoutes = async (
         })
 
         events.emitEvent({ type: 'invoices:changed', userId: invoice.user_id })
+      }
+
+      return { ok: true }
+    })
+
+    instance.post('/api/webhooks/square', async (req, reply) => {
+      const sig = (req.headers['x-square-hmacsha256-signature'] ||
+        req.headers['x-square-signature']) as string | undefined
+
+      if (!sig || typeof sig !== 'string') {
+        return reply
+          .code(400)
+          .send({ error: 'Missing x-square-hmacsha256-signature header' })
+      }
+
+      let secret: string
+      try {
+        secret = getSquareWebhookSecret()
+      } catch (e) {
+        req.log.error({ err: e }, 'Square webhook secret missing')
+        return reply.code(500).send({ error: 'Server misconfigured' })
+      }
+
+      const rawBody = req.body as Buffer
+      const notificationUrl = `${req.protocol}://${req.hostname}${req.url}`
+
+      const isValid = await squarePaymentService.verifyWebhookSignature(
+        rawBody,
+        sig,
+        secret,
+        notificationUrl,
+      )
+
+      if (!isValid) {
+        req.log.warn('Invalid Square webhook signature')
+        return reply.code(400).send({ error: 'Invalid signature' })
+      }
+
+      let payload: SquareWebhookPayload
+      try {
+        payload = JSON.parse(rawBody.toString('utf8')) as SquareWebhookPayload
+      } catch (e) {
+        req.log.warn({ err: e }, 'Malformed Square webhook body')
+        return reply.code(400).send({ error: 'Malformed JSON body' })
+      }
+
+      const eventId = payload.event_id || `sq_evt_${Date.now()}`
+      const eventType = payload.type
+
+      // Ensure square_events table exists
+      db.prepare(
+        `CREATE TABLE IF NOT EXISTS square_events (
+          event_id TEXT PRIMARY KEY,
+          event_type TEXT NOT NULL,
+          payload_json TEXT NOT NULL,
+          processed_at TEXT NOT NULL
+        )`,
+      ).run()
+
+      const insertEvent = db.prepare(
+        `INSERT OR IGNORE INTO square_events (event_id, event_type, payload_json, processed_at)
+         VALUES (?, ?, ?, ?)`,
+      )
+      const inserted = insertEvent.run(
+        eventId,
+        eventType,
+        JSON.stringify(payload),
+        new Date().toISOString(),
+      )
+      if (inserted.changes === 0) {
+        req.log.info({ eventId }, 'Duplicate Square webhook, skipping')
+        return { ok: true, duplicate: true }
+      }
+
+      const isPaymentEvent =
+        eventType === 'payment.updated' ||
+        eventType === 'payment.created' ||
+        eventType === 'order.fulfillment.updated'
+
+      if (isPaymentEvent) {
+        interface SquarePaymentData {
+          id?: string
+          status?: string
+          order_id?: string
+          note?: string
+          metadata?: Record<string, string>
+          amount_money?: {
+            amount?: number | bigint
+            currency?: string
+          }
+        }
+
+        const paymentObj: SquarePaymentData | undefined =
+          payload.data?.object?.payment ??
+          (payload.data?.object as SquarePaymentData | undefined)
+        const status = paymentObj?.status
+
+        if (status === 'COMPLETED' || status === 'APPROVED') {
+          let invoiceId: string | null = null
+          const note = paymentObj?.note
+
+          if (note) {
+            try {
+              const parsedNote = JSON.parse(note) as { invoice_id?: string }
+              if (parsedNote.invoice_id) {
+                invoiceId = parsedNote.invoice_id
+              }
+            } catch {
+              const match = /ID:\s*([a-zA-Z0-9_-]+)/i.exec(note)
+              if (match?.[1]) {
+                invoiceId = match[1]
+              }
+            }
+          }
+
+          if (!invoiceId && paymentObj?.metadata?.invoice_id) {
+            invoiceId = paymentObj.metadata.invoice_id
+          }
+
+          if (!invoiceId) {
+            req.log.info(
+              { eventId },
+              'Square payment completed without invoice_id reference',
+            )
+            return { ok: true, skipped: 'no_invoice_id' }
+          }
+
+          const invoice = db
+            .prepare(
+              'SELECT id, user_id, currency, total FROM invoices WHERE id = ?',
+            )
+            .get(invoiceId) as (InvoiceRow & { total: number }) | undefined
+
+          if (!invoice) {
+            req.log.error(
+              { invoiceId, eventId },
+              'Square webhook references unknown invoice',
+            )
+            return { ok: true, error: 'invoice_not_found' }
+          }
+
+          const amountMoney = paymentObj?.amount_money
+          const amountMajor = amountMoney?.amount
+            ? Number(amountMoney.amount) / 100
+            : invoice.total
+          const currency = (amountMoney?.currency ?? invoice.currency).toUpperCase()
+          const now = new Date().toISOString()
+          const paymentId = paymentObj?.id ?? `sq_pay_${Date.now()}`
+          const orderId = paymentObj?.order_id ?? paymentId
+
+          const tx = db.transaction(() => {
+            db.prepare(
+              `INSERT INTO payments
+                (id, invoice_id, amount, currency, method,
+                 stripe_payment_intent_id, stripe_checkout_session_id, created_at)
+               VALUES (?, ?, ?, ?, 'square', ?, ?, ?)`,
+            ).run(
+              crypto.randomUUID(),
+              invoiceId,
+              amountMajor,
+              currency,
+              paymentId,
+              orderId,
+              now,
+            )
+
+            db.prepare(
+              "UPDATE invoices SET status='paid', updated_at=? WHERE id=?",
+            ).run(now, invoiceId)
+
+            recordAudit(db, {
+              action: 'invoice.paid',
+              entityType: 'invoice',
+              entityId: invoiceId,
+              actorUserId: null,
+              metadata: {
+                source: 'square',
+                square_event_id: eventId,
+                square_payment_id: paymentId,
+                amount: amountMajor,
+                currency,
+              },
+            })
+          })
+          tx()
+
+          enqueueJob(db, {
+            type: 'email.receipt',
+            payload: { invoiceId, paidAt: now },
+          })
+
+          events.emitEvent({
+            type: 'invoices:changed',
+            userId: invoice.user_id,
+          })
+        }
       }
 
       return { ok: true }

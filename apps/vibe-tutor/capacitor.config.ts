@@ -27,8 +27,8 @@ const config: CapacitorConfig = {
   appName: 'Vibe Tutor',
   webDir: 'dist',
   server: {
-    androidScheme: 'http', // Android WebView cannot load local assets with HTTPS scheme
-    cleartext: true, // Required for HTTP scheme on Android
+    // Capacitor 8 release default: local WebView assets use the secure HTTPS origin.
+    androidScheme: 'https',
   },
   plugins: {
     // CRITICAL FIX: Enable CapacitorHttp plugin to bypass CORS issues

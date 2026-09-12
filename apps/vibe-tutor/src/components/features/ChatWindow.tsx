@@ -1,11 +1,12 @@
-import { Bot, Flag, GraduationCap, Heart, Send, Sparkles, X } from 'lucide-react';
-import React, { useEffect, useState, useCallback } from 'react';
-import { dataStore } from '../../services/dataStore';
+import { Bot, GraduationCap, Heart, Send, Sparkles, X } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { GradientIcon } from '../ui/icons/GradientIcon';
 import { useChatMessages } from '../../hooks/useChatMessages';
 import { secureClient } from '../../services/secureClient';
-import LifeSkillsChecklist from './LifeSkillsChecklist';
-import SocialSkillsTips from './SocialSkillsTips';
+import { BuddyToolsOverlay } from './chat/BuddyToolsOverlay';
+import { ChatHeader } from './chat/ChatHeader';
+import { ChatMessageBubble } from './chat/ChatMessageBubble';
+import { ReportModal } from './chat/ReportModal';
 import { logger } from '../../utils/logger';
 import type { ChatMessage } from '../../types';
 
@@ -14,17 +15,35 @@ interface ChatWindowProps {
   description: string;
   onSendMessage: (message: string) => Promise<string>;
   type?: 'tutor' | 'friend';
+  assignmentHelp?: {
+    id: number;
+    subject: string;
+    title: string;
+    draftApplied: boolean;
+  } | null;
+  onAssignmentDraftApplied?: (intentId: number) => void;
+  onBackToAssignment?: () => void;
 }
 
 type ConnectionStatus = 'checking' | 'connected' | 'disconnected';
 
-const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatWindowProps) => {
+const ChatWindow = ({
+  title,
+  description,
+  onSendMessage,
+  type = 'tutor',
+  assignmentHelp = null,
+  onAssignmentDraftApplied,
+  onBackToAssignment,
+}: ChatWindowProps) => {
   const {
     messages,
-    setMessages,
     input,
     setInput,
     isLoading,
+    historyStatus,
+    historyError,
+    persistenceError,
     showLifeSkills,
     setShowLifeSkills,
     showSocialTips,
@@ -32,33 +51,77 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
     messagesEndRef,
     handleSend,
     handleAskBuddy,
-    startTransition,
-  } = useChatMessages({ title, type, onSendMessage });
+    retryHistoryLoad,
+    clearChat,
+  } = useChatMessages({ type, onSendMessage });
 
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('checking');
   const [showOfflineBanner, setShowOfflineBanner] = useState(false);
   const [reportedTimestamps, setReportedTimestamps] = useState<Set<number>>(new Set());
   const [reportingTimestamp, setReportingTimestamp] = useState<number | null>(null);
+  const [pendingReport, setPendingReport] = useState<ChatMessage | null>(null);
+  const [includeReportContent, setIncludeReportContent] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [feedbackState, setFeedbackState] = useState<Record<number, 'helpful' | 'unhelpful'>>({});
+  const chatLabel = type === 'tutor' ? 'AI Tutor' : 'AI Buddy';
+  const appliedIntentId = useRef<number | null>(null);
+  const editedIntentId = useRef<number | null>(null);
+
+  const handleFeedback = useCallback((timestamp: number, feedback: 'helpful' | 'unhelpful') => {
+    setFeedbackState((prev) => ({
+      ...prev,
+      [timestamp]: prev[timestamp] === feedback ? undefined as any : feedback,
+    }));
+  }, []);
+
+  const setComposerInput = useCallback((nextInput: string) => {
+    if (type === 'tutor' && assignmentHelp && !assignmentHelp.draftApplied) {
+      editedIntentId.current = assignmentHelp.id;
+    }
+    setInput(nextInput);
+  }, [assignmentHelp, setInput, type]);
+
+  useEffect(() => {
+    if (
+      type !== 'tutor' ||
+      !assignmentHelp ||
+      assignmentHelp.draftApplied ||
+      historyStatus !== 'ready' ||
+      appliedIntentId.current === assignmentHelp.id
+    ) {
+      return;
+    }
+
+    appliedIntentId.current = assignmentHelp.id;
+    if (editedIntentId.current !== assignmentHelp.id) {
+      setInput(
+        `Help me understand my ${assignmentHelp.subject} assignment: “${assignmentHelp.title}”. Please explain the first step.`,
+      );
+    }
+    onAssignmentDraftApplied?.(assignmentHelp.id);
+  }, [assignmentHelp, historyStatus, onAssignmentDraftApplied, setInput, type]);
 
   const handleReport = useCallback(
     async (msg: ChatMessage) => {
       if (reportingTimestamp !== null || reportedTimestamps.has(msg.timestamp)) return;
       setReportingTimestamp(msg.timestamp);
+      setReportError(null);
       try {
         await secureClient.reportMessage({
-          role: msg.role,
-          content: msg.content,
-          timestamp: msg.timestamp,
-          chatType: type,
+          category: `${type}-chat-message`,
+          includeContent: includeReportContent,
+          ...(includeReportContent ? { content: msg.content } : {}),
         });
         setReportedTimestamps((prev) => new Set(prev).add(msg.timestamp));
+        setPendingReport(null);
       } catch (error) {
         logger.error('Failed to report message:', error);
+        setReportError('Your report was not sent. Please try again.');
       } finally {
         setReportingTimestamp(null);
       }
     },
-    [reportingTimestamp, reportedTimestamps, type],
+    [includeReportContent, reportingTimestamp, reportedTimestamps, type],
   );
 
   const checkConnection = useCallback(async () => {
@@ -109,133 +172,33 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
 
   return (
     <div className="h-full flex flex-col p-4 md:p-8 pb-24 md:pb-8 relative">
-      {/* AI Buddy Tools Overlay (Life Skills + Social Tips) */}
-      {type === 'friend' && (showLifeSkills || showSocialTips) && (
-        <div className="absolute inset-0 bg-black/95 backdrop-blur-sm z-50 overflow-y-auto p-4">
-          <div className="max-w-2xl mx-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-white">
-                {showLifeSkills ? '📋 Daily Life Skills' : '💡 Social Skills Tips'}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowLifeSkills(false);
-                  setShowSocialTips(false);
-                }}
-                className="min-h-[44px] min-w-[44px] p-2 hover:bg-white/10 rounded-lg transition-colors"
-                title="Close panel"
-                aria-label="Close panel"
-              >
-                <X className="w-6 h-6 text-white" />
-              </button>
-            </div>
-            {showLifeSkills && <LifeSkillsChecklist />}
-            {showSocialTips && <SocialSkillsTips onAskBuddy={handleAskBuddy} />}
-          </div>
-        </div>
+      {type === 'friend' && (
+        <BuddyToolsOverlay
+          showLifeSkills={showLifeSkills}
+          showSocialTips={showSocialTips}
+          onClose={() => {
+            setShowLifeSkills(false);
+            setShowSocialTips(false);
+          }}
+          onTaskComplete={(taskId) =>
+            setInput(`I completed ${taskId.replace(/-/g, ' ')}. Help me keep this routine going.`)
+          }
+          onAskBuddy={handleAskBuddy}
+        />
       )}
 
-      <header className="mb-4 md:mb-8 text-center">
-        <div className="relative flex items-center justify-center gap-4 mb-4">
-          {/* Connection status dot */}
-          <div
-            className="absolute right-0 top-0"
-            role="status"
-            aria-label={
-              connectionStatus === 'checking'
-                ? 'Checking AI connection'
-                : connectionStatus === 'connected'
-                  ? 'AI Tutor connected'
-                  : 'AI Tutor offline'
-            }
-          >
-            <span
-              className={`block w-3 h-3 rounded-full${connectionStatus === 'checking' ? ' animate-pulse' : ''}`}
-              style={{
-                backgroundColor:
-                  connectionStatus === 'connected'
-                    ? '#4ADE80'
-                    : connectionStatus === 'disconnected'
-                      ? '#EF4444'
-                      : '#F59E0B',
-              }}
-              title={
-                connectionStatus === 'connected'
-                  ? 'AI Tutor connected'
-                  : connectionStatus === 'disconnected'
-                    ? 'AI Tutor offline'
-                    : 'Checking connection...'
-              }
-            />
-          </div>
-          {type === 'tutor' ? (
-            <GradientIcon
-              Icon={GraduationCap}
-              size={48}
-              gradientId="vibe-gradient-primary"
-              className="icon-pulse"
-            />
-          ) : (
-            <GradientIcon
-              Icon={Heart}
-              size={48}
-              gradientId="vibe-gradient-secondary"
-              className="icon-bounce"
-            />
-          )}
-          <div className="flex flex-col items-center">
-            <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary-accent)] to-[var(--secondary-accent)] neon-text-primary">
-              {title}
-            </h1>
-            {type === 'friend' && (
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={() => setShowLifeSkills(true)}
-                  className="glass-card min-h-[44px] px-3 py-2 rounded-lg hover:bg-violet-500/20 transition-all text-sm flex items-center gap-1"
-                  title="Daily Life Skills Checklist"
-                  aria-label="Daily Life Skills Checklist"
-                >
-                  <span aria-hidden="true">📋</span>
-                  <span className="text-gray-300 text-xs">Life Skills</span>
-                </button>
-                <button
-                  onClick={() => setShowSocialTips(true)}
-                  className="glass-card min-h-[44px] px-3 py-2 rounded-lg hover:bg-violet-500/20 transition-all text-sm flex items-center gap-1"
-                  title="Social Skills Tips"
-                  aria-label="Social Skills Tips"
-                >
-                  <span aria-hidden="true">💡</span>
-                  <span className="text-gray-300 text-xs">Social Tips</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-        <p className="text-text-secondary text-lg">{description}</p>
-        {messages.length > 0 && (
-          <div className="flex items-center justify-center gap-3 mt-3">
-            <div className="px-3 py-1 bg-[var(--primary-accent)]/20 border border-[var(--primary-accent)]/40 rounded-full text-xs text-[var(--primary-accent)] font-medium flex items-center gap-2">
-              <Sparkles size={14} className="icon-spin" />
-              {messages.length} saved
-            </div>
-            <button
-              onClick={() => {
-                setMessages([]);
-                startTransition(async () => {
-                  try {
-                    await dataStore.saveChatHistory(type, []);
-                  } catch (error) {
-                    logger.error('Failed to clear chat history:', error);
-                  }
-                });
-              }}
-              className="min-h-[44px] px-4 py-2 text-sm bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-lg text-red-200 transition-all duration-200 hover:scale-105"
-            >
-              Clear Chat
-            </button>
-          </div>
-        )}
-      </header>
+      <ChatHeader
+        title={title}
+        description={description}
+        type={type}
+        connectionStatus={connectionStatus}
+        chatLabel={chatLabel}
+        messagesCount={messages.length}
+        onClearChat={() => void clearChat()}
+        onBackToAssignment={onBackToAssignment}
+        onOpenLifeSkills={() => setShowLifeSkills(true)}
+        onOpenSocialTips={() => setShowSocialTips(true)}
+      />
 
       {/* Offline connection banner */}
       {showOfflineBanner && (
@@ -248,7 +211,7 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
             color: 'var(--error-accent)',
           }}
         >
-          <span>AI Tutor is offline — check your connection</span>
+          <span>{chatLabel} is offline — check your connection</span>
           <button
             type="button"
             onClick={() => setShowOfflineBanner(false)}
@@ -257,6 +220,31 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
           >
             <X size={14} />
           </button>
+        </div>
+      )}
+
+      {historyStatus === 'loading' && (
+        <div role="status" className="mb-3 text-sm text-text-secondary">Loading saved {chatLabel} history…</div>
+      )}
+      {historyError && (
+        <div role="alert" className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+          <span>{historyError}</span>
+          <button type="button" className="min-h-[44px] px-3 underline" onClick={retryHistoryLoad}>Retry history</button>
+        </div>
+      )}
+      {persistenceError && (
+        <div
+          role="alert"
+          className={`mb-3 flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm ${
+            /quiet hours/i.test(persistenceError)
+              ? 'border border-indigo-400/30 bg-indigo-950/40 text-indigo-200'
+              : 'border border-amber-400/40 bg-amber-500/10 text-amber-50'
+          }`}
+        >
+          {/quiet hours/i.test(persistenceError) && (
+            <span className="text-base leading-none select-none" aria-hidden="true">🌙</span>
+          )}
+          <span className="flex-1">{persistenceError}</span>
         </div>
       )}
 
@@ -290,7 +278,7 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
               ).map((prompt) => (
                 <button
                   key={prompt}
-                  onClick={() => setInput(prompt)}
+                  onClick={() => setComposerInput(prompt)}
                   className="min-h-[44px] px-4 py-2 text-sm rounded-xl bg-white/5 border border-[var(--glass-border)] text-text-secondary hover:bg-white/10 hover:text-text-primary transition-all duration-200"
                 >
                   {prompt}
@@ -350,72 +338,20 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                   <div className="flex-1 h-px bg-[var(--glass-border)] opacity-40" />
                 </div>
               )}
-              <div
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-[fadeInUp_0.3s_ease-out] chat-stagger-delay`}
-                style={{ '--stagger-delay': `${index * 0.1}s` } as React.CSSProperties}
-              >
-                <div
-                  className={`group max-w-xl relative ${msg.role === 'user' ? 'order-1' : 'order-2'}`}
-                >
-                  {msg.role !== 'user' && (
-                    <div className="flex items-center gap-2 mb-2">
-                      {type === 'tutor' ? (
-                        <GradientIcon
-                          Icon={GraduationCap}
-                          size={24}
-                          gradientId="vibe-gradient-primary"
-                        />
-                      ) : (
-                        <GradientIcon Icon={Heart} size={24} gradientId="vibe-gradient-accent" />
-                      )}
-                      <span className="text-xs text-text-muted">
-                        {type === 'tutor' ? 'AI Tutor' : 'AI Buddy'}
-                      </span>
-                    </div>
-                  )}
-                  <div
-                    className={`p-4 rounded-2xl backdrop-blur-md border transition-all duration-300 hover:scale-[1.02] ${
-                      msg.role === 'user'
-                        ? 'bg-gradient-to-br from-[var(--primary-accent)] to-[var(--tertiary-accent)] text-white border-[var(--primary-accent)]/30 shadow-lg shadow-[var(--primary-accent)]/20'
-                        : 'bg-[var(--glass-surface)] text-text-primary border-[var(--glass-border)] hover:border-[var(--border-hover)]'
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                    <div className="flex items-center justify-end gap-3 mt-2">
-                      {msg.role !== 'user' && (
-                        <button
-                          type="button"
-                          onClick={() => void handleReport(msg)}
-                          disabled={
-                            reportingTimestamp === msg.timestamp ||
-                            reportedTimestamps.has(msg.timestamp)
-                          }
-                          className="flex items-center gap-1 text-xs opacity-60 hover:opacity-100 disabled:opacity-40 transition-opacity"
-                          aria-label={
-                            reportedTimestamps.has(msg.timestamp)
-                              ? 'Message reported'
-                              : 'Report this message'
-                          }
-                          title={
-                            reportedTimestamps.has(msg.timestamp)
-                              ? 'Reported — thank you'
-                              : 'Report inappropriate response'
-                          }
-                        >
-                          <Flag size={12} />
-                          {reportedTimestamps.has(msg.timestamp) ? 'Reported' : 'Report'}
-                        </button>
-                      )}
-                      <span className="text-xs opacity-60">
-                        {new Date(msg.timestamp).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ChatMessageBubble
+                message={msg}
+                index={index}
+                type={type}
+                feedback={feedbackState[msg.timestamp] ?? null}
+                onFeedback={handleFeedback}
+                onReportRequest={(targetMsg) => {
+                  setPendingReport(targetMsg);
+                  setIncludeReportContent(false);
+                  setReportError(null);
+                }}
+                isReported={reportedTimestamps.has(msg.timestamp)}
+                isReporting={reportingTimestamp === msg.timestamp}
+              />
             </React.Fragment>
           );
         })}
@@ -457,12 +393,12 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
 
       <div className="mt-auto">
         <div className="flex items-center glass-card p-3 border-[var(--glass-border)] hover:border-[var(--border-hover)] transition-all duration-300">
-          <input
-            type="text"
+          <textarea
+            rows={type === 'tutor' && assignmentHelp ? 4 : 2}
             id="chat-input"
             name="chat-input"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => setComposerInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -474,13 +410,13 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                 ? "You're offline — reconnect to chat"
                 : `Message ${type === 'tutor' ? 'your AI Tutor' : 'your AI Buddy'}... (Enter to send, Shift+Enter for new line)`
             }
-            className="flex-1 bg-transparent px-4 py-3 text-text-primary outline-none focus:ring-2 focus:ring-[var(--primary-accent)] focus:ring-inset rounded placeholder-text-muted"
-            disabled={isLoading || connectionStatus === 'disconnected'}
+            className="flex-1 resize-none bg-transparent px-4 py-3 text-text-primary outline-none focus:ring-2 focus:ring-[var(--primary-accent)] focus:ring-inset rounded placeholder-text-muted"
+            disabled={isLoading || historyStatus !== 'ready' || connectionStatus === 'disconnected'}
             aria-label="Chat input"
           />
           <button
             onClick={() => void handleSend()}
-            disabled={isLoading || !input.trim() || connectionStatus === 'disconnected'}
+            disabled={isLoading || historyStatus !== 'ready' || !input.trim() || connectionStatus === 'disconnected'}
             className="glass-button p-3 ml-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
             aria-label="Send message"
           >
@@ -489,10 +425,21 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
         </div>
         <div className="mt-2 text-center">
           <span className="text-xs text-text-muted opacity-70">
-            Press Ctrl+Enter or click send • {messages.length} messages
+            Enter sends • Shift+Enter adds a new line • {messages.length} messages
           </span>
         </div>
       </div>
+      {pendingReport && (
+        <ReportModal
+          pendingReport={pendingReport}
+          includeReportContent={includeReportContent}
+          setIncludeReportContent={setIncludeReportContent}
+          reportError={reportError}
+          reportingTimestamp={reportingTimestamp}
+          onCancel={() => setPendingReport(null)}
+          onReport={(msg) => void handleReport(msg)}
+        />
+      )}
     </div>
   );
 };

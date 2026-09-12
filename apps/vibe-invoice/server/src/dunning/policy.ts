@@ -1,6 +1,6 @@
-export type { DunningPolicy, DunningReminder } from '@vibetech/billing'
+export type { DunningPolicy, DunningReminder } from '../shared/billing/index.js'
 export {
   DEFAULT_REMINDERS,
   getDunningPolicy as getPolicy,
   upsertDunningPolicy as upsertPolicy,
-} from '@vibetech/billing'
+} from '../shared/billing/index.js'

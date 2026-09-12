@@ -60,11 +60,6 @@
       "count": 1
     }
   },
-  "src/components/features/WorksheetView.tsx": {
-    "max-len": {
-      "count": 1
-    }
-  },
   "src/components/features/useRewardShop.tsx": {
     "max-len": {
       "count": 1
@@ -167,7 +162,7 @@
   },
   "src/components/realms/RealmView.tsx": {
     "max-len": {
-      "count": 5
+      "count": 1
     }
   },
   "src/components/schedules/ScheduleInsightsCard.tsx": {
@@ -178,11 +173,6 @@
   "src/components/schedules/SchedulesHub.tsx": {
     "max-len": {
       "count": 5
-    }
-  },
-  "src/components/settings/PrivacyPolicy.tsx": {
-    "max-len": {
-      "count": 1
     }
   },
   "src/components/settings/RewardSettings.tsx": {
@@ -196,9 +186,6 @@
     }
   },
   "src/hooks/useAchievements.ts": {
-    "max-len": {
-      "count": 1
-    },
     "max-lines-per-function": {
       "count": 1
     }
@@ -241,11 +228,6 @@
       "count": 1
     }
   },
-  "src/hooks/useTokenEconomy.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "src/hooks/useWellnessHub.ts": {
     "max-len": {
       "count": 1
@@ -278,9 +260,6 @@
     }
   },
   "src/services/achievementService.ts": {
-    "max-len": {
-      "count": 1
-    },
     "max-lines-per-function": {
       "count": 1
     }
@@ -328,19 +307,6 @@
   "src/services/migrationService.ts": {
     "max-lines-per-function": {
       "count": 2
-    }
-  },
-  "src/services/openrouter.ts": {
-    "max-len": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "src/services/secureClient.ts": {
-    "max-lines-per-function": {
-      "count": 1
     }
   },
   "src/types/schedule.ts": {

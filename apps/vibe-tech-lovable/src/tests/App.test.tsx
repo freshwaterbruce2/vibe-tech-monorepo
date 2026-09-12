@@ -16,6 +16,7 @@ vi.mock('@/pages/PalettePreview', () => ({ default: () => null }));
 vi.mock('@/pages/Portfolio', () => ({ default: () => null }));
 vi.mock('@/pages/Pricing', () => ({ default: () => null }));
 vi.mock('@/pages/Privacy', () => ({ default: () => null }));
+vi.mock('@/pages/ChessMasterPrivacy', () => ({ default: () => null }));
 vi.mock('@/pages/ProjectDetail', () => ({ default: () => null }));
 vi.mock('@/pages/Resources', () => ({ default: () => null }));
 vi.mock('@/pages/Services', () => ({ default: () => null }));

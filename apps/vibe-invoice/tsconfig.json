@@ -17,20 +17,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
-  "exclude": ["src*.test.ts", "src*.test.tsx", "src/__tests__*", "node_modules"],
-  "references": [
-    {
-      "path": "../../packages/emails"
-    },
-    {
-      "path": "../../packages/billing"
-    },
-    {
-      "path": "../../packages/auth"
-    },
-    {
-      "path": "./tsconfig.node.json"
-    }
-  ],
-  "extends": "../../tsconfig.base.json"
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/__tests__/**", "node_modules"]
 }

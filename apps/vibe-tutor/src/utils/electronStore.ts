@@ -8,8 +8,8 @@
  */
 import { logger } from './logger';
 
-// Provide a localStorage-backed stub when Electron IPC is not available
-// (web, PWA, Capacitor). This ensures window.electronAPI is always defined.
+// Provide a localStorage-backed bridge when Electron IPC is not available
+// (web, PWA, Capacitor). Unsupported Electron-only import capabilities are absent.
 if (typeof window !== 'undefined' && !window.electronAPI) {
   (window as Window & typeof globalThis & { electronAPI: unknown }).electronAPI = {
     isElectron: false,
@@ -19,20 +19,62 @@ if (typeof window !== 'undefined' && !window.electronAPI) {
       delete: (key: string) => localStorage.removeItem(key),
       clear: () => localStorage.clear(),
     },
-    selectImportFile: async () => Promise.resolve(null),
-    ingestAndroidExport: async () => Promise.resolve({ inserted: 0, skipped: 0, total: 0 }),
   };
 }
 
 export interface AppStore {
   get<T = string>(key: string): T | null;
+  getStrict<T = string>(key: string): T | null;
   set<T = string>(key: string, value: T): void;
+  /**
+   * Strict persistence for state changes which must not report success until
+   * the underlying store accepted the value. Unlike `set`, this propagates a
+   * failure to the caller so financial-style ledgers can fail closed.
+   */
+  setStrict<T = string>(key: string, value: T): void;
   remove(key: string): void;
   delete(key: string): void;
 }
 
+export interface StorageFailureSnapshot {
+  id: number;
+  store: 'persistent' | 'session';
+  operation: 'read' | 'write' | 'delete';
+  reason: 'quota' | 'unavailable';
+}
+
+type StorageFailureListener = () => void;
+
+let latestStorageFailure: StorageFailureSnapshot | null = null;
+let nextStorageFailureId = 0;
+const storageFailureListeners = new Set<StorageFailureListener>();
+
+export function getStorageFailureSnapshot(): StorageFailureSnapshot | null {
+  return latestStorageFailure;
+}
+
+export function subscribeToStorageFailures(listener: StorageFailureListener): () => void {
+  storageFailureListeners.add(listener);
+  return () => storageFailureListeners.delete(listener);
+}
+
+function reportStorageFailure(
+  store: StorageFailureSnapshot['store'],
+  operation: StorageFailureSnapshot['operation'],
+  reason: StorageFailureSnapshot['reason'],
+): void {
+  latestStorageFailure = { id: ++nextStorageFailureId, store, operation, reason };
+  for (const listener of storageFailureListeners) {
+    try {
+      listener();
+    } catch {
+      // A subscriber must not interfere with storage or other subscribers.
+    }
+  }
+}
+
 /**
- * Check if we're running in real Electron (not the stub)
+ * Check if we're running in real Electron rather than the localStorage bridge.
  */
 function isRealElectron(): boolean {
   return window.electronAPI?.isElectron === true;
@@ -53,25 +95,30 @@ function isQuotaExceededError(error: unknown): boolean {
   );
 }
 
-let quotaExceededHandler: ((key: string) => void) | null = null;
+function requireBridgeMethod(method: 'get' | 'set' | 'delete'): (...args: unknown[]) => unknown {
+  const bridge = window.electronAPI?.store;
+  const candidate: unknown = bridge?.[method];
+  if (typeof candidate !== 'function') {
+    throw new Error('Storage bridge unavailable');
+  }
+  return candidate as (...args: unknown[]) => unknown;
+}
 
-/**
- * Register a callback invoked when a persistent-store write fails because
- * storage is full, so the UI can surface a "storage full" message instead of
- * silently losing data. Pass null to clear the handler.
- */
-export function onStorageQuotaExceeded(handler: ((key: string) => void) | null): void {
-  quotaExceededHandler = handler;
+function serializeValue(value: unknown): string {
+  if (typeof value === 'string') return value;
+  const serialized = JSON.stringify(value);
+  if (typeof serialized !== 'string') throw new Error('Storage value cannot be serialized');
+  return serialized;
 }
 
 /**
- * Unified storage that works across Electron (IPC bridge) and Web (localStorage)
+ * Unified storage that works across Electron (IPC bridge) and Web/Capacitor (localStorage)
  * After electronInit, window.electronAPI is always available.
  */
 export const appStore: AppStore = {
   get<T = string>(key: string): T | null {
     try {
-      const value = window.electronAPI.store.get(key);
+      const value = requireBridgeMethod('get')(key);
       if (value === null || value === undefined) return null;
 
       try {
@@ -80,30 +127,58 @@ export const appStore: AppStore = {
         return value as unknown as T;
       }
     } catch (error) {
-      logger.error(`[AppStore] Failed to get '${key}':`, error);
+      logger.error('[AppStore] Persistent storage read failed');
+      reportStorageFailure('persistent', 'read', 'unavailable');
       return null;
     }
   },
 
   set<T = string>(key: string, value: T): void {
     try {
-      const serialized = typeof value === 'string' ? value : JSON.stringify(value);
-      window.electronAPI.store.set(key, serialized);
+      const serialized = serializeValue(value);
+      requireBridgeMethod('set')(key, serialized);
     } catch (error) {
       if (isQuotaExceededError(error)) {
-        logger.error(`[AppStore] Storage quota exceeded while setting '${key}'`, error);
-        quotaExceededHandler?.(key);
+        logger.error('[AppStore] Persistent storage is full');
+        reportStorageFailure('persistent', 'write', 'quota');
         return;
       }
-      logger.error(`[AppStore] Failed to set '${key}':`, error);
+      logger.error('[AppStore] Persistent storage write failed');
+      reportStorageFailure('persistent', 'write', 'unavailable');
+    }
+  },
+
+  getStrict<T = string>(key: string): T | null {
+    try {
+      const value = requireBridgeMethod('get')(key);
+      if (value === null || value === undefined) return null;
+      try { return JSON.parse(value as string) as T; } catch { return value as T; }
+    } catch (error) {
+      reportStorageFailure('persistent', 'read', 'unavailable');
+      throw error instanceof Error ? error : new Error('Persistent storage read failed');
+    }
+  },
+
+  setStrict<T = string>(key: string, value: T): void {
+    try {
+      const serialized = serializeValue(value);
+      requireBridgeMethod('set')(key, serialized);
+    } catch (error) {
+      reportStorageFailure(
+        'persistent',
+        'write',
+        isQuotaExceededError(error) ? 'quota' : 'unavailable',
+      );
+      throw error instanceof Error ? error : new Error('Persistent storage write failed');
     }
   },
 
   remove(key: string): void {
     try {
-      window.electronAPI.store.delete(key);
+      requireBridgeMethod('delete')(key);
     } catch (error) {
-      logger.error(`[AppStore] Failed to remove '${key}':`, error);
+      logger.error('[AppStore] Persistent storage delete failed');
+      reportStorageFailure('persistent', 'delete', 'unavailable');
     }
   },
 
@@ -121,7 +196,7 @@ export const sessionStore: AppStore = {
   get<T = string>(key: string): T | null {
     try {
       if (isRealElectron()) {
-        const value = window.electronAPI.store.get(`session_${key}`);
+        const value = requireBridgeMethod('get')(`session_${key}`);
         if (value === null || value === undefined) return null;
 
         try {
@@ -141,36 +216,61 @@ export const sessionStore: AppStore = {
         return value as unknown as T;
       }
     } catch (error) {
-      logger.error(`[SessionStore] Failed to get '${key}':`, error);
+      logger.error('[SessionStore] Session storage read failed');
+      reportStorageFailure('session', 'read', 'unavailable');
       return null;
+    }
+  },
+
+  getStrict<T = string>(key: string): T | null {
+    try {
+      const value = isRealElectron() ? requireBridgeMethod('get')(`session_${key}`) : sessionStorage.getItem(key);
+      if (value === null || value === undefined) return null;
+      try { return JSON.parse(value as string) as T; } catch { return value as T; }
+    } catch (error) {
+      reportStorageFailure('session', 'read', 'unavailable');
+      throw error instanceof Error ? error : new Error('Session storage read failed');
     }
   },
 
   set<T = string>(key: string, value: T): void {
     try {
-      const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+      const serialized = serializeValue(value);
 
       if (isRealElectron()) {
-        window.electronAPI.store.set(`session_${key}`, serialized);
+        requireBridgeMethod('set')(`session_${key}`, serialized);
         return;
       }
 
       sessionStorage.setItem(key, serialized);
     } catch (error) {
-      logger.error(`[SessionStore] Failed to set '${key}':`, error);
+      logger.error('[SessionStore] Session storage write failed');
+      reportStorageFailure('session', 'write', isQuotaExceededError(error) ? 'quota' : 'unavailable');
+    }
+  },
+
+  setStrict<T = string>(key: string, value: T): void {
+    try {
+      const serialized = serializeValue(value);
+      if (isRealElectron()) requireBridgeMethod('set')(`session_${key}`, serialized);
+      else sessionStorage.setItem(key, serialized);
+    } catch (error) {
+      reportStorageFailure('session', 'write', isQuotaExceededError(error) ? 'quota' : 'unavailable');
+      throw error instanceof Error ? error : new Error('Session storage write failed');
     }
   },
 
   remove(key: string): void {
     try {
       if (isRealElectron()) {
-        window.electronAPI.store.delete(`session_${key}`);
+        requireBridgeMethod('delete')(`session_${key}`);
         return;
       }
 
       sessionStorage.removeItem(key);
     } catch (error) {
-      logger.error(`[SessionStore] Failed to remove '${key}':`, error);
+      logger.error('[SessionStore] Session storage delete failed');
+      reportStorageFailure('session', 'delete', 'unavailable');
     }
   },
 

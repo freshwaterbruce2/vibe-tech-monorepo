@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Hook mocks ─────────────────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ vi.mock('../ScheduleInsightsCard', () => ({
 import SchedulesHub from '../SchedulesHub';
 
 // ── Props ──────────────────────────────────────────────────────────────────────
-const onEarnTokens = vi.fn();
+const onEarnTokens = vi.fn().mockResolvedValue(true);
 const onClose = vi.fn();
 
 function renderHub() {
@@ -385,6 +385,62 @@ describe('SchedulesHub', () => {
       fireEvent.click(screen.getByRole('button', { name: /chores list/i }));
       fireEvent.click(screen.getByRole('button', { name: /routines & schedules/i }));
       expect(getActivityInput()).toBeInTheDocument();
+    });
+  });
+
+  describe('AI schedule suggestions', () => {
+    const suggestion = { time: '4:00 PM', activity: 'Math homework', durationMinutes: 30, type: 'study' };
+
+    it('shows an actionable failure, clears a stale preview, and allows retry without adding items', async () => {
+      mockGenerateSchedule.mockResolvedValueOnce([suggestion]);
+      renderHub();
+      const generateButton = screen.getByRole('button', { name: /ai schedule/i });
+
+      fireEvent.click(generateButton);
+      await screen.findByText('Suggested Schedule');
+      expect(screen.getByText('Math homework')).toBeInTheDocument();
+
+      mockGenerateSchedule.mockRejectedValueOnce(new Error('provider unavailable'));
+      fireEvent.click(generateButton);
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('try AI Schedule again');
+      expect(screen.queryByText('Suggested Schedule')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /add all/i })).not.toBeInTheDocument();
+      expect(mockAddScheduleItem).not.toHaveBeenCalled();
+
+      mockGenerateSchedule.mockResolvedValueOnce([suggestion]);
+      fireEvent.click(generateButton);
+      await screen.findByText('Suggested Schedule');
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /add all/i }));
+      await waitFor(() => expect(mockAddScheduleItem).toHaveBeenCalledWith(expect.objectContaining({
+        activity: 'Math homework', time: '04:00', meridian: 'PM',
+      })));
+    });
+
+    it('treats an unexpected empty hook result as a failure instead of a silent success', async () => {
+      mockGenerateSchedule.mockResolvedValueOnce([]);
+      renderHub();
+
+      fireEvent.click(screen.getByRole('button', { name: /ai schedule/i }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Could not create a schedule suggestion');
+      expect(screen.queryByText('Suggested Schedule')).not.toBeInTheDocument();
+      expect(mockAddScheduleItem).not.toHaveBeenCalled();
+    });
+
+    it('does not partially add a defensive invalid preview item', async () => {
+      mockGenerateSchedule.mockResolvedValueOnce([{ ...suggestion, time: 'someday' }]);
+      renderHub();
+
+      fireEvent.click(screen.getByRole('button', { name: /ai schedule/i }));
+      await screen.findByText('Suggested Schedule');
+      fireEvent.click(screen.getByRole('button', { name: /add all/i }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Could not create a schedule suggestion');
+      expect(mockAddScheduleItem).not.toHaveBeenCalled();
+      expect(screen.queryByText('Suggested Schedule')).not.toBeInTheDocument();
     });
   });
 });

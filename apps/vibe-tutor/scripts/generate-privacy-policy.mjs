@@ -1,0 +1,10 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const policy = JSON.parse(readFileSync(resolve(root, 'privacy-policy.json'), 'utf8'));
+const html = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${policy.title}</title><main><h1>${policy.title}</h1><p>Effective ${policy.effectiveDate}</p>${policy.sections.map((s) => `<h2>${s.heading}</h2>${s.paragraphs.map((p) => `<p>${p}</p>`).join('')}`).join('')}</main></html>\n`;
+const markdown = `# ${policy.title}\n\nEffective ${policy.effectiveDate}\n\n${policy.sections.map((s) => `## ${s.heading}\n\n${s.paragraphs.join('\n\n')}`).join('\n\n')}\n`;
+for (const file of ['privacy-policy.html', 'public/privacy-policy.html', 'docs/privacy-policy/index.html']) writeFileSync(resolve(root, file), html);
+writeFileSync(resolve(root, 'docs/PRIVACY_POLICY.md'), markdown);
+process.stdout.write('Generated privacy-policy copies from privacy-policy.json.\n');

@@ -160,7 +160,7 @@ test.describe('Vibe-Tutor Core Flows', () => {
     await board.getByRole('button', { name: /Great/ }).click();
     await board.getByLabel('Reflection (optional)').fill('Playwright wellness reflection');
     await board.getByRole('button', { name: /Save check-in/i }).click();
-    await expect(board.getByRole('button', { name: /Saved today/i })).toBeVisible();
+    await expect(board.getByRole('button', { name: /Update check-in/i })).toBeVisible();
 
     await board.getByRole('button', { name: /Add thought entry/i }).click();
     await board.getByLabel('Situation').fill('A hard quiz is coming up');
@@ -182,7 +182,7 @@ test.describe('Vibe-Tutor first-run gate', () => {
   test('still shows onboarding when completed state is absent', async ({ page }) => {
     await mockAiEndpoints(page);
     await page.goto(BASE_URL);
-    await expect(page.getByRole('heading', { name: 'Welcome to Vibe-Tutor' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Welcome to Vibe Tutor' })).toBeVisible({
       timeout: 15000,
     });
   });

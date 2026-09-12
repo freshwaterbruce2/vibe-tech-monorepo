@@ -61,6 +61,10 @@ describe('ChatWindow', () => {
     vi.restoreAllMocks();
   });
 
+  const waitForHistory = async () => {
+    await waitFor(() => expect(screen.queryByText(/Loading saved AI Tutor history/i)).not.toBeInTheDocument());
+  };
+
   describe('Rendering', () => {
     it('renders chat window with title and description', () => {
       render(<ChatWindow {...defaultProps} />);
@@ -69,8 +73,10 @@ describe('ChatWindow', () => {
       expect(screen.getByText('Get help with your homework')).toBeInTheDocument();
     });
 
-    it('renders input field with correct placeholder', () => {
+    it('renders input field with correct placeholder', async () => {
       render(<ChatWindow {...defaultProps} />);
+
+      await waitForHistory();
 
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
       expect(input).toBeInTheDocument();
@@ -102,6 +108,8 @@ describe('ChatWindow', () => {
     it('sends message when send button is clicked', async () => {
       render(<ChatWindow {...defaultProps} />);
 
+      await waitForHistory();
+
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
       const sendButton = screen.getByLabelText('Send message');
 
@@ -116,6 +124,8 @@ describe('ChatWindow', () => {
     it('sends message when Enter key is pressed', async () => {
       render(<ChatWindow {...defaultProps} />);
 
+      await waitForHistory();
+
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
 
       fireEvent.change(input, { target: { value: 'Hello AI' } });
@@ -128,6 +138,8 @@ describe('ChatWindow', () => {
 
     it('does not send message when Shift+Enter is pressed', async () => {
       render(<ChatWindow {...defaultProps} />);
+
+      await waitForHistory();
 
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
 
@@ -142,6 +154,8 @@ describe('ChatWindow', () => {
     it('sends message when Ctrl+Enter is pressed', async () => {
       render(<ChatWindow {...defaultProps} />);
 
+      await waitForHistory();
+
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
 
       fireEvent.change(input, { target: { value: 'Hello AI' } });
@@ -154,6 +168,8 @@ describe('ChatWindow', () => {
 
     it('clears input after sending message', async () => {
       render(<ChatWindow {...defaultProps} />);
+
+      await waitForHistory();
 
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i) as HTMLInputElement;
       const sendButton = screen.getByLabelText('Send message');
@@ -169,6 +185,8 @@ describe('ChatWindow', () => {
     it('displays user message immediately after sending', async () => {
       render(<ChatWindow {...defaultProps} />);
 
+      await waitForHistory();
+
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
       const sendButton = screen.getByLabelText('Send message');
 
@@ -182,6 +200,8 @@ describe('ChatWindow', () => {
 
     it('displays AI response after receiving', async () => {
       render(<ChatWindow {...defaultProps} />);
+
+      await waitForHistory();
 
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
       const sendButton = screen.getByLabelText('Send message');
@@ -203,6 +223,8 @@ describe('ChatWindow', () => {
 
       render(<ChatWindow {...defaultProps} />);
 
+      await waitForHistory();
+
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
       const sendButton = screen.getByLabelText('Send message');
 
@@ -221,6 +243,8 @@ describe('ChatWindow', () => {
 
       render(<ChatWindow {...defaultProps} />);
 
+      await waitForHistory();
+
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i) as HTMLInputElement;
       const sendButton = screen.getByLabelText('Send message') as HTMLButtonElement;
 
@@ -235,6 +259,8 @@ describe('ChatWindow', () => {
 
     it('re-enables input after response (button stays disabled when input empty)', async () => {
       render(<ChatWindow {...defaultProps} />);
+
+      await waitForHistory();
 
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i) as HTMLInputElement;
       const sendButton = screen.getByLabelText('Send message') as HTMLButtonElement;
@@ -264,6 +290,8 @@ describe('ChatWindow', () => {
 
       render(<ChatWindow {...defaultProps} />);
 
+      await waitForHistory();
+
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
       const sendButton = screen.getByLabelText('Send message');
 
@@ -274,7 +302,7 @@ describe('ChatWindow', () => {
         // Check for any of the possible error messages
         expect(
           screen.getByText(
-            /trouble connecting|technical difficulties|couldn't process|went wrong/i,
+            /trouble connecting|technical difficulties|couldn't process|went wrong|response did not arrive/i,
           ),
         ).toBeInTheDocument();
       });
@@ -285,6 +313,8 @@ describe('ChatWindow', () => {
 
       render(<ChatWindow {...defaultProps} />);
 
+      await waitForHistory();
+
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
       const sendButton = screen.getByLabelText('Send message');
 
@@ -295,8 +325,65 @@ describe('ChatWindow', () => {
         // Check for any of the possible error messages
         expect(
           screen.getByText(
-            /trouble connecting|technical difficulties|couldn't process|went wrong/i,
+            /trouble connecting|technical difficulties|couldn't process|went wrong|response did not arrive/i,
           ),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('differentiates 401 entitlement failure with helpful Play Store guidance', async () => {
+      mockOnSendMessage.mockRejectedValue(new Error('Session init failed (401): Entitlement verification failed.'));
+
+      render(<ChatWindow {...defaultProps} />);
+      await waitForHistory();
+
+      const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
+      const sendButton = screen.getByLabelText('Send message');
+
+      fireEvent.change(input, { target: { value: 'Help with math' } });
+      fireEvent.click(sendButton);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Google Play purchase could not be verified/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('differentiates 503 capacity error with retrying notice', async () => {
+      mockOnSendMessage.mockRejectedValue(new Error('API error: 503'));
+
+      render(<ChatWindow {...defaultProps} />);
+      await waitForHistory();
+
+      const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
+      const sendButton = screen.getByLabelText('Send message');
+
+      fireEvent.change(input, { target: { value: 'Help with math' } });
+      fireEvent.click(sendButton);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/AI service is temporarily busy/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('displays quiet hours notice with calm informative styling', async () => {
+      mockOnSendMessage.mockRejectedValue(new Error('Quiet hours pause new AI replies from 21:00 to 7:00.'));
+
+      render(<ChatWindow {...defaultProps} />);
+      await waitForHistory();
+
+      const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
+      const sendButton = screen.getByLabelText('Send message');
+
+      fireEvent.change(input, { target: { value: 'Help with math' } });
+      fireEvent.click(sendButton);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Quiet hours pause new AI replies from 21:00 to 7:00/i),
         ).toBeInTheDocument();
       });
     });
@@ -314,6 +401,8 @@ describe('ChatWindow', () => {
 
     it('does not send whitespace-only messages', async () => {
       render(<ChatWindow {...defaultProps} />);
+
+      await waitForHistory();
 
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
       const sendButton = screen.getByLabelText('Send message');
@@ -349,6 +438,8 @@ describe('ChatWindow', () => {
       const { dataStore } = await import('../../../services/dataStore');
 
       render(<ChatWindow {...defaultProps} />);
+
+      await waitForHistory();
 
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
       const sendButton = screen.getByLabelText('Send message');
@@ -450,6 +541,8 @@ describe('ChatWindow', () => {
 
       render(<ChatWindow {...defaultProps} />);
 
+      await waitForHistory();
+
       const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
       const sendButton = screen.getByLabelText('Send message');
 
@@ -510,7 +603,7 @@ describe('ChatWindow', () => {
 
       render(<ChatWindow {...defaultProps} />);
 
-      const statusEl = screen.getByRole('status');
+      const statusEl = screen.getAllByRole('status')[0]!;
       expect(statusEl).toHaveAttribute('aria-label', 'Checking AI connection');
     });
 
@@ -617,18 +710,51 @@ describe('ChatWindow', () => {
 
       const reportButton = screen.getByLabelText('Report this message');
       fireEvent.click(reportButton);
+      expect(screen.getByRole('dialog', { name: /report message/i })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /send report/i }));
 
       await waitFor(() => {
         expect(secureClient.reportMessage).toHaveBeenCalledWith({
-          role: 'model',
-          content: 'Hi there!',
-          timestamp: mockHistory[1]!.timestamp,
-          chatType: 'tutor',
+          category: 'tutor-chat-message',
+          includeContent: false,
         });
       });
 
       await waitFor(() => {
         expect(screen.getByLabelText('Message reported')).toBeInTheDocument();
+      });
+    });
+
+    it('persists canonical history without a separate passive capture on unmount', async () => {
+      const { dataStore } = await import('../../../services/dataStore');
+      const { syncService } = await import('@/services');
+      const { unmount } = render(<ChatWindow {...defaultProps} />);
+
+      await waitForHistory();
+      const input = screen.getByPlaceholderText(/Message your AI Tutor/i);
+      fireEvent.change(input, { target: { value: 'Keep this chat' } });
+      fireEvent.click(screen.getByLabelText('Send message'));
+
+      await waitFor(() => expect(dataStore.saveChatHistory).toHaveBeenCalled());
+      unmount();
+
+      expect(syncService.logEvent).not.toHaveBeenCalled();
+    });
+
+    it('includes message content only after the explicit opt-in checkbox is selected', async () => {
+      render(<ChatWindow {...defaultProps} />);
+      await screen.findByText('Hi there!');
+
+      fireEvent.click(screen.getByLabelText('Report this message'));
+      fireEvent.click(screen.getByLabelText(/attach this message’s content/i));
+      fireEvent.click(screen.getByRole('button', { name: /send report/i }));
+
+      await waitFor(() => {
+        expect(secureClient.reportMessage).toHaveBeenCalledWith({
+          category: 'tutor-chat-message',
+          includeContent: true,
+          content: 'Hi there!',
+        });
       });
     });
 
@@ -640,6 +766,7 @@ describe('ChatWindow', () => {
       });
 
       fireEvent.click(screen.getByLabelText('Report this message'));
+      fireEvent.click(screen.getByRole('button', { name: /send report/i }));
 
       await waitFor(() => {
         const reportedButton = screen.getByLabelText('Message reported') as HTMLButtonElement;
@@ -650,7 +777,7 @@ describe('ChatWindow', () => {
       expect(secureClient.reportMessage).toHaveBeenCalledTimes(1);
     });
 
-    it('logs but does not crash when reporting fails', async () => {
+    it('shows an accessible retry state instead of falsely marking a failed report as sent', async () => {
       vi.mocked(secureClient.reportMessage).mockRejectedValue(new Error('Network error'));
 
       render(<ChatWindow {...defaultProps} />);
@@ -660,14 +787,51 @@ describe('ChatWindow', () => {
       });
 
       fireEvent.click(screen.getByLabelText('Report this message'));
+      fireEvent.click(screen.getByRole('button', { name: /send report/i }));
 
       await waitFor(() => {
         expect(secureClient.reportMessage).toHaveBeenCalledTimes(1);
       });
 
-      // Button remains actionable (not stuck reported) after a failed report.
+      expect(screen.getByRole('alert')).toHaveTextContent(/report was not sent/i);
+      expect(screen.getByRole('button', { name: /retry report/i })).toBeEnabled();
+      // The message remains unreported and actionable after a failed report.
       const button = screen.getByLabelText('Report this message') as HTMLButtonElement;
       expect(button.disabled).toBe(false);
+    });
+
+    it('clears the retry state and marks the message reported after a successful retry', async () => {
+      vi.mocked(secureClient.reportMessage)
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockResolvedValueOnce(undefined);
+      render(<ChatWindow {...defaultProps} />);
+      await screen.findByText('Hi there!');
+
+      fireEvent.click(screen.getByLabelText('Report this message'));
+      fireEvent.click(screen.getByRole('button', { name: /send report/i }));
+      await screen.findByRole('button', { name: /retry report/i });
+      fireEvent.click(screen.getByRole('button', { name: /retry report/i }));
+
+      await waitFor(() => expect(secureClient.reportMessage).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(screen.getByLabelText('Message reported')).toBeInTheDocument());
+      expect(screen.queryByRole('alert', { name: /report/i })).not.toBeInTheDocument();
+    });
+
+    it('keeps report submission visibly in-flight until the request resolves', async () => {
+      let resolveReport: () => void = () => undefined;
+      vi.mocked(secureClient.reportMessage).mockImplementation(
+        async () => new Promise<void>((resolve) => { resolveReport = resolve; }),
+      );
+      render(<ChatWindow {...defaultProps} />);
+      await screen.findByText('Hi there!');
+
+      fireEvent.click(screen.getByLabelText('Report this message'));
+      fireEvent.click(screen.getByRole('button', { name: /send report/i }));
+
+      expect(screen.getByRole('button', { name: /sending report/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
+      resolveReport();
+      await waitFor(() => expect(screen.getByLabelText('Message reported')).toBeInTheDocument());
     });
   });
 

@@ -682,6 +682,49 @@ describe('MigrationService - Integration Tests', () => {
       );
     });
 
+    it('does not migrate retired Parent Rules settings while preserving real settings and sensory migration', async () => {
+      let backupCreated = false;
+      const retiredParentRules: Record<string, string> = {
+        firstThenEnabled: 'true',
+        firstThenSteps: '3',
+        dailyCapEnabled: 'true',
+        dailyGameMinutes: '60',
+        dailyTotalMinutes: '180',
+        calmModeEnabled: 'true',
+        animationLevel: 'reduced',
+        soundsEnabled: 'true',
+        scheduleRequired: 'true',
+        firstThenGate: 'required',
+        parentalControlsEnabled: 'true',
+      };
+      const sensoryPrefs = JSON.stringify({ animationSpeed: 'reduced', soundEnabled: false });
+
+      vi.mocked(appStore.get).mockImplementation((key: string) => {
+        if (key === 'vibe_tutor_migration_backup' && backupCreated) return '{}';
+        if (key === 'studentPoints') return '250';
+        if (key === 'sensory-prefs') return sensoryPrefs;
+        return retiredParentRules[key] ?? null;
+      });
+      vi.mocked(appStore.set).mockImplementation((key: string) => {
+        if (key === 'vibe_tutor_migration_backup') backupCreated = true;
+      });
+      vi.mocked(databaseService.getHomeworkItems).mockResolvedValue([]);
+
+      await service.performMigration();
+
+      expect(mockDatabase.run).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT OR REPLACE INTO user_settings'),
+        ['student_points', '250'],
+      );
+      expect(mockDatabase.run).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT OR REPLACE INTO user_preferences'),
+        ['sensory_prefs', sensoryPrefs],
+      );
+      for (const [key, value] of Object.entries(retiredParentRules)) {
+        expect(mockDatabase.run).not.toHaveBeenCalledWith(expect.anything(), [key, value]);
+      }
+    });
+
     it('migrates learning data including focus sessions', async () => {
       const focusSessions = [
         { duration: 25, points: 25 },

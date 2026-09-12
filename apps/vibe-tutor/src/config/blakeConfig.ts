@@ -8,10 +8,12 @@ import { logger } from '../utils/logger';
  * here is only a neutral fallback.
  */
 
+const browserLocation = typeof window !== 'undefined' ? window.location : undefined;
+
 const isNativeCapacitor =
   typeof window !== 'undefined' &&
-  (window.location.protocol === 'capacitor:' ||
-    window.location.protocol === 'ionic:' ||
+  (browserLocation?.protocol === 'capacitor:' ||
+    browserLocation?.protocol === 'ionic:' ||
     (typeof Capacitor?.isNativePlatform === 'function' && Capacitor.isNativePlatform()) ||
     (typeof (window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor
       ?.isNativePlatform === 'function' &&
@@ -24,11 +26,11 @@ const isNativeCapacitor =
 // Native Capacitor release builds run on localhost, so only treat localhost as dev
 // when we're not on native mobile.
 const isLocalDev =
-  typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
+  (browserLocation?.hostname === 'localhost' || browserLocation?.hostname === '127.0.0.1') &&
   !isNativeCapacitor;
 
 const allowNativeLocalApi = import.meta.env.VITE_ALLOW_NATIVE_LOCAL_API === 'true';
+const allowNativeDevLocalApi = import.meta.env.DEV && allowNativeLocalApi;
 
 const LOCAL_API_ENDPOINT = 'http://localhost:3001';
 const PRODUCTION_API_ENDPOINT = 'https://vibe-tutor-api-734857480460.us-east4.run.app';
@@ -49,7 +51,7 @@ const isLocalhostEndpoint = (endpoint: string): boolean => {
       parsed.hostname === '0.0.0.0'
     );
   } catch {
-    return endpoint.includes('localhost') || endpoint.includes('127.0.0.1');
+    return false;
   }
 };
 
@@ -59,16 +61,16 @@ const sanitizeEndpoint = (endpoint: string): string => {
     return PRODUCTION_API_ENDPOINT;
   }
 
-  if (isLocalhostEndpoint(trimmed) && isNativeCapacitor && !allowNativeLocalApi) {
-    logger.warn(
-      `[BLAKE_CONFIG] Refusing localhost endpoint on native app (${trimmed}); using production backend.`,
-    );
+  if (isNativeCapacitor) {
+    if (trimmed === PRODUCTION_API_ENDPOINT) return PRODUCTION_API_ENDPOINT;
+    if (isLocalhostEndpoint(trimmed) && allowNativeDevLocalApi) return trimmed;
+    logger.warn('[TUTOR_CONFIG] Refusing unapproved native backend endpoint; using production backend.');
     return PRODUCTION_API_ENDPOINT;
   }
 
   if (isLocalhostEndpoint(trimmed) && !isLocalDev && !allowNativeLocalApi) {
     logger.warn(
-      `[BLAKE_CONFIG] Refusing localhost endpoint in non-dev build (${trimmed}); using production backend.`,
+      `[TUTOR_CONFIG] Refusing localhost endpoint in non-dev build (${trimmed}); using production backend.`,
     );
     return PRODUCTION_API_ENDPOINT;
   }
@@ -80,24 +82,15 @@ const RESOLVED_API_ENDPOINT = sanitizeEndpoint(
   runtimeApiEndpoint ?? import.meta.env.VITE_API_ENDPOINT ?? DEFAULT_API_ENDPOINT,
 );
 
-export const BLAKE_CONFIG = {
+export const TUTOR_CONFIG = {
   // Personal Info — neutral fallback; the real name comes from onboarding.
   userName: 'Friend',
   avatar: '🎮', // Gaming avatar
   favoriteColor: '#a855f7', // Purple theme
   theme: 'roblox-gaming',
 
-  // API Configuration - USE PROXY for mobile/browser!
-  // The render-backend server handles OpenRouter API calls securely
+  // Android-shipped backend configuration.
   apiEndpoint: RESOLVED_API_ENDPOINT,
-  apiKey: '', // Not used client-side - server handles this
-  useProxy: true, // CRITICAL: Must be true for mobile apps!
-  endpoints: {
-    chat: '/api/openrouter/chat',
-    session: '/api/session/init',
-    health: '/api/health',
-    logAnalytics: '/api/analytics/log',
-  },
 
   // Learning Preferences (ADHD optimized)
   focusSessionDuration: 15, // Shorter sessions for ADHD
@@ -310,7 +303,7 @@ export const BLAKE_CONFIG = {
     { task: 'Help AI Buddy with a problem', reward: 10 },
   ],
 
-  // Blake's Custom AI Buddy Personality
+  // Shared AI Buddy personality
   aiBuddyPersonality: {
     name: 'Vibebux',
     avatar: '🤖',
@@ -335,7 +328,7 @@ export const BLAKE_CONFIG = {
 };
 
 // Export personalized welcome message
-export const getWelcomeMessage = (name: string = BLAKE_CONFIG.userName): string => {
+export const getWelcomeMessage = (name: string = TUTOR_CONFIG.userName): string => {
   const hour = new Date().getHours();
   const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
 
@@ -366,11 +359,11 @@ export const needsBreak = (focusMinutes: number): boolean => {
 };
 
 export const getMotivation = (): string => {
-  const motivations = BLAKE_CONFIG.motivationalMessages;
+  const motivations = TUTOR_CONFIG.motivationalMessages;
   return motivations[Math.floor(Math.random() * motivations.length)]!;
 };
 
-export const calculateBlakeBonus = (
+export const calculateLearningBonus = (
   basePoints: number,
   performance: 'perfect' | 'good' | 'okay',
 ): number => {
@@ -382,4 +375,4 @@ export const calculateBlakeBonus = (
   return Math.round(basePoints * bonusMultipliers[performance]);
 };
 
-export default BLAKE_CONFIG;
+export default TUTOR_CONFIG;

@@ -1,4 +1,4 @@
-import { lazy, Suspense, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { lazy, Suspense, type ReactNode, type SetStateAction } from 'react';
 import FirstRunOnboarding, { type OnboardingResult } from './core/FirstRunOnboarding';
 import FirstWeekChecklist from './dashboard/FirstWeekChecklist';
 import HomeworkDashboard from './dashboard/HomeworkDashboard';
@@ -9,14 +9,15 @@ import ErrorBoundary from './ui/ErrorBoundary';
 import RouteErrorBoundary from './ui/RouteErrorBoundary';
 import { sendMessageToBuddy } from '../services/buddyService';
 import { sendMessageToTutor } from '../services/tutorService';
+import { logger } from '../utils/logger';
 import type { GameCompletionDetails } from '../services/gameProgression';
 import type { AchievementEvent } from '../services/achievementService';
+import type { AvatarPurchaseOperationId } from './avatar/useAvatarShop';
 import type {
   Achievement,
-  ClaimedReward,
+  RewardRequest,
   DifficultyLevel,
   HomeworkItem,
-  MusicPlaylist,
   OnboardingNavigationAction,
   ParsedHomework,
   Reward,
@@ -27,7 +28,9 @@ import type {
 } from '../types';
 
 const MusicLibrary = lazy(async () => import('./features/MusicLibrary'));
-const VibebuxRewardShop = lazy(async () => import('./features/VibebuxRewardShop'));
+const AvatarShopUnified = lazy(async () => ({
+  default: (await import('./avatar/AvatarShopUnified')).AvatarShopUnified,
+}));
 const BrainGymHub = lazy(async () => import('./games/BrainGymHub'));
 const RealmView = lazy(async () => import('./realms/RealmView'));
 const ParentDashboard = lazy(async () => import('./dashboard/ParentDashboard'));
@@ -36,7 +39,6 @@ const WorksheetView = lazy(async () => import('./features/WorksheetView'));
 const SensorySettings = lazy(async () => import('./settings/SensorySettings'));
 const AchievementCenter = lazy(async () => import('./ui/AchievementCenter'));
 const TokenWallet = lazy(async () => import('./features/TokenWallet'));
-const ParentRulesPage = lazy(async () => import('./settings/ParentRulesPage'));
 const SchedulesHub = lazy(async () => import('./schedules/SchedulesHub'));
 const WellnessHub = lazy(async () => import('./features/WellnessHub'));
 
@@ -50,33 +52,33 @@ export interface OnboardingFlags {
 
 interface AppViewRendererProps {
   achievements: Achievement[];
-  claimedRewards: ClaimedReward[];
+  claimedRewards: RewardRequest[];
   dashboardOnboardingAction: OnboardingNavigationAction | null;
   handleAddHomework: (item: ParsedHomework) => void;
-  handleAddPlaylist: (playlist: MusicPlaylist) => void;
-  handleAchievementEvent: (event: AchievementEvent) => Promise<void>;
+  handleAchievementEvent: (event: AchievementEvent) => Promise<boolean>;
   handleChecklistNavigate: (view: View, action?: OnboardingNavigationAction) => void;
-  handleClaimReward: (rewardId: string) => boolean;
-  handleEarnTokens: (amount: number, reason?: string) => void;
+  handleClaimReward: (rewardId: string) => Promise<boolean>;
+  handleEarnTokens: (amount: number, reason: string, operationId: string) => Promise<boolean>;
   handleGameCompleted: (gameId: string, score: number, details: GameCompletionDetails) => void;
   handleOnboardingComplete: (data: OnboardingResult) => void;
-  handleRemovePlaylist: (id: string) => void;
-  handleSpendTokens: (amount: number, reason?: string) => boolean;
+  handleSpendTokens: (amount: number, reason: string, operationId: string) => Promise<boolean>;
   handleToggleComplete: (id: string) => void;
+  requestCompletionSync: () => Promise<void>;
   handleWorksheetCancel: () => void;
-  handleWorksheetComplete: (session: WorksheetSession) => Promise<void>;
+  handleWorksheetComplete: (session: WorksheetSession) => Promise<boolean>;
   handleWorksheetContinue: () => void;
   handleWorksheetTryAgain: () => void;
   homeworkItems: HomeworkItem[];
   onDashboardOnboardingActionHandled: () => void;
   onboardingFlags: OnboardingFlags;
   onUserNameSaved: (name: string) => void;
-  playlists: MusicPlaylist[];
   rewards: Reward[];
+  rewardError: string | null;
+  rewardBlocked: boolean;
   selectedRealmSubject: SubjectType | null;
   setSelectedRealmSubject: (subject: SubjectType | null) => void;
   setView: (view: View) => void;
-  updateRewards: Dispatch<SetStateAction<Reward[]>>;
+  updateRewards: (action: SetStateAction<Reward[]>) => Promise<boolean>;
   userName: string;
   userTokens: number;
   view: View;
@@ -86,7 +88,10 @@ interface AppViewRendererProps {
   worksheetSession: WorksheetSession | null;
   worksheetStarsToNextLevel: number;
   worksheetSubject: SubjectType | null;
-  handleRewardApprovalWrapper: (claimedRewardId: string, isApproved: boolean) => void;
+  handleRewardApprovalWrapper: (
+    requestId: string,
+    action: 'approve' | 'deny' | 'fulfill' | 'retry_debit' | 'retry_refund',
+  ) => Promise<boolean>;
   handleStartWorksheet: (subject: SubjectType) => void;
 }
 
@@ -101,18 +106,17 @@ export function AppViewRenderer({
   claimedRewards,
   dashboardOnboardingAction,
   handleAddHomework,
-  handleAddPlaylist,
   handleAchievementEvent,
   handleChecklistNavigate,
   handleClaimReward,
   handleEarnTokens,
   handleGameCompleted,
   handleOnboardingComplete,
-  handleRemovePlaylist,
   handleRewardApprovalWrapper,
   handleSpendTokens,
   handleStartWorksheet,
   handleToggleComplete,
+  requestCompletionSync,
   handleWorksheetCancel,
   handleWorksheetComplete,
   handleWorksheetContinue,
@@ -121,8 +125,9 @@ export function AppViewRenderer({
   onDashboardOnboardingActionHandled,
   onboardingFlags,
   onUserNameSaved,
-  playlists,
   rewards,
+  rewardError,
+  rewardBlocked,
   selectedRealmSubject,
   setSelectedRealmSubject,
   setView,
@@ -207,6 +212,8 @@ export function AppViewRenderer({
               rewards={rewards}
               onClaimReward={handleClaimReward}
               claimedRewards={claimedRewards}
+              rewardError={rewardError}
+              rewardBlocked={rewardBlocked}
               userTokens={userTokens}
             />
           </RouteErrorBoundary>
@@ -226,6 +233,8 @@ export function AppViewRenderer({
               onUpdateRewards={updateRewards}
               claimedRewards={claimedRewards}
               onApproval={handleRewardApprovalWrapper}
+              rewardError={rewardError}
+              rewardBlocked={rewardBlocked}
               onNavigate={setView}
             />
           </RouteErrorBoundary>
@@ -233,11 +242,7 @@ export function AppViewRenderer({
       case 'music':
         return (
           <RouteErrorBoundary routeName="Music Library">
-            <MusicLibrary
-              playlists={playlists}
-              onAddPlaylist={handleAddPlaylist}
-              onRemovePlaylist={handleRemovePlaylist}
-            />
+            <MusicLibrary />
           </RouteErrorBoundary>
         );
       case 'sensory':
@@ -250,12 +255,8 @@ export function AppViewRenderer({
         return (
           <RouteErrorBoundary routeName="Focus Timer">
             <FocusTimer
-              onSessionComplete={(mins) => {
-                handleEarnTokens(mins, 'Focus session');
-                void handleAchievementEvent({
-                  type: 'FOCUS_SESSION_COMPLETED',
-                  payload: { duration: mins },
-                });
+              onDurableFocusCompletion={() => {
+                void requestCompletionSync();
               }}
             />
           </RouteErrorBoundary>
@@ -263,39 +264,40 @@ export function AppViewRenderer({
       case 'cards':
         return (
           <RouteErrorBoundary routeName="Realm Quests">
-            {worksheetSession ? (
-              <WorksheetResults
-                session={worksheetSession}
-                leveledUp={worksheetLeveledUp}
-                newDifficulty={worksheetNewDifficulty}
-                starsToNextLevel={worksheetStarsToNextLevel}
-                onTryAgain={handleWorksheetTryAgain}
-                onNextWorksheet={handleWorksheetTryAgain}
-                onBackToCards={handleWorksheetContinue}
-              />
-            ) : worksheetSubject && worksheetProgress ? (
-              <WorksheetView
-                subject={worksheetSubject}
-                difficulty={worksheetProgress.currentDifficulty}
-                onComplete={(session) => {
-                  void handleWorksheetComplete(session);
-                }}
-                onCancel={handleWorksheetCancel}
-              />
-            ) : !selectedRealmSubject ? (
-              <SubjectCards
-                onStartWorksheet={(subject) => setSelectedRealmSubject(subject)}
-                userTokens={userTokens}
-              />
-            ) : (
-              <RealmView
-                subject={selectedRealmSubject}
-                onStartWorksheet={(subject) => handleStartWorksheet(subject)}
-                onBack={() => setSelectedRealmSubject(null)}
-                onEarnTokens={handleEarnTokens}
-                onGameCompleted={handleGameCompleted}
-              />
-            )}
+            <>
+              {worksheetSession ? (
+                <WorksheetResults
+                  session={worksheetSession}
+                  leveledUp={worksheetLeveledUp}
+                  newDifficulty={worksheetNewDifficulty}
+                  starsToNextLevel={worksheetStarsToNextLevel}
+                  onTryAgain={handleWorksheetTryAgain}
+                  onNextWorksheet={handleWorksheetTryAgain}
+                  onBackToCards={handleWorksheetContinue}
+                />
+              ) : worksheetSubject && worksheetProgress ? (
+                <WorksheetView
+                  subject={worksheetSubject}
+                  difficulty={worksheetProgress.currentDifficulty}
+                  onComplete={handleWorksheetComplete}
+                  onCancel={handleWorksheetCancel}
+                />
+              ) : !selectedRealmSubject ? (
+                <SubjectCards
+                  onStartWorksheet={(subject) => setSelectedRealmSubject(subject)}
+                  onEarnTokens={handleEarnTokens}
+                  userTokens={userTokens}
+                />
+              ) : (
+                <RealmView
+                  subject={selectedRealmSubject}
+                  onStartWorksheet={(subject) => handleStartWorksheet(subject)}
+                  onBack={() => setSelectedRealmSubject(null)}
+                  onEarnTokens={handleEarnTokens}
+                  onGameCompleted={handleGameCompleted}
+                />
+              )}
+            </>
           </RouteErrorBoundary>
         );
       case 'games':
@@ -320,21 +322,20 @@ export function AppViewRenderer({
         );
       case 'shop':
         return (
-          <RouteErrorBoundary routeName="Reward Shop">
-            <VibebuxRewardShop
+          <RouteErrorBoundary routeName="Avatar Shop">
+            <AvatarShopUnified
               userTokens={userTokens}
               onSpendTokens={handleSpendTokens}
-              onPurchaseComplete={() => {
-                void handleAchievementEvent({ type: 'SHOP_PURCHASE' });
+              onPurchaseComplete={async (operationId: AvatarPurchaseOperationId) => {
+                try {
+                  const eventId: `shop-purchase:avatar-purchase:${string}` = `shop-purchase:${operationId}`;
+                  await handleAchievementEvent({ type: 'SHOP_PURCHASE', eventId });
+                } catch (error) {
+                  logger.error('[avatar-shop] Confirmed purchase achievement event failed', error);
+                }
               }}
               onClose={() => setView('dashboard')}
             />
-          </RouteErrorBoundary>
-        );
-      case 'parent-rules':
-        return (
-          <RouteErrorBoundary routeName="Parent Rules">
-            <ParentRulesPage onClose={() => setView('parent')} />
           </RouteErrorBoundary>
         );
       case 'wellness':

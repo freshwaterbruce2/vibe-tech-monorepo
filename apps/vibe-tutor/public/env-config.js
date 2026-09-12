@@ -8,15 +8,13 @@
  *   - When loaded on localhost / 127.0.0.1 → uses http://localhost:3001
  *   - Otherwise (production bundle, Capacitor build) → uses Cloud Run URL
  *
- * Override at runtime by assigning window.__API_URL__ before this script runs,
- * or set VITE_API_ENDPOINT at build time.
+ * Runtime values are validated by the application configuration before Android
+ * code uses them.
  */
 
 (function configureEnv() {
-  const PRODUCTION_API_URL = 'https://vibe-tutor-api-960784183118.us-central1.run.app';
-  // render-backend dev server runs on 3002 to avoid conflict with the shared
-  // openrouter-proxy on 3001 (used by vibe-code-studio, nova-agent, etc.).
-  const LOCAL_API_URL = 'http://localhost:3002';
+  const PRODUCTION_API_URL = 'https://vibe-tutor-api-734857480460.us-east4.run.app';
+  const LOCAL_API_URL = 'http://localhost:3001';
 
   const host = typeof window !== 'undefined' && window.location ? window.location.hostname : '';
   const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
@@ -27,12 +25,4 @@
 
   window.__API_BASE_URL__ = '/api';
   window.__JAMENDO_CLIENT_ID__ = '12a7acff';
-
-  // eslint-disable-next-line no-console
-  console.log('[Env Config] Configuration loaded:', {
-    apiUrl: window.__API_URL__,
-    apiBaseUrl: window.__API_BASE_URL__,
-    jamendoConfigured: window.__JAMENDO_CLIENT_ID__ !== 'YOUR_CLIENT_ID',
-    isLocalHost: isLocalHost,
-  });
 })();

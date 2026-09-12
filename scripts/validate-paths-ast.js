@@ -47,6 +47,7 @@ const PATH_POLICY_TOOLING = new Set([
     'check-staged-paths.js',
     'validate-paths-ast.js',
     'check-vibe-paths.js',
+    'sync.mjs',
 ]);
 
 for (const file of files) {

@@ -3,7 +3,7 @@ import {
   setTenantPlan,
   type FeatureKey,
   type PlanLevel,
-} from '@vibetech/monetization'
+} from './shared/monetization/index.js'
 
 export const INVOICE_SAAS_FEATURES = {
   invoiceCreation: 'invoices.create',

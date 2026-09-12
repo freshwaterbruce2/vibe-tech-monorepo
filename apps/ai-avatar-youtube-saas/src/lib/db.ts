@@ -1,4 +1,4 @@
-import AppDatabase from "@vibetech/db-app";
+import AppDatabase from "@/shared/db-app/index";
 import { env } from "@/lib/env";
 
 const db = AppDatabase.getInstance({ path: env.APP_DB_PATH }).getDatabase();

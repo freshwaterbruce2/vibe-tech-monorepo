@@ -4,14 +4,6 @@
  */
 
 import type { RadioStatus } from '../../../services/audioStreamService';
-import type { MusicPlaylist } from '../../../types';
-
-// Component Props
-export interface MusicLibraryProps {
-  playlists: MusicPlaylist[];
-  onAddPlaylist: (playlist: MusicPlaylist) => void;
-  onRemovePlaylist: (id: string) => void;
-}
 
 // Radio streaming state
 export interface RadioStreamingState {
@@ -20,4 +12,4 @@ export interface RadioStreamingState {
 
 // Re-export types from services for convenience
 export type { RadioStatus } from '../../../services/audioStreamService';
-export type { MusicPlaylist, RadioStation } from '../../../types';
+export type { RadioStation } from '../../../types';

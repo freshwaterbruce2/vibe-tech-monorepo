@@ -5,7 +5,7 @@
  */
 
 import { logger } from '../utils/logger';
-import { BLAKE_CONFIG } from '@/config';
+import { TUTOR_CONFIG } from '@/config';
 import { Capacitor } from '@capacitor/core';
 import type { RadioStation } from '../types';
 
@@ -192,8 +192,7 @@ class AudioStreamService {
    */
   private getProxiedUrl(streamUrl: string): string {
     if (Capacitor.getPlatform() === 'android') {
-      const apiBase = window.__API_URL__ ?? BLAKE_CONFIG.apiEndpoint;
-      return `${apiBase}/api/radio/stream?url=${encodeURIComponent(streamUrl)}`;
+      return `${TUTOR_CONFIG.apiEndpoint}/api/radio/stream?url=${encodeURIComponent(streamUrl)}`;
     }
     return streamUrl;
   }

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { logger } from '../../../utils/logger';
 import type { WordSearchGrid } from '../../../services/puzzleGenerator';
-import { appStore } from '../../../utils/electronStore';
+import { triggerVibration } from '../../../services/uiService';
 
 interface UseWordSearchInputProps {
   puzzle: WordSearchGrid | null;
@@ -127,15 +127,7 @@ export function useWordSearchInput({
               playSound('success');
             }
 
-            // Haptic feedback
-            try {
-              const sensoryPrefs = appStore.get<Record<string, unknown>>('sensory-prefs') ?? {};
-              if (sensoryPrefs.hapticEnabled !== false && navigator.vibrate) {
-                navigator.vibrate([50, 30, 50]);
-              }
-            } catch (e) {
-              logger.debug('Vibration not supported:', e);
-            }
+            triggerVibration([50, 30, 50]);
           } catch (error) {
             logger.error('Error updating foundWords:', error);
             return;

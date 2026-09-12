@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSpring } from '@react-spring/web';
 import { useGameAudio } from '../../hooks/useGameAudio';
 
@@ -279,7 +279,7 @@ const generateMixedPattern = (difficulty: number, isBossRound: boolean): Pattern
 };
 
 interface UsePatternQuestGameProps {
-  onEarnTokens?: (amount: number) => void;
+  onEarnTokens?: (amount: number, awardKey: string) => Promise<boolean>;
 }
 
 export function usePatternQuestGame({ onEarnTokens }: UsePatternQuestGameProps) {
@@ -292,6 +292,8 @@ export function usePatternQuestGame({ onEarnTokens }: UsePatternQuestGameProps) 
   const [showCelebration, setShowCelebration] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [questsCompleted, setQuestsCompleted] = useState(0);
+  const rewardAttemptRef = useRef(0);
+  const rewardPendingRef = useRef(false);
   const { playSound } = useGameAudio();
 
   const [patternProps, api] = useSpring(() => ({
@@ -329,12 +331,13 @@ export function usePatternQuestGame({ onEarnTokens }: UsePatternQuestGameProps) 
   }, [level, questsCompleted]);
 
   useEffect(() => {
+    rewardAttemptRef.current += 1;
     setCurrentPattern(generatePattern());
     void api.start({ from: { opacity: 0, scale: 0.8 }, to: { opacity: 1, scale: 1 } });
   }, [level, generatePattern, api]);
 
-  const handleAnswer = (selected: PatternElement) => {
-    if (!currentPattern) return;
+  const handleAnswer = async (selected: PatternElement) => {
+    if (!currentPattern || rewardPendingRef.current) return;
 
     const isCorrect =
       currentPattern.type === 'number'
@@ -348,19 +351,16 @@ export function usePatternQuestGame({ onEarnTokens }: UsePatternQuestGameProps) 
 
     if (isCorrect) {
       // Correct answer
-      void playSound('success');
       const bossBonus = currentPattern.isBossRound ? 20 : 0;
       const points = 15 + currentPattern.difficulty * 5 + streak * 3 + bossBonus;
       const tokens = Math.max(1, Math.floor(points / 10));
 
-      setScore((prev) => prev + points);
-      setStreak((prev) => prev + 1);
-      setTotalTokensEarned((prev) => prev + tokens);
-      setQuestsCompleted((prev) => prev + 1);
-
-      if (onEarnTokens) {
-        onEarnTokens(tokens);
-      }
+      rewardPendingRef.current = true;
+      let awarded = !onEarnTokens;
+      try { awarded ||= await onEarnTokens!(tokens, `pattern:${rewardAttemptRef.current}`); } catch { awarded = false; }
+      rewardPendingRef.current = false;
+      if (!awarded) { setFeedback('Token reward could not be saved. Retry this pattern.'); return; }
+      void playSound('success'); setScore((prev) => prev + points); setStreak((prev) => prev + 1); setTotalTokensEarned((prev) => prev + tokens); setQuestsCompleted((prev) => prev + 1);
 
       setFeedback(
         currentPattern.isBossRound

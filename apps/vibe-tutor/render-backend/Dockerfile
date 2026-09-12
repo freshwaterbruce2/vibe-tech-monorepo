@@ -1,15 +1,15 @@
 FROM node:22-slim
 
-WORKDIR /app
+# Build from apps/vibe-tutor:
+# docker build -f render-backend/Dockerfile -t vibe-tutor-api .
+WORKDIR /app/render-backend
 
-# Copy server-only package.json (no frontend deps)
-COPY package-server.json ./package.json
+COPY render-backend/package-server.json ./package.json
 RUN npm install --omit=dev
 
-# Copy server code
-COPY server.mjs ./
+COPY render-backend/server.mjs render-backend/core.mjs render-backend/cloud.mjs render-backend/metrics.mjs ./
+COPY privacy-policy.json /app/privacy-policy.json
 
-# Cloud Run uses PORT env variable (default 8080)
 ENV PORT=8080
 EXPOSE 8080
 

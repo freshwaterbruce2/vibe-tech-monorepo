@@ -3,11 +3,11 @@ export type {
   OverdueReminderProps,
   PaymentReceiptProps,
   ReminderStep,
-} from '@vibetech/email'
+} from '../shared/email/index.js'
 export {
   InvoiceCreated,
   OverdueReminder,
   PaymentReceipt,
   renderToHtml,
   renderToText,
-} from '@vibetech/email'
+} from '../shared/email/index.js'

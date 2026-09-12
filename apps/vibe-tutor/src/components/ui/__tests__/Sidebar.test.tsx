@@ -34,4 +34,13 @@ describe('Sidebar', () => {
     );
     expect(subtitles.length).toBeGreaterThan(0);
   });
+
+  it('falls back to the default greeting name when userName is empty', () => {
+    render(<Sidebar {...defaultProps} userName="" />);
+
+    const subtitles = screen.getAllByText((_, element) =>
+      Boolean(element?.textContent?.includes('Friend')),
+    );
+    expect(subtitles.length).toBeGreaterThan(0);
+  });
 });

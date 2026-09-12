@@ -7,10 +7,8 @@ from typing import Any
 import yaml
 
 
-DEFAULT_CONFIG_PATHS = [
-    Path(r"V:\monorepo\.woodpecker\self-healing-config.yml"),
-    Path(r"V:\monorepo\.github\self-healing-config.yml"),
-]
+WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_CONFIG_PATHS = [WORKSPACE_ROOT / ".github" / "self-healing-config.yml"]
 
 
 @dataclass

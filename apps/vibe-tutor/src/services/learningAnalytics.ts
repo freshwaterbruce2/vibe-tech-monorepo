@@ -1,18 +1,41 @@
 ﻿/**
  * Learning Analytics Service for Vibe Tutor
- * Tracks, analyzes, and stores learning patterns on D: drive
+ * Tracks and stores privacy-minimized learning patterns in app-local storage.
  * Provides adaptive difficulty and personalized recommendations
  */
 
-import { BLAKE_CONFIG } from '@/config';
-import { CapacitorHttp } from '@capacitor/core';
 import { databaseService } from './databaseService';
+import { dataStore } from './dataStore';
 
 import { appStore } from '../utils/electronStore';
 import { logger } from '../utils/logger';
 
-// Learning analytics data path on D: drive
-const ANALYTICS_PATH = 'D:\\learning-system\\vibe-tutor';
+const ANALYTICS_STORAGE_KEY = 'learning-analytics-v1';
+const ANALYTICS_ENABLED_KEY = 'learning-analytics-enabled';
+const LEGACY_ANALYTICS_INDEX_KEY = 'analytics_index';
+const ANALYTICS_TEXT_CAP = 120;
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function boundedNonEmptyString(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed && trimmed.length <= ANALYTICS_TEXT_CAP ? trimmed : null;
+}
+
+function nonNegativeFiniteNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+function finiteNumberInRange(value: unknown, minimum: number, maximum: number): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value >= minimum && value <= maximum
+    ? value
+    : null;
+}
 
 export interface LearningMetrics {
   sessionId: string;
@@ -48,40 +71,72 @@ export interface AdaptiveRecommendation {
   activities: string[];
 }
 
+interface AnalyticsEvent {
+  event: string;
+  timestamp: string;
+  data: Record<string, string | number | boolean>;
+}
+
+interface PersistedAnalytics {
+  version: 1;
+  sessions: Array<Omit<LearningMetrics, 'timestamp'> & { timestamp: string }>;
+  events: AnalyticsEvent[];
+}
+
+export interface LocalAnalyticsExport {
+  format: 'vibe-tutor-learning-analytics-v1';
+  sessions: LearningMetrics[];
+  events: AnalyticsEvent[];
+}
+
 export class LearningAnalyticsService {
   private static readonly ANALYTICS_KEY_CAP = 100;
   private currentSession: LearningMetrics | null = null;
   private sessionStartTime: number = 0;
   private analytics: Map<string, LearningMetrics> = new Map();
+  private events: AnalyticsEvent[] = [];
+  private enabled = true;
+  private analyticsPersistence: Promise<boolean> = Promise.resolve(true);
 
   /**
    * Initialize learning analytics system
    */
-  async initialize(): Promise<void> {
+  async initialize(): Promise<boolean> {
     try {
-      // Create directories on D: drive if needed
-      await this.ensureAnalyticsDirectory();
-
-      // Load existing analytics data
+      this.enabled = (await dataStore.getUserSettings(ANALYTICS_ENABLED_KEY)) !== 'false';
+      if (!this.enabled) return true;
       await this.loadAnalyticsData();
-
+      return true;
     } catch (error) {
       logger.error('Failed to initialize learning analytics:', error);
+      return false;
     }
-  }
-
-  /**
-   * Ensure analytics directory exists on D: drive
-   */
-  private async ensureAnalyticsDirectory(): Promise<void> {
-    // In a real implementation, we'd use Node.js fs module
-    // For browser environment, we'll store in database
   }
 
   /**
    * Load existing analytics data
    */
   private async loadAnalyticsData(): Promise<void> {
+    const saved = await dataStore.getUserSettings(ANALYTICS_STORAGE_KEY);
+    if (saved) {
+      const persisted = this.parsePersistedAnalytics(saved);
+      if (!persisted) {
+        throw new Error('Stored learning analytics are malformed');
+      }
+      this.events = persisted.events;
+      for (const session of persisted.sessions) {
+        const metrics = this.deserializeSession(session);
+        if (!metrics) {
+          throw new Error('Stored learning analytics contain a malformed session');
+        }
+        this.storeSession(metrics);
+      }
+    } else if (this.loadLegacyAnalyticsData()) {
+      if (!(await this.persistAnalyticsData())) {
+        throw new Error('Could not migrate legacy learning analytics');
+      }
+    }
+
     const db = databaseService.getConnection();
     if (!db) return;
 
@@ -94,8 +149,142 @@ export class LearningAnalyticsService {
     if (result.values) {
       result.values.forEach((row: Record<string, unknown>) => {
         const metrics = this.mapSessionRowToMetrics(row);
-        if (metrics) this.analytics.set(metrics.sessionId, metrics);
+        if (metrics) this.storeSession(metrics);
       });
+    }
+  }
+
+  private loadLegacyAnalyticsData(): boolean {
+    const index = appStore.getStrict<string[]>(LEGACY_ANALYTICS_INDEX_KEY);
+    if (index == null) return false;
+    if (!Array.isArray(index)) {
+      throw new Error('Legacy learning analytics index is malformed');
+    }
+    const referencedSessions = index.slice(-LearningAnalyticsService.ANALYTICS_KEY_CAP);
+    for (const sessionId of referencedSessions) {
+      if (typeof sessionId !== 'string' || !sessionId) {
+        throw new Error('Legacy learning analytics index contains an invalid session id');
+      }
+      const saved = appStore.getStrict<unknown>(`analytics_${sessionId}`);
+      const metrics = this.deserializeSession(saved);
+      if (!metrics) {
+        throw new Error('Legacy learning analytics contains a missing or malformed session');
+      }
+      this.storeSession(metrics);
+    }
+    return referencedSessions.length > 0;
+  }
+
+  private parsePersistedAnalytics(saved: string): PersistedAnalytics | null {
+    try {
+      const parsed = JSON.parse(saved) as PersistedAnalytics;
+      if (
+        parsed?.version !== 1 ||
+        !Array.isArray(parsed.sessions) ||
+        !Array.isArray(parsed.events) ||
+        parsed.sessions.length > LearningAnalyticsService.ANALYTICS_KEY_CAP ||
+        parsed.events.length > LearningAnalyticsService.ANALYTICS_KEY_CAP
+      ) {
+        return null;
+      }
+      if (
+        parsed.sessions.some((session) => !this.deserializeSession(session)) ||
+        parsed.events.some((event) => !this.deserializeEvent(event))
+      ) {
+        return null;
+      }
+      return {
+        ...parsed,
+        events: parsed.events.map((event) => this.deserializeEvent(event)!),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private deserializeSession(value: unknown): LearningMetrics | null {
+    if (!isPlainRecord(value)) return null;
+    const sessionId = boundedNonEmptyString(value.sessionId);
+    const activity = boundedNonEmptyString(value.activity);
+    const subject = boundedNonEmptyString(value.subject);
+    const timestampValue = boundedNonEmptyString(value.timestamp);
+    const duration = nonNegativeFiniteNumber(value.duration);
+    const focusLevel = finiteNumberInRange(value.focusLevel, 0, 100);
+    const completionRate = finiteNumberInRange(value.completionRate, 0, 1);
+    const performance = value.performance;
+    if (
+      !sessionId ||
+      !activity ||
+      !subject ||
+      !timestampValue ||
+      duration === null ||
+      focusLevel === null ||
+      completionRate === null ||
+      !isPlainRecord(performance)
+    ) return null;
+
+    const timestamp = new Date(timestampValue);
+    const correct = nonNegativeFiniteNumber(performance.correct);
+    const incorrect = nonNegativeFiniteNumber(performance.incorrect);
+    const accuracy = finiteNumberInRange(performance.accuracy, 0, 100);
+    const difficulty = value.difficulty;
+    if (
+      Number.isNaN(timestamp.getTime()) ||
+      correct === null ||
+      incorrect === null ||
+      accuracy === null ||
+      (difficulty !== 'easy' && difficulty !== 'medium' && difficulty !== 'hard')
+    ) return null;
+
+    const rawUserId = value.userId;
+    const userId = rawUserId === undefined ? undefined : boundedNonEmptyString(rawUserId);
+    if (rawUserId !== undefined && !userId) return null;
+
+    return {
+      sessionId,
+      timestamp,
+      activity,
+      subject,
+      duration,
+      performance: {
+        correct,
+        incorrect,
+        accuracy,
+      },
+      focusLevel,
+      difficulty,
+      completionRate,
+      ...(userId ? { userId } : {}),
+    };
+  }
+
+  private deserializeEvent(value: unknown): AnalyticsEvent | null {
+    if (!value || typeof value !== 'object') return null;
+    const candidate = value as Partial<AnalyticsEvent>;
+    if (
+      typeof candidate.event !== 'string' ||
+      !candidate.event ||
+      candidate.event.length > 80 ||
+      typeof candidate.timestamp !== 'string' ||
+      Number.isNaN(Date.parse(candidate.timestamp)) ||
+      !candidate.data ||
+      typeof candidate.data !== 'object' ||
+      Array.isArray(candidate.data)
+    ) {
+      return null;
+    }
+    const minimized = this.minimizeEventData(candidate.data as Record<string, unknown>);
+    if (Object.keys(minimized).length !== Object.keys(candidate.data).length) return null;
+    return { event: candidate.event, timestamp: candidate.timestamp, data: minimized };
+  }
+
+  private storeSession(metrics: LearningMetrics): void {
+    this.analytics.delete(metrics.sessionId);
+    this.analytics.set(metrics.sessionId, metrics);
+    while (this.analytics.size > LearningAnalyticsService.ANALYTICS_KEY_CAP) {
+      const oldestSessionId = this.analytics.keys().next().value;
+      if (!oldestSessionId) break;
+      this.analytics.delete(oldestSessionId);
     }
   }
 
@@ -116,6 +305,7 @@ export class LearningAnalyticsService {
     const activity = typeof row.session_type === 'string' ? row.session_type : 'session';
     const timestamp =
       typeof row.session_date === 'string' ? new Date(row.session_date) : new Date();
+    if (Number.isNaN(timestamp.getTime())) return null;
 
     return {
       sessionId: id,
@@ -140,7 +330,8 @@ export class LearningAnalyticsService {
   /**
    * Start a new learning session
    */
-  startSession(activity: string, subject: string, difficulty: 'easy' | 'medium' | 'hard'): void {
+  startSession(activity: string, subject: string, difficulty: 'easy' | 'medium' | 'hard'): boolean {
+    if (!this.enabled) return false;
     this.sessionStartTime = Date.now();
     this.currentSession = {
       sessionId: crypto.randomUUID(),
@@ -155,25 +346,27 @@ export class LearningAnalyticsService {
     };
 
     void this.logEvent('session_start', { activity, subject, difficulty });
+    return true;
   }
 
   /**
-   * Log event to backend (which writes to D: drive)
+   * Store a privacy-minimized analytics event in the app-local analytics record.
    */
-  async logEvent(event: string, data: Record<string, unknown> = {}): Promise<void> {
-    if (!BLAKE_CONFIG.apiKey) return;
-
+  async logEvent(event: string, data: Record<string, unknown> = {}): Promise<boolean> {
+    if (!this.enabled || !event.trim()) return false;
     try {
-      await CapacitorHttp.post({
-        url: `${BLAKE_CONFIG.apiEndpoint}/chat/completions`,
-        headers: {
-          Authorization: `Bearer ${BLAKE_CONFIG.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        data: { event, data },
+      this.events.push({
+        event: event.trim().slice(0, 80),
+        timestamp: new Date().toISOString(),
+        data: this.minimizeEventData(data),
       });
+      if (this.events.length > LearningAnalyticsService.ANALYTICS_KEY_CAP) {
+        this.events = this.events.slice(-LearningAnalyticsService.ANALYTICS_KEY_CAP);
+      }
+      return await this.persistAnalyticsData();
     } catch (error) {
-      logger.error('[Analytics] Failed to log event to backend:', error);
+      logger.error('[Analytics] Failed to store local event:', error);
+      return false;
     }
   }
 
@@ -185,8 +378,8 @@ export class LearningAnalyticsService {
     promptLength: number,
     responseLength: number,
     duration: number,
-  ): Promise<void> {
-    await this.logEvent('ai_call', {
+  ): Promise<boolean> {
+    return this.logEvent('ai_call', {
       model,
       promptLength,
       responseLength,
@@ -230,71 +423,96 @@ export class LearningAnalyticsService {
   /**
    * End current learning session and save analytics
    */
-  async endSession(completionRate: number): Promise<void> {
-    if (!this.currentSession) return;
+  async endSession(completionRate: number): Promise<boolean> {
+    if (!this.currentSession || !this.enabled) return false;
+    if (!Number.isFinite(completionRate) || completionRate < 0 || completionRate > 1) return false;
 
-    // Calculate session duration
-    this.currentSession.duration = Math.round((Date.now() - this.sessionStartTime) / 60000); // in minutes
-    this.currentSession.completionRate = completionRate;
-
-    // Save to database
-    await databaseService.recordLearningSession({
-      type: this.currentSession.activity,
-      duration: this.currentSession.duration,
-      focusScore: this.currentSession.focusLevel,
-      tasksCompleted: Math.round(completionRate * 10),
-    });
-
-    // Store in analytics
-    this.analytics.set(this.currentSession.sessionId, this.currentSession);
-
-    // Save to D: drive (async, non-blocking)
-    void this.saveAnalyticsToFile(this.currentSession);
-
+    // Claim this specific session before awaiting any I/O. A new session may
+    // start while the ending one is being saved, and must remain untouched.
+    const endingSession = this.currentSession;
+    const endingSessionStartTime = this.sessionStartTime;
     this.currentSession = null;
     this.sessionStartTime = 0;
-  }
 
-  /**
-   * Save analytics data to D: drive
-   */
-  private async saveAnalyticsToFile(metrics: LearningMetrics): Promise<void> {
+    // Calculate session duration
+    endingSession.duration = Math.round((Date.now() - endingSessionStartTime) / 60000); // in minutes
+    endingSession.completionRate = completionRate;
+
+    // Save to database
     try {
-      // In browser environment, we'll store in IndexedDB as fallback
-      // In production, this would write to D:\learning-system\vibe-tutor\
-      const analyticsData = {
-        ...metrics,
-        savedAt: new Date().toISOString(),
-        path: `${ANALYTICS_PATH}\\sessions\\${metrics.sessionId}.json`,
-      };
+      const insertedSessionId = await databaseService.recordLearningSession({
+        type: endingSession.activity,
+        duration: endingSession.duration,
+        focusScore: endingSession.focusLevel,
+        tasksCompleted: Math.round(completionRate * 10),
+      });
 
-      // Store in browser storage as backup, capping retained keys so the
-      // per-session analytics entries can't grow unbounded.
-      if (appStore) {
-        appStore.set(`analytics_${metrics.sessionId}`, JSON.stringify(analyticsData));
-        this.pruneAnalyticsKeys(metrics.sessionId);
-      }
+      endingSession.sessionId = String(insertedSessionId);
+      this.storeSession(endingSession);
+      const persisted = await this.persistAnalyticsData();
+      if (!persisted) this.analytics.delete(endingSession.sessionId);
+      return persisted;
     } catch (error) {
-      logger.error('Failed to save analytics to file:', error);
+      logger.error('Failed to store local learning analytics:', error);
+      return false;
     }
   }
 
   /**
-   * Track persisted analytics keys in a bounded index and evict the oldest
-   * `analytics_<uuid>` entries once the cap is exceeded, preventing unbounded
-   * localStorage growth.
+   * Persist analytics in the app-local store and verify the saved schema.
    */
-  private pruneAnalyticsKeys(sessionId: string): void {
-    const INDEX_KEY = 'analytics_index';
-    const index = appStore.get<string[]>(INDEX_KEY) ?? [];
-    if (!index.includes(sessionId)) index.push(sessionId);
+  private async persistAnalyticsData(): Promise<boolean> {
+    const write = this.analyticsPersistence.then(async () => {
+      try {
+        const persisted: PersistedAnalytics = {
+          version: 1,
+          sessions: Array.from(this.analytics.values()).map((metrics) => ({
+            ...metrics,
+            timestamp: metrics.timestamp.toISOString(),
+          })),
+          events: [...this.events],
+        };
+        const serialized = JSON.stringify(persisted);
+        await dataStore.saveUserSettings(ANALYTICS_STORAGE_KEY, serialized);
+        const confirmed = await dataStore.getUserSettings(ANALYTICS_STORAGE_KEY);
+        return confirmed === serialized && this.parsePersistedAnalytics(confirmed) !== null;
+      } catch (error) {
+        logger.error('Failed to persist local analytics:', error);
+        return false;
+      }
+    });
+    this.analyticsPersistence = write.catch(() => false);
+    return write;
+  }
 
-    while (index.length > LearningAnalyticsService.ANALYTICS_KEY_CAP) {
-      const evicted = index.shift();
-      if (evicted) appStore.remove(`analytics_${evicted}`);
-    }
+  /**
+   * Produce a platform-neutral local export payload. It is data, not a file;
+   * callers decide whether a user-initiated export destination is available.
+   */
+  async exportLocalAnalytics(): Promise<LocalAnalyticsExport> {
+    return {
+      format: 'vibe-tutor-learning-analytics-v1',
+      sessions: Array.from(this.analytics.values()),
+      events: [...this.events],
+    };
+  }
 
-    appStore.set(INDEX_KEY, index);
+  private minimizeEventData(data: Record<string, unknown>): Record<string, string | number | boolean> {
+    const allowed = new Set([
+      'activity', 'subject', 'difficulty', 'model', 'promptLength', 'responseLength', 'durationMs',
+    ]);
+    return Object.fromEntries(
+      Object.entries(data)
+        .filter(
+          ([key, value]) =>
+            allowed.has(key) &&
+            (typeof value === 'string' ||
+              typeof value === 'boolean' ||
+              (typeof value === 'number' && Number.isFinite(value))),
+        )
+        .map(([key, value]) => [key, typeof value === 'string' ? value.trim().slice(0, 80) : value])
+        .filter(([, value]) => value !== ''),
+    );
   }
 
   /**

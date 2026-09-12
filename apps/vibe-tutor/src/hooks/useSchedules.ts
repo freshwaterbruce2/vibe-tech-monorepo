@@ -15,6 +15,8 @@ export interface ChoreItem {
   completed: boolean;
   rewardTokens: number;
   completedAt?: number;
+  /** Persisted first-award marker prevents uncheck/recheck token replay. */
+  rewardedAt?: number;
 }
 
 export interface GoalItem {
@@ -115,11 +117,14 @@ export function useSchedules() {
     setData((prev) => {
       const updatedChores = prev.chores.map((c) => {
         if (c.id === id) {
-          if (!c.completed) earnedTokens = c.rewardTokens; // earn when checking
+          const completedAt = !c.completed ? Date.now() : undefined;
+          const canAward = !c.completed && c.rewardedAt === undefined;
+          if (canAward) earnedTokens = c.rewardTokens;
           return {
             ...c,
             completed: !c.completed,
-            completedAt: !c.completed ? Date.now() : undefined,
+            completedAt,
+            ...(canAward ? { rewardedAt: completedAt } : {}),
           };
         }
         return c;

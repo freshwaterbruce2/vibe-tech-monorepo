@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AvatarProfile from '../AvatarProfile';
 
@@ -40,6 +40,15 @@ describe('AvatarProfile', () => {
       'src',
       '/avatars/avatar-teen-neon-hair.png',
     );
+  });
+
+  it('hides the saved profile on load failure and reloads it only after storage recovers', async () => {
+    dataStoreMock.getAvatarState.mockRejectedValueOnce(new Error('profile storage unavailable'));
+    render(<AvatarProfile />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('profile storage unavailable');
+    expect(screen.queryByRole('heading', { name: 'Avatar Profile' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /reload avatar profile/i }));
+    expect(await screen.findByRole('heading', { name: 'Avatar Profile' })).toBeInTheDocument();
   });
 
   describe('name editor', () => {
@@ -93,5 +102,45 @@ describe('AvatarProfile', () => {
       const input = await screen.findByDisplayValue('Blake');
       expect(input).toHaveAttribute('maxLength', '24');
     });
+
+    it('keeps the saved name and parent callback unchanged on a failed save, then allows retry', async () => {
+      const onUserNameSaved = vi.fn();
+      dataStoreMock.saveUserSettings.mockRejectedValueOnce(new Error('name write failed')).mockResolvedValue(undefined);
+      render(<AvatarProfile onUserNameSaved={onUserNameSaved} />);
+      const input = await screen.findByDisplayValue('Blake');
+      fireEvent.change(input, { target: { value: 'Alex' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('name write failed');
+      expect(onUserNameSaved).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      await waitFor(() => expect(onUserNameSaved).toHaveBeenCalledWith('Alex'));
+    });
+  });
+
+  it('retains equipped gear after a failed unequip and serializes the retry', async () => {
+    dataStoreMock.getAvatarState.mockResolvedValue({ equippedItems: { hat: 'hat-math' }, ownedItems: ['hat-math'], purchaseHistory: [], selectedAvatarId: 'avatar-teen-neon-hair', unlockedAvatars: ['avatar-teen-neon-hair'] });
+    dataStoreMock.saveAvatarState.mockRejectedValueOnce(new Error('gear write failed')).mockResolvedValue(undefined);
+    render(<AvatarProfile />);
+    const unequip = await screen.findByRole('button', { name: 'Unequip' });
+    const hatRow = unequip.parentElement!;
+    fireEvent.click(unequip);
+    expect(await screen.findByRole('alert')).toHaveTextContent('gear write failed');
+    expect(within(hatRow).getByText("Mathematician's Cap")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Unequip' }));
+    await waitFor(() => expect(within(hatRow).getByText('Empty Slot')).toBeInTheDocument());
+  });
+
+  it('serializes profile writes by disabling controls while an unequip is pending', async () => {
+    let resolveSave!: () => void;
+    dataStoreMock.getAvatarState.mockResolvedValue({ equippedItems: { hat: 'hat-math' }, ownedItems: ['hat-math'], purchaseHistory: [], selectedAvatarId: 'avatar-teen-neon-hair', unlockedAvatars: ['avatar-teen-neon-hair'] });
+    dataStoreMock.saveAvatarState.mockImplementationOnce(async () => new Promise<void>((resolve) => { resolveSave = resolve; }));
+    render(<AvatarProfile />);
+    const unequip = await screen.findByRole('button', { name: 'Unequip' });
+    const hatRow = unequip.parentElement!;
+    fireEvent.click(unequip);
+    expect(within(hatRow).getByRole('button', { name: 'Unequip' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    resolveSave();
+    await waitFor(() => expect(within(hatRow).getByText('Empty Slot')).toBeInTheDocument());
   });
 });

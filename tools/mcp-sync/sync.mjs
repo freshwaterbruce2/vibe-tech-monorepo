@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
  * mcp-sync — render the canonical MCP registry into every agent tool's native
- * config (Claude Code, Gemini CLI, Antigravity, Codex, Cursor, Hermes).
+ * config (Claude Code, Claude Desktop, Codex, Cursor, Hermes).
  *
  * Source of truth: mcp/registry.json. Edit servers THERE, then run this.
  *
  *   pnpm mcp:sync            # dry-run: show what WOULD change (no writes)
  *   pnpm mcp:sync --apply    # write all tool configs (backs up each first)
  *   pnpm mcp:check           # exit 1 if any tool is out of sync (CI gate)
- *   node tools/mcp-sync/sync.mjs --apply --tool gemini,codex
+ *   node tools/mcp-sync/sync.mjs --apply --tool codex,cursor
  *
  * Secrets: the registry references env-var NAMES only; this emits each tool's
  * native env-ref syntax and NEVER writes literal key values.
@@ -26,16 +26,13 @@ const BACKUP_DIR = 'D:/backups/mcp-sync';
 // Windows command resolution — reproduces the working .mcp.json invocation forms
 // so every tool gets a command that actually launches on this machine.
 const NODE_BIN =
-  process.env.MCP_NODE_BIN ||
-  'C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe';
+  process.env.MCP_NODE_BIN || 'C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe';
 const NPX_BIN =
-  process.env.MCP_NPX_BIN ||
-  'C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/npx.cmd';
+  process.env.MCP_NPX_BIN || 'C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/npx.cmd';
 const UV_BIN = process.env.MCP_UV_BIN || 'C:/Users/fresh_zxae3v6/.local/bin/uv.exe';
 const UVX_BIN = process.env.MCP_UVX_BIN || 'C:/Users/fresh_zxae3v6/.local/bin/uvx.exe';
 const POWERSHELL_BIN =
-  process.env.MCP_POWERSHELL_BIN ||
-  'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe';
+  process.env.MCP_POWERSHELL_BIN || 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe';
 
 function resolveStdio(command, args = []) {
   switch (command) {
@@ -97,29 +94,6 @@ function emitClaude(servers) {
   const mcpServers = {};
   for (const [name, def] of Object.entries(servers)) mcpServers[name] = claudeServerObject(def);
   return JSON.stringify({ mcpServers }, null, 2) + '\n';
-}
-
-function geminiServerObject(def) {
-  if (def.transport === 'http') {
-    const headers = def.secretEnv
-      ? { Authorization: `Bearer $${def.secretEnv}` }
-      : def.headers || {};
-    return { httpUrl: def.url, headers };
-  }
-  const { command, args } = resolveStdio(def.command, def.args);
-  const obj = { command, args };
-  if (def.env) obj.env = def.env;
-  return obj;
-}
-
-// Gemini + Antigravity: surgical merge — keep every existing setting, replace
-// only the mcpServers block.
-function emitGeminiJson(servers, existingText) {
-  const base = existingText ? JSON.parse(existingText) : {};
-  const mcpServers = {};
-  for (const [name, def] of Object.entries(servers)) mcpServers[name] = geminiServerObject(def);
-  base.mcpServers = mcpServers;
-  return JSON.stringify(base, null, 2) + '\n';
 }
 
 function emitCursor(servers, existingText) {
@@ -240,8 +214,6 @@ function render(reg, toolKey, format, targetPath) {
   switch (format) {
     case 'claude-json':
       return emitClaude(servers);
-    case 'gemini-json':
-      return emitGeminiJson(servers, existing);
     case 'cursor-json':
       return emitCursor(servers, existing);
     case 'codex-toml':
@@ -268,7 +240,9 @@ function parseArgs(argv) {
     if (a === '--apply') opts.apply = true;
     else if (a === '--check') opts.check = true;
     else if (a.startsWith('--out-dir')) {
-      opts.outDir = a.includes('=') ? a.split('=')[1] : process.argv.slice(2)[process.argv.slice(2).indexOf(a) + 1];
+      opts.outDir = a.includes('=')
+        ? a.split('=')[1]
+        : process.argv.slice(2)[process.argv.slice(2).indexOf(a) + 1];
     } else if (a.startsWith('--tool')) {
       const v = a.includes('=') ? a.split('=')[1] : argv[argv.indexOf(a) + 1];
       opts.tools = v ? v.split(',').map((s) => s.trim()) : null;
@@ -312,7 +286,13 @@ function syncOne(reg, toolKey, opts, stamp) {
     return { drift: 1, wrote: 1 };
   }
   console.log(`  ~ ${label} would update (${count} servers)  ${targetPath}`);
-  console.log(next.split('\n').map((l) => `        | ${l}`).join('\n').slice(0, 1600));
+  console.log(
+    next
+      .split('\n')
+      .map((l) => `        | ${l}`)
+      .join('\n')
+      .slice(0, 1600),
+  );
   return { drift: 1, wrote: 0 };
 }
 
@@ -339,8 +319,10 @@ function main() {
     console.log('mcp-sync: all tools in sync.');
     return;
   }
-  if (opts.apply) console.log(`mcp-sync: wrote ${wrote} tool config(s). Restart the tools to load.`);
-  else console.log(`mcp-sync: DRY-RUN — ${drift} tool(s) would change. Re-run with --apply to write.`);
+  if (opts.apply)
+    console.log(`mcp-sync: wrote ${wrote} tool config(s). Restart the tools to load.`);
+  else
+    console.log(`mcp-sync: DRY-RUN — ${drift} tool(s) would change. Re-run with --apply to write.`);
 }
 
 main();

@@ -34,7 +34,7 @@ adb install vibe-tutor.apk
 
 ## App Features
 
-- **AI-Powered Tutoring** - Gemini AI (with OpenRouter fallback) for homework help
+- **AI-Powered Tutoring** - optional AI tutoring through a configured provider for homework help
 - **Achievement System** - Gamified learning with rewards
 - **Homework Manager** - Voice input and task breakdown
 - **Parent Dashboard** - PIN-protected progress tracking
@@ -44,13 +44,13 @@ adb install vibe-tutor.apk
 
 - **Package Name**: com.vibetech.tutor
 - **App Name**: Vibe Tutor
-- **File Size**: ~4MB
-- **Permissions**: Internet, microphone (voice input), audio/media access, wake lock, and media playback foreground service
-- **Android Version**: Compatible with Android 7.0+ (API 24+)
+- **File Size**: approximately 27.4 MiB (APK: 28,726,793 bytes)
+- **Permissions**: Internet, optional microphone voice input, legacy older-Android file/export access, wake lock, and media playback foreground service
+- **Android Version**: Compatible with Android 6.0+ (API 23+)
 
 ## Environment Variables
 
-The app backend requires AI provider keys (`GEMINI_API_KEY`, optional `OPENROUTER_API_KEY`). Keys are server-side and not exposed to the client.
+The production backend owns AI routing and never accepts client provider/model controls. Its sole configured order is `deepseek/deepseek-v4-flash-0731`, then `google/gemini-3.7-flash`; credentials remain server-side. Live provider validation requires separate approval.
 
 ## Troubleshooting
 

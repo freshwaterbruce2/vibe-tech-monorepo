@@ -6,9 +6,8 @@
 import { NowPlayingBar } from './components/NowPlayingBar';
 import { RadioStreamsSection } from './components/RadioStreamsSection';
 import { useRadioStreaming } from './hooks/useRadioStreaming';
-import type { MusicLibraryProps } from './types';
 
-export function MusicLibrary(_props: MusicLibraryProps) {
+export function MusicLibrary() {
   const radio = useRadioStreaming();
 
   return (

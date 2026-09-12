@@ -72,7 +72,8 @@ const Sidebar = ({
 }: SidebarProps) => {
   const [moreOpen, setMoreOpen] = useState(false);
   const shouldHideMobileNav = currentView === 'onboarding';
-  const welcomeMessage = getWelcomeMessage(userName?.trim() || undefined);
+  const trimmedUserName = userName?.trim();
+  const welcomeMessage = getWelcomeMessage(trimmedUserName === '' ? undefined : trimmedUserName);
 
   useEffect(() => {
     if (shouldHideMobileNav && moreOpen) {

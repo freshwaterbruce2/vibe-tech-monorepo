@@ -4,6 +4,8 @@ export type GameProgressionSource = 'brain-gym' | 'learning-realm';
 
 export interface GameCompletionDetails {
   source: GameProgressionSource;
+  /** Persisted logical run identity used for replay-safe downstream settlement. */
+  sessionId?: string;
   stars?: number;
   timeSpent?: number;
   subject?: string;

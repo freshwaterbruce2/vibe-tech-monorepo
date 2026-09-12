@@ -1,1 +1,1 @@
-export { BLAKE_CONFIG, getMotivation, getWelcomeMessage, needsBreak, calculateBlakeBonus } from './blakeConfig';
+export { TUTOR_CONFIG, getMotivation, getWelcomeMessage, needsBreak, calculateLearningBonus } from './blakeConfig';

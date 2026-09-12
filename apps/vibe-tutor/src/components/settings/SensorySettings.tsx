@@ -1,24 +1,16 @@
 import { Eye, Palette, RotateCcw, Smartphone, Type, Volume2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { appStore } from '../../utils/electronStore';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { SensoryPreferences } from '../../types';
+import {
+  applySensoryPreferences,
+  DEFAULT_SENSORY_PREFERENCES,
+  initializeSensoryPreferences,
+  loadSensoryPreferences,
+  persistSensoryPreferences,
+} from '../../services/sensoryPreferences';
+import { soundEffects } from '../../services/soundEffects';
 
-interface SensoryPreferences {
-  animationSpeed: 'normal' | 'reduced' | 'none';
-  soundEnabled: boolean;
-  hapticEnabled: boolean;
-  fontSize: 'small' | 'medium' | 'large';
-  dyslexiaFont: boolean;
-  colorMode: 'default' | 'high-contrast' | 'warm' | 'cool';
-}
-
-const DEFAULTS: SensoryPreferences = {
-  animationSpeed: 'normal',
-  soundEnabled: true,
-  hapticEnabled: true,
-  fontSize: 'medium',
-  dyslexiaFont: false,
-  colorMode: 'default',
-};
+const DEFAULTS: SensoryPreferences = { ...DEFAULT_SENSORY_PREFERENCES };
 
 function Toggle({
   enabled,
@@ -81,25 +73,39 @@ function SegmentedControl<T extends string>({
 }
 
 const SensorySettings = () => {
-  const [prefs, setPrefs] = useState<SensoryPreferences>(() => {
-    const saved = appStore.get<SensoryPreferences>('sensory-prefs');
-    return saved ?? { ...DEFAULTS };
-  });
+  const [prefs, setPrefs] = useState<SensoryPreferences>({ ...DEFAULTS });
+  const [storageError, setStorageError] = useState<string | null>(null);
+  const desiredPreferences = useRef<SensoryPreferences>({ ...DEFAULTS });
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.setAttribute('data-animation-speed', prefs.animationSpeed);
-    root.setAttribute('data-font-size', prefs.fontSize);
-    root.setAttribute('data-color-mode', prefs.colorMode);
-    document.body.classList.toggle('dyslexia-font', prefs.dyslexiaFont);
-
-    appStore.set('sensory-prefs', JSON.stringify(prefs));
-  }, [prefs]);
+    void loadSensoryPreferences()
+      .then((saved) => {
+        const initialized = initializeSensoryPreferences(saved);
+        desiredPreferences.current = initialized;
+        setPrefs(initialized);
+        soundEffects.applyPreferences(initialized);
+      });
+  }, []);
 
   const isDefaults = useMemo(() => JSON.stringify(prefs) === JSON.stringify(DEFAULTS), [prefs]);
 
+  const save = useCallback(async (next: SensoryPreferences) => {
+    desiredPreferences.current = next;
+    setPrefs(next);
+    setStorageError(null);
+    applySensoryPreferences(next);
+    soundEffects.applyPreferences(next);
+    const result = await persistSensoryPreferences(next);
+    if (result.status !== 'failed') return;
+    desiredPreferences.current = result.prefs;
+    setPrefs(result.prefs);
+    applySensoryPreferences(result.prefs);
+    soundEffects.applyPreferences(result.prefs);
+    setStorageError('Your sensory settings could not be saved. The previous settings were restored.');
+  }, []);
+
   const update = <K extends keyof SensoryPreferences>(key: K, val: SensoryPreferences[K]) =>
-    setPrefs((p) => ({ ...p, [key]: val }));
+    void save({ ...desiredPreferences.current, [key]: val });
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
@@ -114,7 +120,7 @@ const SensorySettings = () => {
         </div>
         {!isDefaults && (
           <button
-            onClick={() => setPrefs({ ...DEFAULTS })}
+            onClick={() => void save({ ...DEFAULTS })}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
             title="Reset to defaults"
           >
@@ -123,6 +129,11 @@ const SensorySettings = () => {
           </button>
         )}
       </div>
+      {storageError && (
+        <p role="alert" className="text-sm text-red-300">
+          {storageError}
+        </p>
+      )}
 
       {/* Animation Speed */}
       <div className="glass-card p-5 rounded-xl space-y-3">

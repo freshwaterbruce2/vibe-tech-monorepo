@@ -37,10 +37,15 @@ export const DEFAULT_UNLOCKED_AVATAR_IDS = AVATAR_CHARACTER_ITEMS.map((item) => 
 
 const KNOWN_AVATAR_IDS = new Set(DEFAULT_UNLOCKED_AVATAR_IDS);
 
+/** Strictly accepts only persisted current IDs or exact supported legacy values. */
+export function parseStoredAvatarId(value: string): string | null {
+  if (KNOWN_AVATAR_IDS.has(value)) return value;
+  return LEGACY_AVATAR_VALUE_TO_ID[value] ?? null;
+}
+
 export function normalizeAvatarId(value: string | null | undefined): string {
   if (!value) return DEFAULT_AVATAR_ID;
-  if (KNOWN_AVATAR_IDS.has(value)) return value;
-  return LEGACY_AVATAR_VALUE_TO_ID[value] ?? DEFAULT_AVATAR_ID;
+  return parseStoredAvatarId(value) ?? DEFAULT_AVATAR_ID;
 }
 
 const GEAR_ITEMS: ShopItem[] = [
@@ -51,7 +56,7 @@ const GEAR_ITEMS: ShopItem[] = [
     cost: 100,
     type: 'hat',
     statBoosts: { mathPower: 5 },
-    imageUrl: '🧢', // simple emoji placeholder
+    imageUrl: '🧢',
   },
   {
     id: 'hat-history',

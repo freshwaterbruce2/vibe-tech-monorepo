@@ -16,9 +16,17 @@ if (packageJsonFile.exists()) {
 }
 
 def appVersionCode = rootProject.ext.androidVersionCode
+def releaseTaskRequested = gradle.startParameter.taskNames.any { taskName ->
+    def lowered = taskName.toLowerCase()
+    lowered.contains('release') || lowered.contains('bundle')
+}
+def integrityProjectNumber = project.findProperty('VIBE_TUTOR_INTEGRITY_CLOUD_PROJECT_NUMBER') ?: System.getenv('VIBE_TUTOR_INTEGRITY_CLOUD_PROJECT_NUMBER') ?: '0'
 
 android {
     namespace "com.vibetech.tutor"
+    buildFeatures {
+        buildConfig true
+    }
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "com.vibetech.tutor"
@@ -26,6 +34,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode appVersionCode
         versionName appVersionName
+        buildConfigField "long", "VIBE_TUTOR_INTEGRITY_CLOUD_PROJECT_NUMBER", "${integrityProjectNumber}L"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -51,18 +60,13 @@ android {
             }
 
             // 3. Enforce strict assertion if a release task is requested
-            def releaseTaskRequested = gradle.startParameter.taskNames.any { taskName ->
-                def lowered = taskName.toLowerCase()
-                lowered.contains('release') || lowered.contains('bundle')
-            }
-
             if (targetStoreFile && targetStorePassword && targetKeyAlias && targetKeyPassword) {
                 // Path segregation guardrail: signing keys must never live inside the git-tracked code tree.
-                if (targetStoreFile.toUpperCase().startsWith("V:\\MONOREPO")) {
-                    throw new GradleException("CRITICAL: Path segregation violation. Keystore must not reside in V:\\monorepo: " + targetStoreFile)
-                }
-
                 def keystoreFile = new File(targetStoreFile)
+                def checkoutRoot = rootProject.file("..").canonicalFile
+                if (keystoreFile.canonicalFile.toPath().startsWith(checkoutRoot.toPath())) {
+                    throw new GradleException("CRITICAL: Keystore must not reside inside the Vibe Tutor checkout.")
+                }
                 if (keystoreFile.exists()) {
                     storeFile keystoreFile
                     storePassword targetStorePassword
@@ -83,6 +87,9 @@ android {
 
     buildTypes {
         release {
+            if (releaseTaskRequested && integrityProjectNumber == '0') {
+                throw new GradleException("CRITICAL: VIBE_TUTOR_INTEGRITY_CLOUD_PROJECT_NUMBER is required for release builds.")
+            }
             signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
@@ -107,6 +114,7 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+    implementation 'com.google.android.play:integrity:1.6.0'
 }
 
 apply from: 'capacitor.build.gradle'

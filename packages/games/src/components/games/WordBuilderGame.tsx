@@ -1,10 +1,10 @@
 import confetti from 'canvas-confetti';
 import { BookOpen, Coins, RefreshCw, Sparkles, Star, Trophy } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useGameAudio } from '../../hooks/useGameAudio';
 
 interface WordBuilderProps {
-  onEarnTokens?: (amount: number) => void;
+  onEarnTokens?: (amount: number, awardKey: string) => Promise<boolean>;
   onClose?: () => void;
 }
 
@@ -28,6 +28,8 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
   const [hintUsed, setHintUsed] = useState(false);
   const [level, setLevel] = useState(1);
   const [showCelebration, setShowCelebration] = useState(false);
+  const rewardAttemptRef = useRef(0);
+  const rewardPendingRef = useRef(false);
 
   // Word categories with Roblox theme
   const wordCategories = {
@@ -85,6 +87,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
     setUsedIndices(new Set());
     setHintUsed(false);
     setFeedback('');
+    rewardAttemptRef.current += 1;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- getAllWords is a pure helper using only static data
   }, [level]);
 
@@ -124,8 +127,8 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
     }
   };
 
-  const checkWord = (word: string) => {
-    if (!currentChallenge) return;
+  const checkWord = async (word: string) => {
+    if (!currentChallenge || rewardPendingRef.current) return;
 
     if (word === currentChallenge.word) {
       // Correct!
@@ -135,13 +138,12 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
       const points = Math.max(basePoints + streakBonus - hintPenalty, 5);
       const tokens = Math.floor(points / 5);
 
-      setScore((prev) => prev + points);
-      setStreak((prev) => prev + 1);
-      setTotalTokensEarned((prev) => prev + tokens);
-
-      if (onEarnTokens) {
-        onEarnTokens(tokens);
-      }
+      rewardPendingRef.current = true;
+      let awarded = !onEarnTokens;
+      try { awarded ||= await onEarnTokens!(tokens, `word:${currentChallenge.word}:${rewardAttemptRef.current}`); } catch { awarded = false; }
+      rewardPendingRef.current = false;
+      if (!awarded) { setFeedback('Token reward could not be saved. Retry this word.'); return; }
+      setScore((prev) => prev + points); setStreak((prev) => prev + 1); setTotalTokensEarned((prev) => prev + tokens);
 
       setFeedback('🎉 Awesome! You built the word!');
 
@@ -250,7 +252,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
 
             {/* Feedback */}
             {feedback && (
-              <div
+              <div role="status" aria-live="polite"
                 className={`text-center text-2xl font-bold mb-6 animate-pulse ${
                   feedback.includes('Awesome')
                     ? 'text-violet-400'

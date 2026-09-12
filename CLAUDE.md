@@ -2,7 +2,7 @@
 
 ## Default Agent
 
-This workspace defines a default **master agent** in `.claude/agents/master-agent.md` (and `.agent/agents/master-agent.md` for the Antigravity framework). Load it first when starting work in this repository for workspace orientation, path policy enforcement, and intelligent routing to specialist agents.
+This workspace defines a default **Codex master agent** in `.claude/agents/master-agent.md`. Load it first when starting work in this repository for workspace orientation, path policy enforcement, and intelligent routing to specialist agents.
 
 ## Build & Install Failures
 
@@ -17,7 +17,7 @@ This workspace defines a default **master agent** in `.claude/agents/master-agen
 
 ## Windows Environment
 
-- Use `npx.cmd` (not `npx`) when constructing MCP server commands on Windows.
+- For Nx MCP on Windows, use the workspace-pinned launcher: `cmd.exe /d /s /c "cd /d C:\projects\vibe-tech-monorepo && corepack pnpm exec nx mcp"`. Never use `npx` as a fallback.
 - Do NOT use `sed` for file manipulation. Use PowerShell or Python instead.
 - For git operations, use `git rm` instead of `rm` to avoid lock file race conditions.
 
@@ -26,7 +26,7 @@ This workspace defines a default **master agent** in `.claude/agents/master-agen
 - When a fix attempt fails twice with the same approach, STOP and try a fundamentally different strategy.
 - For unfamiliar errors, search the codebase for prior solutions before attempting fixes.
 - When debugging, write a minimal reproduction first, then fix against that — don't scatter-shot across components.
-- For any non-trivial task, run `/explore <problem>` first. It does a read-only diagnosis and produces a plan. Implementation only starts after the plan is approved. This prevents the wrong-approach-first failure mode.
+- For any non-trivial task, perform a read-only diagnosis and create or update a task-specific plan in `docs/plans/` before implementation. Honor any approval gate recorded in that plan.
 
 ## Canonical Rules
 

@@ -1,9 +1,13 @@
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 const tmpDir = resolve(process.cwd(), "tmp");
 const testDbPath = resolve(tmpDir, "subscriptions.test.db");
+
+vi.hoisted(() => {
+  process.env.APP_DB_PATH = "./tmp/subscriptions.test.db";
+});
 
 beforeAll(() => {
   if (!existsSync(tmpDir)) mkdirSync(tmpDir, { recursive: true });

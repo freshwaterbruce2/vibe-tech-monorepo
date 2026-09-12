@@ -4,7 +4,7 @@ import { type BossDef, type AvatarStat } from '../../types';
 import { dataStore } from '../../services/dataStore';
 import { SHOP_ITEMS } from '../../services/avatarShopData';
 
-// Simulated import of the question banks. Since we expanded them earlier, we can just use them.
+// Question banks used by the battle rounds.
 import { MATH_QUESTIONS } from '../../services/questionBanks/math';
 import { SCIENCE_QUESTIONS } from '../../services/questionBanks/science';
 import { HISTORY_QUESTIONS } from '../../services/questionBanks/history';

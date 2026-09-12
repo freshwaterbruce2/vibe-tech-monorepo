@@ -1,185 +1,181 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Achievement } from '../../types';
 import { useAchievements } from '../useAchievements';
-
-vi.mock('../../services/dataStore', () => ({
-  dataStore: {
-    getAchievements: vi.fn().mockResolvedValue([]),
-  },
+const api = vi.hoisted(() => ({
+  getAchievements: vi.fn(),
+  getPendingAchievementAwards: vi.fn(),
+  checkAndUnlockAchievements: vi.fn(),
+  confirmAchievementAward: vi.fn(),
 }));
-
-vi.mock('../../services/achievementService', () => ({
-  checkAndUnlockAchievements: vi.fn().mockResolvedValue({
-    achievements: [],
-    newlyUnlocked: [],
-    totalBonusTokens: 0,
-    totalBonusPoints: 0,
-  }),
-}));
-
-import { checkAndUnlockAchievements } from '../../services/achievementService';
-import { dataStore } from '../../services/dataStore';
-
-const mockedDataStore = vi.mocked(dataStore);
-const mockedCheck = vi.mocked(checkAndUnlockAchievements);
-
-describe('useAchievements', () => {
+vi.mock('../../services/achievementService', () => api);
+const a = (id: string) => ({
+  id,
+  name: id,
+  description: '',
+  goal: 1,
+  progress: 1,
+  unlocked: true,
+  icon: () => null,
+});
+const e = {
+  type: 'TASK_COMPLETED' as const,
+  eventId: 'homework-completed:task',
+  payload: { completionDay: '2026-08-24' },
+};
+describe('useAchievements canonical settlement', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    mockedDataStore.getAchievements.mockResolvedValue([]);
-    mockedCheck.mockResolvedValue({
+    api.getAchievements.mockResolvedValue([a('FIRST_TASK')]);
+    api.getPendingAchievementAwards.mockResolvedValue([]);
+    api.checkAndUnlockAchievements.mockResolvedValue({
       achievements: [],
-      newlyUnlocked: [],
+      newlyQualified: [],
+      pendingAwards: [],
       totalBonusTokens: 0,
       totalBonusPoints: 0,
     });
+    api.confirmAchievementAward.mockResolvedValue(undefined);
   });
-
-  afterEach(() => {
-    vi.useRealTimers();
+  afterEach(() => vi.useRealTimers());
+  it('loads canonical achievements', async () => {
+    const { result } = renderHook(() => useAchievements({ onAwardTokens: vi.fn() }));
+    await vi.waitFor(() => expect(result.current.achievements).toHaveLength(1));
+    expect(api.getAchievements).toHaveBeenCalled();
   });
-
-  it('should initialise with empty achievements and 0 bonus tokens', () => {
-    const { result } = renderHook(() => useAchievements());
-    expect(result.current.achievements).toEqual([]);
-    expect(result.current.newlyUnlocked).toBeNull();
-    expect(result.current.bonusTokens).toBe(0);
-  });
-
-  it('should load achievements from dataStore', async () => {
-    const mockAchievements = [
-      { id: 'a1', name: 'First Steps', description: '', unlocked: false, icon: () => null },
+  it('settles every pending award individually before confirmation', async () => {
+    const awards = [
+      { achievementId: 'FIRST_TASK', operationId: 'achievement:unlock:FIRST_TASK', amount: 25 },
+      { achievementId: 'FIVE_TASKS', operationId: 'achievement:unlock:FIVE_TASKS', amount: 50 },
     ];
-    mockedDataStore.getAchievements.mockResolvedValue(mockAchievements as Achievement[]);
-
-    const { result } = renderHook(() => useAchievements());
-
-    await vi.waitFor(() => {
-      expect(result.current.achievements).toHaveLength(1);
-    });
+    api.getPendingAchievementAwards.mockResolvedValueOnce(awards).mockResolvedValue([]);
+    const earn = vi.fn().mockResolvedValue(true);
+    renderHook(() => useAchievements({ onAwardTokens: earn }));
+    await vi.waitFor(() => expect(api.confirmAchievementAward).toHaveBeenCalledTimes(2));
+    expect(earn.mock.calls).toEqual([
+      [25, 'Achievement unlocked: FIRST_TASK', 'achievement:unlock:FIRST_TASK'],
+      [50, 'Achievement unlocked: FIVE_TASKS', 'achievement:unlock:FIVE_TASKS'],
+    ]);
+    expect(api.confirmAchievementAward.mock.invocationCallOrder[0]).toBeGreaterThan(
+      earn.mock.invocationCallOrder[0]!,
+    );
   });
-
-  it('should handle achievement event with unlock and award tokens through callback', async () => {
+  it('leaves pending and exposes retry after false award', async () => {
+    api.getPendingAchievementAwards.mockResolvedValue([
+      { achievementId: 'FIRST_TASK', operationId: 'achievement:unlock:FIRST_TASK', amount: 25 },
+    ]);
+    const earn = vi.fn().mockResolvedValue(false);
+    const { result } = renderHook(() => useAchievements({ onAwardTokens: earn }));
+    await vi.waitFor(() => expect(result.current.achievementError).toBe(true));
+    expect(api.confirmAchievementAward).not.toHaveBeenCalled();
+    earn.mockResolvedValue(true);
+    await act(async () => {
+      await result.current.retryAchievements();
+    });
+    await vi.waitFor(() => expect(api.confirmAchievementAward).toHaveBeenCalled());
+  });
+  it('keeps a thrown token award retryable without confirming', async () => {
+    api.getPendingAchievementAwards.mockResolvedValue([
+      { achievementId: 'FIRST_TASK', operationId: 'achievement:unlock:FIRST_TASK', amount: 25 },
+    ]);
+    const award = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('ledger unavailable'))
+      .mockResolvedValue(true);
+    const { result } = renderHook(() => useAchievements({ onAwardTokens: award }));
+    await vi.waitFor(() => expect(result.current.achievementError).toBe(true));
+    expect(api.confirmAchievementAward).not.toHaveBeenCalled();
+    await act(async () => {
+      await result.current.retryAchievements();
+    });
+    await vi.waitFor(() =>
+      expect(api.confirmAchievementAward).toHaveBeenCalledWith(
+        'FIRST_TASK',
+        'achievement:unlock:FIRST_TASK',
+      ),
+    );
+  });
+  it('retries a confirmation write with the same stable award details and resolves only after success', async () => {
+    const pending = {
+      achievementId: 'FIRST_TASK',
+      operationId: 'achievement:unlock:FIRST_TASK',
+      amount: 25,
+    };
+    api.getPendingAchievementAwards.mockResolvedValue([pending]);
+    api.confirmAchievementAward
+      .mockRejectedValueOnce(new Error('write failed'))
+      .mockResolvedValueOnce(undefined);
+    const award = vi.fn().mockResolvedValue(true);
+    const { result } = renderHook(() => useAchievements({ onAwardTokens: award }));
+    await vi.waitFor(() => expect(result.current.achievementError).toBe(true));
+    expect(api.confirmAchievementAward).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      await result.current.retryAchievements();
+    });
+    await vi.waitFor(() => expect(api.confirmAchievementAward).toHaveBeenCalledTimes(2));
+    expect(award.mock.calls).toEqual([
+      [25, 'Achievement unlocked: FIRST_TASK', 'achievement:unlock:FIRST_TASK'],
+      [25, 'Achievement unlocked: FIRST_TASK', 'achievement:unlock:FIRST_TASK'],
+    ]);
+    expect(result.current.achievementError).toBe(false);
+  });
+  it('never confirms when the token callback is missing or confirmation persistence fails', async () => {
+    api.getPendingAchievementAwards.mockResolvedValue([
+      { achievementId: 'FIRST_TASK', operationId: 'achievement:unlock:FIRST_TASK', amount: 25 },
+    ]);
+    const { result, rerender } = renderHook(
+      ({ award }) => useAchievements({ onAwardTokens: award }),
+      { initialProps: { award: undefined as undefined | ReturnType<typeof vi.fn> } },
+    );
+    await vi.waitFor(() => expect(result.current.achievementError).toBe(true));
+    expect(api.confirmAchievementAward).not.toHaveBeenCalled();
+    const earn = vi.fn().mockResolvedValue(true);
+    api.confirmAchievementAward.mockRejectedValueOnce(new Error('write failed'));
+    rerender({ award: earn });
+    await act(async () => {
+      await result.current.retryAchievements();
+    });
+    expect(api.confirmAchievementAward).toHaveBeenCalledWith(
+      'FIRST_TASK',
+      'achievement:unlock:FIRST_TASK',
+    );
+    expect(result.current.achievementError).toBe(true);
+  });
+  it('retains staged event failures and queues confirmed notifications', async () => {
     vi.useRealTimers();
-
-    const fakeAchievement = {
-      id: 'ach1',
-      name: 'Star Pupil',
-      description: 'Got it',
-      unlocked: true,
-      icon: () => null,
-    };
-    const onAwardTokens = vi.fn();
-
-    mockedDataStore.getAchievements.mockResolvedValue([fakeAchievement as Achievement]);
-    mockedCheck.mockResolvedValue({
-      achievements: [fakeAchievement as Achievement],
-      newlyUnlocked: [fakeAchievement as Achievement],
-      totalBonusTokens: 10,
-      totalBonusPoints: 10,
-    });
-
-    const { result } = renderHook(() => useAchievements({ onAwardTokens }));
-
-    await vi.waitFor(() => {
-      expect(result.current.achievements).toHaveLength(1);
-    });
-
-    await act(async () => {
-      await result.current.handleAchievementEvent({ type: 'TASK_COMPLETED' });
-    });
-
-    expect(onAwardTokens).toHaveBeenCalledWith(10, 'Achievement unlocked: Star Pupil');
-    expect(result.current.newlyUnlocked?.name).toBe('Star Pupil');
-    expect(result.current.bonusTokens).toBe(10);
-
-    vi.useFakeTimers();
-  });
-
-  it('should auto-clear notification after 5 seconds', async () => {
-    const fakeAchievement = {
-      id: 'ach1',
-      name: 'Focus!',
-      description: '',
-      unlocked: true,
-      icon: () => null,
-    };
-    mockedCheck.mockResolvedValue({
-      achievements: [fakeAchievement as Achievement],
-      newlyUnlocked: [fakeAchievement as Achievement],
-      totalBonusTokens: 5,
-      totalBonusPoints: 5,
-    });
-
-    const { result } = renderHook(() => useAchievements());
-
-    await act(async () => {
-      await result.current.handleAchievementEvent({
-        type: 'FOCUS_SESSION_COMPLETED',
-        payload: { duration: 25 },
-      });
-    });
-
-    expect(result.current.newlyUnlocked).toBeTruthy();
-
-    act(() => {
-      vi.advanceTimersByTime(5000);
-    });
-
-    expect(result.current.newlyUnlocked).toBeNull();
-    expect(result.current.bonusTokens).toBe(0);
-  });
-
-  it('should handle achievement event with no unlocks', async () => {
-    mockedCheck.mockResolvedValue({
-      achievements: [
-        { id: 'a1', name: 'X', description: '', unlocked: false, icon: () => null } as Achievement,
-      ],
-      newlyUnlocked: [],
+    api.checkAndUnlockAchievements.mockRejectedValueOnce(new Error('write')).mockResolvedValueOnce({
+      achievements: [],
+      newlyQualified: [a('FIRST_TASK'), a('FIVE_TASKS')],
+      pendingAwards: [],
       totalBonusTokens: 0,
       totalBonusPoints: 0,
     });
-
-    const { result } = renderHook(() => useAchievements());
-
+    const { result } = renderHook(() =>
+      useAchievements({ onAwardTokens: vi.fn().mockResolvedValue(true) }),
+    );
     await act(async () => {
-      await result.current.handleAchievementEvent({ type: 'TASK_COMPLETED' });
+      await result.current.handleAchievementEvent(e);
     });
-
-    expect(result.current.newlyUnlocked).toBeNull();
-    expect(result.current.bonusTokens).toBe(0);
+    expect(result.current.achievementError).toBe(true);
+    await act(async () => {
+      await result.current.retryAchievements();
+    });
+    expect(result.current.newlyUnlocked?.id).toBe('FIRST_TASK');
+    act(() => result.current.clearNotification());
+    expect(result.current.newlyUnlocked?.id).toBe('FIVE_TASKS');
   });
-
-  it('should clear notification manually', async () => {
-    const fakeAchievement = {
-      id: 'a1',
-      name: 'X',
-      description: '',
-      unlocked: true,
-      icon: () => null,
-    };
-    mockedCheck.mockResolvedValue({
-      achievements: [fakeAchievement as Achievement],
-      newlyUnlocked: [fakeAchievement as Achievement],
-      totalBonusTokens: 3,
-      totalBonusPoints: 3,
-    });
-
-    const { result } = renderHook(() => useAchievements());
-
+  it('keeps the retry error when a staged event fails again even if award settlement succeeds', async () => {
+    vi.useRealTimers();
+    api.checkAndUnlockAchievements.mockRejectedValue(new Error('write'));
+    const { result } = renderHook(() =>
+      useAchievements({ onAwardTokens: vi.fn().mockResolvedValue(true) }),
+    );
     await act(async () => {
-      await result.current.handleAchievementEvent({ type: 'TASK_COMPLETED' });
+      await result.current.handleAchievementEvent(e);
     });
-
-    expect(result.current.newlyUnlocked).toBeTruthy();
-
-    act(() => {
-      result.current.clearNotification();
+    await act(async () => {
+      await result.current.retryAchievements();
     });
-
-    expect(result.current.newlyUnlocked).toBeNull();
-    expect(result.current.bonusTokens).toBe(0);
+    expect(result.current.achievementError).toBe(true);
   });
 });

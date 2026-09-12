@@ -7,7 +7,7 @@ This app uses `apps/vibe-tutor/privacy-policy.html` as the source.
 
 Host as a static page on GitHub Pages (or equivalent static hosting) and use a stable URL like:
 
-- `https://freshwaterbruce2.github.io/vibetech/privacy-policy/`
+- `https://freshwaterbruce2.github.io/vibe-tech-monorepo/privacy-policy/`
 
 ## Publish Steps
 

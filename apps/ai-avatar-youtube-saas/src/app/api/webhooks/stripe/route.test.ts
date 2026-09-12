@@ -1,16 +1,16 @@
 import { vi, describe, expect, it, beforeAll, afterAll } from "vitest";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
-import AppDatabase from "@vibetech/db-app";
+import AppDatabase from "@/shared/db-app/index";
 import { headers } from "next/headers";
 
-const tmpDir = "D:\\databases\\ai-avatar-youtube-saas\\tmp";
+const tmpDir = resolve(process.cwd(), "tmp");
 const testDbPath = resolve(tmpDir, "stripe-webhooks.test.db");
 const dummySecret = "whsec_test_secret";
 
 // 1. Run hoisted setup to configure env variables before imports and mocks are resolved
 vi.hoisted(() => {
-  process.env.APP_DB_PATH = "D:\\databases\\ai-avatar-youtube-saas\\tmp\\stripe-webhooks.test.db";
+  process.env.APP_DB_PATH = "./tmp/stripe-webhooks.test.db";
   process.env.STRIPE_SECRET_KEY = "sk_test_mockkey";
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test_secret";
 });

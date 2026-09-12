@@ -1,167 +1,131 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  __resetTokenServiceForTests,
-  awardFocusSession,
-  awardGameComplete,
-  awardScheduleComplete,
-  awardScheduleStep,
-  cleanupOldTransactions,
-  earnTokens,
-  getRecentTransactions,
-  getTodayEarnings,
-  getTodaySpending,
-  getTokenBalance,
-  getTokenStats,
-  getTransactionsByType,
-  setTokenBalance,
-  spendTokens,
-  subscribeToTokenChanges,
-  syncTokenBalanceFromLegacy,
-  TOKEN_REWARDS,
-} from '../tokenService';
+import { __resetTokenServiceForTests, earnTokens, getRecentTransactions, getTokenBalance, getTokenStats, initializeTokenLedger, spendTokens, subscribeToTokenChanges } from '../tokenService';
 
-// VibeBux is real-reward currency for kids — treat the ledger like financial
-// logic and assert earn/spend/persistence/caps explicitly.
-beforeEach(() => {
-  window.localStorage.clear();
-  __resetTokenServiceForTests();
-});
+beforeEach(() => { window.localStorage.clear(); __resetTokenServiceForTests(); });
 
-describe('tokenService ledger', () => {
-  it('starts at a zero balance', () => {
-    expect(getTokenBalance()).toBe(0);
-    expect(getTokenStats()).toMatchObject({ balance: 0, totalEarned: 0, totalSpent: 0 });
+describe('tokenService durable v3 ledger', () => {
+  it('creates one bounded canonical v3 record', async () => {
+    await initializeTokenLedger();
+    const raw = window.localStorage.getItem('vibetutor_token_ledger_v3');
+    expect(raw).not.toBeNull();
+    expect(JSON.parse(raw ?? '{}')).toMatchObject({ version: 3, balance: 0, transactions: [], appliedOperationIds: [] });
   });
-
-  it('earns tokens and tracks totals', () => {
-    earnTokens(50, 'Homework complete');
-    expect(getTokenBalance()).toBe(50);
-    const stats = getTokenStats();
-    expect(stats.totalEarned).toBe(50);
-    expect(stats.totalSpent).toBe(0);
+  it('persists before it publishes a confirmed mutation', async () => {
+    const listener = vi.fn(() => expect(getTokenBalance()).toBe(25));
+    subscribeToTokenChanges(listener);
+    const result = await earnTokens(25, 'Homework complete', 'homework:item-1');
+    expect(result).toMatchObject({ ok: true, duplicate: false });
+    expect(listener).toHaveBeenCalledOnce();
+    expect(getTokenStats()).toMatchObject({ balance: 25, totalEarned: 25, totalSpent: 0 });
   });
-
-  it('ignores non-positive earns', () => {
-    expect(earnTokens(0, 'x')).toBeNull();
-    expect(earnTokens(-5, 'x')).toBeNull();
-    expect(getTokenBalance()).toBe(0);
-  });
-
-  it('spends tokens when the balance is sufficient', () => {
-    earnTokens(100, 'seed');
-    const txn = spendTokens(30, 'Reward');
-    expect(txn).not.toBeNull();
-    expect(getTokenBalance()).toBe(70);
-    expect(getTokenStats().totalSpent).toBe(30);
-  });
-
-  it('never lets the balance go negative', () => {
-    earnTokens(20, 'seed');
-    expect(spendTokens(50, 'too much')).toBeNull();
-    expect(getTokenBalance()).toBe(20);
-  });
-
-  it('rejects non-positive spends', () => {
-    earnTokens(20, 'seed');
-    expect(spendTokens(0, 'x')).toBeNull();
-    expect(spendTokens(-1, 'x')).toBeNull();
-    expect(getTokenBalance()).toBe(20);
-  });
-
-  it('persists the balance across a cache reset (round-trips through storage)', () => {
-    earnTokens(42, 'seed');
-    __resetTokenServiceForTests();
-    expect(getTokenBalance()).toBe(42);
-  });
-
-  it('setTokenBalance raises and lowers toward a target, no-ops when equal', () => {
-    setTokenBalance(80);
-    expect(getTokenBalance()).toBe(80);
-    setTokenBalance(30);
-    expect(getTokenBalance()).toBe(30);
-    expect(setTokenBalance(30)).toBeNull();
-  });
-
-  it('syncTokenBalanceFromLegacy only ever raises the balance', () => {
-    earnTokens(10, 'seed');
-    expect(syncTokenBalanceFromLegacy(5)).toBe(false);
+  it('is idempotent for a stable operation ID', async () => {
+    await earnTokens(10, 'Daily challenge', 'daily:2026-08-24');
+    const duplicate = await earnTokens(10, 'Daily challenge', 'daily:2026-08-24');
+    expect(duplicate).toMatchObject({ ok: true, duplicate: true });
     expect(getTokenBalance()).toBe(10);
-    expect(syncTokenBalanceFromLegacy(40)).toBe(true);
+    expect(getRecentTransactions()).toHaveLength(1);
+  });
+  it('serializes concurrent spending and never overdrafts', async () => {
+    await earnTokens(10, 'Seed', 'seed');
+    const [first, second] = await Promise.all([spendTokens(8, 'One', 'spend:one'), spendTokens(8, 'Two', 'spend:two')]);
+    expect([first.ok, second.ok]).toEqual([true, false]);
+    expect(getTokenBalance()).toBe(2);
+  });
+  it('rejects malformed canonical state instead of silently resetting it', async () => {
+    window.localStorage.setItem('vibetutor_token_ledger_v3', '{bad');
+    await expect(initializeTokenLedger()).rejects.toThrow('Token ledger is malformed');
+  });
+  it('migrates legacy userTokens once and never reimports after v3 exists', async () => {
+    window.localStorage.setItem('userTokens', '40');
+    await initializeTokenLedger();
+    expect(getTokenBalance()).toBe(40);
+    __resetTokenServiceForTests();
+    window.localStorage.setItem('userTokens', '99');
+    await initializeTokenLedger();
     expect(getTokenBalance()).toBe(40);
   });
-
-  it('records and filters transactions by type', () => {
-    earnTokens(10, 'a');
-    earnTokens(20, 'b');
-    spendTokens(5, 'c');
-    expect(getRecentTransactions(10)).toHaveLength(3);
-    expect(getTransactionsByType('earn')).toHaveLength(2);
-    expect(getTransactionsByType('spend')).toHaveLength(1);
+  it('does not treat student_points as VibeBux', async () => {
+    window.localStorage.setItem('student_points', '999');
+    await initializeTokenLedger();
+    expect(getTokenBalance()).toBe(0);
   });
-
-  it('aggregates today earnings and spending', () => {
-    earnTokens(15, 'today earn');
-    spendTokens(5, 'today spend');
-    expect(getTodayEarnings()).toBe(15);
-    expect(getTodaySpending()).toBe(5);
+  it('retains a pruned operation ID as an idempotent replay without re-crediting it', async () => {
+    for (let index = 0; index <= 200; index += 1) {
+      await earnTokens(1, 'Bounded history', `bounded:${index}`);
+    }
+    const replay = await earnTokens(1, 'Bounded history', 'bounded:0');
+    expect(replay).toMatchObject({ ok: true, duplicate: true, transaction: null });
+    expect(getTokenBalance()).toBe(201);
+    expect(getRecentTransactions(200)).toHaveLength(200);
   });
-
-  it('cleanupOldTransactions keeps recent transactions', () => {
-    earnTokens(10, 'recent');
-    cleanupOldTransactions(90);
-    expect(getRecentTransactions(10).length).toBeGreaterThanOrEqual(1);
+  it('rejects a conflicting replay after the original transaction is pruned', async () => {
+    for (let index = 0; index <= 200; index += 1) await earnTokens(1, 'Bounded history', `pruned-conflict:${index}`);
+    expect(await spendTokens(1, 'Different mutation', 'pruned-conflict:0')).toMatchObject({ ok: false, reason: 'invalid_amount' });
+    expect(getTokenBalance()).toBe(201);
   });
-});
-
-describe('tokenService award helpers', () => {
-  it('awardScheduleStep / awardScheduleComplete credit the right amounts', () => {
-    awardScheduleStep('brush teeth', 'morning-1');
-    expect(getTokenBalance()).toBe(TOKEN_REWARDS.MORNING_ROUTINE_STEP);
-    awardScheduleComplete('evening', 'evening-1');
-    expect(getTokenBalance()).toBe(
-      TOKEN_REWARDS.MORNING_ROUTINE_STEP + TOKEN_REWARDS.EVENING_ROUTINE_COMPLETE,
-    );
+  it('migrates known v3 fingerprints and blocks an unknown retained legacy ID', async () => {
+    window.localStorage.setItem('vibetutor_token_ledger_v3', JSON.stringify({ version: 3, balance: 3, totalEarned: 3, totalSpent: 0, updatedAt: 1, transactions: [{ id: 'known', type: 'earn', amount: 3, reason: 'Known', relatedId: 'known', timestamp: 1 }], appliedOperationIds: ['unknown', 'known'] }));
+    await initializeTokenLedger();
+    expect(await earnTokens(3, 'Known', 'known')).toMatchObject({ ok: true, duplicate: true });
+    expect(await earnTokens(1, 'Cannot establish equality', 'unknown')).toMatchObject({ ok: false, reason: 'invalid_amount' });
   });
+  it('rejects present operation fingerprints that omit or mismatch retained transactions', async () => {
+    const base = { version: 3, balance: 3, totalEarned: 3, totalSpent: 0, updatedAt: 1, transactions: [{ id: 'known', type: 'earn', amount: 3, reason: 'Known', relatedId: 'related:known', timestamp: 1 }], appliedOperationIds: ['known'] };
+    window.localStorage.setItem('vibetutor_token_ledger_v3', JSON.stringify({ ...base, operationFingerprints: [] }));
+    await expect(initializeTokenLedger()).rejects.toThrow('Token ledger is malformed');
 
-  it('awardGameComplete adds perfect + no-hint bonuses', () => {
-    awardGameComplete('Sudoku', 100, true, true, 'g1');
-    expect(getTokenBalance()).toBe(
-      TOKEN_REWARDS.GAME_COMPLETE + TOKEN_REWARDS.GAME_PERFECT + TOKEN_REWARDS.GAME_NO_HINTS,
-    );
-  });
-
-  it('awardGameComplete with no bonuses credits only the base amount', () => {
-    awardGameComplete('Memory', 60, false, false, 'g2');
-    expect(getTokenBalance()).toBe(TOKEN_REWARDS.GAME_COMPLETE);
-  });
-
-  it('awardFocusSession scales with minutes', () => {
-    awardFocusSession(50, 's1');
-    expect(getTokenBalance()).toBe(TOKEN_REWARDS.FOCUS_SESSION_50MIN);
     __resetTokenServiceForTests();
+    window.localStorage.setItem('vibetutor_token_ledger_v3', JSON.stringify({ ...base, operationFingerprints: [{ id: 'known', type: 'earn', amount: 3, reason: 'Known', relatedId: 'other:related' }] }));
+    await expect(initializeTokenLedger()).rejects.toThrow('Token ledger is malformed');
+  });
+  it('immediately rewrites legacy v3 state with reconstructed operation fingerprints', async () => {
+    window.localStorage.setItem('vibetutor_token_ledger_v3', JSON.stringify({ version: 3, balance: 3, totalEarned: 3, totalSpent: 0, updatedAt: 1, transactions: [{ id: 'known', type: 'earn', amount: 3, reason: 'Known', relatedId: 'related:known', timestamp: 1 }], appliedOperationIds: ['known'] }));
+    await initializeTokenLedger();
+    const rewritten = JSON.parse(window.localStorage.getItem('vibetutor_token_ledger_v3') ?? '{}');
+    expect(rewritten.operationFingerprints).toEqual([{ id: 'known', type: 'earn', amount: 3, reason: 'Known', relatedId: 'related:known' }]);
+  });
+  it('rejects a conflicting replay for a retained operation ID', async () => {
+    await earnTokens(10, 'Daily challenge', 'daily:conflict');
+    const conflict = await spendTokens(10, 'Different operation', 'daily:conflict');
+    expect(conflict).toMatchObject({ ok: false, reason: 'invalid_amount' });
+    expect(getTokenBalance()).toBe(10);
+  });
+  it('migrates a complete valid v2 ledger and fails closed on malformed-present v2 data', async () => {
+    window.localStorage.setItem('vibetutor_token_state_v2', JSON.stringify({ version: 2, balance: 6, totalEarned: 10, totalSpent: 4, updatedAt: 1 }));
+    window.localStorage.setItem('vibetutor_token_transactions_v2', JSON.stringify([
+      { id: 'v2:earn', type: 'earn', amount: 10, reason: 'Seed', timestamp: 1 },
+      { id: 'v2:spend', type: 'spend', amount: 4, reason: 'Use', timestamp: 2 },
+    ]));
+    await initializeTokenLedger();
+    expect(getTokenStats()).toMatchObject({ balance: 6, totalEarned: 10, totalSpent: 4 });
+
     window.localStorage.clear();
-    awardFocusSession(25, 's2');
-    expect(getTokenBalance()).toBe(TOKEN_REWARDS.FOCUS_SESSION_25MIN);
+    __resetTokenServiceForTests();
+    window.localStorage.setItem('vibetutor_token_state_v2', JSON.stringify({ version: 2, balance: 1 }));
+    await expect(initializeTokenLedger()).rejects.toThrow('Legacy token ledger is malformed');
   });
-});
-
-describe('tokenService subscriptions', () => {
-  it('notifies subscribers on earn/spend and stops after unsubscribe', () => {
-    const listener = vi.fn();
-    const unsubscribe = subscribeToTokenChanges(listener);
-    earnTokens(10, 'a');
-    spendTokens(5, 'b');
-    expect(listener).toHaveBeenCalledTimes(2);
-    unsubscribe();
-    earnTokens(3, 'c');
-    expect(listener).toHaveBeenCalledTimes(2);
+  it('normalizes a legacy null relatedId at the persistence boundary', async () => {
+    window.localStorage.setItem('vibetutor_token_ledger_v3', JSON.stringify({
+      version: 3, balance: 5, totalEarned: 5, totalSpent: 0, updatedAt: 1,
+      transactions: [{ id: 'legacy:null-related', type: 'earn', amount: 5, reason: 'Legacy', relatedId: null, timestamp: 1 }],
+      appliedOperationIds: ['legacy:null-related'],
+    }));
+    await initializeTokenLedger();
+    expect(getRecentTransactions(1)[0]).toMatchObject({ id: 'legacy:null-related', relatedId: undefined });
   });
+  it('rejects impossible ledger invariants and unsafe integer mutation overflow', async () => {
+    window.localStorage.setItem('vibetutor_token_ledger_v3', JSON.stringify({
+      version: 3, balance: 4, totalEarned: 3, totalSpent: 0, updatedAt: 1, transactions: [], appliedOperationIds: [],
+    }));
+    await expect(initializeTokenLedger()).rejects.toThrow('Token ledger is malformed');
 
-  it('isolates listener errors from the ledger', () => {
-    subscribeToTokenChanges(() => {
-      throw new Error('boom');
-    });
-    expect(() => earnTokens(5, 'a')).not.toThrow();
-    expect(getTokenBalance()).toBe(5);
+    window.localStorage.clear();
+    __resetTokenServiceForTests();
+    window.localStorage.setItem('vibetutor_token_ledger_v3', JSON.stringify({
+      version: 3, balance: Number.MAX_SAFE_INTEGER, totalEarned: Number.MAX_SAFE_INTEGER, totalSpent: 0, updatedAt: 1, transactions: [], appliedOperationIds: [],
+    }));
+    const overflow = await earnTokens(1, 'Overflow', 'overflow:one');
+    expect(overflow).toMatchObject({ ok: false, reason: 'invalid_amount' });
+    expect(getTokenBalance()).toBe(Number.MAX_SAFE_INTEGER);
   });
 });

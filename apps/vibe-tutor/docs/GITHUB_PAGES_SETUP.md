@@ -4,7 +4,7 @@ This repo now includes a workflow that publishes the Vibe Tutor privacy policy t
 
 Expected public URL:
 
-`https://freshwaterbruce2.github.io/vibetech/privacy-policy/`
+`https://freshwaterbruce2.github.io/vibe-tech-monorepo/privacy-policy/`
 
 ## What the workflow publishes
 
@@ -47,7 +47,7 @@ The workflow runs when:
 2. Open the `Actions` tab.
 3. Wait for `Vibe Tutor Privacy Policy Pages` to finish successfully.
 4. Open:
-   `https://freshwaterbruce2.github.io/vibetech/privacy-policy/`
+   `https://freshwaterbruce2.github.io/vibe-tech-monorepo/privacy-policy/`
 
 ## Troubleshooting
 

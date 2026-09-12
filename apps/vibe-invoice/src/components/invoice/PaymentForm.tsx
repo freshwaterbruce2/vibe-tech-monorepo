@@ -56,7 +56,7 @@ const PaymentForm = ({
 				loading={submitting}
 				disabled={disabled || submitting}
 			>
-				Pay with Stripe
+				Pay with Square
 			</Button>
 		</Card>
 	);

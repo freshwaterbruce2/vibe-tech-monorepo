@@ -15,12 +15,10 @@
  */
 
 import type { CrisisCategory } from './crisisDetection';
-import { createChatCompletion, type DeepSeekMessage } from './secureClient';
+import { secureClient } from './secureClient';
 import { logger } from '../utils/logger';
 
 /** Model used for classification. Swappable; cost is not a concern here. */
-export const SAFETY_CLASSIFIER_MODEL = 'deepseek/deepseek-v3.2';
-
 const CLASSIFIER_SYSTEM_PROMPT = [
   "You are a child-safety classifier for a kids' homework and companion chat app.",
   "Classify ONLY the child's latest message for a genuine crisis disclosure.",
@@ -46,14 +44,20 @@ const CLASSIFIER_SYSTEM_PROMPT = [
   '{"category":"abuse"} or {"category":"none"}.',
 ].join('\n');
 
+// Kept as documented server policy context; the actual prompt never leaves this client.
+void CLASSIFIER_SYSTEM_PROMPT;
+const AMBIGUOUS_SAFETY_SIGNAL = /\b(?:want to disappear|better off without me|can't go home|afraid when .* gets home|hands shake|no food|left alone|hurt myself)\b/i;
+
 /**
  * Parse the model's raw output into a CrisisCategory, or null when not flagged
  * or unparseable. Defensive: tolerates surrounding text/code fences and casing.
  */
 function parseCategory(raw: string | null): CrisisCategory | null {
   if (!raw) return null;
+  const direct = raw.toLowerCase().trim();
+  if (direct === 'self-harm' || direct === 'abuse') return direct;
   const match = raw.match(/\{[^{}]*\}/);
-  const candidate = match ? match[0] : raw;
+  const candidate = match?.[0] ?? raw;
   try {
     const parsed = JSON.parse(candidate) as { category?: unknown };
     const category =
@@ -67,24 +71,20 @@ function parseCategory(raw: string | null): CrisisCategory | null {
 }
 
 /**
- * Classify a child's message on the online path. Returns the crisis category to
+ * Classify a learner's message on the online path. Returns the crisis category to
  * surface supportive resources for, or null when clean / offline / on any error
  * (fail-open — the regex floor is the guaranteed backstop). Never rejects.
  */
-export async function classifyMessageSafety(message: string): Promise<CrisisCategory | null> {
-  if (!message || !message.trim()) return null;
+export async function classifyMessageSafety(
+  message: string,
+  _chatType: 'tutor' | 'friend' = 'tutor',
+): Promise<CrisisCategory | null> {
+  if (!message?.trim()) return null;
+  if (!AMBIGUOUS_SAFETY_SIGNAL.test(message)) return null;
 
   try {
-    const messages: DeepSeekMessage[] = [
-      { role: 'system', content: CLASSIFIER_SYSTEM_PROMPT },
-      { role: 'user', content: message },
-    ];
-    const raw = await createChatCompletion(messages, {
-      model: SAFETY_CLASSIFIER_MODEL,
-      temperature: 0,
-      max_tokens: 32,
-      retryCount: 1,
-    });
+    // The backend owns classifier prompt/model policy. This is only reached for ambiguous messages.
+    const raw = await secureClient.classifySafety(message);
     const category = parseCategory(raw);
     if (category) {
       // Log the flag WITHOUT the disclosure text (privacy: no message content).

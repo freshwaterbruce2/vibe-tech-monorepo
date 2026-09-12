@@ -1,9 +1,9 @@
-import { syncService } from '@/services';
 import { logger } from '../utils/logger';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { hydrateBuddyHistory } from '../services/buddyService';
+import { clearBuddyHistory, hydrateBuddyHistory } from '../services/buddyService';
 import { dataStore } from '../services/dataStore';
-import { hydrateTutorHistory } from '../services/tutorService';
+import { clearTutorHistory, hydrateTutorHistory } from '../services/tutorService';
+import { isDevBuild } from '../config';
 import type { ChatMessage } from '../types';
 
 const formatAIResponse = (text: string): string => {
@@ -24,15 +24,17 @@ const formatAIResponse = (text: string): string => {
 };
 
 interface UseChatMessagesProps {
-  title: string;
   type: "tutor" | "friend";
   onSendMessage: (message: string) => Promise<string>;
 }
 
-export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesProps) {
+export function useChatMessages({ type, onSendMessage }: UseChatMessagesProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [historyStatus, setHistoryStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [persistenceError, setPersistenceError] = useState<string | null>(null);
   const [showLifeSkills, setShowLifeSkills] = useState(false);
   const [showSocialTips, setShowSocialTips] = useState(false);
   const [, startTransition] = useTransition();
@@ -51,6 +53,8 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
     typeRef.current = type;
     isLoadingRef.current = true;
     setIsLoading(false);
+    setHistoryStatus('loading');
+    setHistoryError(null);
     setInput('');
     setMessages([]);
     messagesRef.current = [];
@@ -72,9 +76,14 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
           } else {
             hydrateBuddyHistory(validMessages);
           }
+          setHistoryStatus('ready');
         }
       } catch (error) {
         logger.error('Failed to load chat history:', error);
+        if (requestEpochRef.current === epoch) {
+          setHistoryStatus('error');
+          setHistoryError('Your saved chat could not be loaded. Retry before sending a message.');
+        }
       } finally {
         if (requestEpochRef.current === epoch) {
           isLoadingRef.current = false;
@@ -86,32 +95,6 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
-
-  // Memory capture: on session end/unmount, persist a lightweight summary for Android hub sync.
-  useEffect(() => {
-    return () => {
-      try {
-        const count = messagesRef.current.length;
-        if (count <= 0) return;
-
-        const date = new Date().toLocaleDateString();
-        const topic = title ? ` Topic: ${title}.` : '';
-        const summary = `Chat Session: ${date} - ${count} messages exchanged.${topic}`;
-
-        // Fire-and-forget to avoid blocking navigation.
-        void (async () => {
-          try {
-            await syncService.logEvent(summary, ['chat', 'session_end', 'android_client']);
-          } catch (error) {
-            // Never block navigation if SQLite/filesystem is unavailable.
-            logger.warn('SyncService.logEvent failed (non-fatal):', error);
-          }
-        })();
-      } catch (error) {
-        logger.warn('ChatWindow memory capture failed (non-fatal):', error);
-      }
-    };
-  }, [title]);
 
   // Save chat history whenever messages change — but NEVER during a type switch.
   // When type changes, the save effect fires with stale messages from the old type,
@@ -136,6 +119,9 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
           }
         } catch (error) {
           logger.error('Failed to save chat history:', error);
+          if (typeRef.current === type) {
+            setPersistenceError('Your message is visible, but saving it failed. Retry after checking storage.');
+          }
         }
       });
     }
@@ -151,7 +137,7 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
 
   const handleSend = async () => {
     const trimmedInput = input.trim();
-    if (trimmedInput === '' || isLoading) return;
+    if (trimmedInput === '' || isLoading || isLoadingRef.current || historyStatus !== 'ready') return;
 
     const requestEpoch = requestEpochRef.current;
     const requestType = typeRef.current;
@@ -159,6 +145,7 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
     const userMessage: ChatMessage = { role: 'user', content: trimmedInput, timestamp: Date.now() };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
+    setPersistenceError(null);
     setIsLoading(true);
 
     try {
@@ -176,26 +163,31 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
         timestamp: Date.now(),
       };
       setMessages((prev) => [...prev, modelMessage]);
+      setPersistenceError(null);
     } catch (error) {
       if (requestEpochRef.current !== requestEpoch || typeRef.current !== requestType) {
         return;
       }
       logger.error('Chat error:', error);
 
-      const errorMessages = [
-        "I'm having trouble connecting right now. Please try again in a moment.",
-        'Something went wrong on my end. Let me try to help you again.',
-        "I'm experiencing some technical difficulties. Please retry your message.",
-        "Oops! I couldn't process that. Mind giving it another shot?",
-      ];
-
-      const randomError = errorMessages[Math.floor(Math.random() * errorMessages.length)];
-      const errorMessage: ChatMessage = {
-        role: 'model',
-        content: randomError ?? 'Something went wrong. Please try again.',
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      const detail = error instanceof Error ? error.message.trim() : '';
+      if (/quiet hours/i.test(detail)) {
+        setPersistenceError(detail);
+      } else if (/daily .*limit|usage controls|included AI allowance/i.test(detail)) {
+        setPersistenceError(detail);
+      } else if (/401|entitlement|license|unauthorized/i.test(detail)) {
+        const base = 'Google Play purchase could not be verified. Please ensure you are signed in to the Play Store account used to purchase Vibe Tutor.';
+        setPersistenceError(isDevBuild && detail ? `${base} [HTTP 401: ${detail}]` : base);
+      } else if (/ai_unavailable|temporarily unavailable|quota-contention|503/i.test(detail)) {
+        const base = 'The AI service is temporarily busy. Retrying in a moment...';
+        setPersistenceError(isDevBuild && detail ? `${base} [HTTP 503: ${detail}]` : base);
+      } else if (/timeout|abort|network|connection|failed to fetch/i.test(detail)) {
+        const base = 'Trouble connecting to the network. Please check your connection and retry.';
+        setPersistenceError(isDevBuild && detail ? `${base} [Network: ${detail}]` : base);
+      } else {
+        const base = 'The response did not arrive. Your message was not saved as an AI reply; please retry.';
+        setPersistenceError(isDevBuild && detail ? `${base} [Debug: ${detail}]` : base);
+      }
     } finally {
       if (requestEpochRef.current === requestEpoch && typeRef.current === requestType) {
         setIsLoading(false);
@@ -209,12 +201,65 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
     setShowLifeSkills(false);
   };
 
+  const retryHistoryLoad = () => {
+    // A new epoch makes any previous load or reply ineligible to update this chat.
+    requestEpochRef.current += 1;
+    const epoch = requestEpochRef.current;
+    isLoadingRef.current = true;
+    setHistoryStatus('loading');
+    setHistoryError(null);
+    void dataStore
+      .getChatHistory(type)
+      .then((savedMessages) => {
+        if (typeRef.current !== type || requestEpochRef.current !== epoch) return;
+        const validMessages = Array.isArray(savedMessages) ? savedMessages : [];
+        setMessages(validMessages);
+        if (type === 'tutor') hydrateTutorHistory(validMessages);
+        else hydrateBuddyHistory(validMessages);
+        setHistoryStatus('ready');
+      })
+      .catch(() => {
+        if (requestEpochRef.current === epoch) {
+          setHistoryStatus('error');
+          setHistoryError('Your saved chat could not be loaded. Retry before sending a message.');
+        }
+      })
+      .finally(() => {
+        if (requestEpochRef.current === epoch) isLoadingRef.current = false;
+      });
+  };
+
+  const clearChat = async (): Promise<void> => {
+    requestEpochRef.current += 1;
+    const epoch = requestEpochRef.current;
+    const previousMessages = messagesRef.current;
+    setMessages([]);
+    messagesRef.current = [];
+    setPersistenceError(null);
+    try {
+      await dataStore.saveChatHistory(type, []);
+      if (requestEpochRef.current !== epoch || typeRef.current !== type) return;
+      if (type === 'tutor') clearTutorHistory();
+      else clearBuddyHistory();
+    } catch (error) {
+      logger.error('Failed to clear chat history:', error);
+      if (requestEpochRef.current === epoch && typeRef.current === type) {
+        setMessages(previousMessages);
+        messagesRef.current = previousMessages;
+        setPersistenceError('Could not clear this chat. Your messages were restored; please retry.');
+      }
+    }
+  };
+
   return {
     messages,
     setMessages,
     input,
     setInput,
     isLoading,
+    historyStatus,
+    historyError,
+    persistenceError,
     showLifeSkills,
     setShowLifeSkills,
     showSocialTips,
@@ -222,6 +267,8 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
     messagesEndRef,
     handleSend,
     handleAskBuddy,
+    retryHistoryLoad,
+    clearChat,
     startTransition,
   };
 }

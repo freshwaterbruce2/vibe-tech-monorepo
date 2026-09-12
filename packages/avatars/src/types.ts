@@ -1,6 +1,6 @@
 export type AvatarRarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type AvatarStat = 'mathPower' | 'sciencePower' | 'historyPower' | 'logicPower' | 'creativity';
-export type AvatarItemType = 'hat' | 'shirt' | 'accessory' | 'avatar' | 'frame' | 'badge' | 'background' | 'real-reward';
+export type AvatarItemType = 'hat' | 'shirt' | 'accessory' | 'avatar' | 'frame' | 'badge' | 'background';
 
 export interface AvatarCharacter {
   id: string;
@@ -22,8 +22,15 @@ export interface ShopItem {
   rarity?: AvatarRarity;
   twClasses?: string;    // Tailwind classes for frame ring / background gradient overlay
   badgeEmoji?: string;   // Emoji rendered as bottom-right corner badge
-  isRealReward?: boolean;
-  maxQuantity?: number;
+}
+
+export interface AvatarPurchaseIntent {
+  schemaVersion: 1;
+  operationId: string;
+  itemId: string;
+  cost: number;
+  reason: string;
+  createdAt: number;
 }
 
 export interface AvatarState {
@@ -39,4 +46,5 @@ export interface AvatarState {
   ownedItems: string[];
   unlockedAvatars: string[];
   purchaseHistory?: Array<{ itemId: string; date: string; cost: number }>;
+  pendingPurchase?: AvatarPurchaseIntent;
 }

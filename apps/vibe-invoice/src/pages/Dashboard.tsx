@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import { AlertCircle, Download, MoreHorizontal, Plus, RefreshCw } from 'lucide-react'
+import { AlertCircle, Download, MoreHorizontal, Plus, RefreshCw, Sparkles } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -8,6 +8,7 @@ import Card from '../components/common/Card'
 import Navigation from '../components/common/Navigation'
 import RecurringInvoices from '../components/dashboard/RecurringInvoices'
 import RevenueChart from '../components/dashboard/RevenueChart'
+import SmartDraftModal from '../components/invoice/SmartDraftModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useRealtimeInvoices } from '../hooks/useRealtimeInvoices'
 import { invoiceService } from '../services/invoiceService'
@@ -51,7 +52,13 @@ const STATUS_LABELS: Record<InvoiceStatus, string> = {
   overdue: 'Overdue',
 }
 
-const InvoiceActions = ({ invoice }: { invoice: Invoice }) => {
+const InvoiceActions = ({
+  invoice,
+  onOpenSmartDraft,
+}: {
+  invoice: Invoice
+  onOpenSmartDraft: (invoice: Invoice) => void
+}) => {
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const transitions = STATUS_TRANSITIONS[invoice.status]
@@ -83,19 +90,36 @@ const InvoiceActions = ({ invoice }: { invoice: Invoice }) => {
 
   return (
     <div className="ui-actions">
+      {invoice.status === 'overdue' && (
+        <button
+          type="button"
+          className="ui-actions__btn"
+          onClick={() => onOpenSmartDraft(invoice)}
+          title="Generate AI Payment Reminder"
+          aria-label="Generate AI Payment Reminder"
+          style={{
+            color: '#f59e0b',
+            background: 'rgba(245, 158, 11, 0.12)',
+            borderColor: 'rgba(245, 158, 11, 0.3)',
+          }}
+        >
+          <Sparkles size={14} />
+        </button>
+      )}
+
       <button type="button" className="ui-actions__btn" onClick={handlePdf} title="Download PDF" aria-label="Download PDF">
         <Download size={14} />
       </button>
 
-      {transitions.length > 0 && (
+      {(transitions.length > 0 || invoice.status !== 'draft') && (
         <div className="ui-actions__menu">
           <button
             type="button"
             className="ui-actions__btn"
             onClick={() => setOpen((prev) => !prev)}
             disabled={busy}
-            title="Change status"
-            aria-label="Change status"
+            title="Options"
+            aria-label="Options"
           >
             <MoreHorizontal size={14} />
           </button>
@@ -111,6 +135,21 @@ const InvoiceActions = ({ invoice }: { invoice: Invoice }) => {
                   Mark as {STATUS_LABELS[status]}
                 </button>
               ))}
+              {invoice.status !== 'draft' && (
+                <button
+                  key="ai-reminder"
+                  type="button"
+                  className="ui-actions__option"
+                  onClick={() => {
+                    setOpen(false)
+                    onOpenSmartDraft(invoice)
+                  }}
+                  style={{ color: '#667eea', fontWeight: 500 }}
+                >
+                  <Sparkles size={12} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle' }} />
+                  AI Reminder Draft
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -121,6 +160,7 @@ const InvoiceActions = ({ invoice }: { invoice: Invoice }) => {
 
 const Dashboard = () => {
   const { user } = useAuth()
+  const [activeReminderInvoice, setActiveReminderInvoice] = useState<Invoice | null>(null)
 
   const { invoices, loading, error, retry, totals } = useRealtimeInvoices()
   const [retrying, setRetrying] = useState(false)
@@ -242,7 +282,10 @@ const Dashboard = () => {
                       ) : null}
                     </span>
                     <span className="ui-text-right">
-                      <InvoiceActions invoice={invoice} />
+                      <InvoiceActions
+                        invoice={invoice}
+                        onOpenSmartDraft={setActiveReminderInvoice}
+                      />
                     </span>
                   </div>
                 )
@@ -251,6 +294,14 @@ const Dashboard = () => {
           )}
         </Card>
       </main>
+
+      {activeReminderInvoice && (
+        <SmartDraftModal
+          invoice={activeReminderInvoice}
+          isOpen={Boolean(activeReminderInvoice)}
+          onClose={() => setActiveReminderInvoice(null)}
+        />
+      )}
     </div>
   )
 }

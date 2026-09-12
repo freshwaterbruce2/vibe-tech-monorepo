@@ -1,137 +1,31 @@
-# Privacy Policy for Vibe Tutor
+# Vibe Tutor Privacy Policy
 
-**Effective Date:** March 9, 2026  
-**Last Updated:** March 9, 2026
+Effective 2026-08-23
 
 ## Overview
 
-Vibe Tutor is an educational app from **VibeTech**. It helps users study, manage assignments, use optional AI tutoring features, and access optional audio features such as internet radio. This Privacy Policy explains how Vibe Tutor accesses, stores, uses, and shares data.
+Vibe Tutor is a teen-focused educational app for ages 13–17. It provides organization, study, gaming-themed rewards, and optional AI chats. It is not medical care and does not diagnose or treat a condition.
 
-Vibe Tutor is intended for users age 13 and older and is not directed to children under 13.
+## Purchase and AI allowance
 
-## Who We Are
+The proposed United States release, if separately approved, is a $2.99 one-time purchase. It includes up to 200 successful Tutor or Buddy AI responses per UTC calendar month, with a maximum of 30 successful responses per UTC day. Core non-AI features remain available when the allowance is used. Pricing and distribution are not yet live.
 
-- **Developer:** VibeTech
-- **App:** Vibe Tutor
-- **Privacy Contact:** freshwaterbruce2@gmail.com
+## AI, safety, and licensing
 
-## Data We Access, Collect, Use, and Share
+When you use Tutor or Buddy, message text and needed conversation context are sent to our backend and an AI infrastructure/provider to generate a response. The backend runs a local crisis check first. Only locally ambiguous safety requests may be sent for separate safety classification; ordinary messages are not classified twice.
 
-### Data stored locally on your device
+We use Google Play Integrity and licensing verdicts to help confirm that the app was obtained through Play. We derive a pseudonymous installation and quota identifier using a one-way keyed hash; we do not put the raw installation identifier in session tokens.
 
-Vibe Tutor stores educational and app data locally on your device. Depending on platform, this may be stored in local browser storage, app storage, or SQLite databases.
+## Data, retention, and controls
 
-Examples include:
+Vibe Tutor does not create app accounts. Study data, settings, and chat history are stored locally until you clear app data or uninstall. Optional voice input may create transcript text through your device or speech service; Vibe Tutor sends transcript text, not microphone audio, only for the feature you choose.
 
-- homework and assignment entries
-- progress and learning-session records
-- rewards, achievements, and points
-- schedules, preferences, and parent-control settings
-- chat history saved locally in the app
-- local export files you choose to create
+Routine operational data is minimized and does not include chat text. Reports store pseudonymous metadata by default. Report text is included only when you explicitly choose to attach it, is restricted to support handling, and carries a 30-day expiration timestamp. Automatic deletion depends on the configured cloud retention enforcement, which has not yet been verified for this release.
 
-### Data sent to our backend and service providers
+## Sharing and choices
 
-When you use networked features, Vibe Tutor sends limited data off-device.
+We use hosting, AI infrastructure/providers, Google Play Integrity, and optional audio providers only to provide the selected feature. We do not sell personal data and do not serve ads. You can avoid optional AI and voice features, clear local app data, or uninstall the app. Data Management export, import, and reset workflows are still being completed and must not be treated as a verified device-file backup or restore service.
 
-This can include:
+## Changes and contact
 
-- chat prompts and related conversation context when you use AI chat or tutoring features
-- homework transcript text when you use voice homework entry and choose to send the resulting transcript for parsing
-- temporary session tokens used to authorize app requests
-- pseudonymous analytics and operational event data, such as feature events, model usage metrics, and request timing
-- radio-stream request information needed to fetch or proxy audio streams
-
-### Microphone and voice input
-
-If you choose to use voice input, Vibe Tutor may request microphone access. On supported platforms, microphone audio may first be processed by your browser, operating system, or speech-recognition provider to create transcript text. Vibe Tutor then uses that transcript text to help structure homework details. Typed input remains available if you do not want to use voice input.
-
-### Files and storage access
-
-On some platforms, Vibe Tutor may request media or file-storage access for user-initiated local export, sync, or audio-related features. These permissions are optional and feature-specific.
-
-## Third Parties We Share Data With
-
-Vibe Tutor shares data only as needed to provide app features.
-
-Current categories of third parties include:
-
-- **AI providers**, including Google Gemini and OpenRouter, for AI tutoring, chat, and structured homework parsing
-- **audio and radio providers**, such as Jamendo and radio-stream hosts, when you use audio features
-- **hosting and infrastructure providers** that run the app backend and related services
-
-We do **not** sell personal data.
-
-## Data We Do Not Intentionally Collect as Account Identity
-
-Vibe Tutor does not require account registration to use core features. We do not intentionally require users to provide:
-
-- full name
-- email address for account creation
-- phone number
-- precise device location
-- contacts
-- SMS or call logs
-
-## How We Use Data
-
-We use data to:
-
-- provide tutoring, homework, and study-support features
-- save progress, preferences, and local settings
-- support optional voice-entry workflows
-- support optional radio and audio playback
-- maintain app security, session management, and abuse prevention
-- troubleshoot reliability and improve feature quality
-
-## Retention
-
-- **Local device data:** remains on your device until you delete it, uninstall the app, clear app storage, or use in-app data-clearing tools.
-- **Session tokens:** are temporary and expire automatically.
-- **Backend operational logs and analytics events:** may be retained for limited operational, debugging, and reliability purposes.
-- **AI provider handling:** prompts and responses sent to third-party AI providers may be retained and processed under those providers' own terms and privacy policies.
-
-Vibe Tutor does not maintain long-term user account profiles for general app usage.
-
-## Deletion and User Controls
-
-You can delete local Vibe Tutor data from the app through **Settings -> Data Management -> Clear All Data** when that option is available on your platform.
-
-You can also:
-
-- decline optional microphone use
-- avoid optional AI features
-- avoid optional radio and streaming features
-- remove the app and its local storage from your device
-
-Because Vibe Tutor generally does not require user accounts, deletion requests are primarily handled through device-side data removal rather than account-based deletion workflows.
-
-## Security
-
-We use reasonable measures designed to protect data, including:
-
-- HTTPS/TLS for supported network communications
-- temporary session tokens for backend access
-- in-app controls for sensitive settings
-- rate limiting and content-safety controls on backend AI endpoints
-
-No method of transmission or storage is completely secure, and we cannot guarantee absolute security.
-
-## International and Third-Party Processing
-
-If you use AI, radio, or hosted backend features, your data may be processed by third-party services that operate in different jurisdictions. Those providers' terms and privacy policies may also apply.
-
-## Age Scope
-
-Vibe Tutor is intended for users **13 and older** and is **not directed to children under 13**. If you believe a child under 13 has provided personal information through the app, contact us at freshwaterbruce2@gmail.com so we can review the issue.
-
-## Changes to This Policy
-
-We may update this Privacy Policy from time to time. When we do, we will update the date at the top of this page.
-
-## Contact
-
-If you have questions about this Privacy Policy, contact:
-
-- **VibeTech**
-- **Email:** freshwaterbruce2@gmail.com
+We will update this policy when practices change. Contact VibeTech at freshwaterbruce2@gmail.com with privacy questions.

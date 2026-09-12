@@ -1,12 +1,15 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
     "noEmit": true,
+    "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
@@ -15,11 +18,14 @@
         "name": "next"
       }
     ],
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@vibetech/avatar-render-engine": ["../../packages/avatar-render-engine/src/index.ts"],
-      "@vibetech/avatar-render-engine/constants": ["../../packages/avatar-render-engine/src/compositions/constants.ts"]
+      "@vibetech/ai-client": ["./src/shared/ai-client/index.ts"],
+      "@vibetech/avatar-render-engine": ["./src/shared/avatar-render-engine/index.ts"],
+      "@vibetech/avatar-render-engine/constants": [
+        "./src/shared/avatar-render-engine/compositions/constants.ts"
+      ],
+      "@vibetech/db-app": ["./src/shared/db-app/index.ts"]
     },
     "noUnusedLocals": false,
     "noUnusedParameters": false
@@ -39,10 +45,5 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx"
-  ],
-  "references": [
-    {
-      "path": "../../packages/shared-config"
-    }
   ]
 }

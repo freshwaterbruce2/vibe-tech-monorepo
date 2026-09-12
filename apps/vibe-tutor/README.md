@@ -28,22 +28,22 @@
 
 **Prerequisites:** Node.js 22+ and pnpm 10.33+ from the workspace root.
 
-1. **Install dependencies:**
+1. **Open the workspace:**
 
    ```powershell
-   cd V:\monorepo
-   pnpm install
+   cd C:\projects\vibe-tech-monorepo
    ```
 
 2. **Set up environment:**
-   Create `.env.local` and add your backend AI provider keys:
+   Configure backend-only secrets outside the client and outside this checkout.
+   Use the server-side examples as field names only; do not place keys in
+   `.env.local`, browser configuration, or Capacitor configuration.
 
    ```
-   GEMINI_API_KEY=your_gemini_api_key_here
-   OPENROUTER_API_KEY=your_openrouter_api_key_here
+   OPENROUTER_API_KEY=server-side-only
    ```
 
-3. **Run the app:**
+3. **Run the local web app:**
 
    ```powershell
    pnpm nx run vibe-tutor:dev
@@ -54,7 +54,7 @@
 
 ## 🎯 Features
 
-- **AI Homework Assistant**: Voice-to-text homework parsing with Gemini (primary) and OpenRouter fallback
+- **AI Tutor and Buddy**: Optional backend-managed teen study and social-support chats; production routing and allowances are documented in `render-backend/README.md`.
 - **Smart Dashboard**: Glass-morphic interface with animated task cards
 - **Achievement System**: Gamified learning with 3D badges and progress tracking
 - **AI Tutor & AI Buddy**: Separate chat contexts for homework help and friendly conversation
@@ -64,7 +64,7 @@
 
 ## 🔒 Kiosk Mode (Single-App Lockdown)
 
-Turn your child's device into a **dedicated study device** by locking it to only run Vibe-Tutor. Perfect for focused learning without distractions.
+Turn a study device into a **dedicated study device** by locking it to only run Vibe-Tutor. Useful for focused learning without distractions.
 
 **Available Methods:**
 
@@ -82,11 +82,12 @@ Turn your child's device into a **dedicated study device** by locking it to only
 
 ## 📱 Mobile Deployment
 
-For installing Vibe-Tutor as a native Android app, see:
+Android signing, Gradle, device/ADB, hosting, Play Console, pricing, upload,
+submission, and publication are held for separate approval. For the current
+readiness boundary, see:
 
-- **[docs/ANDROID_INSTALL_INSTRUCTIONS.md](docs/ANDROID_INSTALL_INSTRUCTIONS.md)** - Build and install APK
-- **[docs/ANDROID_RELEASE_RUNBOOK.md](docs/ANDROID_RELEASE_RUNBOOK.md)** - Release build flow
-- **[docs/MOBILE-TROUBLESHOOTING.md](docs/MOBILE-TROUBLESHOOTING.md)** - Common Android issues
+- **[docs/ANDROID_RELEASE_RUNBOOK.md](docs/ANDROID_RELEASE_RUNBOOK.md)** - Held prerequisites
+- **[docs/PLAY_STORE_CHECKLIST.md](docs/PLAY_STORE_CHECKLIST.md)** - Held external checklist
 
 ## 📚 Documentation
 

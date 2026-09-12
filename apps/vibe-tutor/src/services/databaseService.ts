@@ -1,14 +1,13 @@
-﻿/**
+/**
  * Database Service for Vibe Tutor
- * Manages SQLite database on D: drive for persistent data storage
- * Uses @capacitor-community/sqlite for cross-platform support
+ * Manages app-local SQLite storage through Capacitor on supported platforms.
  */
 
 import { logger } from '../utils/logger';
 import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { Capacitor } from '@capacitor/core';
 
-import type { HomeworkItem, LearningSession } from '../types';
+import type { FocusSession, HomeworkItem, LearningSession } from '../types';
 import { appStore } from '../utils/electronStore';
 
 import { migrationService } from './migrationService';
@@ -23,10 +22,61 @@ export interface UserProgressRecord {
   difficulty_level?: string;
 }
 
-// Database path on D: drive for Windows (matches MCP server config)
-// Platform-aware path: Use sandbox for mobile, D: for desktop dev
+// The Capacitor SQLite plugin selects the app-local storage location.
 const DATABASE_NAME = 'vibe-tutor.db';
 const DATABASE_VERSION = 1;
+const HOMEWORK_ID = /^[\x21-\x7e]{1,160}$/;
+const HOMEWORK_TEXT = /^(?=.*\S)[\x20-\x7e]{1,500}$/;
+const FOCUS_ID = /^[\x21-\x7e]{1,160}$/;
+
+function assertFocus(session: FocusSession): void {
+  if (
+    typeof session.id !== 'string' ||
+    !FOCUS_ID.test(session.id) ||
+    !Number.isSafeInteger(session.startTime) ||
+    session.startTime < 0 ||
+    session.endTime === undefined ||
+    !Number.isSafeInteger(session.endTime) ||
+    session.endTime < session.startTime ||
+    !Number.isSafeInteger(session.duration) ||
+    session.duration <= 0 ||
+    session.completed !== true ||
+    (session.points !== undefined && (!Number.isSafeInteger(session.points) || session.points < 0))
+  )
+    throw new Error('Focus session is malformed');
+}
+
+function assertHomework(item: HomeworkItem): void {
+  const parts =
+    typeof item.dueDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.dueDate)
+      ? item.dueDate.split('-').map(Number)
+      : null;
+  const [year, month, day] = parts ?? [];
+  const leap = year !== undefined && year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (
+    typeof item.id !== 'string' ||
+    typeof item.subject !== 'string' ||
+    typeof item.title !== 'string' ||
+    typeof item.dueDate !== 'string' ||
+    !HOMEWORK_ID.test(item.id) ||
+    !HOMEWORK_TEXT.test(item.subject) ||
+    !HOMEWORK_TEXT.test(item.title) ||
+    !year ||
+    year < 1 ||
+    year > 9999 ||
+    !month ||
+    month < 1 ||
+    month > 12 ||
+    !day ||
+    day < 1 ||
+    day > days[month - 1]! ||
+    typeof item.completed !== 'boolean' ||
+    (item.completedDate !== undefined &&
+      (!Number.isSafeInteger(item.completedDate) || item.completedDate < 0 || !item.completed))
+  )
+    throw new Error('Homework item is malformed');
+}
 
 export class DatabaseService {
   private sqlite: SQLiteConnection;
@@ -75,10 +125,8 @@ export class DatabaseService {
           }
         } catch (e) {
           logger.warn('[Database] Corruption detected or check failed. Initiating restore...', e);
-          // Close the corrupt connection.
-          await db.close();
-          await this.sqlite.closeConnection(DATABASE_NAME, false);
-          this.db = null;
+          // Close the corrupt connection without obscuring the integrity error.
+          await this.closeUnusableConnection(db);
 
           // Restore the source-of-truth (localStorage) from the migration backup.
           await migrationService.restoreFromBackup();
@@ -127,9 +175,9 @@ export class DatabaseService {
   }
 
   /**
-   * Create-or-retrieve the SQLite connection, open it, and apply the
-   * WAL + busy-timeout pragmas. Extracted so both the initial open and the
-   * corruption-recovery path use the exact same connection setup.
+   * Create-or-retrieve the SQLite connection and verify its nontransactional
+   * WAL + busy-timeout configuration. Both initial and recovery opens use this
+   * exact path so a returned connection is known durable before use.
    */
   private async openConnection(): Promise<void> {
     const checkConsistency = await this.sqlite.checkConnectionsConsistency();
@@ -147,16 +195,78 @@ export class DatabaseService {
       );
     }
 
-    await this.db.open();
-
-    // Concurrency + durability: App.tsx, several hooks and dashboard panels all
-    // trigger initialization in parallel against this single connection. WAL +
-    // a busy timeout prevent SQLITE_BUSY on the main app DB.
+    const db = this.db;
+    if (!db) throw new Error('Database connection failed to open');
     try {
-      await this.db.execute('PRAGMA journal_mode=WAL;');
-      await this.db.execute('PRAGMA busy_timeout=5000;');
-    } catch (pragmaError) {
-      logger.warn('[Database] Failed to apply WAL/busy_timeout pragmas:', pragmaError);
+      await db.open();
+      await this.configureDurabilityPragmas(db);
+    } catch (error) {
+      await this.closeUnusableConnection(db);
+      throw error;
+    }
+  }
+
+  private parseBusyTimeoutMs(row: Record<string, unknown> | undefined): number {
+    const raw =
+      row?.['timeout'] ??
+      row?.['busy_timeout'] ??
+      (row ? Object.values(row)[0] : undefined);
+    if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+    if (typeof raw === 'string' && /^\d+$/.test(raw)) return Number(raw);
+    return Number.NaN;
+  }
+
+  private async configureDurabilityPragmas(db: SQLiteDBConnection): Promise<void> {
+    // Android SQLiteDatabase rejects PRAGMA via execSQL/execute when it returns rows.
+    // Keep journal_mode on query (rawQuery). For busy_timeout: non-transactional execute
+    // applies the setter on Capacitor/SQLCipher; also run the assignment via query so
+    // platforms that only accept PRAGMA setters through rawQuery still apply it, and so
+    // we can use the assignment result if a later readback column shape differs.
+    await db.query('PRAGMA journal_mode=WAL;');
+
+    let busyTimeoutAssignRow: Record<string, unknown> | undefined;
+    try {
+      await db.execute('PRAGMA busy_timeout=5000;', false);
+    } catch {
+      // execSQL rejects some returning PRAGMAs — assignment query below is the fallback.
+    }
+    const busyTimeoutAssignResult = await db.query('PRAGMA busy_timeout=5000;');
+    busyTimeoutAssignRow = busyTimeoutAssignResult.values?.[0] as
+      | Record<string, unknown>
+      | undefined;
+
+    const journalModeResult = await db.query('PRAGMA journal_mode;');
+    const journalMode = journalModeResult.values?.[0]?.['journal_mode'];
+    if (typeof journalMode !== 'string' || journalMode.toLowerCase() !== 'wal') {
+      throw new Error('SQLite journal_mode readback was not WAL');
+    }
+
+    const busyTimeoutResult = await db.query('PRAGMA busy_timeout;');
+    // SQLite names this result column "timeout" (pragma.h COLS); wrappers may use
+    // "busy_timeout" or an unnamed first cell. Fall back to the assignment query row.
+    let parsedBusyTimeout = this.parseBusyTimeoutMs(
+      busyTimeoutResult.values?.[0] as Record<string, unknown> | undefined,
+    );
+    if (!Number.isFinite(parsedBusyTimeout) || parsedBusyTimeout < 5000) {
+      parsedBusyTimeout = this.parseBusyTimeoutMs(busyTimeoutAssignRow);
+    }
+    if (!Number.isFinite(parsedBusyTimeout) || parsedBusyTimeout < 5000) {
+      throw new Error('SQLite busy_timeout readback was below 5000ms');
+    }
+  }
+
+  private async closeUnusableConnection(db: SQLiteDBConnection | null): Promise<void> {
+    try {
+      await db?.close();
+    } catch (closeError) {
+      logger.warn('[Database] Failed to close unusable connection:', closeError);
+    }
+    try {
+      await this.sqlite.closeConnection(DATABASE_NAME, false);
+    } catch (closeConnectionError) {
+      logger.warn('[Database] Failed to release unusable connection:', closeConnectionError);
+    } finally {
+      if (this.db === db) this.db = null;
     }
   }
 
@@ -174,6 +284,7 @@ export class DatabaseService {
         title TEXT NOT NULL,
         due_date TEXT NOT NULL,
         completed INTEGER DEFAULT 0,
+        completed_date INTEGER,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`,
@@ -209,6 +320,9 @@ export class DatabaseService {
         duration_minutes INTEGER,
         focus_score INTEGER,
         tasks_completed INTEGER,
+        external_id TEXT UNIQUE,
+        started_at INTEGER,
+        ended_at INTEGER,
         session_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`,
 
@@ -237,6 +351,14 @@ export class DatabaseService {
     for (const schema of schemas) {
       await this.db.execute(schema);
     }
+    await this.ensureColumn('homework_items', 'completed_date', 'INTEGER');
+    await this.ensureColumn('learning_sessions', 'external_id', 'TEXT');
+    await this.ensureColumn('learning_sessions', 'started_at', 'INTEGER');
+    await this.ensureColumn('learning_sessions', 'ended_at', 'INTEGER');
+    await this.db.execute(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_learning_sessions_external_id ON learning_sessions(external_id)',
+      false,
+    );
 
     // Create indexes for frequently-queried columns (performance optimization)
     const indexes = [
@@ -253,6 +375,17 @@ export class DatabaseService {
     for (const index of indexes) {
       await this.db.execute(index);
     }
+  }
+
+  private async ensureColumn(
+    table: 'homework_items' | 'learning_sessions',
+    column: string,
+    type: string,
+  ) {
+    if (!this.db) throw new Error('Database not connected');
+    const result = await this.db.query(`PRAGMA table_info(${table})`);
+    if ((result.values ?? []).some((row) => row.name === column)) return;
+    await this.db.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`, false);
   }
 
   /**
@@ -294,39 +427,85 @@ export class DatabaseService {
   }
 
   // CRUD Operations for Homework Items
-  async saveHomeworkItem(item: HomeworkItem): Promise<void> {
+  async saveHomeworkItem(item: HomeworkItem, transaction = true): Promise<void> {
     if (!this.db) throw new Error('Database not connected');
+    assertHomework(item);
 
     const query = `
-      INSERT OR REPLACE INTO homework_items
-      (id, subject, title, due_date, completed)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO homework_items (id, subject, title, due_date, completed, completed_date)
+      SELECT ?, ?, ?, ?, ?, ?
+      WHERE EXISTS (SELECT 1 FROM homework_items WHERE id = ?)
+         OR (SELECT COUNT(*) FROM homework_items) < ?
+      ON CONFLICT(id) DO UPDATE SET
+        subject = excluded.subject, title = excluded.title, due_date = excluded.due_date,
+        completed = excluded.completed, completed_date = excluded.completed_date
     `;
 
-    await this.db.run(query, [
-      item.id,
-      item.subject,
-      item.title,
-      item.dueDate,
-      item.completed ? 1 : 0,
-    ]);
+    const result = await this.db.run(
+      query,
+      [
+        item.id,
+        item.subject,
+        item.title,
+        item.dueDate,
+        item.completed ? 1 : 0,
+        item.completedDate ?? null,
+        item.id,
+        500,
+      ],
+      transaction,
+    );
+    if (result.changes?.changes !== 1) throw new Error('Homework write was not verified or exceeded the safe limit');
   }
 
   async getHomeworkItems(): Promise<HomeworkItem[]> {
     if (!this.db) throw new Error('Database not connected');
 
     const result = await this.db.query(`
-      SELECT id, subject, title, due_date as dueDate,
-             CASE WHEN completed = 1 THEN true ELSE false END as completed
+      SELECT id, subject, title, due_date as dueDate, completed,
+             completed_date as completedDate
       FROM homework_items
       ORDER BY due_date ASC
     `);
 
-    return (result.values as HomeworkItem[]) ?? [];
+    if (result.values !== undefined && !Array.isArray(result.values))
+      throw new Error('Stored homework rows are malformed');
+    const rows = result.values ?? [];
+    if (rows.length > 500) throw new Error('Stored homework rows are malformed');
+    const ids = new Set<string>();
+    return rows.map((row) => {
+      if (!row || typeof row !== 'object' || Array.isArray(row))
+        throw new Error('Stored homework rows are malformed');
+      const completedDate = row.completedDate;
+      if (
+        row.completed !== 0 &&
+        row.completed !== 1 &&
+        row.completed !== true &&
+        row.completed !== false
+      )
+        throw new Error('Stored homework completion is malformed');
+      if (
+        completedDate !== null &&
+        completedDate !== undefined &&
+        !Number.isSafeInteger(completedDate)
+      ) {
+        throw new Error('Stored homework completion date is malformed');
+      }
+      const { completedDate: _ignoredCompletedDate, ...base } = row;
+      const item = {
+        ...base,
+        completed: row.completed === true || row.completed === 1,
+        ...(completedDate === null || completedDate === undefined ? {} : { completedDate }),
+      } as HomeworkItem;
+      if (ids.has(item.id)) throw new Error('Stored homework rows are malformed');
+      ids.add(item.id);
+      assertHomework(item);
+      return item;
+    });
   }
 
   // Learning Analytics Operations
-  async recordLearningSession(session: LearningSession): Promise<void> {
+  async recordLearningSession(session: LearningSession): Promise<number> {
     if (!this.db) throw new Error('Database not connected');
 
     const query = `
@@ -335,12 +514,55 @@ export class DatabaseService {
       VALUES (?, ?, ?, ?)
     `;
 
-    await this.db.run(query, [
+    const result = await this.db.run(query, [
       session.type,
       session.duration,
       session.focusScore,
       session.tasksCompleted,
     ]);
+    const lastId = result.changes?.lastId;
+    if (typeof lastId !== 'number' || !Number.isSafeInteger(lastId) || lastId <= 0) {
+      throw new Error('Learning session insert did not return a verified positive lastId');
+    }
+    return lastId;
+  }
+
+  async saveFocusSession(session: FocusSession): Promise<FocusSession> {
+    if (!this.db) throw new Error('Database not connected');
+    assertFocus(session);
+    const result = await this.db.run(
+      `INSERT INTO learning_sessions
+       (session_type, duration_minutes, focus_score, tasks_completed, external_id, started_at, ended_at)
+       SELECT ?, ?, ?, ?, ?, ?, ?
+       WHERE EXISTS (
+         SELECT 1 FROM learning_sessions
+         WHERE external_id = ? AND session_type = 'focus'
+       ) OR (
+         (SELECT COUNT(*) FROM learning_sessions WHERE session_type = 'focus') < ?
+         AND NOT EXISTS (SELECT 1 FROM learning_sessions WHERE external_id = ?)
+       )
+       ON CONFLICT(external_id) DO UPDATE SET
+         duration_minutes = excluded.duration_minutes,
+         focus_score = excluded.focus_score,
+         started_at = excluded.started_at,
+         ended_at = excluded.ended_at
+       WHERE learning_sessions.session_type = 'focus'`,
+      [
+        'focus',
+        session.duration,
+        session.points ?? 0,
+        0,
+        session.id,
+        session.startTime,
+        session.endTime,
+        session.id,
+        500,
+        session.id,
+      ],
+    );
+    if (result.changes?.changes !== 1)
+      throw new Error('Focus write was not verified or exceeded the safe limit');
+    return { ...session };
   }
 
   async getUserProgress(subject?: string): Promise<UserProgressRecord[]> {

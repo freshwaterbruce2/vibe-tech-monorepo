@@ -23,7 +23,6 @@ import {
 } from './brainGymHelpers';
 import type {
   BrainGymHubProps,
-  GamePerformanceStats,
   GameTarget,
   GroupARecommendationConfig,
   HubStats,
@@ -42,14 +41,21 @@ export function useBrainGymState(props: BrainGymHubProps) {
   const [showChestAnimation, setShowChestAnimation] = useState(false);
   const gameStartRef = useRef(0);
   const continuousGameTokensRef = useRef(0);
+  const gameSessionIdRef = useRef<string | null>(null);
+  const continuousAwardOrdinalRef = useRef(0);
+  const continuousOperationIdsRef = useRef(new Map<string, string>());
 
   useEffect(() => {
     if (activeGame) {
       gameStartRef.current = Date.now();
       continuousGameTokensRef.current = 0;
+      continuousAwardOrdinalRef.current = 0;
+      continuousOperationIdsRef.current.clear();
+      gameSessionIdRef.current = `brain-gym:${todayKey}:${activeGame}:${stats.gamesPlayed + 1}`;
     } else {
       gameStartRef.current = 0;
       continuousGameTokensRef.current = 0;
+      gameSessionIdRef.current = null;
     }
   }, [activeGame]);
 
@@ -129,13 +135,13 @@ export function useBrainGymState(props: BrainGymHubProps) {
 
   /* ---------- Game complete handler ---------- */
   const handleGameComplete = useCallback(
-    (
+    async (
       gameId: string,
       score: number,
       stars: number,
       timeSpent?: number,
       options?: { awardHubTokens?: boolean; autoCloseDelayMs?: number },
-    ) => {
+    ): Promise<void> => {
       const game = GAMES.find((g) => g.id === gameId);
       if (!game) return;
       const awardHubTokens = options?.awardHubTokens ?? true;
@@ -144,88 +150,55 @@ export function useBrainGymState(props: BrainGymHubProps) {
         timeSpent ?? (gameStartRef.current ? globalThis.Math.floor((Date.now() - gameStartRef.current) / 1000) : undefined);
       const streakMultiplier = 1 + stats.streak * 0.1;
       let completionTokens = continuousGameTokensRef.current;
+      const sessionId = gameSessionIdRef.current;
+      if (!sessionId) return;
       if (awardHubTokens) {
         completionTokens = calculateStandardGameTokens(gameId, stars, { streakMultiplier });
-        onEarnTokens(completionTokens, `Played ${game.name}`);
+        if (!await onEarnTokens(completionTokens, `Played ${game.name}`, `${sessionId}:completion`)) return;
       }
-      onGameCompleted?.(gameId, score, {
-        source: 'brain-gym',
-        stars,
-        timeSpent: completionTime,
-        subject: GAME_SUBJECT_MAP[gameId] ?? 'General',
-        tokensEarned: completionTokens,
-      });
-      setStats((prev) => {
-        const today = new Date().toISOString().split('T')[0] ?? '';
-        const newStreak = isToday(prev.lastPlayDate)
-          ? prev.streak
-          : prev.lastPlayDate === new Date(Date.now() - 86400_000).toISOString().split('T')[0]
-            ? prev.streak + 1
-            : 1;
-        const newXp = prev.xp + XP_PER_GAME;
-        const newLevel = globalThis.Math.floor(newXp / XP_PER_LEVEL);
-        const newChestProgress = prev.chestProgress + 1;
-        const chestUnlocked = newChestProgress >= CHEST_THRESHOLD;
-        const prevDailyProgress = prev.dailyGoalDate === today ? prev.dailyGoalProgress : 0;
-        const newDailyProgress = prevDailyProgress + 1;
-        const dailyAlreadyAwarded = prev.dailyGoalCompletedOn === today;
-        const dailyCompletedNow = newDailyProgress >= DAILY_GOAL_TARGET && !dailyAlreadyAwarded;
-        const prevGame = getGameStats(prev, gameId);
-        const updatedGame: GamePerformanceStats = {
-          plays: prevGame.plays + 1,
-          bestScore: globalThis.Math.max(prevGame.bestScore, score),
-          bestStars: globalThis.Math.max(prevGame.bestStars, stars),
-          lastPlayedDate: today,
-          lastTokens: completionTokens,
-          totalTokens: prevGame.totalTokens + completionTokens,
-          fastestTime:
-            completionTime && completionTime > 0
-              ? prevGame.fastestTime === null
-                ? completionTime
-                : globalThis.Math.min(prevGame.fastestTime, completionTime)
-              : prevGame.fastestTime,
-        };
-        const updated: HubStats = {
-          xp: newXp,
-          level: newLevel,
-          streak: newStreak,
-          lastPlayDate: today,
-          gamesPlayed: prev.gamesPlayed + 1,
-          chestsOpened: chestUnlocked ? prev.chestsOpened + 1 : prev.chestsOpened,
-          chestProgress: chestUnlocked ? 0 : newChestProgress,
-          dailyGoalDate: today,
-          dailyGoalProgress: newDailyProgress,
-          dailyGoalCompletedOn: dailyCompletedNow || dailyAlreadyAwarded ? today : prev.dailyGoalCompletedOn,
-          gameStats: { ...prev.gameStats, [gameId]: updatedGame },
-        };
-        saveStats(updated);
-        if (chestUnlocked) {
-          setShowChestAnimation(true);
-          onEarnTokens(50, 'Chest unlocked');
-          setTimeout(() => setShowChestAnimation(false), 3000);
-        }
-        if (dailyCompletedNow) onEarnTokens(DAILY_GOAL_BONUS, 'Daily Brain Gym goal');
-        if (newStreak === 3) onEarnTokens(TOKEN_REWARDS.THREE_DAY_STREAK, '3-day streak bonus');
-        if (newStreak === 7) onEarnTokens(TOKEN_REWARDS.SEVEN_DAY_STREAK, '7-day streak bonus');
-        if (newStreak === 30) onEarnTokens(TOKEN_REWARDS.THIRTY_DAY_STREAK, '30-day streak bonus');
-        return updated;
-      });
+      const previous = stats;
+      const today = new Date().toISOString().split('T')[0] ?? '';
+      const newStreak = isToday(previous.lastPlayDate) ? previous.streak : previous.lastPlayDate === new Date(Date.now() - 86400_000).toISOString().split('T')[0] ? previous.streak + 1 : 1;
+      const newChestProgress = previous.chestProgress + 1;
+      const chestUnlocked = newChestProgress >= CHEST_THRESHOLD;
+      const newDailyProgress = (previous.dailyGoalDate === today ? previous.dailyGoalProgress : 0) + 1;
+      const dailyCompletedNow = newDailyProgress >= DAILY_GOAL_TARGET && previous.dailyGoalCompletedOn !== today;
+      const bonusAwards: Array<[number, string, string]> = [];
+      if (chestUnlocked) bonusAwards.push([50, 'Chest unlocked', `${sessionId}:chest:${previous.chestsOpened + 1}`]);
+      if (dailyCompletedNow) bonusAwards.push([DAILY_GOAL_BONUS, 'Daily Brain Gym goal', `${sessionId}:daily:${today}`]);
+      if ([3, 7, 30].includes(newStreak)) bonusAwards.push([newStreak === 3 ? TOKEN_REWARDS.THREE_DAY_STREAK : newStreak === 7 ? TOKEN_REWARDS.SEVEN_DAY_STREAK : TOKEN_REWARDS.THIRTY_DAY_STREAK, `${newStreak}-day streak bonus`, `${sessionId}:streak:${today}:${newStreak}`]);
+      for (const [amount, reason, operationId] of bonusAwards) if (!await onEarnTokens(amount, reason, operationId)) return;
+      const prevGame = getGameStats(previous, gameId);
+      const updated: HubStats = {
+        xp: previous.xp + XP_PER_GAME, level: globalThis.Math.floor((previous.xp + XP_PER_GAME) / XP_PER_LEVEL), streak: newStreak, lastPlayDate: today,
+        gamesPlayed: previous.gamesPlayed + 1, chestsOpened: chestUnlocked ? previous.chestsOpened + 1 : previous.chestsOpened, chestProgress: chestUnlocked ? 0 : newChestProgress,
+        dailyGoalDate: today, dailyGoalProgress: newDailyProgress, dailyGoalCompletedOn: dailyCompletedNow || previous.dailyGoalCompletedOn === today ? today : previous.dailyGoalCompletedOn,
+        gameStats: { ...previous.gameStats, [gameId]: { plays: prevGame.plays + 1, bestScore: globalThis.Math.max(prevGame.bestScore, score), bestStars: globalThis.Math.max(prevGame.bestStars, stars), lastPlayedDate: today, lastTokens: completionTokens, totalTokens: prevGame.totalTokens + completionTokens, fastestTime: completionTime && completionTime > 0 ? (prevGame.fastestTime === null ? completionTime : globalThis.Math.min(prevGame.fastestTime, completionTime)) : prevGame.fastestTime } },
+      };
+      saveStats(updated);
+      setStats(updated);
+      if (chestUnlocked) {
+        setShowChestAnimation(true);
+        setTimeout(() => setShowChestAnimation(false), 3000);
+      }
+      onGameCompleted?.(gameId, score, { source: 'brain-gym', stars, timeSpent: completionTime, subject: GAME_SUBJECT_MAP[gameId] ?? 'General', tokensEarned: completionTokens });
       setTimeout(() => {
         setActiveGame(null);
         setActiveGameLaunchConfig({});
       }, autoCloseDelayMs);
     },
-    [onEarnTokens, onGameCompleted, stats.streak],
+    [onEarnTokens, onGameCompleted, stats],
   );
 
-  const closeActiveGame = useCallback(() => {
+  const closeActiveGame = useCallback(async () => {
     if (activeGame && CONTINUOUS_GAMES.has(activeGame) && continuousGameTokensRef.current > 0) {
       const earned = continuousGameTokensRef.current;
       const stars = earned >= 20 ? 3 : earned >= 10 ? 2 : 1;
-      handleGameComplete(activeGame, earned * 10, stars, undefined, {
+      await handleGameComplete(activeGame, earned * 10, stars, undefined, {
         awardHubTokens: false,
         autoCloseDelayMs: 0,
       });
+      return;
     }
     gameStartRef.current = 0;
     continuousGameTokensRef.current = 0;
@@ -241,6 +214,18 @@ export function useBrainGymState(props: BrainGymHubProps) {
     },
     [stats],
   );
+  const nextContinuousOperationId = useCallback((awardKey?: string) => {
+    const sessionId = gameSessionIdRef.current;
+    if (!sessionId) return null;
+    if (awardKey) {
+      const existing = continuousOperationIdsRef.current.get(awardKey);
+      if (existing) return existing;
+    }
+    continuousAwardOrdinalRef.current += 1;
+    const operationId = `${sessionId}:continuous:${continuousAwardOrdinalRef.current}`;
+    if (awardKey) continuousOperationIdsRef.current.set(awardKey, operationId);
+    return operationId;
+  }, []);
 
   return {
     activeGame,
@@ -268,5 +253,6 @@ export function useBrainGymState(props: BrainGymHubProps) {
     handleGameComplete,
     closeActiveGame,
     launchGame,
+    nextContinuousOperationId,
   };
 }

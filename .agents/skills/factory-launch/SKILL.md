@@ -9,7 +9,7 @@ Use this skill before triggering or modifying the App Factory SaaS generator.
 
 ## Required Context
 
-1. Read `AGENTS.md` and `.agent/agents/master-agent.md`.
+1. Read `AGENTS.md` and `.claude/agents/master-agent.md`.
 2. Invoke `nx-generate` before scaffolding or generator changes.
 3. Search existing generator/template files before creating anything new:
    - `plugins/factory/src/generators/saas/`

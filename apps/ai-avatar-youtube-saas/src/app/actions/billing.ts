@@ -4,6 +4,10 @@ import { revalidateTag } from "next/cache";
 import { env } from "@/lib/env";
 import { getSubscriptionByUserId } from "@/lib/db";
 import { PLAN_TIERS, PlanTierKey, stripe } from "@/lib/stripe";
+import {
+  createSquareCheckoutSession,
+  type SquarePlanTierKey,
+} from "@/lib/square";
 
 interface BillingResponse {
   success: boolean;
@@ -15,6 +19,19 @@ export async function createCheckoutSessionAction(
   userId: string,
   tier: PlanTierKey
 ): Promise<BillingResponse> {
+  const appUrl =
+    env.NEXT_PUBLIC_APP_URL ||
+    "https://ai-avatar-studio-production.up.railway.app";
+
+  if (env.SQUARE_ACCESS_TOKEN || process.env.SQUARE_ACCESS_TOKEN) {
+    return createSquareCheckoutSession({
+      userId,
+      tier: tier as SquarePlanTierKey,
+      redirectUrl: `${appUrl}/dashboard/billing?status=success&tier=${tier}`,
+      cancelUrl: `${appUrl}/dashboard/billing?status=canceled`,
+    });
+  }
+
   try {
     const plan = PLAN_TIERS[tier];
     if (!plan?.priceId) {
@@ -24,7 +41,6 @@ export async function createCheckoutSessionAction(
     const existingSub = getSubscriptionByUserId(userId);
     const customerId = existingSub?.stripeCustomerId ?? undefined;
 
-    const appUrl = env.NEXT_PUBLIC_APP_URL;
     const session = await stripe.checkout.sessions.create({
       client_reference_id: userId,
       customer: customerId,

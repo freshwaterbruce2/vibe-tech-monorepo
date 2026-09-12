@@ -59,13 +59,13 @@ export interface GroupARecommendationConfig {
 
 export interface BrainGymHubProps {
   userTokens: number;
-  onEarnTokens: (amount: number, reason?: string) => void;
-  onSpendTokens?: (amount: number, reason?: string) => boolean;
+  onEarnTokens: (amount: number, reason: string, operationId: string) => Promise<boolean>;
+  onSpendTokens?: (amount: number, reason: string, operationId: string) => Promise<boolean>;
   onGameCompleted?: (gameId: string, score: number, details: GameCompletionDetails) => void;
   onClose: () => void;
   renderAvatarProfile?: (props: { onOpenShop: () => void }) => ReactNode;
   renderAvatarShop?: (props: {
-    onSpendTokens: (amount: number, reason?: string) => boolean;
+    onSpendTokens: (amount: number, reason: string, operationId: string) => Promise<boolean>;
     userTokens: number;
   }) => ReactNode;
 }

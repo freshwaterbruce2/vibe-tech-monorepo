@@ -19,19 +19,35 @@ describe('breakdownService.breakDownTask', () => {
   it('requests the primary model and returns parsed steps', async () => {
     secure.createChatCompletion.mockResolvedValue(JSON.stringify({ steps: ['read', 'write'] }));
 
-    const steps = await breakDownTask('Write an essay', 'English');
+    const result = await breakDownTask('Write an essay', 'English');
 
     expect(secure.createChatCompletion).toHaveBeenCalledWith(
       expect.any(Array),
-      expect.objectContaining({ model: 'deepseek/deepseek-v3.2' }),
+      { chatType: 'tutor' },
     );
-    expect(steps).toEqual(['read', 'write']);
+    expect(result).toEqual({ status: 'success', steps: ['read', 'write'] });
   });
 
-  it('returns fallback steps when the AI response is empty', async () => {
-    secure.createChatCompletion.mockResolvedValue(null);
+  it('returns an unavailable result when the AI response is malformed', async () => {
+    secure.createChatCompletion.mockResolvedValue(JSON.stringify({ steps: ['read', 2] }));
 
-    const steps = await breakDownTask('Solve problems', 'Math');
-    expect(steps.length).toBeGreaterThan(0);
+    const result = await breakDownTask('Solve problems', 'Math');
+
+    expect(result).toEqual({
+      status: 'unavailable',
+      message: 'AI-generated steps are unavailable right now. Please try again.',
+    });
+    expect(store.sessionStore.set).not.toHaveBeenCalled();
+  });
+
+  it('returns an unavailable result when generation fails', async () => {
+    secure.createChatCompletion.mockRejectedValue(new Error('provider unavailable'));
+
+    const result = await breakDownTask('Solve problems', 'Math');
+
+    expect(result).toEqual({
+      status: 'unavailable',
+      message: 'AI-generated steps are unavailable right now. Please try again.',
+    });
   });
 });

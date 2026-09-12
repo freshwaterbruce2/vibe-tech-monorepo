@@ -6,7 +6,7 @@ import {
 	getTenantPlan,
 	setTenantPlan,
 	type PlanLevel,
-} from "@vibetech/monetization";
+} from "../shared/monetization/index.js";
 import {
 	INVOICE_SAAS_FEATURES,
 	resolveUserPlan,

@@ -1,4 +1,4 @@
-// Initialize electron API stub FIRST - must be before any other imports
+// Initialize the Electron/localStorage bridge first, before any other imports.
 import './utils/electronStore';
 
 import './styles/theme.css';

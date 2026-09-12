@@ -1,5 +1,5 @@
 import { Resend } from 'resend'
-import { getResendClient } from '@vibetech/email'
+import { getResendClient } from '../shared/email/index.js'
 
 /**
  * Returns a singleton Resend SDK instance.

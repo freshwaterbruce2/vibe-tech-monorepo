@@ -1,6 +1,6 @@
 import { useEffect, useState, useTransition } from 'react';
 import { logger } from '../utils/logger';
-import { dataStore } from '../services/dataStore';
+import { loadSensoryPreferences } from '../services/sensoryPreferences';
 
 interface SensoryPreferences {
   animationEnabled: boolean;
@@ -14,10 +14,8 @@ export function useSensoryPreferences(): SensoryPreferences {
   useEffect(() => {
     startTransition(async () => {
       try {
-        const prefs = await dataStore.getSensoryPreferences();
-        if (prefs) {
-          setAnimationEnabled(prefs.animationSpeed !== 'none');
-        }
+        const prefs = await loadSensoryPreferences();
+        setAnimationEnabled(prefs.animationSpeed !== 'none');
       } catch (error) {
         logger.error('Could not load sensory preferences:', error);
       }

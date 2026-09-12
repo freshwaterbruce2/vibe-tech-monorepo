@@ -1,5 +1,5 @@
 {
-  "_comment": "CANONICAL MCP server registry for ALL agent tools (Claude Code, Gemini CLI, Antigravity, Codex, Cursor, Hermes). Edit servers HERE only, then run `pnpm mcp:sync` to regenerate every tool's native config. Secrets are referenced by env-var NAME ($VAR) and never stored literally. See tools/mcp-sync/README.md.",
+  "_comment": "CANONICAL MCP server registry for ALL agent tools (Claude Code, Claude Desktop, Codex, Cursor, Hermes). Edit servers HERE only, then run `pnpm mcp:sync` to regenerate every tool's native config. Secrets are referenced by env-var NAME ($VAR) and never stored literally. See tools/mcp-sync/README.md.",
   "version": 1,
   "tools": {
     "claude": {
@@ -10,14 +10,6 @@
       "target": "C:/Users/fresh_zxae3v6/AppData/Roaming/Claude/claude_desktop_config.json",
       "format": "cursor-json"
     },
-    "gemini": {
-      "target": "~/.gemini/settings.json",
-      "format": "gemini-json"
-    },
-    "antigravity": {
-      "target": "~/.gemini/antigravity-cli/settings.json",
-      "format": "gemini-json"
-    },
     "codex": {
       "target": "~/.codex/config.toml",
       "format": "codex-toml"
@@ -26,30 +18,12 @@
       "target": "~/.cursor/mcp.json",
       "format": "cursor-json"
     },
-    "kimi": {
-      "target": "~/.kimi-code/mcp.json",
-      "format": "cursor-json"
-    },
     "hermes": {
       "target": "~/.hermes/config.yaml",
       "format": "hermes-yaml"
-    },
-    "vscode": {
-      "target": "V:/monorepo/.vscode/mcp.json",
-      "format": "vscode-json"
     }
   },
-  "defaultEnabledFor": [
-    "claude",
-    "claude-desktop",
-    "gemini",
-    "antigravity",
-    "codex",
-    "cursor",
-    "kimi",
-    "hermes",
-    "vscode"
-  ],
+  "defaultEnabledFor": ["claude", "claude-desktop", "codex", "cursor", "hermes"],
   "servers": {
     "nx-mcp": {
       "transport": "stdio",
@@ -233,18 +207,6 @@
         "visualization-cursor"
       ],
       "enabledFor": ["cursor"]
-    },
-    "playwright": {
-      "transport": "stdio",
-      "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest", "--allow-unrestricted-file-access"],
-      "enabledFor": ["kimi"]
-    },
-    "context7": {
-      "transport": "stdio",
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"],
-      "enabledFor": ["kimi"]
     }
   }
 }

@@ -4,6 +4,56 @@ Historical log of major issues, solutions, and time-saving discoveries.
 
 ---
 
+## 2026-09-11: Physical Device Release Verification (v1.5.18) & Workflow Hardening Blueprint
+
+### Milestone Summary
+
+- **Accomplishment**: Successfully designed, decomposed, compiled, verified on a physical Samsung A54 (`R5CW60X0PHT`), and packaged a release candidate for **v1.5.18** with rich math rendering (KaTeX) and formatted code cards with copy buttons.
+- **Architecture Validation**: Core backend security and client boundaries are rock-solid. Unauthorized or sideloaded APKs cannot drain OpenRouter credits; verified Google Play buyers receive smooth, low-latency AI responses with rigorous monthly/daily token allowances.
+
+### Critical Friction Points Exposed
+
+#### 1. The Play Integrity Wall
+
+- **Symptom**: Sideloaded debug APK (`assembleDebug`) failed AI chat session initialization with no clear on-screen explanation.
+- **Root Cause**: Production Cloud Run enforces Google Play Integrity (`PLAY_RECOGNIZED`, Google's production signing certificate, and `LICENSED` account verdict). A sideloaded debug APK will _always_ fail these checks in production Cloud Run.
+- **Impact**: Created uncertainty whether the backend was broken or the mobile client was failing.
+
+#### 2. The "Quiet Hours" Ambush
+
+- **Symptom**: At 1:33 AM during late-night testing, AI replies suddenly paused, masking backend recovery.
+- **Root Cause**: Client-side parental study rules in `usageMonitor.ts` automatically paused AI replies between 21:00 (9 PM) and 07:00 (7 AM).
+- **Impact**: Simulated a false backend outage during nocturnal developer QA sessions.
+
+#### 3. Generic Error Message Masking
+
+- **Symptom**: The chat UI reported: _"The response did not arrive. Your message was not saved as an AI reply; please retry."_
+- **Root Cause**: `useChatMessages.ts` caught all errors not explicitly matching `/quiet hours/` or `/503/` and collapsed them into a generic timeout error, masking HTTP `401 Entitlement verification failed`.
+- **Impact**: Required CDP / `adb logcat` investigation to diagnose an ordinary entitlement rejection.
+
+### The 5-Point Workflow Blueprint (100% Implemented & Verified)
+
+1. **Developer-Mode Seams in Debug Builds**:
+   - In `config.ts`, `isDevBuild` provides automatic dev/debug detection across web, Electron, and native Capacitor.
+   - Sideloaded debug builds can connect to local reverse proxy (`http://localhost:3001` via `pnpm run dev:bridge`).
+   - `App.tsx` renders a dismissible on-screen status banner clearly displaying local bridge connection status or Cloud Run requirements.
+2. **Differentiate Error Messages in the UI**:
+   - `secureClient.ts` captures precise HTTP status and rejection reasons during session initialization.
+   - `useChatMessages.ts` routes errors into specific, actionable user messages:
+     - **401 Rejection**: _"Google Play purchase could not be verified. Please ensure you are signed in to the Play Store account used to purchase Vibe Tutor."_
+     - **503 / Capacity**: _"The AI service is temporarily busy. Retrying in a moment..."_
+     - **Quiet Hours**: _"Quiet hours active (21:00 - 07:00)."_ (Rendered in calm indigo with a 🌙 icon).
+     - **Debug builds**: Appends raw diagnostic codes (`[HTTP 401: license]`).
+3. **Developer Bypass for Parental Controls**:
+   - Added in-memory & persistent 1-hour bypass (`enableDevBypass`, `disableDevBypass`, `isDevBypassActive`) to `usageMonitor.ts`.
+   - Added interactive "Developer Bypass (1 hour)" control card inside `ScreenTimeSettings.tsx` (PIN protected), allowing nocturnal QA without changing device system clocks.
+4. **Maintained Device Smoke Test Command (`pnpm run test:device`)**:
+   - Created `scripts/device-smoke-test.mjs` automating device preflight checks on Samsung Galaxy A54 (`R5CW60X0PHT`), port forwarding, live math calculation assertion, coding palindrome card assertion, copy button verification, and screenshot capture. Supports `--dry-run` and `--skip-launch`.
+5. **Automated Version-Code Allowlist Deployment**:
+   - Upgraded `scripts/ship-release.ps1` to bind `android/variables.gradle` `androidVersionCode` with `render-backend/server.mjs` automatically and generate a staged deployment payload in `docs/release-readiness/cloud-run-staged-<versionCode>.json`.
+
+---
+
 ## 2025-10-03: Duplicate Buttons + Chat Fix (v1.0.5)
 
 ### Issue Summary
@@ -123,14 +173,14 @@ For future mobile app development:
 
 #### "If You See X, Check Y First" Rules
 
-| Symptom | Check This First | Typical Fix |
-|---------|------------------|-------------|
-| Duplicate navs on mobile | Tailwind version | Install v3 |
-| Media queries ignored | WebView version | Use compatible CSS |
-| Chat not working | Network requests | Use CapacitorHttp |
-| Stale code after build | versionCode | Increment version |
-| CORS errors on Android | fetch() usage | Use CapacitorHttp |
-| CSS not applying | Service worker cache | Clear cache, rebuild |
+| Symptom                  | Check This First     | Typical Fix          |
+| ------------------------ | -------------------- | -------------------- |
+| Duplicate navs on mobile | Tailwind version     | Install v3           |
+| Media queries ignored    | WebView version      | Use compatible CSS   |
+| Chat not working         | Network requests     | Use CapacitorHttp    |
+| Stale code after build   | versionCode          | Increment version    |
+| CORS errors on Android   | fetch() usage        | Use CapacitorHttp    |
+| CSS not applying         | Service worker cache | Clear cache, rebuild |
 
 #### Quick Diagnostics
 

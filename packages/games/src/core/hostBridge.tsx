@@ -14,7 +14,7 @@ export interface SharedGameCompletionResult {
 export interface GamesHostBridge {
   loadConfig?: <T = unknown>(key: string) => T | undefined;
   onComplete?: (result: SharedGameCompletionResult) => void;
-  onEarnTokens?: (amount: number, reason?: string) => void;
+  onEarnTokens?: (amount: number, reason: string, operationId: string) => Promise<boolean>;
   playSound?: (type: GameSoundType) => void;
   saveConfig?: (key: string, value: unknown) => void;
 }

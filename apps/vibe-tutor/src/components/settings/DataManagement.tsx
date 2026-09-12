@@ -1,5 +1,12 @@
 import React, { useRef, useTransition } from 'react';
 import { dataStore } from '../../services/dataStore';
+import {
+    applySensoryPreferences,
+    DEFAULT_SENSORY_PREFERENCES,
+    persistSensoryPreferences,
+    requireValidSensoryPreferences,
+} from '../../services/sensoryPreferences';
+import { soundEffects } from '../../services/soundEffects';
 import { logger } from '../../utils/logger';
 import PrivacyPolicy from './PrivacyPolicy';
 
@@ -82,11 +89,23 @@ const DataManagement = () => {
                     if (typeof text !== 'string') throw new Error("Invalid file format");
 
                     const data = JSON.parse(text);
+                    const importedSensory = Object.hasOwn(data, 'sensory-prefs')
+                        ? requireValidSensoryPreferences(data['sensory-prefs'])
+                        : null;
                     const confirmed = window.confirm(
                         'Are you sure you want to import this data? This will overwrite all current progress.'
                     );
 
                     if (confirmed) {
+                        if (importedSensory) {
+                            const sensoryResult = await persistSensoryPreferences(importedSensory);
+                            if (sensoryResult.status !== 'confirmed') {
+                                throw new Error('Imported sensory preferences could not be verified.');
+                            }
+                            applySensoryPreferences(sensoryResult.prefs);
+                            soundEffects.applyPreferences(sensoryResult.prefs);
+                        }
+
                         // Import data through dataStore (single source of truth)
                         if (data.homeworkItems && Array.isArray(data.homeworkItems)) {
                             await dataStore.saveHomeworkItems(data.homeworkItems);
@@ -108,10 +127,6 @@ const DataManagement = () => {
                             for (const session of data.focusSessions) {
                                 await dataStore.saveFocusSession(session);
                             }
-                        }
-
-                        if (data['sensory-prefs']) {
-                            await dataStore.saveSensoryPreferences(data['sensory-prefs']);
                         }
 
                         alert('Data imported successfully! The app will now reload.');
@@ -138,20 +153,18 @@ const DataManagement = () => {
         if (confirmed) {
             startTransition(async () => {
                 try {
+                    const sensoryResult = await persistSensoryPreferences(DEFAULT_SENSORY_PREFERENCES);
+                    if (sensoryResult.status !== 'confirmed') {
+                        throw new Error('Reset sensory preferences could not be verified.');
+                    }
+                    applySensoryPreferences(sensoryResult.prefs);
+                    soundEffects.applyPreferences(sensoryResult.prefs);
+
                     // Reset all data through dataStore
                     await dataStore.saveHomeworkItems([]);
                     await dataStore.saveAchievements([]);
                     await dataStore.saveStudentPoints(0);
                     await dataStore.saveRewards([]);
-                    await dataStore.saveSensoryPreferences({
-                      animationSpeed: 'normal',
-                      soundEnabled: true,
-                      hapticEnabled: true,
-                      fontSize: 'medium',
-                      dyslexiaFont: false,
-                      colorMode: 'default'
-                    });
-
                     alert('Application data has been reset. The app will now reload.');
                     window.location.reload();
                 } catch (error) {

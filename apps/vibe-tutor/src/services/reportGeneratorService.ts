@@ -1,5 +1,4 @@
 import { createChatCompletion } from './secureClient';
-import { MODELS } from './openrouter';
 import type { HomeworkItem } from '../types';
 import { logger } from '../utils/logger';
 
@@ -43,8 +42,7 @@ export const generateProgressReport = async (
                 content: prompt
             }
         ], {
-            model: MODELS.PRIMARY_PAID,
-            temperature: 0.7,
+            chatType: 'tutor',
         });
         return response ?? "Could not generate a report at this time. Please check the raw data for progress.";
     } catch (error) {

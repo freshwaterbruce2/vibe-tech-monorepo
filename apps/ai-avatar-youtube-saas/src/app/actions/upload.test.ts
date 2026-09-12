@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-process.env.DPOP_SECRET = "a-very-secret-key-that-is-long-enough-for-hmac256";
-process.env.GCS_CREDENTIALS = JSON.stringify({ type: "service_account", project_id: "test" });
-process.env.GCS_BUCKET_NAME = "test-bucket";
+vi.hoisted(() => {
+  process.env.DPOP_SECRET = "a-very-secret-key-that-is-long-enough-for-hmac256";
+  process.env.GCS_CREDENTIALS = JSON.stringify({ type: "service_account", project_id: "test" });
+  process.env.GCS_BUCKET_NAME = "test-bucket";
+});
 
 const saveMock = vi.fn();
 const getSignedUrlMock = vi.fn();

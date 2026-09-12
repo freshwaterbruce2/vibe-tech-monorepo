@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify'
 
 import { recordAudit } from '../audit.js'
 import { buildCheckoutSession } from '../payments/stripeAdapter.js'
+import { squarePaymentService } from '../payments/squarePaymentService.js'
 
 interface InvoiceRow {
   id: string
@@ -70,36 +71,58 @@ export const registerPaymentRoutes = (
 
       const baseUrl = getAppBaseUrl()
       try {
-        const session = await buildCheckoutSession({
-          currency: invoice.currency,
-          successUrl: `${baseUrl}/pay/${id}?token=${token}&status=success`,
-          cancelUrl: `${baseUrl}/pay/${id}?token=${token}&status=canceled`,
-          customerEmail: client?.email ?? undefined,
-          metadata: {
-            invoice_id: id,
-            public_token: token,
-            invoice_number: invoice.invoice_number,
-          },
-          lineItems: [
-            {
-              name: `Invoice ${invoice.invoice_number}`,
-              unitAmount: invoice.total,
+        let checkoutUrl: string
+        let sessionId: string
+
+        if (process.env.SQUARE_ACCESS_TOKEN) {
+          const session = await squarePaymentService.createInvoiceCheckoutSession({
+            invoiceId: id,
+            invoiceNumber: invoice.invoice_number,
+            amount: invoice.total,
+            currency: invoice.currency,
+            token,
+            customerEmail: client?.email ?? undefined,
+            successUrl: `${baseUrl}/pay/${id}?token=${token}&status=success`,
+            cancelUrl: `${baseUrl}/pay/${id}?token=${token}&status=canceled`,
+          })
+          checkoutUrl = session.url
+          sessionId = session.id
+        } else {
+          const session = await buildCheckoutSession({
+            currency: invoice.currency,
+            successUrl: `${baseUrl}/pay/${id}?token=${token}&status=success`,
+            cancelUrl: `${baseUrl}/pay/${id}?token=${token}&status=canceled`,
+            customerEmail: client?.email ?? undefined,
+            metadata: {
+              invoice_id: id,
+              public_token: token,
+              invoice_number: invoice.invoice_number,
             },
-          ],
-        })
+            lineItems: [
+              {
+                name: `Invoice ${invoice.invoice_number}`,
+                unitAmount: invoice.total,
+              },
+            ],
+          })
+          checkoutUrl = session.url
+          sessionId = session.id
+        }
 
         recordAudit(db, {
           action: 'payment.checkout_session_created',
           entityType: 'invoice',
           entityId: id,
           actorUserId: null,
-          metadata: { stripe_session_id: session.id },
+          metadata: process.env.SQUARE_ACCESS_TOKEN
+            ? { square_session_id: sessionId }
+            : { stripe_session_id: sessionId },
         })
 
-        return { url: session.url }
+        return { url: checkoutUrl }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
-        req.log.error({ err: e, invoiceId: id }, 'Stripe checkout session failed')
+        req.log.error({ err: e, invoiceId: id }, 'Payment checkout session failed')
         return reply.code(502).send({
           error: 'Could not create payment session',
           detail: msg,

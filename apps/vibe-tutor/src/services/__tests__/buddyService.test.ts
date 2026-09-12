@@ -1,486 +1,77 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getMoodAnalysis, sendMessageToBuddy } from '../buddyService';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('../secureClient', () => ({ createChatCompletion: vi.fn() }));
+vi.mock('../safetyClassifier', () => ({ classifyMessageSafety: vi.fn().mockResolvedValue(null) }));
+vi.mock('../usageMonitor', () => ({ usageMonitor: { reserveRequest: vi.fn(() => ({ allowed: true, reservationId: 'buddy-1' })), commitRequest: vi.fn().mockResolvedValue(true), releaseRequest: vi.fn() } }));
+vi.mock('../learningAnalytics', () => ({ learningAnalytics: { logAICall: vi.fn() } }));
+import { createChatCompletion } from '../secureClient';
 import { learningAnalytics } from '../learningAnalytics';
 import { classifyMessageSafety } from '../safetyClassifier';
-import * as secureClient from '../secureClient';
+import { clearBuddyHistory, hydrateBuddyHistory, sendMessageToBuddy } from '../buddyService';
+import { clearTutorHistory, hydrateTutorHistory } from '../tutorService';
 import { usageMonitor } from '../usageMonitor';
-
-// Mock dependencies
-vi.mock('../secureClient', () => ({
-  createChatCompletion: vi.fn(),
-}));
-
-// The online safety classifier is mocked so tests drive its verdict directly,
-// independently of the answer mock. Default (clean) is set in beforeEach.
-vi.mock('../safetyClassifier', () => ({
-  classifyMessageSafety: vi.fn(),
-}));
-
-vi.mock('../usageMonitor', () => ({
-  usageMonitor: {
-    canMakeRequest: vi.fn(),
-    recordRequest: vi.fn(),
-  },
-}));
-
-vi.mock('../learningAnalytics', () => ({
-  learningAnalytics: {
-    logAICall: vi.fn(),
-  },
-}));
-
-describe('buddyService', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    // Default: Allow requests
-    vi.mocked(usageMonitor.canMakeRequest).mockReturnValue({ allowed: true });
-    // Default: classifier finds nothing (clean) — flag paths opt in per test.
-    vi.mocked(classifyMessageSafety).mockResolvedValue(null);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  describe('sendMessageToBuddy', () => {
-    it('checks usage limits before making request', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('Test response');
-
-      await sendMessageToBuddy('Hello');
-
-      expect(usageMonitor.canMakeRequest).toHaveBeenCalled();
-    });
-
-    it('returns rate limit message when usage limit exceeded', async () => {
-      vi.mocked(usageMonitor.canMakeRequest).mockReturnValue({
-        allowed: false,
-        reason: 'Daily limit reached. Try again tomorrow.',
-      });
-
-      const response = await sendMessageToBuddy('Hello');
-
-      expect(response).toBe('Daily limit reached. Try again tomorrow.');
-      expect(secureClient.createChatCompletion).not.toHaveBeenCalled();
-    });
-
-    it('short-circuits crisis messages with a safety response (never reaches the LLM)', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('AI response');
-
-      const response = await sendMessageToBuddy('I want to kill myself');
-
-      // The crisis backstop must fire regardless of model/usage limits.
-      expect(response).toContain('988');
-      expect(secureClient.createChatCompletion).not.toHaveBeenCalled();
-      expect(usageMonitor.canMakeRequest).not.toHaveBeenCalled();
-    });
-
-    it('overrides the answer with crisis resources when the classifier flags (under cap)', async () => {
-      vi.mocked(classifyMessageSafety).mockResolvedValue('abuse');
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('ordinary buddy answer');
-
-      // Regex-neutral phrasing on purpose: the deterministic floor does NOT catch
-      // this, so the override can only come from the (mocked) online classifier.
-      const response = await sendMessageToBuddy('i need to tell you something but its hard');
-
-      // The model answer is discarded in favor of the supportive crisis reply.
-      expect(response).toContain('988');
-      expect(response).not.toBe('ordinary buddy answer');
-      // A flagged turn is not billed as a normal request or logged as an AI call.
-      expect(usageMonitor.recordRequest).not.toHaveBeenCalled();
-      expect(learningAnalytics.logAICall).not.toHaveBeenCalled();
-    });
-
-    it('runs the classifier even over the usage cap and surfaces resources on a flag', async () => {
-      vi.mocked(usageMonitor.canMakeRequest).mockReturnValue({
-        allowed: false,
-        reason: 'Daily limit reached. Try again tomorrow.',
-      });
-      vi.mocked(classifyMessageSafety).mockResolvedValue('self-harm');
-
-      // Regex-neutral phrasing: the flag must come from the online classifier,
-      // proving safety runs even when the usage cap would block a normal answer.
-      const response = await sendMessageToBuddy('can we talk for a minute about stuff');
-
-      // Safety overrides the commercial cap; the answer model is never called.
-      expect(response).toContain('988');
-      expect(secureClient.createChatCompletion).not.toHaveBeenCalled();
-    });
-
-    it('sends message with correct AI model and default options', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('AI response');
-
-      await sendMessageToBuddy("I'm feeling anxious");
-
-      expect(secureClient.createChatCompletion).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({ role: 'system' }),
-          expect.objectContaining({ role: 'user', content: "I'm feeling anxious" }),
-        ]),
-        expect.objectContaining({
-          model: 'deepseek/deepseek-v3.2',
-          temperature: 0.8,
-          top_p: 0.95,
-          useReasoning: false,
-        }),
-      );
-    });
-
-    it('enables reasoning mode when useReasoning parameter is true', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('AI response');
-
-      await sendMessageToBuddy('Help me understand algebra', true);
-
-      expect(secureClient.createChatCompletion).toHaveBeenCalledWith(
-        expect.any(Array),
-        expect.objectContaining({
-          useReasoning: true,
-        }),
-      );
-    });
-
-    it('includes system prompt with AI Buddy personality', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('AI response');
-
-      await sendMessageToBuddy('First message');
-
-      const callArgs = vi.mocked(secureClient.createChatCompletion).mock.calls[0];
-      expect(callArgs).toBeDefined();
-      const messages = callArgs?.[0] ?? [];
-
-      expect(messages[0]).toEqual(
-        expect.objectContaining({
-          role: 'system',
-          content: expect.stringContaining('AI buddy'), // Verify buddy system prompt (lowercase)
-        }),
-      );
-    });
-
-    it('returns AI response on success', async () => {
-      const mockResponse = 'I understand how you feel. Let me help...';
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue(mockResponse);
-
-      const response = await sendMessageToBuddy("I'm stressed about homework");
-
-      expect(response).toBe(mockResponse);
-    });
-
-    it('returns fallback message when AI response is empty', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue(null);
-
-      const response = await sendMessageToBuddy('Hello');
-
-      expect(response).toBe(
-        "Sorry, I'm having a little trouble connecting right now. Let's talk later.",
-      );
-    });
-
-    it('logs analytics for successful AI calls', async () => {
-      const mockResponse = 'This is a supportive response';
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue(mockResponse);
-
-      await sendMessageToBuddy('Test message');
-
-      expect(learningAnalytics.logAICall).toHaveBeenCalledWith(
-        'deepseek/deepseek-v3.2',
-        expect.any(Number), // Input tokens
-        mockResponse.length, // Output tokens
-        expect.any(Number), // Duration
-      );
-    });
-
-    it('does not log analytics when AI call fails', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue(null);
-
-      await sendMessageToBuddy('Test message');
-
-      expect(learningAnalytics.logAICall).not.toHaveBeenCalled();
-    });
-
-    it('records request in usage monitor after successful call', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('AI response');
-
-      await sendMessageToBuddy('Test message');
-
-      expect(usageMonitor.recordRequest).toHaveBeenCalled();
-    });
-
-    it('maintains conversation history across multiple messages', async () => {
-      vi.mocked(secureClient.createChatCompletion)
-        .mockResolvedValueOnce('First response')
-        .mockResolvedValueOnce('Second response');
-
-      await sendMessageToBuddy('How are you?');
-      await sendMessageToBuddy("I'm doing well!");
-
-      const secondCallArgs = vi.mocked(secureClient.createChatCompletion).mock.calls[1];
-      expect(secondCallArgs).toBeDefined();
-      const messages = secondCallArgs?.[0] ?? [];
-
-      // Check the LAST 4 messages (to handle accumulated history from other tests)
-      const lastFour = messages.slice(-4);
-
-      expect(lastFour[0]).toEqual({ role: 'user', content: 'How are you?' });
-      expect(lastFour[1]).toEqual({ role: 'assistant', content: 'First response' });
-      expect(lastFour[2]).toEqual({ role: 'user', content: "I'm doing well!" });
-
-      // Verify system prompt is first in overall history
-      expect(messages[0]?.role).toBe('system');
-    });
-
-    it('handles errors gracefully with fallback message', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockRejectedValue(new Error('Network error'));
-
-      const response = await sendMessageToBuddy('Test message');
-
-      expect(response).toBe(
-        "Sorry, I'm having a little trouble connecting right now. Let's talk later.",
-      );
-    });
-
-    it('logs errors to console when exception occurs', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const testError = new Error('API failure');
-      vi.mocked(secureClient.createChatCompletion).mockRejectedValue(testError);
-
-      await sendMessageToBuddy('Test message');
-
-      expect(consoleSpy).toHaveBeenCalledWith('[ERROR] Error sending message to buddy:', testError);
-
-      consoleSpy.mockRestore();
-    });
-
-    it('tracks request duration for analytics', async () => {
-      vi.useFakeTimers();
-
-      try {
-        vi.mocked(secureClient.createChatCompletion).mockImplementation(
-          async () => new Promise((resolve) => setTimeout(() => resolve('Response'), 100)),
-        );
-
-        const messagePromise = sendMessageToBuddy('Test message');
-        await vi.advanceTimersByTimeAsync(100);
-        await messagePromise;
-
-        const analyticsCall = vi.mocked(learningAnalytics.logAICall).mock.calls[0];
-        expect(analyticsCall).toBeDefined();
-        const duration = analyticsCall?.[3] ?? 0;
-
-        expect(duration).toBeGreaterThanOrEqual(100);
-        expect(duration).toBeLessThan(1000);
-      } finally {
-        vi.useRealTimers();
-      }
-    });
-
-    it('handles multiple consecutive messages correctly', async () => {
-      vi.mocked(secureClient.createChatCompletion)
-        .mockResolvedValueOnce('Response 1')
-        .mockResolvedValueOnce('Response 2')
-        .mockResolvedValueOnce('Response 3');
-
-      await sendMessageToBuddy('Message 1');
-      await sendMessageToBuddy('Message 2');
-      await sendMessageToBuddy('Message 3');
-
-      expect(secureClient.createChatCompletion).toHaveBeenCalledTimes(3);
-      expect(usageMonitor.recordRequest).toHaveBeenCalledTimes(3);
-      expect(learningAnalytics.logAICall).toHaveBeenCalledTimes(3);
-    });
-
-    it('includes assistant response in history even when AI call fails', async () => {
-      vi.mocked(secureClient.createChatCompletion)
-        .mockResolvedValueOnce(null) // First call fails
-        .mockResolvedValueOnce('Second response'); // Second call succeeds
-
-      await sendMessageToBuddy('Test message');
-      await sendMessageToBuddy('Follow-up message');
-
-      const secondCallArgs = vi.mocked(secureClient.createChatCompletion).mock.calls[1];
-      expect(secondCallArgs).toBeDefined();
-      const messages = secondCallArgs?.[0] ?? [];
-
-      // Find the fallback message in the last few messages
-      const lastMessages = messages.slice(-4);
-      const fallbackMessage = lastMessages.find(
-        (msg) =>
-          msg.role === 'assistant' &&
-          msg.content ===
-            "Sorry, I'm having a little trouble connecting right now. Let's talk later.",
-      );
-
-      // Should include fallback message in history
-      expect(fallbackMessage).toBeDefined();
-      expect(fallbackMessage?.role).toBe('assistant');
-    });
-
-    it('calculates input tokens based on conversation history length', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('Response');
-
-      const longMessage = 'a'.repeat(1000);
-      await sendMessageToBuddy(longMessage);
-
-      const analyticsCall = vi.mocked(learningAnalytics.logAICall).mock.calls[0];
-      expect(analyticsCall).toBeDefined();
-      const inputTokens = analyticsCall?.[1] ?? 0;
-
-      expect(inputTokens).toBeGreaterThan(1000);
-    });
-  });
-
-  describe('getMoodAnalysis', () => {
-    it('generates supportive reflection for mood without note', async () => {
-      const mockResponse = 'It sounds like you are feeling happy. That is wonderful!';
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue(mockResponse);
-
-      const response = await getMoodAnalysis('happy');
-
-      expect(response).toBe(mockResponse);
-      expect(secureClient.createChatCompletion).toHaveBeenCalledWith(
-        [
-          {
-            role: 'user',
-            content: expect.stringContaining('A user has logged their mood as "happy"'),
-          },
-        ],
-        expect.objectContaining({
-          model: 'deepseek/deepseek-v3.2',
-          temperature: 0.7,
-          max_tokens: 100,
-        }),
-      );
-    });
-
-    it('includes optional note in mood analysis prompt', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('Supportive message');
-
-      await getMoodAnalysis('anxious', 'I have a test tomorrow');
-
-      const callArgs = vi.mocked(secureClient.createChatCompletion).mock.calls[0];
-      expect(callArgs).toBeDefined();
-      const prompt = callArgs?.[0]?.[0]?.content ?? '';
-
-      expect(prompt).toContain('anxious');
-      expect(prompt).toContain('I have a test tomorrow');
-    });
-
-    it('returns fallback message when AI call fails', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue(null);
-
-      const response = await getMoodAnalysis('sad');
-
-      expect(response).toBe("It's okay to feel your feelings. Be kind to yourself today.");
-    });
-
-    it('handles errors gracefully with fallback message', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockRejectedValue(new Error('Network error'));
-
-      const response = await getMoodAnalysis('stressed');
-
-      expect(response).toBe("It's okay to feel your feelings. Be kind to yourself today.");
-    });
-
-    it('logs analytics for successful mood analysis', async () => {
-      const mockResponse = 'Gentle supportive message';
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue(mockResponse);
-
-      await getMoodAnalysis('tired', 'Long day at school');
-
-      expect(learningAnalytics.logAICall).toHaveBeenCalledWith(
-        'deepseek/deepseek-v3.2',
-        expect.any(Number), // Prompt length
-        mockResponse.length, // Response length
-        expect.any(Number), // Duration
-      );
-    });
-
-    it('does not log analytics when mood analysis fails', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue(null);
-
-      await getMoodAnalysis('happy');
-
-      expect(learningAnalytics.logAICall).not.toHaveBeenCalled();
-    });
-
-    it('logs errors to console when exception occurs', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const testError = new Error('API failure');
-      vi.mocked(secureClient.createChatCompletion).mockRejectedValue(testError);
-
-      await getMoodAnalysis('anxious');
-
-      expect(consoleSpy).toHaveBeenCalledWith('[ERROR] Error getting mood analysis:', testError);
-
-      consoleSpy.mockRestore();
-    });
-
-    it('limits response tokens to 100 for brief reflection', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('Brief message');
-
-      await getMoodAnalysis('excited');
-
-      expect(secureClient.createChatCompletion).toHaveBeenCalledWith(
-        expect.any(Array),
-        expect.objectContaining({
-          max_tokens: 100,
-        }),
-      );
-    });
-
-    it('requests brief 2-3 sentence responses in prompt', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('Response');
-
-      await getMoodAnalysis('calm');
-
-      const callArgs = vi.mocked(secureClient.createChatCompletion).mock.calls[0];
-      expect(callArgs).toBeDefined();
-      const prompt = callArgs?.[0]?.[0]?.content ?? '';
-
-      expect(prompt).toContain('short (2-3 sentences)');
-    });
-
-    it('instructs AI not to give medical advice', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('Response');
-
-      await getMoodAnalysis('depressed', 'Feeling down lately');
-
-      const callArgs = vi.mocked(secureClient.createChatCompletion).mock.calls[0];
-      expect(callArgs).toBeDefined();
-      const prompt = callArgs?.[0]?.[0]?.content ?? '';
-
-      expect(prompt).toContain('Do not give medical advice');
-    });
-
-    it('tracks request duration for mood analysis', async () => {
-      vi.useFakeTimers();
-
-      try {
-        vi.mocked(secureClient.createChatCompletion).mockImplementation(
-          async () => new Promise((resolve) => setTimeout(() => resolve('Response'), 50)),
-        );
-
-        const analysisPromise = getMoodAnalysis('happy');
-        await vi.advanceTimersByTimeAsync(50);
-        await analysisPromise;
-
-        const analyticsCall = vi.mocked(learningAnalytics.logAICall).mock.calls[0];
-        expect(analyticsCall).toBeDefined();
-        const duration = analyticsCall?.[3] ?? 0;
-
-        expect(duration).toBeGreaterThanOrEqual(50);
-        expect(duration).toBeLessThan(1000);
-      } finally {
-        vi.useRealTimers();
-      }
-    });
-
-    it('does not call usage monitor for mood analysis', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('Response');
-
-      await getMoodAnalysis('happy');
-
-      // Mood analysis is quick and doesn't count against usage limits
-      expect(usageMonitor.canMakeRequest).not.toHaveBeenCalled();
-      expect(usageMonitor.recordRequest).not.toHaveBeenCalled();
-    });
-  });
+describe('Buddy service boundary', () => {
+ beforeEach(() => {
+  vi.clearAllMocks();
+  clearBuddyHistory();
+  clearTutorHistory();
+  vi.mocked(createChatCompletion).mockResolvedValue('That sounds frustrating. Want to talk it through?');
+  vi.mocked(classifyMessageSafety).mockResolvedValue(null);
+  vi.mocked(usageMonitor.reserveRequest).mockReturnValue({ allowed: true, reservationId: 'buddy-1' });
+ });
+
+ it('sends only Buddy context under friend chat type and commits a real response once', async () => {
+  await expect(sendMessageToBuddy('My game was rough')).resolves.toBe('That sounds frustrating. Want to talk it through?');
+  const [messages, options] = vi.mocked(createChatCompletion).mock.calls[0]!;
+  expect(messages[0]).toEqual({ role: 'user', content: 'My game was rough' });
+  expect(messages.every((message) => message.role !== 'system')).toBe(true);
+  expect(options).toEqual({ chatType: 'friend' });
+  expect(usageMonitor.commitRequest).toHaveBeenCalledWith('buddy-1');
+ expect(learningAnalytics.logAICall).toHaveBeenCalledTimes(1);
+ });
+
+ it('returns a real reply without releasing capacity when its commit cannot persist', async () => {
+  vi.mocked(usageMonitor.commitRequest).mockResolvedValueOnce(false);
+  await expect(sendMessageToBuddy('A thought')).resolves.toBe('That sounds frustrating. Want to talk it through?');
+  expect(usageMonitor.releaseRequest).not.toHaveBeenCalled();
+ });
+
+ it('keeps hydrated Buddy context distinct from Tutor context', async () => {
+  hydrateTutorHistory([{ role: 'user', content: 'Tutor-only question', timestamp: 1 }]);
+  hydrateBuddyHistory([{ role: 'user', content: 'Gaming issue', timestamp: 1 }]);
+  await sendMessageToBuddy('What should I say?');
+  const messages = vi.mocked(createChatCompletion).mock.calls[0]![0];
+  expect(messages).toEqual([{ role: 'user', content: 'Gaming issue' }, { role: 'user', content: 'What should I say?' }]);
+ });
+
+ it('rejects provider failures without charging or retaining the failed turn', async () => {
+  vi.mocked(createChatCompletion).mockRejectedValueOnce(new Error('network unavailable'));
+  await expect(sendMessageToBuddy('Failed thought')).rejects.toThrow('network unavailable');
+  expect(usageMonitor.releaseRequest).toHaveBeenCalledWith('buddy-1');
+  expect(learningAnalytics.logAICall).not.toHaveBeenCalled();
+
+  await sendMessageToBuddy('Working thought');
+  expect(vi.mocked(createChatCompletion).mock.calls[1]![0]).toEqual([{ role: 'user', content: 'Working thought' }]);
+  expect(usageMonitor.commitRequest).toHaveBeenCalledTimes(1);
+ });
+
+ it('uses classifier crisis support when the concurrent provider request fails', async () => {
+  vi.mocked(classifyMessageSafety).mockResolvedValueOnce('self-harm');
+  vi.mocked(createChatCompletion).mockRejectedValueOnce(new Error('provider unavailable'));
+  await expect(sendMessageToBuddy('I feel unsafe')).resolves.toMatch(/trusted adult/i);
+  expect(usageMonitor.releaseRequest).toHaveBeenCalledWith('buddy-1');
+  expect(learningAnalytics.logAICall).not.toHaveBeenCalled();
+ });
+
+ it('uses local crisis support without provider generation', async () => {
+  const reply = await sendMessageToBuddy('I want to kill myself');
+  expect(reply).toMatch(/trusted adult/i);
+  expect(createChatCompletion).not.toHaveBeenCalled();
+ });
+
+ it('returns the honest usage-limit reason when no safety flag is present', async () => {
+  vi.mocked(usageMonitor.reserveRequest).mockReturnValue({ allowed: false, reason: 'Daily limit reached.' });
+  await expect(sendMessageToBuddy('One more thought')).resolves.toBe('Daily limit reached.');
+  expect(createChatCompletion).not.toHaveBeenCalled();
+  expect(usageMonitor.commitRequest).not.toHaveBeenCalled();
+ });
 });

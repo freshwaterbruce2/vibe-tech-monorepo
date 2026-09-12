@@ -7,7 +7,7 @@ export interface CronRegistration {
 }
 
 const registrations: CronRegistration[] = []
-let activeTasks: cron.ScheduledTask[] = []
+let activeTasks: Array<ReturnType<typeof cron.schedule>> = []
 
 export const registerCronSchedule = (registration: CronRegistration): void => {
   registrations.push(registration)

@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, CheckCircle, Trophy, XCircle } from 'lucide-react';
-import { memo, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import { generateWorksheet } from '../../services/worksheetGenerator';
 import type {
   DifficultyLevel,
@@ -11,11 +11,29 @@ import type {
 interface WorksheetViewProps {
   subject: SubjectType;
   difficulty: DifficultyLevel;
-  onComplete: (session: WorksheetSession) => void;
+  onComplete: (session: WorksheetSession) => Promise<boolean>;
   onCancel: () => void;
 }
 
-const WorksheetView = memo(function WorksheetView({ subject, difficulty, onComplete, onCancel }: WorksheetViewProps) {
+function isCorrectWorksheetAnswer(
+  type: WorksheetQuestion['type'],
+  answer: string | number | null,
+  correctAnswer: string | number,
+): boolean {
+  if (type === 'fill-blank') {
+    return String(answer).trim().toLowerCase() === String(correctAnswer).trim().toLowerCase();
+  }
+  return answer === correctAnswer;
+}
+
+const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+const WorksheetView = memo(function WorksheetView({
+  subject,
+  difficulty,
+  onComplete,
+  onCancel,
+}: WorksheetViewProps) {
   const [questions] = useState<WorksheetQuestion[]>(() => generateWorksheet(subject, difficulty));
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<(string | number | null)[]>(() =>
@@ -25,6 +43,11 @@ const WorksheetView = memo(function WorksheetView({ subject, difficulty, onCompl
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [startTime] = useState<number>(() => Date.now());
+  const completionRef = useRef<WorksheetSession | null>(null);
+  const completionInFlightRef = useRef<Promise<boolean> | null>(null);
+  const completionAcceptedRef = useRef(false);
+  const [completionError, setCompletionError] = useState<string | null>(null);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const currentQuestion = questions[currentQuestionIndex];
   if (!currentQuestion) return null;
@@ -42,11 +65,11 @@ const WorksheetView = memo(function WorksheetView({ subject, difficulty, onCompl
     if (selectedAnswer === null) return;
 
     // Case-insensitive comparison for fill-blank text answers
-    const correct =
-      currentQuestion.type === 'fill-blank'
-        ? String(selectedAnswer).trim().toLowerCase() ===
-          String(currentQuestion.correctAnswer).trim().toLowerCase()
-        : selectedAnswer === currentQuestion.correctAnswer;
+    const correct = isCorrectWorksheetAnswer(
+      currentQuestion.type,
+      selectedAnswer,
+      currentQuestion.correctAnswer,
+    );
     setIsCorrect(correct);
     setShowFeedback(true);
 
@@ -81,39 +104,81 @@ const WorksheetView = memo(function WorksheetView({ subject, difficulty, onCompl
 
   // Complete the worksheet
   const completeWorksheet = () => {
-    const timeSpent = Math.floor((Date.now() - startTime) / 1000); // seconds
+    if (completionAcceptedRef.current) return;
+    if (completionInFlightRef.current) return;
+    let session = completionRef.current;
+    if (!session) {
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000); // seconds
 
-    // Calculate score
-    let correctCount = 0;
-    answers.forEach((answer, index) => {
-      if (answer === questions[index]?.correctAnswer) {
-        correctCount = correctCount + 1;
+      // Calculate score
+      let correctCount = 0;
+      answers.forEach((answer, index) => {
+        if (
+          questions[index] &&
+          isCorrectWorksheetAnswer(questions[index].type, answer, questions[index].correctAnswer)
+        ) {
+          correctCount = correctCount + 1;
+        }
+      });
+
+      const score = Math.round((correctCount / questions.length) * 100);
+
+      // Calculate stars
+      let starsEarned = 0;
+      if (score >= 90) starsEarned = 5;
+      else if (score >= 80) starsEarned = 4;
+      else if (score >= 70) starsEarned = 3;
+      else if (score >= 60) starsEarned = 2;
+      else if (score >= 50) starsEarned = 1;
+
+      let id: string;
+      try {
+        const uuid = globalThis.crypto?.randomUUID;
+        if (typeof uuid !== 'function') throw new Error('Secure worksheet identity is unavailable');
+        const generatedUuid: unknown = uuid.call(globalThis.crypto);
+        if (typeof generatedUuid !== 'string' || !UUID_V4_PATTERN.test(generatedUuid)) {
+          throw new Error('Secure worksheet identity is invalid');
+        }
+        id = `worksheet:${generatedUuid}`;
+      } catch {
+        setCompletionError('Worksheet identity is unavailable. Please retry before finishing.');
+        return;
       }
-    });
-
-    const score = Math.round((correctCount / questions.length) * 100);
-
-    // Calculate stars
-    let starsEarned = 0;
-    if (score >= 90) starsEarned = 5;
-    else if (score >= 80) starsEarned = 4;
-    else if (score >= 70) starsEarned = 3;
-    else if (score >= 60) starsEarned = 2;
-    else if (score >= 50) starsEarned = 1;
-
-    const session: WorksheetSession = {
-      id: `worksheet_${Date.now()}`,
-      subject,
-      difficulty,
-      questions,
-      answers,
-      score,
-      starsEarned,
-      completedAt: Date.now(),
-      timeSpent,
-    };
-
-    onComplete(session);
+      session = {
+        id,
+        subject,
+        difficulty,
+        questions,
+        answers,
+        score,
+        starsEarned,
+        completedAt: Date.now(),
+        timeSpent,
+      };
+      completionRef.current = session;
+    }
+    setCompletionError(null);
+    setIsCompleting(true);
+    const completion = Promise.resolve()
+      .then(async () => onComplete(session))
+      .then((saved) => {
+        if (saved) {
+          completionAcceptedRef.current = true;
+          setCompletionError(null);
+          return true;
+        }
+        setCompletionError('Your worksheet could not be saved. Please retry finishing it.');
+        return false;
+      })
+      .catch(() => {
+        setCompletionError('Your worksheet could not be saved. Please retry finishing it.');
+        return false;
+      })
+      .finally(() => {
+        completionInFlightRef.current = null;
+        setIsCompleting(false);
+      });
+    completionInFlightRef.current = completion;
   };
 
   if (questions.length === 0) {
@@ -341,6 +406,7 @@ const WorksheetView = memo(function WorksheetView({ subject, difficulty, onCompl
           ) : (
             <button
               onClick={handleNextQuestion}
+              disabled={isLastQuestion && (isCompleting || completionAcceptedRef.current)}
               className="glass-button px-8 py-3 rounded-xl hover:scale-105 transition-all font-semibold flex items-center gap-2"
             >
               <span>{isLastQuestion ? 'Finish Quest' : 'Next Question'}</span>
@@ -348,6 +414,19 @@ const WorksheetView = memo(function WorksheetView({ subject, difficulty, onCompl
             </button>
           )}
         </div>
+        {completionError && (
+          <div role="alert" className="mt-4 text-center text-sm text-red-400">
+            <p>{completionError}</p>
+            <button
+              type="button"
+              onClick={completeWorksheet}
+              disabled={isCompleting}
+              className="mt-2 underline disabled:opacity-50"
+            >
+              Retry finishing worksheet
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

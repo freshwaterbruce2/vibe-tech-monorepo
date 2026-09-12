@@ -1,5 +1,5 @@
 import Stripe from 'stripe'
-import { getStripeClient } from '@vibetech/payments'
+import { getStripeClient } from '../shared/payments/index.js'
 
 /**
  * Returns a singleton Stripe SDK instance.

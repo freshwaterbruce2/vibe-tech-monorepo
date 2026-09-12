@@ -1,10 +1,10 @@
 import { ComponentType } from 'react';
 import { Composition } from 'remotion';
-import { AvatarVideo } from '@vibetech/avatar-render-engine';
 import {
+  AvatarVideo,
   avatarVideoCompositionId,
   avatarVideoSchema,
-} from '@vibetech/avatar-render-engine/constants';
+} from '@/shared/avatar-render-engine/index';
 
 export const Root = () => {
   return (

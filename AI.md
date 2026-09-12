@@ -2,7 +2,7 @@
 
 Single source of truth for workspace behavior, paths, rules, workflow, and agents.
 
-Last Updated: 2026-06-19
+Last Updated: 2026-08-23
 System: Windows (Win32)
 Repository Root: V:\monorepo
 
@@ -74,8 +74,7 @@ Process:
 
 AI tooling:
 
-- Permitted interactive workflow: Codex CLI (by ChatGPT), Antigravity 2.0 CLI, and Antigravity 2.0 IDE.
-- No other editors or AI tools (such as VS Code, Claude Code, or Cursor) are used for building, refactoring, or backup operations.
+- Codex CLI is the only permitted interactive AI development workflow for this repository.
 
 Git rules:
 
@@ -88,18 +87,17 @@ Git rules:
 
 For complex tasks (>5 tool calls, multi-step, research), use file-based planning:
 
-**Planning Directory:** `~/.gemini/antigravity/scratch/planning/`
+**Planning Directory:** `docs/plans/`
 
-**Core Files:**
+**Plan File:**
 
-- `task_plan.md` — Phases, progress, decisions (update after each phase)
-- `findings.md` — Research and discoveries (update after ANY discovery)
-- `progress.md` — Session log and test results (update throughout)
+- `YYYY-MM-DD-<task-slug>.md` — Scope, non-goals, findings, decisions, progress,
+  errors, and validation evidence for one task
 
 **Critical Rules:**
 
-1. **Create Plan First** — Never start complex work without `task_plan.md`
-2. **2-Action Rule** — After every 2 view/search operations, save findings to disk
+1. **Create Plan First** — Never start complex work without a task-specific plan
+2. **Keep It Current** — Save meaningful findings and state changes during execution
 3. **Read Before Decide** — Re-read plan before major decisions
 4. **Log ALL Errors** — Every error goes in the plan file with attempt number
 5. **Never Repeat Failures** — Track attempts, mutate approach on failure
@@ -111,8 +109,6 @@ For complex tasks (>5 tool calls, multi-step, research), use file-based planning
 - Attempt 3: Broader rethink
 - After 3 failures: Escalate to user
 
-**Templates:** Copy from `TEMPLATE_*.md` in planning directory.
-
 ---
 
 ## 4) Learning system (summary)
@@ -120,11 +116,13 @@ For complex tasks (>5 tool calls, multi-step, research), use file-based planning
 Purpose: automatic capture of tool usage and pattern recognition.
 
 Key locations:
+
 - Database: D:\databases\agent_learning.db
 - Logs: D:\learning-system\logs\tool-usage-YYYY-MM-DD.log
 - Hooks: V:\monorepo\.claude\hooks\pre-tool-use-stdin.ps1 and post-tool-use-stdin.ps1
 
 Core Schema Tables:
+
 - `agent_executions`: Telemetry logs of agent timing, tool usage (JSON), and task success.
 - `agent_mistakes`: Identified mistakes, root cause analysis, prevention strategies, and severity ratings.
 - `agent_knowledge`: Learned facts, confidence levels, usage counts, and applicability.
@@ -133,6 +131,7 @@ Core Schema Tables:
 - `mcts_nodes`: Monte Carlo Tree Search trajectory nodes containing value scores and reflections.
 
 Quick checks:
+
 - Tail today’s log: D:\learning-system\logs\tool-usage-YYYY-MM-DD.log
 - Validate tables: sqlite3 D:\databases\agent_learning.db ".tables"
 - Run path policy review: `pnpm run paths:check`

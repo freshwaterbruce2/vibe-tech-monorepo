@@ -2,7 +2,7 @@ export type {
   BuildCheckoutSessionInput,
   CheckoutSessionResult as CheckoutSession,
   StripeWebhookEventLike,
-} from '@vibetech/payments'
+} from '../shared/payments/index.js'
 export {
   buildCheckoutSession,
   createTenantCheckoutSession,
@@ -10,4 +10,4 @@ export {
   lookupSubscriptionStatus,
   verifyWebhookSignature,
   verifyStripeWebhook,
-} from '@vibetech/payments'
+} from '../shared/payments/index.js'

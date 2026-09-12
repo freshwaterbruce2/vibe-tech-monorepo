@@ -80,79 +80,69 @@ describe('useWorksheet', () => {
     });
   });
 
-  it('should complete a worksheet session', async () => {
+  it('publishes primary durable completion, returns true, and requests one safe delivery sync', async () => {
     mockedComplete.mockResolvedValue({
       leveledUp: true,
       newDifficulty: 'Intermediate',
       starsToNextLevel: 5,
     });
 
-    const { result } = renderHook(() => useWorksheet());
+    const requestCompletionSync = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() => useWorksheet({ requestCompletionSync }));
     const session = makeSession();
 
     await act(async () => {
-      await result.current.completeWorksheetSession(session);
+      await expect(result.current.completeWorksheetSession(session)).resolves.toBe(true);
     });
 
     expect(result.current.worksheetSession).toEqual(session);
     expect(result.current.worksheetLeveledUp).toBe(true);
     expect(result.current.worksheetNewDifficulty).toBe('Intermediate');
     expect(result.current.worksheetStarsToNextLevel).toBe(5);
+    expect(requestCompletionSync).toHaveBeenCalledTimes(1);
   });
 
-  it('should call onAwardTokens when stars are earned', async () => {
-    const onAwardTokens = vi.fn();
-
-    const { result } = renderHook(() => useWorksheet({ onAwardTokens }));
-    const session = makeSession({ starsEarned: 4 });
+  it('returns false without publication or notification when primary persistence throws', async () => {
+    mockedComplete.mockRejectedValue(new Error('Save failed'));
+    const requestCompletionSync = vi.fn();
+    const { result } = renderHook(() => useWorksheet({ requestCompletionSync }));
 
     await act(async () => {
-      await result.current.completeWorksheetSession(session);
+      await expect(result.current.completeWorksheetSession(makeSession())).resolves.toBe(false);
     });
 
-    expect(onAwardTokens).toHaveBeenCalledWith(4);
+    expect(result.current.worksheetSession).toBeNull();
+    expect(requestCompletionSync).not.toHaveBeenCalled();
   });
 
-  it('should call onAchievementEvent with worksheet completion details', async () => {
-    const onAchievementEvent = vi.fn();
-
-    const { result } = renderHook(() => useWorksheet({ onAchievementEvent }));
-    const session = makeSession({ starsEarned: 3 });
-
-    await act(async () => {
-      await result.current.completeWorksheetSession(session);
-    });
-
-    expect(onAchievementEvent).toHaveBeenCalledWith({
-      type: 'WORKSHEET_COMPLETED',
-      payload: {
-        subject: 'Math',
-        score: 80,
-        starsEarned: 3,
-        tokensEarned: 3,
+  it.each([
+    [
+      'synchronous throw',
+      () => {
+        throw new Error('notify failed');
       },
-    });
-  });
-
-  it('should still call onAchievementEvent for low-scoring worksheets', async () => {
-    const onAchievementEvent = vi.fn();
-
-    const { result } = renderHook(() => useWorksheet({ onAchievementEvent }));
-    const session = makeSession({ starsEarned: 2 });
+    ],
+    ['asynchronous rejection', async () => Promise.reject(new Error('notify failed'))],
+  ])('keeps durable success when notification has a %s', async (_kind, requestCompletionSync) => {
+    const notification = vi.fn(requestCompletionSync);
+    const { result } = renderHook(() => useWorksheet({ requestCompletionSync: notification }));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const session = makeSession();
 
     await act(async () => {
-      await result.current.completeWorksheetSession(session);
+      await expect(result.current.completeWorksheetSession(session)).resolves.toBe(true);
     });
 
-    expect(onAchievementEvent).toHaveBeenCalledWith({
-      type: 'WORKSHEET_COMPLETED',
-      payload: {
-        subject: 'Math',
-        score: 80,
-        starsEarned: 2,
-        tokensEarned: 2,
-      },
-    });
+    expect(result.current.worksheetSession).toEqual(session);
+    expect(notification).toHaveBeenCalledTimes(1);
+    errorSpy.mockRestore();
+  });
+
+  it('does not expose direct token or achievement settlement callbacks', () => {
+    const { result } = renderHook(() => useWorksheet());
+    expect(Object.keys(result.current)).not.toEqual(
+      expect.arrayContaining(['worksheetRewardError', 'retryWorksheetReward']),
+    );
   });
 
   it('should cancel the worksheet', async () => {

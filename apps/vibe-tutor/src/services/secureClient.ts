@@ -1,287 +1,236 @@
-/**
- * Secure API Client - Communicates with backend proxy
- * No API keys stored client-side - all auth handled by server
- *
- * @module services/secureClient
- * @description 2026 Best Practice - Proxy-based API access for mobile apps
- */
-
-import { BLAKE_CONFIG } from '@/config';
+/** Client boundary for the production Tutor/Buddy API. Model selection stays on the server. */
+import { API_CONFIG } from '@/config';
 import { sessionStore } from '@/utils/electronStore';
-import { CapacitorHttp } from '@capacitor/core';
-import { logger } from '../utils/logger';
+import { Capacitor, CapacitorHttp, registerPlugin } from '@capacitor/core';
 
-export interface DeepSeekMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
+export interface DeepSeekMessage { role: 'system' | 'user' | 'assistant'; content: string; }
+export interface ChatOptions { chatType: 'tutor' | 'friend'; }
+export interface AllowancePeriod {
+  used: number; limit: number; remaining: number; resetAt: string;
 }
-
-export interface ChatOptions {
-  model?: string;
-  temperature?: number;
-  top_p?: number;
-  max_tokens?: number;
-  retryCount?: number;
-  fallbackMessage?: string;
-  useReasoning?: boolean;
-}
-
+export interface Allowance { daily: AllowancePeriod; monthly: AllowancePeriod; }
 export interface ChatCompletionResponse {
-  choices?: Array<{
-    message?: {
-      content?: string;
-    };
-  }>;
+  choices?: Array<{ message?: { content?: string } }>; allowance?: Allowance;
 }
-
 export interface ReportMessagePayload {
-  role: 'user' | 'model';
-  content: string;
-  timestamp: number;
-  chatType: 'tutor' | 'friend';
+  category: string; includeContent: boolean; content?: string;
 }
+interface IntegrityPlugin {
+  prepare(): Promise<void>;
+  request(options: { requestHash: string }): Promise<{ token: string }>;
+}
+const VibeTutorIntegrity = registerPlugin<IntegrityPlugin>('VibeTutorIntegrity');
+const MAX_MESSAGES = 20;
+const MAX_MESSAGE_CHARS = 4000;
+const CHAT_CONNECT_TIMEOUT_MS = 30000;
+const CHAT_READ_TIMEOUT_MS = 90000;
+const CHAT_TRANSIENT_ATTEMPTS = 3;
+const sleep = async (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+function base64Url(bytes: Uint8Array): string { let value = ''; for (const byte of bytes) value += String.fromCharCode(byte); return btoa(value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, ''); }
+function asResponseData(data: unknown): Record<string, unknown> | null {
+  if (data && typeof data === 'object' && !Array.isArray(data)) return data as Record<string, unknown>;
+  if (typeof data !== 'string' || !data.trim()) return null;
+  try {
+    const parsed: unknown = JSON.parse(data);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : null;
+  } catch {
+    return null;
+  }
+}
+function apiFailureMessage(data: unknown, status: number): string {
+  const body = asResponseData(data);
+  const code = typeof body?.code === 'string' ? body.code.trim() : '';
+  if (code) return code;
+  const error = typeof body?.error === 'string' ? body.error.trim() : '';
+  if (error) return error;
+  return `API error: ${status}`;
+}
+function isTransientChatFailure(status: number, data: unknown): boolean {
+  if (status !== 503) return false;
+  const body = asResponseData(data);
+  const code = typeof body?.code === 'string' ? body.code : '';
+  const error = typeof body?.error === 'string' ? body.error : '';
+  return code === 'ai_unavailable'
+    || /temporarily unavailable|quota-contention/i.test(`${code} ${error}`)
+    || (!code && !error);
+}
+async function requestHash(installationId: string, requestedAt: number): Promise<string> {
+  // This insertion order and numeric timestamp must exactly match the backend's
+  // requestHash(installationId, requestedAt) verification contract.
+  const canonical = JSON.stringify({ installationId, requestedAt });
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonical));
+  return base64Url(new Uint8Array(digest));
+}
+function isNative(): boolean { return typeof Capacitor.isNativePlatform === 'function' && Capacitor.isNativePlatform(); }
 
 class SecureAPIClient {
-  private baseURL: string;
   private sessionToken: string | null = null;
   private tokenExpiry = 0;
-  private static readonly FREE_FALLBACK_MODEL = 'openrouter/free';
+  private allowance: Allowance | null = null;
 
-  constructor() {
-    // ALWAYS use proxy for mobile apps - server handles API keys securely
-    this.baseURL = BLAKE_CONFIG.apiEndpoint;
-    logger.error(`[SecureClient] baseURL resolved to ${this.baseURL}`);
-  }
-
-  /**
-   * Initialize a session with the backend proxy
-   */
   private async initSession(): Promise<void> {
-    const targetUrl = `${this.baseURL}${BLAKE_CONFIG.endpoints.session}`;
-    logger.error(`[SecureClient] initSession → POST ${targetUrl}`);
-    try {
-      const response = await CapacitorHttp.post({
-        url: targetUrl,
-        headers: { 'Content-Type': 'application/json' },
-        data: {},
-      });
-      logger.error(`[SecureClient] initSession response status: ${response.status}`);
-
-      if (response.status !== 200) {
-        throw new Error(`Session init failed: ${response.status}`);
-      }
-
-      const data = response.data;
-      this.sessionToken = data.token;
-      this.tokenExpiry = Date.now() + data.expiresIn * 1000;
-
-      // Store token securely
-      sessionStore.set('vibetutor_session', this.sessionToken);
-      sessionStore.set('vibetutor_expiry', String(this.tokenExpiry));
-    } catch (error) {
-      logger.error('[SecureClient] Session initialization failed:', error);
-      throw error;
+    const installationId = sessionStore.get<string>('vibetutor_installation_id') ?? crypto.randomUUID();
+    sessionStore.set('vibetutor_installation_id', installationId);
+    const requestedAt = Date.now();
+    const hash = await requestHash(installationId, requestedAt);
+    if (!isNative()) throw new Error('Play Integrity verification is unavailable.');
+    await VibeTutorIntegrity.prepare();
+    const integrityToken = (await VibeTutorIntegrity.request({ requestHash: hash })).token;
+    if (!integrityToken) throw new Error('Play Integrity verification is unavailable.');
+    const response = await CapacitorHttp.post({
+      url: `${API_CONFIG.baseURL}${API_CONFIG.endpoints.initSession}`,
+      headers: { 'Content-Type': 'application/json' },
+      data: { installationId, requestedAt, requestHash: hash, integrityToken },
+    });
+    if (response.status < 200 || response.status >= 300 || !response.data?.token) {
+      const detail = apiFailureMessage(response.data, response.status);
+      throw new Error(`Session init failed (${response.status}): ${detail}`);
     }
+    this.sessionToken = response.data.token;
+    this.tokenExpiry = Date.now() + Number(response.data.expiresIn ?? 0) * 1000;
+    this.allowance = response.data.allowance ?? null;
+    sessionStore.set('vibetutor_session', this.sessionToken);
+    sessionStore.set('vibetutor_expiry', String(this.tokenExpiry));
   }
 
-  /**
-   * Ensure we have a valid session before making requests
-   */
-  private async ensureValidSession(): Promise<void> {
-    if (this.sessionToken && Date.now() < this.tokenExpiry) {
-      return; // Session still valid
-    }
-
-    // Try to restore from storage
-    const storedToken = sessionStore.get<string>('vibetutor_session');
-    const storedExpiry = sessionStore.get<string>('vibetutor_expiry');
-
-    if (storedToken && storedExpiry && Date.now() < Number(storedExpiry)) {
-      this.sessionToken = storedToken;
-      this.tokenExpiry = Number(storedExpiry);
-
+  private async ensureSession(): Promise<void> {
+    if (this.sessionToken && Date.now() < this.tokenExpiry) return;
+    const token = sessionStore.get<string>('vibetutor_session');
+    const expiry = Number(sessionStore.get<string>('vibetutor_expiry'));
+    if (token && expiry > Date.now()) {
+      this.sessionToken = token;
+      this.tokenExpiry = expiry;
       return;
     }
-
-    // Initialize new session
     await this.initSession();
   }
 
-  /**
-   * Make a chat completion request through the proxy
-   */
   async chatCompletion(
-    messages: DeepSeekMessage[],
-    options: ChatOptions = {},
+    messages: DeepSeekMessage[], options: ChatOptions,
   ): Promise<ChatCompletionResponse> {
-    await this.ensureValidSession();
-
-    const maxRetries = options.retryCount ?? 3;
-    let lastError: Error | null = null;
-    let forcedModel: string | undefined;
-
-    const buildRequestData = (modelOverride?: string) => {
-      const model = modelOverride ?? options.model;
-      return {
-        messages,
-        // Keep top-level fields for newer backend variants.
-        model,
-        temperature: options.temperature,
-        top_p: options.top_p,
-        max_tokens: options.max_tokens,
-        // Include nested options for legacy backend variants.
-        options: {
-          model,
-          temperature: options.temperature,
-          top_p: options.top_p,
-          max_tokens: options.max_tokens,
-        },
-      };
-    };
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const response = await CapacitorHttp.request({
-          url: `${this.baseURL}${BLAKE_CONFIG.endpoints.chat}`,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.sessionToken}`,
-          },
-          data: buildRequestData(forcedModel),
-          connectTimeout: 30000,
-          readTimeout: 30000,
-        });
-
-        if (response.status === 401) {
-          // Session expired, reinitialize and retry
-          await this.initSession();
-          continue;
-        }
-
-        if (response.status === 429) {
-          // Rate limited
-          const retryAfter = response.data?.retryAfter ?? 60;
-          logger.warn(`[SecureClient] Rate limited, retry after ${retryAfter}s`);
-
-          if (attempt < maxRetries) {
-            await new Promise((r) => setTimeout(r, retryAfter * 1000));
-            continue;
-          }
-        }
-
-        // Billing/access errors from paid models: retry once using free router model.
-        if (
-          (response.status === 402 || response.status === 503) &&
-          (forcedModel ?? options.model) !== SecureAPIClient.FREE_FALLBACK_MODEL
-        ) {
-          forcedModel = SecureAPIClient.FREE_FALLBACK_MODEL;
-          logger.warn(
-            '[SecureClient] Retrying chat with free fallback model after paid-model failure',
-          );
-          continue;
-        }
-
-        if (response.status < 200 || response.status >= 300) {
-          const serverMsg = response.data?.message ?? response.data?.error ?? '';
-          throw new Error(`API error: ${response.status} - ${serverMsg}`);
-        }
-
-        return response.data;
-      } catch (error) {
-        lastError = error as Error;
-        logger.error(`[SecureClient] Attempt ${attempt} failed:`, error);
-
-        if (attempt < maxRetries) {
-          const backoff = Math.min(Math.pow(2, attempt - 1) * 1000, 10000);
-          await new Promise((r) => setTimeout(r, backoff));
-        }
-      }
-    }
-
-    throw lastError ?? new Error('Request failed after all retries');
-  }
-
-  /**
-   * Report an AI-generated (or user) message as inappropriate, for Play Store
-   * content-moderation compliance. Logged server-side via /api/analytics/log.
-   */
-  async reportMessage(payload: ReportMessagePayload): Promise<void> {
-    await this.ensureValidSession();
-
-    const post = async () =>
-      CapacitorHttp.post({
-        url: `${this.baseURL}${BLAKE_CONFIG.endpoints.logAnalytics}`,
+    if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) throw new Error('Invalid message count');
+    const bounded = messages.map((message) => {
+      if (
+        !message ||
+        (message.role !== 'user' && message.role !== 'assistant') ||
+        typeof message.content !== 'string' ||
+        !message.content.trim() ||
+        message.content.length > MAX_MESSAGE_CHARS
+      ) throw new Error('Invalid message content');
+      return { role: message.role, content: message.content };
+    });
+    let authRetried = false;
+    for (let attempt = 0; attempt < CHAT_TRANSIENT_ATTEMPTS; attempt += 1) {
+      await this.ensureSession();
+      const response = await CapacitorHttp.request({
+        url: `${API_CONFIG.baseURL}${API_CONFIG.endpoints.chat}`,
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${this.sessionToken}`,
         },
-        data: {
-          event: 'report',
-          data: {
-            chatType: payload.chatType,
-            role: payload.role,
-            content: payload.content,
-            messageTimestamp: payload.timestamp,
-          },
-        },
+        data: { chatType: options.chatType, messages: bounded },
+        connectTimeout: CHAT_CONNECT_TIMEOUT_MS,
+        readTimeout: CHAT_READ_TIMEOUT_MS,
       });
-
-    let response = await post();
-
-    if (response.status === 401) {
-      await this.initSession();
-      response = await post();
+      if (response.status === 401 && !authRetried) {
+        authRetried = true;
+        this.sessionToken = null;
+        this.tokenExpiry = 0;
+        attempt -= 1;
+        continue;
+      }
+      if (
+        isTransientChatFailure(response.status, response.data)
+        && attempt + 1 < CHAT_TRANSIENT_ATTEMPTS
+      ) {
+        await sleep(400 * (2 ** attempt));
+        continue;
+      }
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(apiFailureMessage(response.data, response.status));
+      }
+      const body = asResponseData(response.data);
+      this.allowance = (body?.allowance as Allowance | null | undefined) ?? this.allowance;
+      return {
+        choices: typeof body?.message === 'string'
+          ? [{ message: { content: body.message } }]
+          : undefined,
+        allowance: this.allowance ?? undefined,
+      };
     }
-
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(`Report failed: ${response.status}`);
-    }
+    throw new Error('Session refresh failed');
   }
 
-  /**
-   * Check if the backend is healthy
-   */
+  async getAllowance(): Promise<Allowance | null> {
+    await this.ensureSession();
+    const response = await CapacitorHttp.get({
+      url: `${API_CONFIG.baseURL}/api/allowance`,
+      headers: { Authorization: `Bearer ${this.sessionToken}` },
+    });
+    if (response.status >= 200 && response.status < 300) {
+      this.allowance = response.data?.allowance ?? null;
+    }
+    return this.allowance;
+  }
+  getCachedAllowance(): Allowance | null { return this.allowance; }
+  async reportMessage(payload: ReportMessagePayload): Promise<void> {
+    await this.ensureSession();
+    const post = async () => CapacitorHttp.post({
+      url: `${API_CONFIG.baseURL}/api/reports`,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.sessionToken}`,
+      },
+      data: payload,
+    });
+    let response = await post();
+    if (response.status === 401) {
+      this.sessionToken = null;
+      await this.ensureSession();
+      response = await post();
+    }
+    if (response.status < 200 || response.status >= 300) throw new Error(`Report failed: ${response.status}`);
+  }
+  async classifySafety(message: string): Promise<string | null> {
+    if (!message.trim() || message.length > MAX_MESSAGE_CHARS) return null;
+    await this.ensureSession();
+    const response = await CapacitorHttp.post({
+      url: `${API_CONFIG.baseURL}/api/safety/classify`,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.sessionToken}`,
+      },
+      data: { text: message },
+    });
+    return response.status >= 200 && response.status < 300
+      ? response.data?.classification ?? null
+      : null;
+  }
   async healthCheck(): Promise<boolean> {
     try {
       const response = await CapacitorHttp.get({
-        url: `${this.baseURL}${BLAKE_CONFIG.endpoints.health}`,
+        url: `${API_CONFIG.baseURL}${API_CONFIG.endpoints.health}`,
       });
-      return response.status === 200 && response.data?.status === 'healthy';
+      return response.status === 200 && response.data?.status === 'ready' && response.data?.ready === true;
     } catch {
       return false;
     }
   }
 }
-
-// Singleton instance
 export const secureClient = new SecureAPIClient();
-
-/**
- * Helper function for chat completions
- */
 export async function createChatCompletion(
-  messages: DeepSeekMessage[],
-  options: ChatOptions = {},
-): Promise<string | null> {
-  try {
-    const response = await secureClient.chatCompletion(messages, options);
-    const content = response.choices?.[0]?.message?.content;
-
-    if (!content) {
-      return options.fallbackMessage ?? null;
-    }
-
-    return content;
-  } catch (error) {
-    logger.error('[SecureClient] Chat completion error:', error);
-    logger.error('[SecureClient] Chat completion error details:', error);
-    return (
-      options.fallbackMessage ??
-      "I'm having trouble connecting right now. Please try again in a moment! 🔄"
-    );
+  messages: DeepSeekMessage[], options: ChatOptions,
+): Promise<string> {
+  const content = (
+    await secureClient.chatCompletion(messages, options)
+  ).choices?.[0]?.message?.content;
+  if (typeof content !== 'string' || !content.trim()) {
+    throw new Error('AI response was unavailable.');
   }
+  return content;
 }
-
-// Legacy export for compatibility
 export { secureClient as deepseekClient };

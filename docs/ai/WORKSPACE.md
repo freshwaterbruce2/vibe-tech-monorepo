@@ -9,6 +9,6 @@ lastReviewed: 2026-02-06
 
 Canonical workspace rules live in [AI.md](../../AI.md).
 
-Primary AI tools: Gemini CLI + Gemini Code Assist.
+Primary AI tool: Codex CLI.
 
 If a project has overrides, check its local AI.md file.

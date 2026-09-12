@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import { runDunningSweep as runSharedDunningSweep } from '@vibetech/billing'
+import { runDunningSweep as runSharedDunningSweep } from '../shared/billing/index.js'
 
 import { recordAudit } from '../audit.js'
 import { enqueueJob } from '../jobs/enqueue.js'

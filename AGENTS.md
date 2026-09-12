@@ -41,12 +41,12 @@ The canonical repository is hosted on GitHub at `https://github.com/freshwaterbr
 
 ## Master Agent & Hierarchical Orchestration
 
-This workspace defines a default **master agent** in `.claude/agents/master-agent.md` (and `.agent/agents/master-agent.md` for the Antigravity framework). Load it first when starting work in this repository for workspace orientation, path policy enforcement, and intelligent routing to specialist agents.
+This workspace defines a default **Codex master agent** in `.claude/agents/master-agent.md`. Load it first when starting work in this repository for workspace orientation, path policy enforcement, and intelligent routing to specialist agents.
 
 - **Delegation Gate**: The Master Orchestrator must never implement complex features directly. If a task requires editing multiple files, complex logic, or more than 5 tool calls, the Master Orchestrator must delegate the tasks to specialized child agents (e.g., `frontend-expert`, `backend-expert`, `qa-expert`, or `data-expert`).
-- **Model Routing Criteria**:
-  - **Reasoning & Judgment (Sonnet 4.6 / Gemini 2.5 Pro)**: Reserved for architecture, planning, code reviews, and safety-gated execution.
-  - **Deterministic & Repetitive Tasks (Haiku 4.5 / Gemini 2.5 Flash)**: Routed to fast, cheap models for compilation checks, formatting, linting, and workspace cleanup.
+- **Codex Routing Criteria**:
+  - **Reasoning & Judgment**: The Codex master agent owns architecture, planning, code reviews, integration, and safety-gated execution.
+  - **Bounded Execution**: Codex child agents may own deterministic implementation, compilation checks, formatting, linting, or other explicitly scoped work.
 
 # Technology Stack
 
@@ -412,35 +412,29 @@ verified. The root working tree is the default source of truth.
 - Add or update tests when behavior changes.
 - Use `apply_patch` for manual edits.
 
-# Antigravity Orchestration Rules
+# Codex Orchestration Rules
 
 - For shared-package API changes or generated SaaS template changes, use the
   `.agents/skills/cross-package-refactor` workflow and split independent app/package
-  updates with Antigravity `/goal` or `.agent/workflows/orchestrate.md`.
+  updates among Codex child agents with explicit ownership boundaries.
 - For App Factory SaaS launches, use `.agents/skills/factory-launch` before
   generator edits or generated app verification.
-- Antigravity MCP config is unified for GUI and CLI at
-  `C:\Users\fresh_zxae3v6\.gemini\config\mcp_config.json`.
-- Keep `nx-mcp` enabled for `V:\monorepo` and prefer Nx graph/affected queries over
+- Keep the Codex `nx-mcp` registration workspace-pinned to
+  `C:\projects\vibe-tech-monorepo` and prefer Nx graph/affected queries over
   broad manual searches when determining downstream impact.
-- If Git worktree support sets `extensions.worktreeConfig=true`, ensure the
-  local repo config also has `core.repositoryformatversion=1` before launching
-  Antigravity.
 
 # State Management & Error Recovery (Manus Pattern & 3-Strike Protocol)
 
-For complex tasks (defined as requiring >5 tool calls, multi-step execution, or research), you must adopt file-based planning:
+For complex tasks (defined as requiring >5 tool calls, multi-step execution, or research), you must adopt repo-local file-based planning:
 
-- **Planning Directory**: `C:\Users\fresh_zxae3v6\.gemini\antigravity\scratch\planning\`
-- **Core Files**:
-  - `task_plan.md` — Outline phases, track progress, document decisions (update after each phase).
-  - `findings.md` — Record findings, schemas, and configurations (update after any discovery).
-  - `progress.md` — Keep a continuous execution log and test outcomes.
+- **Planning Directory**: `docs/plans/`
+- **Plan File**: `YYYY-MM-DD-<task-slug>.md` — Record scope, non-goals, findings,
+  decisions, progress, errors, and validation evidence in one task-specific file.
 - **Planning Rules**:
-  - **Create Plan First**: Write `task_plan.md` before executing any edits or complex commands.
-  - **2-Action Rule**: Save findings and state to `findings.md` after every 2 file view/search operations.
-  - **Read Before Decide**: Reread the planning files before making major architecture or design decisions.
-  - **Log Errors**: Record all errors, including attempt numbers, in `progress.md`.
+  - **Create Plan First**: Create or update the task-specific plan before executing any edits or complex commands.
+  - **Keep It Current**: Save meaningful findings and state changes to the plan during execution.
+  - **Read Before Decide**: Reread the plan before making major architecture or design decisions.
+  - **Log Errors**: Record all errors, including attempt numbers, in the plan.
 - **3-Strike Protocol**:
   1. _Strike 1 (Attempt 1)_: Diagnose the issue and apply a direct fix.
   2. _Strike 2 (Attempt 2)_: Pivot to an alternative technical approach.

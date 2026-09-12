@@ -43,7 +43,7 @@ export default function BrainGymHub(props: BrainGymHubProps) {
     zoneFilter, setZoneFilter, stats, showChestAnimation, continuousGameTokensRef,
     gameStartRef, streakActive, todayKey, gamesByZone, visibleZones, xpProgress,
     dailyGoalProgress, dailyGoalPct, gameTargets, totalTrackedRuns, nextUnlockGame,
-    featuredRecommendation, FeaturedGameIcon, handleGameComplete, closeActiveGame, launchGame,
+    featuredRecommendation, FeaturedGameIcon, handleGameComplete, closeActiveGame, launchGame, nextContinuousOperationId,
   } = state;
 
   /* ---------- Active game view ---------- */
@@ -61,24 +61,27 @@ export default function BrainGymHub(props: BrainGymHubProps) {
       onComplete: (score: number, stars: number, timeSpent: number) => {
         gameStartRef.current = 0;
         continuousGameTokensRef.current = 0;
-        handleGameComplete(activeGame, score, stars, timeSpent);
+        void handleGameComplete(activeGame, score, stars, timeSpent);
       },
-      onBack: () => closeActiveGame(),
+      onBack: () => { void closeActiveGame(); },
     };
     const memoryProps = { ...groupAProps, initialDifficulty: activeGameLaunchConfig.memoryDifficulty };
     const wordSearchProps = { ...groupAProps, initialConfig: activeGameLaunchConfig.wordsearchConfig };
     const groupBProps = {
-      onEarnTokens: (amount: number) => {
-        if (amount <= 0) return;
-        continuousGameTokensRef.current += amount;
-        onEarnTokens(amount, `Played ${getGameDisplayName(activeGame ?? 'game')}`);
+      onEarnTokens: async (amount: number, awardKey?: string) => {
+        if (amount <= 0) return false;
+        const operationId = nextContinuousOperationId(awardKey);
+        if (!operationId) return false;
+        const awarded = await onEarnTokens(amount, `Played ${getGameDisplayName(activeGame ?? 'game')}`, operationId);
+        if (awarded) continuousGameTokensRef.current += amount;
+        return awarded;
       },
       onClose: () => closeActiveGame(),
     };
     return (
       <Suspense fallback={fallback}>
         <div className="gh-active-game">
-          <button onClick={closeActiveGame} aria-label="Back to games hub" className="gh-back-btn">
+          <button onClick={() => { void closeActiveGame(); }} aria-label="Back to games hub" className="gh-back-btn">
             <ChevronLeft size={16} /> Back
           </button>
           {activeGame === 'memory' && <MemoryMatchGame {...memoryProps} />}
@@ -115,7 +118,7 @@ export default function BrainGymHub(props: BrainGymHubProps) {
             <ChevronLeft size={18} /> Back to Profile
           </button>
           {renderAvatarShop?.({
-            onSpendTokens: onSpendTokens ?? (() => false),
+            onSpendTokens: onSpendTokens ?? (async () => false),
             userTokens,
           }) ?? null}
         </div>

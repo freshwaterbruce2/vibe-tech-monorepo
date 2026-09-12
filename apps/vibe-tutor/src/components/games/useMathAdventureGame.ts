@@ -55,6 +55,8 @@ export function useMathAdventureGame({ onClose, onEarnTokens }: MathAdventurePro
   const animationFrameRef = useRef<number | null>(null);
   const lastFrameRef = useRef<number | null>(null);
   const playfieldGestureRef = useRef<{ x: number; y: number } | null>(null);
+  const pendingEncounterIdRef = useRef<string | null>(null);
+  const failedEncounterIdRef = useRef<string | null>(null);
 
   useEffect(() => { runnerStateRef.current = runnerState; }, [runnerState]);
   useEffect(() => { playerLaneRef.current = playerLane; }, [playerLane]);
@@ -74,15 +76,47 @@ export function useMathAdventureGame({ onClose, onEarnTokens }: MathAdventurePro
     setPlayerLane((c) => globalThis.Math.max(0, globalThis.Math.min(3, c + direction)) as LaneIndex);
   }, []);
 
-  const selectLane = useCallback((lane: LaneIndex) => { setPlayerLane(lane); }, []);
+  const selectLane = useCallback((lane: LaneIndex) => {
+    playerLaneRef.current = lane;
+    setPlayerLane(lane);
+    // A rejected gate stays in place; selecting a lane is the explicit retry gesture.
+    failedEncounterIdRef.current = null;
+  }, []);
 
-  const awardTokens = useEffectEvent((amount: number) => {
-    if (amount <= 0) return;
-    setTokensCollected((c) => c + amount);
-    onEarnTokens?.(amount);
+  const awardEncounter = useEffectEvent(async (
+    encounter: Encounter,
+    amount: number,
+    resolvedState: MathRunnerState,
+    isMathGate: boolean,
+  ) => {
+    if (pendingEncounterIdRef.current || amount <= 0) return;
+    pendingEncounterIdRef.current = encounter.id;
+    let accepted = !onEarnTokens;
+    try {
+      accepted ||= await onEarnTokens!(amount, `math-adventure:${encounter.id}`);
+    } catch {
+      accepted = false;
+    }
+    pendingEncounterIdRef.current = null;
+    if (!accepted) {
+      failedEncounterIdRef.current = encounter.id;
+      const retryable = { ...runnerStateRef.current, lastEvent: 'Token reward could not be saved. Choose a lane to retry this encounter.' };
+      runnerStateRef.current = retryable;
+      setRunnerState(retryable);
+      return;
+    }
+    const settledEncounters = encountersRef.current.map((item) => item.id === encounter.id ? { ...item, resolved: true } : item);
+    runnerStateRef.current = resolvedState;
+    encountersRef.current = settledEncounters;
+    setRunnerState(resolvedState);
+    setEncounters(settledEncounters);
+    setTokensCollected((current) => current + amount);
+    playSound(isMathGate ? 'success' : 'pop');
   });
 
   const triggerAction = useCallback((type: RunnerAction) => {
+    // Jump/dash is the explicit retry gesture for a rejected obstacle-clear award.
+    failedEncounterIdRef.current = null;
     const boostResult = consumeBoostCharge(runnerStateRef.current);
     if (!boostResult.consumed) {
       runnerStateRef.current = boostResult.state;
@@ -106,6 +140,8 @@ export function useMathAdventureGame({ onClose, onEarnTokens }: MathAdventurePro
     runnerStateRef.current = fresh;
     encountersRef.current = nextEnc;
     activeActionRef.current = null;
+    pendingEncounterIdRef.current = null;
+    failedEncounterIdRef.current = null;
     playerLaneRef.current = 1;
     setRunnerState(fresh);
     setEncounters(nextEnc);
@@ -146,6 +182,9 @@ export function useMathAdventureGame({ onClose, onEarnTokens }: MathAdventurePro
 
   /* ---------- Main game loop ---------- */
   const stepFrame = useEffectEvent((deltaMs: number) => {
+    // Do not let the runner move past a reward-bearing encounter until its ledger
+    // mutation is settled. This intentionally freezes only the bounded encounter.
+    if (pendingEncounterIdRef.current) return;
     const allowConfetti = animationSpeed === 'normal';
     const allowFlash = animationSpeed !== 'none';
     let nextState = tickMathRunner(runnerStateRef.current, deltaMs);
@@ -188,12 +227,20 @@ export function useMathAdventureGame({ onClose, onEarnTokens }: MathAdventurePro
 
     for (const enc of nextEnc) {
       if (enc.resolved || enc.x > PLAYER_X) continue;
+      if (failedEncounterIdRef.current === enc.id) {
+        commit(runnerStateRef.current, encountersRef.current, activeActionRef.current, impactFlash);
+        return;
+      }
       if (enc.kind === 'math') {
         const result = resolveMathLaneChoice(nextState, enc.problem, playerLaneRef.current);
+        if (result.isCorrect) {
+          void awardEncounter(enc, result.tokenDelta, result.state, true);
+          commit(runnerStateRef.current, encountersRef.current, activeActionRef.current, impactFlash);
+          return;
+        }
         nextState = result.state; enc.resolved = true;
         spawnRecoveryBufferRef.current = globalThis.Math.max(spawnRecoveryBufferRef.current, getEncounterRecoveryBufferMs(progress));
-        if (result.isCorrect) { playSound('success'); awardTokens(result.tokenDelta); if (allowConfetti && result.state.streak > 0 && result.state.streak % 5 === 0) void confetti({ colors: ['#38bdf8', '#facc15', '#c084fc'], origin: { x: 0.55, y: 0.3 }, particleCount: 70, spread: 55 }); }
-        else { playSound('error'); flash = allowFlash ? (animationSpeed === 'reduced' ? 120 : 220) : 0; }
+        playSound('error'); flash = allowFlash ? (animationSpeed === 'reduced' ? 120 : 220) : 0;
         if (nextState.isGameOver) break;
         continue;
       }
@@ -201,10 +248,14 @@ export function useMathAdventureGame({ onClose, onEarnTokens }: MathAdventurePro
       if (!laneHit) { enc.resolved = true; continue; }
       const evaded = nextAction?.type === enc.requiredAction;
       const result = resolveObstacleHit(nextState, evaded, enc.requiredAction);
+      if (evaded) {
+        void awardEncounter(enc, ACTION_REWARD_TOKEN, result.state, false);
+        commit(runnerStateRef.current, encountersRef.current, activeActionRef.current, impactFlash);
+        return;
+      }
       nextState = result.state; enc.resolved = true;
       spawnRecoveryBufferRef.current = globalThis.Math.max(spawnRecoveryBufferRef.current, getEncounterRecoveryBufferMs(progress));
-      if (evaded) { playSound('pop'); awardTokens(ACTION_REWARD_TOKEN); }
-      else { playSound('error'); flash = allowFlash ? (animationSpeed === 'reduced' ? 120 : 220) : 0; }
+      playSound('error'); flash = allowFlash ? (animationSpeed === 'reduced' ? 120 : 220) : 0;
       if (nextState.isGameOver) break;
     }
 

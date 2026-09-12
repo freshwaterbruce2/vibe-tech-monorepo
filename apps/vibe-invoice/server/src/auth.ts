@@ -1,4 +1,4 @@
-export type { AuthUser, SessionPayload } from '@vibetech/auth';
+export type { AuthUser, SessionPayload } from './shared/auth/index.js';
 export {
   createSessionToken,
   getSessionCookieName,
@@ -7,4 +7,4 @@ export {
   hashPassword,
   parseSessionToken,
   verifyPassword,
-} from '@vibetech/auth';
+} from './shared/auth/index.js';

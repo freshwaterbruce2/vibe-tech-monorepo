@@ -21,7 +21,7 @@ import { useSchedules, type GoalItem, type ScheduleItem } from '../../hooks/useS
 import { ScheduleInsightsCard } from './ScheduleInsightsCard';
 
 interface SchedulesHubProps {
-  onEarnTokens: (amount: number, reason: string) => void;
+  onEarnTokens: (amount: number, reason: string, operationId: string) => Promise<boolean>;
   onClose: () => void;
 }
 
@@ -47,6 +47,8 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
   const [energyLevel, setEnergyLevel] = useState<1 | 2 | 3>(2);
   const [aiSuggestions, setAiSuggestions] = useState<ScheduleSuggestion[]>([]);
   const [showAiPreview, setShowAiPreview] = useState(false);
+  const [aiSuggestionError, setAiSuggestionError] = useState<string | null>(null);
+  const [choreRewardError, setChoreRewardError] = useState<string | null>(null);
 
   // Local state for inputs
   const [newScheduleAcitivity, setNewScheduleActivity] = useState('');
@@ -80,10 +82,11 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
     setNewChore('');
   };
 
-  const handleToggleChore = (id: string, currentlyCompleted: boolean) => {
+  const handleToggleChore = async (id: string, currentlyCompleted: boolean) => {
     const earned = schedules.toggleChore(id);
     if (!currentlyCompleted && earned > 0) {
-      onEarnTokens(earned, 'Chore completed');
+      const awarded = await onEarnTokens(earned, 'Chore completed', `chore:complete:${id}`);
+      if (!awarded) setChoreRewardError('The chore was saved, but its token reward could not be saved. Toggle it and retry after checking storage.');
     }
   };
 
@@ -92,29 +95,43 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
       .filter((g) => !g.completed && g.type === 'short-term')
       .map((g) => g.title)
       .slice(0, 5);
-    const suggestions = await intelligence.generateSchedule(energyLevel, homeworkTitles);
-    setAiSuggestions(suggestions);
-    setShowAiPreview(suggestions.length > 0);
+    setAiSuggestionError(null);
+    setAiSuggestions([]);
+    setShowAiPreview(false);
+    try {
+      const suggestions = await intelligence.generateSchedule(energyLevel, homeworkTitles);
+      if (suggestions.length === 0) {
+        throw new Error('No usable schedule suggestions were returned');
+      }
+      setAiSuggestions(suggestions);
+      setShowAiPreview(true);
+    } catch {
+      setAiSuggestions([]);
+      setShowAiPreview(false);
+      setAiSuggestionError('Could not create a schedule suggestion. Check your connection and try AI Schedule again.');
+    }
   };
 
   const handleAddAllSuggestions = () => {
-    for (const s of aiSuggestions) {
-      // Parse "4:00 PM" → time "04:00", meridian "PM"
-      const match = s.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
-      if (match) {
-        const hourStr = match[1] ?? '0';
-        const minuteStr = match[2] ?? '00';
-        const meridianStr = match[3] ?? 'AM';
-        const hour = meridianStr.toUpperCase() === 'PM' && parseInt(hourStr) !== 12
-          ? String(parseInt(hourStr) + 12).padStart(2, '0')
-          : hourStr.padStart(2, '0');
-        schedules.addScheduleItem({
-          activity: s.activity,
-          time: `${hour}:${minuteStr}`,
-          meridian: meridianStr.toUpperCase() as 'AM' | 'PM',
-          type: activeScheduleType,
-        });
+    const parsedSuggestions: Array<{ activity: string; time: string; meridian: 'AM' | 'PM'; type: ScheduleType }> = [];
+    for (const suggestion of aiSuggestions) {
+      const match = suggestion.time.match(/^(1[0-2]|[1-9]):([0-5]\d)\s(AM|PM)$/);
+      if (!match) {
+        setAiSuggestions([]);
+        setShowAiPreview(false);
+        setAiSuggestionError('Could not create a schedule suggestion. Check your connection and try AI Schedule again.');
+        return;
       }
+      parsedSuggestions.push({
+        activity: suggestion.activity,
+        time: `${match[1]!.padStart(2, '0')}:${match[2]!}`,
+        meridian: match[3]! as 'AM' | 'PM',
+        type: activeScheduleType,
+      });
+    }
+
+    for (const suggestion of parsedSuggestions) {
+      schedules.addScheduleItem(suggestion);
     }
     setShowAiPreview(false);
     setAiSuggestions([]);
@@ -231,6 +248,12 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
                   )}
                 </button>
               </div>
+
+              {aiSuggestionError && (
+                <p role="alert" className="text-sm text-[var(--text-secondary)]">
+                  {aiSuggestionError}
+                </p>
+              )}
 
               {/* AI suggestions preview */}
               {showAiPreview && aiSuggestions.length > 0 && (
@@ -376,6 +399,7 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
 
           {activeTab === 'chores' && (
             <div className="space-y-6 animate-[fadeIn_0.3s_ease-out]">
+              {choreRewardError && <p role="alert" className="text-sm text-red-200">{choreRewardError}</p>}
               <div className="glass-card p-4 rounded-xl border border-[var(--glass-border)] flex flex-col md:flex-row gap-4 md:items-end items-stretch">
                 <div className="flex-1 w-full">
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">New Chore</label>
@@ -421,7 +445,7 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
                     }`}
                   >
                     <div className="flex items-center gap-4 flex-1">
-                      <button onClick={() => handleToggleChore(chore.id, chore.completed)}>
+                      <button onClick={async () => handleToggleChore(chore.id, chore.completed)}>
                         {chore.completed ? (
                           <CheckCircle2 className="w-6 h-6 text-[var(--secondary-accent)]" />
                         ) : (

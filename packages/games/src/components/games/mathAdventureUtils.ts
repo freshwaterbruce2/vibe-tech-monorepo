@@ -13,7 +13,8 @@ import { createMathRunnerProblem } from './mathAdventureRunner';
 /* ---------- Types ---------- */
 export interface MathAdventureProps {
   onClose?: () => void;
-  onEarnTokens?: (amount: number) => void;
+  /** Resolves only after the ledger has durably accepted this encounter. */
+  onEarnTokens?: (amount: number, awardKey: string) => Promise<boolean>;
 }
 
 export interface ActiveAction {

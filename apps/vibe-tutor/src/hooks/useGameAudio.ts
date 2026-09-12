@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { logger } from '../utils/logger';
+import { isSoundFeedbackEnabled } from '../services/sensoryPreferences';
 
 type SoundType = 'pop' | 'success' | 'error' | 'victory' | 'levelUp';
 
@@ -33,7 +34,7 @@ export function useGameAudio() {
   }, []);
 
   const playTone = useCallback((frequency: number, type: OscillatorType, duration: number, volume: number = 0.1) => {
-    if (!audioContext.current) return;
+    if (!isSoundFeedbackEnabled() || !audioContext.current) return;
     try {
       if (audioContext.current.state === 'suspended') {
         void audioContext.current.resume().catch(() => {});

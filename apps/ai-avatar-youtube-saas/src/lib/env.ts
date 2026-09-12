@@ -20,8 +20,14 @@ const envSchema = z.object({
   STRIPE_PRICE_STARTUP: z.string().optional(),
   STRIPE_PRICE_GROWTH: z.string().optional(),
   STRIPE_PRICE_SAAS_SCALE: z.string().optional(),
+  SQUARE_ACCESS_TOKEN: z.string().optional(),
+  SQUARE_LOCATION_ID: z.string().optional(),
+  SQUARE_WEBHOOK_SECRET: z.string().optional(),
+  SQUARE_ENVIRONMENT: z.enum(['sandbox', 'production']).default('sandbox'),
   AUTH_SECRET: z.string().min(32).default('change-me-min-32-characters-long'),
   DPOP_SECRET: z.string().min(32).default('change-me-min-32-characters-long'),
+  VIBE_AI_GATEWAY_URL: z.string().url().default('https://vibe-ai-gateway-734857480460.us-east4.run.app'),
+  VIBE_AI_GATEWAY_KEY: z.string().default('vibe_sk_avatar_default'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -47,4 +53,7 @@ export const env: z.infer<typeof envSchema> = parsed.success
       YOUTUBE_REDIRECT_URI: 'http://localhost:4300/api/auth/youtube/callback',
       AUTH_SECRET: 'change-me-min-32-characters-long',
       DPOP_SECRET: 'change-me-min-32-characters-long',
+      SQUARE_ENVIRONMENT: 'sandbox' as const,
+      VIBE_AI_GATEWAY_URL: 'https://vibe-ai-gateway-734857480460.us-east4.run.app',
+      VIBE_AI_GATEWAY_KEY: 'vibe_sk_avatar_default',
     };

@@ -3,18 +3,18 @@ import { useState } from 'react';
 import type { ShopItem } from '@vibetech/avatars';
 import { AvatarImage } from '@vibetech/avatars';
 import { AvatarPreview } from './AvatarPreview';
-import { useAvatarShop } from './useAvatarShop';
+import { type AvatarPurchaseOperationId, useAvatarShop } from './useAvatarShop';
 
-type TabId = 'Characters' | 'Hats' | 'Accessories' | 'Frames' | 'Badges' | 'Backgrounds' | 'Real Rewards';
+type TabId = 'Characters' | 'Hats' | 'Shirts' | 'Accessories' | 'Frames' | 'Badges' | 'Backgrounds';
 
 const TABS: { id: TabId; type: string; emoji: string }[] = [
   { id: 'Characters', type: 'avatar', emoji: '🧑' },
   { id: 'Hats', type: 'hat', emoji: '🧢' },
+  { id: 'Shirts', type: 'shirt', emoji: '👕' },
   { id: 'Accessories', type: 'accessory', emoji: '🎒' },
   { id: 'Frames', type: 'frame', emoji: '✨' },
   { id: 'Badges', type: 'badge', emoji: '🏅' },
   { id: 'Backgrounds', type: 'background', emoji: '🌌' },
-  { id: 'Real Rewards', type: 'real-reward', emoji: '🎁' },
 ];
 
 const RARITY_COLOR: Record<string, string> = {
@@ -29,13 +29,13 @@ interface ItemCardProps {
   isOwned: boolean;
   isEquipped: boolean;
   canBuy: boolean;
-  purchaseCount: number;
+  busy: boolean;
   userTokens: number;
   onBuy: () => void;
   onEquip: () => void;
 }
 
-function ItemCard({ item, isOwned, isEquipped, canBuy, purchaseCount, userTokens, onBuy, onEquip }: ItemCardProps) {
+function ItemCard({ item, isOwned, isEquipped, canBuy, busy, userTokens, onBuy, onEquip }: ItemCardProps) {
   const rarityClass = item.rarity ? (RARITY_COLOR[item.rarity] ?? '') : '';
 
   return (
@@ -74,33 +74,11 @@ function ItemCard({ item, isOwned, isEquipped, canBuy, purchaseCount, userTokens
         )}
       </div>
 
-      {/* Quantity tracker for real rewards */}
-      {item.maxQuantity && (
-        <p className="text-xs text-[var(--text-secondary)]">
-          {purchaseCount}/{item.maxQuantity} redeemed
-        </p>
-      )}
-
       {/* Action button */}
-      {item.isRealReward ? (
-        <button
-          onClick={onBuy}
-          disabled={!canBuy}
-          className={`w-full py-2 rounded-xl text-sm font-bold transition-all ${
-            canBuy
-              ? 'glass-button text-white hover:scale-[1.02]'
-              : 'bg-[var(--glass-border)] text-[var(--text-secondary)] cursor-not-allowed opacity-60'
-          }`}
-        >
-          {canBuy
-            ? `Redeem ${item.cost} 💎`
-            : userTokens < item.cost
-              ? `Need ${item.cost - userTokens} more`
-              : 'Max reached'}
-        </button>
-      ) : isEquipped ? (
+      {isEquipped ? (
         <button
           onClick={onEquip}
+          disabled={busy}
           className="w-full py-2 rounded-xl text-sm font-semibold border-2 border-[var(--primary-accent)] text-[var(--primary-accent)] hover:bg-[var(--primary-accent)]/10 transition-all"
         >
           ✓ Equipped · Unequip
@@ -108,6 +86,7 @@ function ItemCard({ item, isOwned, isEquipped, canBuy, purchaseCount, userTokens
       ) : isOwned ? (
         <button
           onClick={onEquip}
+          disabled={busy}
           className="w-full py-2 rounded-xl text-sm font-bold bg-[var(--success-accent)]/20 text-[var(--success-accent)] hover:bg-[var(--success-accent)]/30 transition-all"
         >
           Equip
@@ -133,8 +112,8 @@ function ItemCard({ item, isOwned, isEquipped, canBuy, purchaseCount, userTokens
 
 interface AvatarShopUnifiedProps {
   userTokens: number;
-  onSpendTokens: (amount: number, reason?: string) => boolean;
-  onPurchaseComplete?: () => void;
+  onSpendTokens: (amount: number, reason: string, operationId: string) => Promise<boolean>;
+  onPurchaseComplete?: (operationId: AvatarPurchaseOperationId) => unknown | Promise<unknown>;
   onClose?: () => void;
 }
 
@@ -145,7 +124,7 @@ export function AvatarShopUnified({
   onClose,
 }: AvatarShopUnifiedProps) {
   const [activeTab, setActiveTab] = useState<TabId>('Characters');
-  const { avatarState, allItems, lastPurchased, isOwned, isEquipped, canBuy, purchaseCount, handleBuy, handleEquip } =
+  const { avatarState, loading, blocked, busy, error, allItems, lastPurchased, isOwned, isEquipped, canBuy, handleBuy, retryPendingPurchase, reload, handleEquip } =
     useAvatarShop({ userTokens, onSpendTokens, onPurchaseComplete });
 
   const activeType = TABS.find((t) => t.id === activeTab)?.type ?? 'avatar';
@@ -166,7 +145,7 @@ export function AvatarShopUnified({
             </button>
           )}
 
-          <AvatarPreview avatarState={avatarState} allItems={allItems} size={56} className="shrink-0" />
+          {avatarState && <AvatarPreview avatarState={avatarState} allItems={allItems} size={56} className="shrink-0" />}
 
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold neon-text-primary leading-tight">My Avatar</h1>
@@ -185,6 +164,7 @@ export function AvatarShopUnified({
             <button
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); }}
+              disabled={loading || blocked || busy}
               className={`px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all shrink-0 ${
                 activeTab === tab.id
                   ? 'bg-[var(--primary-accent)] text-white shadow-[0_0_12px_rgba(139,92,246,0.5)]'
@@ -199,25 +179,37 @@ export function AvatarShopUnified({
 
       {/* Item grid */}
       <div className="flex-1 overflow-y-auto p-4">
-        {filteredItems.length === 0 ? (
-          <p className="text-center text-[var(--text-secondary)] py-16">No items available.</p>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {filteredItems.map((item) => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                isOwned={isOwned(item)}
-                isEquipped={isEquipped(item)}
-                canBuy={canBuy(item)}
-                purchaseCount={purchaseCount(item.id)}
-                userTokens={userTokens}
-                onBuy={() => { void handleBuy(item); }}
-                onEquip={() => { void handleEquip(item); }}
-              />
-            ))}
-          </div>
-        )}
+        {loading ? (
+          <p className="text-center text-[var(--text-secondary)] py-16" role="status">Loading avatar shop…</p>
+        ) : blocked ? (
+          <section className="text-center text-[var(--text-secondary)] py-16" role="alert">
+            <p>{error}</p>
+            <button className="glass-button mt-4 px-4 py-2 rounded-xl" onClick={() => { void reload(); }}>Reload avatar shop</button>
+          </section>
+        ) : avatarState ? (
+          <>
+            {(error || avatarState.pendingPurchase) && (
+              <section role="alert" className="mb-4 text-[var(--error-accent)]">
+                {error && <p>{error}</p>}
+                {avatarState.pendingPurchase && (
+                  <>
+                    <p>Finish your saved purchase safely.</p>
+                    <button className="glass-button mt-2 px-4 py-2 rounded-xl" disabled={busy} onClick={() => { void retryPendingPurchase(); }}>Retry purchase</button>
+                  </>
+                )}
+              </section>
+            )}
+            {filteredItems.length === 0 ? (
+              <p className="text-center text-[var(--text-secondary)] py-16">No items available.</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {filteredItems.map((item) => (
+                  <ItemCard key={item.id} item={item} isOwned={isOwned(item)} isEquipped={isEquipped(item)} canBuy={canBuy(item)} busy={busy} userTokens={userTokens} onBuy={() => { void handleBuy(item); }} onEquip={() => { void handleEquip(item); }} />
+                ))}
+              </div>
+            )}
+          </>
+        ) : <p className="text-center text-[var(--text-secondary)] py-16" role="status">Preparing avatar shop…</p>}
       </div>
 
       {/* Purchase success toast */}
@@ -225,9 +217,6 @@ export function AvatarShopUnified({
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[var(--primary-accent)] text-white px-5 py-3 rounded-2xl shadow-xl text-center pointer-events-none animate-bounce">
           <div className="font-bold text-base">{lastPurchased.imageUrl} Got it!</div>
           <div className="text-sm opacity-80">{lastPurchased.name}</div>
-          {lastPurchased.isRealReward && (
-            <div className="text-xs mt-1 opacity-70">Parent has been notified ✉️</div>
-          )}
         </div>
       )}
     </div>

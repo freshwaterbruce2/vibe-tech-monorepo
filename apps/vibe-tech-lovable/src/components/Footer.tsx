@@ -89,6 +89,9 @@ const Footer = () => {
             <Link to="/privacy" className="text-white hover:text-aura-accent transition-colors text-sm">
               Privacy Policy
             </Link>
+            <Link to="/privacy/chess-master" className="text-white hover:text-aura-accent transition-colors text-sm">
+              Chess Master Privacy
+            </Link>
             <Link to="/terms" className="text-white hover:text-aura-accent transition-colors text-sm">
               Terms of Service
             </Link>

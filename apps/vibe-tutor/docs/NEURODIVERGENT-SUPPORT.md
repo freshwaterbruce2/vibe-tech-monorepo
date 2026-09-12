@@ -1,14 +1,14 @@
 # Neurodivergent Learning Support Guide for Parents
 
 **Version**: 1.0.6+
-**Target Audience**: Parents of students (ages 12-16) with ADHD and/or high-functioning autism
+**Scope**: Optional presentation and organization settings for teen learners. This guide does not diagnose, optimize treatment for, monitor, or certify support for any condition.
 **Last Updated**: October 4, 2025
 
 ---
 
 ## Overview
 
-Vibe-Tutor has been specifically optimized for students with ADHD and high-functioning autism based on current neurodivergent education research. This guide helps parents understand how the AI tutoring works differently and what to expect.
+Vibe Tutor offers optional settings such as reduced motion, sound controls, clear task organization, and concise study guidance. Individual needs vary; families should choose the settings that work for them.
 
 ---
 

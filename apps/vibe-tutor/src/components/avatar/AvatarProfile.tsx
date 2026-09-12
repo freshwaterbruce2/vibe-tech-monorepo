@@ -2,18 +2,13 @@ import { Zap, Sparkles, BookOpen, Brain, Activity, type LucideProps } from 'luci
 import React, { useEffect, useState, useMemo } from 'react';
 import { type AvatarState, type AvatarStat, type ShopItem } from '../../types';
 import { dataStore } from '../../services/dataStore';
-import {
-  DEFAULT_UNLOCKED_AVATAR_IDS,
-  SHOP_ITEMS,
-  normalizeAvatarId,
-} from '../../services/avatarShopData';
+import { DEFAULT_UNLOCKED_AVATAR_IDS, SHOP_ITEMS, normalizeAvatarId } from '../../services/avatarShopData';
 import { AvatarPreview } from './AvatarPreview';
 
 function createAvatarState(
   saved?: Partial<AvatarState> | null,
-  legacyAvatar?: string,
 ): AvatarState {
-  const selectedAvatarId = normalizeAvatarId(saved?.selectedAvatarId ?? legacyAvatar);
+  const selectedAvatarId = normalizeAvatarId(saved?.selectedAvatarId);
 
   return {
     equippedItems: saved?.equippedItems ?? {},
@@ -90,27 +85,45 @@ export default function AvatarProfile({
   const [avatarState, setAvatarState] = useState<AvatarState>(() => createAvatarState());
   const [savedName, setSavedName] = useState(userName ?? '');
   const [nameInput, setNameInput] = useState(userName ?? '');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const [state, legacyAvatar, name] = await Promise.all([
+      setLoading(true);
+      try {
+      const [state, name] = await Promise.all([
         dataStore.getAvatarState(),
-        dataStore.getUserSettings('user_avatar'),
         dataStore.getUserSettings('user_name'),
       ]);
-      setAvatarState(createAvatarState(state, legacyAvatar));
+      setAvatarState(createAvatarState(state));
       setSavedName(name);
       setNameInput(name);
+      setError(null);
+      setLoadFailed(false);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : 'Avatar data could not be opened.');
+        setLoadFailed(true);
+      } finally { setLoading(false); }
     }
     void load();
-  }, []);
+  }, [loadAttempt]);
 
   const handleSaveName = async () => {
+    if (loading || loadFailed || busy) return;
+    setBusy(true);
     const trimmed = nameInput.trim();
-    setSavedName(trimmed);
-    setNameInput(trimmed);
-    await dataStore.saveUserSettings('user_name', trimmed);
-    onUserNameSaved?.(trimmed);
+    try {
+      await dataStore.saveUserSettings('user_name', trimmed);
+      setSavedName(trimmed);
+      setNameInput(trimmed);
+      try { onUserNameSaved?.(trimmed); } catch (callbackError) { console.error('Avatar profile name callback failed', callbackError); }
+      setError(null);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Your name could not be saved. Try again.'); }
+    finally { setBusy(false); }
   };
 
   const isNameUnchanged = nameInput.trim() === savedName.trim();
@@ -158,13 +171,25 @@ export default function AvatarProfile({
   }, [equippedShopItems]);
 
   const handleUnequip = async (type: 'hat' | 'shirt' | 'accessory') => {
+    if (loading || loadFailed || busy) return;
+    setBusy(true);
     const newState = {
       ...avatarState,
       equippedItems: { ...avatarState.equippedItems, [type]: undefined },
     };
-    setAvatarState(newState);
-    await dataStore.saveAvatarState(newState);
+    try { await dataStore.saveAvatarState(newState); setAvatarState(newState); setError(null); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Avatar equipment could not be saved. Try again.'); }
+    finally { setBusy(false); }
   };
+
+  if (loading || loadFailed) {
+    return (
+      <section role={loadFailed ? 'alert' : 'status'} aria-busy={!loadFailed} className="p-6">
+        <p>{loadFailed ? error : 'Loading avatar profile…'}</p>
+        {loadFailed && <button onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Reload avatar profile</button>}
+      </section>
+    );
+  }
 
   return (
     <div
@@ -176,6 +201,7 @@ export default function AvatarProfile({
         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
       }}
     >
+      {error && <p role="alert">{error}</p>}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
           <Activity
@@ -247,7 +273,7 @@ export default function AvatarProfile({
           />
           <button
             onClick={() => void handleSaveName()}
-            disabled={isNameUnchanged}
+            disabled={loading || loadFailed || busy || isNameUnchanged}
             style={{
               background: isNameUnchanged ? 'var(--text-placeholder)' : '#3b82f6',
               border: 'none',
@@ -349,6 +375,7 @@ export default function AvatarProfile({
                   {item && (
                     <button
                       onClick={() => void handleUnequip(type)}
+                      disabled={loading || loadFailed || busy}
                       style={{
                         background: 'transparent',
                         border: '1px solid var(--error-accent)',

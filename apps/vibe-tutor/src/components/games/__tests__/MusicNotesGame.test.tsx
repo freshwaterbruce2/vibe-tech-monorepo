@@ -65,32 +65,49 @@ describe('MusicNotesGame', () => {
     expect(mocks.playTone).toHaveBeenCalledWith('C', 0.5);
   });
 
-  it('awards tokens on correct answers and tracks accuracy by correctness', () => {
-    const onEarnTokens = vi.fn();
+  it('awaits token acceptance before recording a correct answer', async () => {
+    const onEarnTokens = vi.fn().mockResolvedValue(true);
     render(<MusicNotesGame onEarnTokens={onEarnTokens} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'C' }));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'C' })); });
     expect(mocks.playCorrect).toHaveBeenCalledTimes(1);
-    expect(onEarnTokens).toHaveBeenNthCalledWith(1, 2);
+    expect(onEarnTokens).toHaveBeenNthCalledWith(1, 2, 'music:C:0');
 
     act(() => {
       vi.advanceTimersByTime(1000);
     });
-    fireEvent.click(screen.getByRole('button', { name: 'C' }));
-    expect(onEarnTokens).toHaveBeenNthCalledWith(2, 2);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'C' })); });
+    expect(onEarnTokens).toHaveBeenNthCalledWith(2, 2, 'music:C:1');
 
     act(() => {
       vi.advanceTimersByTime(1000);
     });
-    fireEvent.click(screen.getByRole('button', { name: 'C' }));
-    expect(onEarnTokens).toHaveBeenNthCalledWith(3, 3);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'C' })); });
+    expect(onEarnTokens).toHaveBeenNthCalledWith(3, 3, 'music:C:2');
 
     act(() => {
       vi.advanceTimersByTime(1000);
     });
-    fireEvent.click(screen.getByRole('button', { name: 'D' }));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'D' })); });
     expect(mocks.playWrong).toHaveBeenCalledTimes(1);
     expect(onEarnTokens).toHaveBeenCalledTimes(3);
     expect(screen.getByText(/75% accuracy/i)).toBeInTheDocument();
+  });
+
+  it('keeps the same note retryable while a durable award is pending or rejected', async () => {
+    let settle: ((accepted: boolean) => void) | undefined;
+    const onEarnTokens = vi.fn(async () => new Promise<boolean>((resolve) => { settle = resolve; }));
+    render(<MusicNotesGame onEarnTokens={onEarnTokens} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'C' }));
+    fireEvent.click(screen.getByRole('button', { name: 'C' }));
+    expect(onEarnTokens).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/0 answered/i)).toBeInTheDocument();
+
+    await act(async () => { settle?.(false); });
+    expect(screen.getByText(/could not be saved/i)).toBeInTheDocument();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'C' })); });
+    expect(onEarnTokens).toHaveBeenCalledTimes(2);
+    expect(onEarnTokens.mock.calls[0]?.[1]).toBe(onEarnTokens.mock.calls[1]?.[1]);
   });
 });

@@ -9,13 +9,13 @@ Use this skill when changing a shared package API, billing or monetization contr
 
 ## Preflight
 
-1. Read `AGENTS.md`, `.agent/agents/master-agent.md`, and project-local `AGENTS.md` files for every touched app/package.
+1. Read `AGENTS.md`, `.claude/agents/master-agent.md`, and project-local `AGENTS.md` files for every touched app/package.
 2. Use `nx-workspace` first, then query affected projects with Nx instead of manual guessing.
 3. Search before creating files or duplicate services:
    - `rg --files`
    - `rg "<symbol-or-route-name>"`
    - `pnpm exec nx show projects --json`
-4. If the change is complex, create or update the file-backed plan in `~/.gemini/antigravity/scratch/planning/`.
+4. If the change is complex, create or update a task-specific file-backed plan in `docs/plans/`.
 
 ## Parallel Execution Pattern
 
@@ -26,7 +26,7 @@ Split work by ownership boundary, not by file count:
 - each downstream app family
 - final verification and affected Nx gates
 
-Use Antigravity `/goal` or the repo `orchestrate` workflow when the work spans independent folders. Each subagent must report:
+Use Codex child-agent delegation when the work spans independent folders. Assign explicit ownership and require each child agent to report:
 
 - files touched
 - contract assumptions

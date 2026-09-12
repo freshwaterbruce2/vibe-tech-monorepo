@@ -1,0 +1,37 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const read = (name) => readFileSync(resolve(appRoot, name), 'utf8');
+const policy = JSON.parse(read('privacy-policy.json'));
+const backend = `${read('render-backend/server.mjs')}\n${read('render-backend/core.mjs')}`;
+const disclosureFiles = ['privacy-policy.html', 'public/privacy-policy.html', 'docs/privacy-policy/index.html', 'docs/PRIVACY_POLICY.md', 'docs/PLAY_STORE_DESCRIPTION.md', 'docs/DATA_SAFETY.md', 'docs/PLAY_CONSOLE_ANSWER_SHEET.md', 'docs/PLAY_CONSOLE_QUICK_SETUP.md', 'docs/CONTENT_RATING_GUIDE.md', 'docs/PLAY_STORE_CHECKLIST.md'];
+const docs = disclosureFiles.map(read).join('\n');
+const rootEnv = read('.env.example');
+const backendEnv = read('render-backend/.env.example');
+const readme = read('README.md');
+const runbook = read('docs/ANDROID_RELEASE_RUNBOOK.md');
+const archivedChecklist = read('docs/PLAY_STORE_RELEASE_CHECKLIST.md');
+const assetDocs = `${read('docs/store-assets/README.md')}\n${read('docs/STORE_ASSETS_GUIDE.md')}`;
+const failures = [];
+const canonicalHtml = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${policy.title}</title><main><h1>${policy.title}</h1><p>Effective ${policy.effectiveDate}</p>${policy.sections.map((s) => `<h2>${s.heading}</h2>${s.paragraphs.map((p) => `<p>${p}</p>`).join('')}`).join('')}</main></html>\n`;
+for (const file of ['privacy-policy.html', 'public/privacy-policy.html', 'docs/privacy-policy/index.html']) if (read(file) !== canonicalHtml) failures.push(`${file} is not generated from canonical policy.`);
+for (const phrase of ['ages 13', '$2.99', '200 successful', '30-day expiration timestamp', 'Automatic deletion depends on the configured cloud retention enforcement', 'does not create app accounts', 'Data Management export, import, and reset workflows are still being completed', 'do not sell']) if (!JSON.stringify(policy).includes(phrase)) failures.push(`Canonical policy is missing ${phrase}.`);
+for (const phrase of ['deepseek/deepseek-v4-flash-0731', 'google/gemini-3.7-flash', "data_collection: 'deny'", 'privacy-policy.json']) if (!backend.includes(phrase)) failures.push(`Backend is missing ${phrase}.`);
+for (const phrase of ['does not create app accounts', '30-day expiration timestamp', 'TTL enforcement is unverified', 'Data Management export, import, and reset are incomplete']) if (!docs.includes(phrase)) failures.push(`Disclosure is missing ${phrase}.`);
+for (const forbidden of ['Moonshot', 'Kimi', '100% FREE', 'unlimited AI', '24/7 homework', 'automatically deleted after 30 days']) if (docs.includes(forbidden)) failures.push(`Disclosure contains stale claim: ${forbidden}.`);
+const requiredServerEnvKeys = ['OPENROUTER_API_KEY', 'SESSION_SIGNING_SECRET', 'INSTALLATION_HMAC_SECRET', 'PLAY_CERTIFICATE_SHA256', 'VIBE_TUTOR_INTEGRITY_CLOUD_PROJECT_NUMBER', 'GOOGLE_CLOUD_PROJECT', 'FIRESTORE_DATABASE'];
+for (const [name, content] of [['.env.example', rootEnv], ['render-backend/.env.example', backendEnv]]) {
+  for (const key of requiredServerEnvKeys) if (!new RegExp(`^${key}=`, 'm').test(content)) failures.push(`${name} is missing required server-side key ${key}.`);
+  if (!content.includes('server-side')) failures.push(`${name} must mark secrets server-side only.`);
+  if (/\b(?:VITE|NEXT_PUBLIC|REACT_APP)_[A-Z0-9_]*(?:KEY|SECRET|TOKEN)\b/.test(content)) failures.push(`${name} exposes browser/client secret guidance.`);
+  if (content.includes('GEMINI_API_KEY')) failures.push(`${name} retains direct Gemini key guidance.`);
+}
+if (readme.includes('GEMINI_API_KEY')) failures.push('README retains direct Gemini key guidance.');
+if (/\b(?:VITE|NEXT_PUBLIC|REACT_APP)_[A-Z0-9_]*(?:KEY|SECRET|TOKEN)\b/.test(readme)) failures.push('README exposes browser/client secret guidance.');
+if (!readme.includes('OPENROUTER_API_KEY') || !readme.includes('server-side')) failures.push('README is missing server-only OpenRouter guidance.');
+for (const content of [readme, runbook, archivedChecklist, assetDocs]) if (/\b[VD]:\\/i.test(content)) failures.push('Release-facing documentation retains a prohibited drive path.');
+if (!runbook.includes('requires an explicitly named approval')) failures.push('Android runbook must keep external and artifact actions held.');
+if (!archivedChecklist.includes('non-executable') || !archivedChecklist.includes('1.5.13` / `10514')) failures.push('Historical release checklist must be non-executable and redirect to the current identity.');
+if (!assetDocs.includes('historical') || !assetDocs.includes('separately approved')) failures.push('Store asset records must be marked historical and held.');
+if (failures.length) { console.error('Play release disclosure validation failed:'); failures.forEach((failure) => console.error(`- ${failure}`)); process.exitCode = 1; } else process.stdout.write('Play release disclosure validation passed.\n');

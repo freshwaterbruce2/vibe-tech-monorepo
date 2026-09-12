@@ -2,20 +2,19 @@ import { Capacitor } from '@capacitor/core';
 import { logger } from './utils/logger';
 
 // Vibe-Tutor Configuration
-// UPDATED: January 10, 2026 - Fixed for USB debugging with ADB reverse
 export * from './config/blakeConfig';
 
 // Runtime detection
+const browserLocation = typeof window !== 'undefined' ? window.location : undefined;
 const isDevelopment =
-  typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  browserLocation?.hostname === 'localhost' || browserLocation?.hostname === '127.0.0.1';
 
 // Detect native Capacitor runtime (Android/iOS).
 // Do NOT rely only on `Capacitor in window` because Electron/web shims may define it.
 const isNativeCapacitor =
   typeof window !== 'undefined' &&
-  (window.location.protocol === 'capacitor:' ||
-    window.location.protocol === 'ionic:' ||
+  (browserLocation?.protocol === 'capacitor:' ||
+    browserLocation?.protocol === 'ionic:' ||
     (typeof Capacitor?.isNativePlatform === 'function' && Capacitor.isNativePlatform()) ||
     (typeof (window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor
       ?.isNativePlatform === 'function' &&
@@ -29,19 +28,35 @@ const isNativeCapacitor =
 // Production: Google Cloud Run
 const PRODUCTION_BACKEND_URL = 'https://vibe-tutor-api-734857480460.us-east4.run.app';
 const allowNativeLocalApi = import.meta.env.VITE_ALLOW_NATIVE_LOCAL_API === 'true';
+
+// Dev / Debug mode detection across web, electron, and native debug APK
+const windowDev =
+  typeof window !== 'undefined'
+    ? (window as Window & { __DEV__?: boolean; __DEBUGGABLE__?: boolean }).__DEV__
+    : undefined;
+const windowDebuggable =
+  typeof window !== 'undefined'
+    ? (window as Window & { __DEV__?: boolean; __DEBUGGABLE__?: boolean }).__DEBUGGABLE__
+    : undefined;
+
+export const isDevBuild = Boolean(
+  windowDev !== undefined
+    ? windowDev
+    : (import.meta.env.DEV || import.meta.env.VITE_DEV_MODE === 'true' || windowDebuggable),
+);
+
+const allowNativeDevLocalApi = (isDevBuild || import.meta.env.DEV) && (allowNativeLocalApi || import.meta.env.VITE_USB_DEBUG === 'true');
 const runtimeApiUrl =
   typeof window !== 'undefined'
     ? (window as Window & { __API_URL__?: string }).__API_URL__
     : undefined;
 
-// USB debugging with ADB reverse (for local development ONLY)
-// Run: adb reverse tcp:3001 tcp:3001
+// Local development backend, guarded out of native production by the checks below.
 const USB_DEBUG_URL = 'http://localhost:3001';
 
-// Set VITE_USB_DEBUG=true in .env.local for local Capacitor development.
-// Guard with DEV so production builds cannot accidentally hardcode localhost.
+// Guard local overrides with DEV so production builds cannot accidentally use localhost.
 const USE_USB_DEBUG =
-  import.meta.env.DEV && import.meta.env.VITE_USB_DEBUG === 'true' && !isNativeCapacitor;
+  (isDevBuild || import.meta.env.DEV) && import.meta.env.VITE_USB_DEBUG === 'true';
 
 /**
  * Detect the best backend URL based on environment
@@ -49,9 +64,16 @@ const USE_USB_DEBUG =
 function detectBackendURL(): string {
   if (typeof runtimeApiUrl === 'string' && runtimeApiUrl.trim().length > 0) {
     const trimmedRuntimeUrl = runtimeApiUrl.trim();
-    const isLocalRuntimeUrl =
-      trimmedRuntimeUrl.includes('localhost') || trimmedRuntimeUrl.includes('127.0.0.1');
-    if (isNativeCapacitor && isLocalRuntimeUrl && !allowNativeLocalApi) {
+    let isLocalRuntimeUrl = false;
+    try {
+      const host = new URL(trimmedRuntimeUrl).hostname;
+      isLocalRuntimeUrl = host === 'localhost' || host === '127.0.0.1';
+    } catch {
+      isLocalRuntimeUrl = false;
+    }
+    if (isNativeCapacitor) {
+      if (trimmedRuntimeUrl === PRODUCTION_BACKEND_URL) return PRODUCTION_BACKEND_URL;
+      if (isLocalRuntimeUrl && allowNativeDevLocalApi) return trimmedRuntimeUrl;
       return PRODUCTION_BACKEND_URL;
     }
     return trimmedRuntimeUrl;
@@ -62,8 +84,12 @@ function detectBackendURL(): string {
     return USB_DEBUG_URL;
   }
 
-  // Explicit USB debug override (for local development)
-  if (USE_USB_DEBUG) {
+  if (!browserLocation) {
+    return PRODUCTION_BACKEND_URL;
+  }
+
+  // Explicit USB debug override (for local development or dev bridge testing)
+  if (USE_USB_DEBUG && (!isNativeCapacitor || allowNativeDevLocalApi)) {
     return USB_DEBUG_URL;
   }
 
@@ -83,11 +109,30 @@ export const API_CONFIG = {
   endpoints: {
     initSession: '/api/session/init',
     chat: '/api/chat',
-    openrouterChat: '/api/chat',
     health: '/api/health',
-    logAnalytics: '/api/analytics/log',
   },
 };
+
+export const isUsingLocalBackend = Boolean(
+  API_CONFIG.baseURL.includes('localhost') || API_CONFIG.baseURL.includes('127.0.0.1'),
+);
+
+export { isNativeCapacitor };
+
+/**
+ * Returns diagnostic notice text when running a debug build.
+ * Informs developers whether the app is pointing to local bridge or Cloud Run.
+ */
+export function getDevBridgeNotice(): string | null {
+  if (!isDevBuild) return null;
+  if (isUsingLocalBackend) {
+    return 'Debug build: connected to local dev bridge (localhost:3001)';
+  }
+  if (isNativeCapacitor) {
+    return 'Debug build targeting Cloud Run (Play Integrity required). For local bridge, run: pnpm run dev:bridge';
+  }
+  return null;
+}
 
 // ============== DEBUG LOGGING ==============
 
@@ -95,8 +140,8 @@ if (typeof window !== 'undefined') {
   logger.debug('[CONFIG] Environment detected:', {
     isDevelopment,
     isNativeCapacitor,
-    protocol: window.location.protocol,
-    hostname: window.location.hostname,
+    protocol: browserLocation?.protocol,
+    hostname: browserLocation?.hostname,
     hasCapacitorGlobal: 'Capacitor' in window,
     baseURL: API_CONFIG.baseURL,
   });
@@ -107,28 +152,3 @@ if (typeof window !== 'undefined') {
 }
 
 export default API_CONFIG;
-
-// ============== SETUP INSTRUCTIONS ==============
-/*
-USB DEBUGGING SETUP (Recommended):
-
-1. Connect Android phone via USB
-2. Enable USB debugging on phone (Settings > Developer Options)
-3. Open PowerShell on PC and run:
-
-   adb reverse tcp:3001 tcp:3001
-
-4. Start backend server:
-
-   cd V:\monorepo\apps\vibe-tutor\render-backend
-   node server.mjs
-
-5. Now the Android app can reach your PC's localhost:3001
-
-WIFI DEBUGGING ALTERNATIVE:
-
-1. Ensure phone and PC are on same WiFi network
-2. Find your PC's IP: ipconfig | findstr IPv4
-3. Update USB_DEBUG_URL to: http://YOUR_IP:3001
-4. Make sure Windows Firewall allows port 3001
-*/

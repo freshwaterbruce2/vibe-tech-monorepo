@@ -19,7 +19,7 @@ describe('reportGeneratorService.generateProgressReport', () => {
 
     expect(secure.createChatCompletion).toHaveBeenCalledWith(
       expect.any(Array),
-      expect.objectContaining({ model: 'deepseek/deepseek-v3.2' }),
+      { chatType: 'tutor' },
     );
     expect(report).toBe('Great progress this week!');
   });

@@ -13,6 +13,8 @@ import PalettePreview from '@/pages/PalettePreview';
 import Portfolio from '@/pages/Portfolio';
 import Pricing from '@/pages/Pricing';
 import Privacy from '@/pages/Privacy';
+import ChessMasterPrivacy from '@/pages/ChessMasterPrivacy';
+import Tutor from '@/pages/Tutor';
 import ProjectDetail from '@/pages/ProjectDetail';
 import Resources from '@/pages/Resources';
 import Services from '@/pages/Services';
@@ -44,6 +46,8 @@ const App: React.FC = () => {
             <Route path="/tools" element={<Tools />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/privacy/chess-master" element={<ChessMasterPrivacy />} />
+            <Route path="/tutor" element={<Tutor />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/palette-preview" element={<PalettePreview />} />
             <Route path="/futuristic-demo" element={<FuturisticDemo />} />

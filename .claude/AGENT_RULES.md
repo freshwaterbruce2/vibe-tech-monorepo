@@ -1,8 +1,8 @@
-# 🤖 CLAUDE AGENT MANDATORY INSTRUCTIONS
+# CODEX AGENT MANDATORY INSTRUCTIONS
 
 ## ⚠️ CRITICAL: READ BEFORE ANY CODE CHANGES ⚠️
 
-**These instructions are MANDATORY for all Claude AI agents (Opus, Sonnet, Haiku) working in this repository.**
+**These instructions are mandatory for every Codex agent working in this repository.**
 
 ---
 
@@ -10,16 +10,16 @@
 
 ### 1. **CHECK MONOREPO RULES**
 
-```bash
+```powershell
 # ALWAYS read the main rules first
-cat AI.md
+Get-Content -Raw AI.md
 ```
 
-### 2. **VERIFY YOUR ROLE**
+### 2. **VERIFY YOUR CODEX ROLE**
 
-- **Claude Opus 4.6 / Claude Code**: You handle PLANNING ONLY
-- **Claude Sonnet 4.6**: You handle CODING ONLY
-- **Other Models**: Follow task-specific instructions
+- **Codex master agent**: Own planning, integration, safety decisions, and final verification.
+- **Codex worker agent**: Implement only the explicitly assigned files or responsibility.
+- **Codex reviewer agent**: Review independently and report findings without expanding scope.
 
 ---
 
@@ -33,14 +33,14 @@ Before touching ANY code:
 2. Check line count of existing files (500 soft / 1000 hard)
 3. Determine if planning is required (3+ files)
 
-### **STEP 2: PLANNING (Opus/Claude Code Only)**
+### **STEP 2: PLANNING (CODEX PLAN OWNER)**
 
-If you are Opus 4.6 or Claude Code and planning is needed:
+If you own planning and planning is needed:
 
 ```yaml
 Create Plan:
-  - Location: ~/.gemini/antigravity/scratch/planning/
-  - Format: PLAN_YYYY-MM-DD_HH-MM-SS.md
+  - Location: docs/plans/
+  - Format: YYYY-MM-DD-<task-slug>.md
   - Contents:
       - Affected files list
       - Line count verification
@@ -49,12 +49,12 @@ Create Plan:
       - Testing approach
 ```
 
-### **STEP 3: EXECUTION (Sonnet 4.6 Only)**
+### **STEP 3: EXECUTION (ASSIGNED CODEX WORKER)**
 
-If you are Sonnet 4.6:
+If you are an assigned Codex worker:
 
-1. **WAIT for approved plan** from Opus/Claude Code
-2. **FOLLOW plan exactly** - no deviations
+1. **READ the task plan** and honor any recorded approval gate
+2. **STAY within assigned ownership** - report any required scope expansion
 3. **ENFORCE line limits** - split files over 500/1000 lines
 4. **MAINTAIN file names** - never rename existing files
 
@@ -132,23 +132,23 @@ EXAMPLES:
 
 ## 🎯 AGENT-SPECIFIC BEHAVIORS
 
-### **For Claude Opus 4.6 / Claude Code:**
+### **For the Codex Master Agent:**
 
-- **PRIMARY ROLE**: Planning and Architecture
-- **NEVER**: Write implementation code directly
-- **ALWAYS**: Create detailed plans before delegation
-- **OUTPUT**: Planning documents in `~/.gemini/antigravity/scratch/planning/`
+- **PRIMARY ROLE**: Planning, architecture, integration, and final verification
+- **DELEGATE**: Complex or independent work with explicit ownership boundaries
+- **ALWAYS**: Create or update a task-specific plan before complex execution
+- **OUTPUT**: Planning documents in `docs/plans/`
 
-### **For Claude Sonnet 4.6:**
+### **For Codex Worker Agents:**
 
 - **PRIMARY ROLE**: Code Implementation
-- **NEVER**: Make architectural decisions independently
-- **ALWAYS**: Request plan from Opus for 3+ file changes
+- **NEVER**: Expand scope or make unassigned architectural decisions independently
+- **ALWAYS**: Follow the task plan and assigned ownership boundary
 - **OUTPUT**: Clean, modular code following the plan
 
 ### **For All Agents:**
 
-- **USE TodoWrite**: Track all tasks and progress
+- **USE THE PLAN FILE**: Track task progress in `docs/plans/` when planning is required
 - **CHECK line count**: Before and after edits
 - **VALIDATE structure**: Ensure modular architecture
 - **PRESERVE names**: Never rename existing files
@@ -173,9 +173,9 @@ pnpm run lines:check
 
 ### **Check Planning Requirement:**
 
-```bash
+```powershell
 # Count affected files
-git diff --name-only | wc -l
+@(git diff --name-only).Count
 ```
 
 ### **Verify D:\ Drive Paths:**
@@ -212,8 +212,9 @@ START
   │   └─ No → Continue
   │
   └─ What's my role?
-      ├─ Opus/Claude Code → Create plan only
-      └─ Sonnet → Implement from plan only
+      ├─ Codex master → Plan, delegate, integrate, and verify
+      ├─ Codex worker → Implement only assigned ownership
+      └─ Codex reviewer → Review and report findings
 ```
 
 ---
@@ -233,8 +234,8 @@ START
 
 ## 📝 METADATA
 
-- **Rules Version**: 1.1.0
-- **Last Updated**: November 24, 2025
+- **Rules Version**: 2.0.0
+- **Last Updated**: August 23, 2026
 - **Enforcement Level**: MANDATORY
 - **Override Authority**: NONE
 

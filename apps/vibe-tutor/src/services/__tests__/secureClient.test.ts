@@ -1,514 +1,78 @@
-import type { HttpResponse } from '@capacitor/core';
-import { CapacitorHttp } from '@capacitor/core';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock dependencies
 vi.mock('@capacitor/core', () => ({
-  CapacitorHttp: {
-    post: vi.fn(),
-    request: vi.fn(),
-    get: vi.fn(),
-  },
+  Capacitor: { isNativePlatform: vi.fn(() => false) },
+  CapacitorHttp: { post: vi.fn(), request: vi.fn(), get: vi.fn() },
+  registerPlugin: vi.fn(() => ({ prepare: vi.fn().mockResolvedValue(undefined), request: vi.fn().mockResolvedValue({ token: 'integrity-token' }) })),
 }));
+vi.mock('@/config', () => ({ API_CONFIG: { baseURL: 'http://localhost:3001', endpoints: { initSession: '/api/session/init', chat: '/api/chat', health: '/api/health' } } }));
+vi.mock('@/utils/electronStore', () => ({ sessionStore: { get: vi.fn(() => null), set: vi.fn() } }));
 
-vi.mock('@/config', () => ({
-  BLAKE_CONFIG: {
-    apiEndpoint: 'http://localhost:3001',
-    endpoints: {
-      chat: '/api/chat',
-      session: '/api/session/init',
-      health: '/api/health',
-    },
-  },
-}));
-
-vi.mock('@/utils/electronStore', () => ({
-  sessionStore: {
-    get: vi.fn(),
-    set: vi.fn(),
-    remove: vi.fn(),
-    delete: vi.fn(),
-  },
-}));
-
-// Import after mocks are set up
-import type { ChatOptions, DeepSeekMessage } from '@/types';
-import { sessionStore } from '@/utils/electronStore';
 import { createChatCompletion, secureClient } from '../secureClient';
 
-describe('SecureAPIClient', () => {
-  const mockSessionResponse: HttpResponse = {
-    url: '',
-    status: 200,
-    headers: {},
-    data: {
-      token: 'test-session-token',
-      expiresIn: 3600, // 1 hour
-    },
-  };
-
-  const mockChatResponse: HttpResponse = {
-    url: '',
-    status: 200,
-    headers: {},
-    data: {
-      choices: [
-        {
-          message: {
-            content: 'This is a test response from AI',
-          },
-        },
-      ],
-    },
-  };
-
-  const mockMessages: DeepSeekMessage[] = [{ role: 'user', content: 'Hello AI' }];
-
+describe('SecureAPIClient production contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset navigator.onLine to true by default
-    Object.defineProperty(navigator, 'onLine', {
-      writable: true,
-      value: true,
-    });
-    // Reset secureClient instance state (clear any previous session)
-    (secureClient as unknown as Record<string, unknown>).sessionToken = null;
-    (secureClient as unknown as Record<string, unknown>).tokenExpiry = 0;
-    // Default: No stored session (returns null)
-    vi.mocked(sessionStore.get).mockReturnValue(null);
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+    (secureClient as unknown as { sessionToken: string | null; tokenExpiry: number }).sessionToken = null;
+    (secureClient as unknown as { sessionToken: string | null; tokenExpiry: number }).tokenExpiry = 0;
+    vi.mocked(CapacitorHttp.post).mockResolvedValue({ status: 200, data: { token: 'token', expiresIn: 60, allowance: { daily: { used: 1, limit: 30, remaining: 29, resetAt: 'tomorrow' }, monthly: { used: 1, limit: 200, remaining: 199, resetAt: 'next-month' } } } } as never);
+    vi.mocked(CapacitorHttp.request).mockResolvedValue({ status: 200, data: { message: 'reply', allowance: { daily: { used: 1, limit: 30, remaining: 29, resetAt: 'tomorrow' }, monthly: { used: 1, limit: 200, remaining: 199, resetAt: 'next-month' } } } } as never);
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
+  it('initializes a pseudonymous session request and sends only chatType and bounded messages', async () => {
+    await secureClient.chatCompletion([{ role: 'user', content: 'Help with fractions' }], { chatType: 'tutor' });
+    expect(CapacitorHttp.post).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ installationId: expect.any(String), requestedAt: expect.any(Number), requestHash: expect.any(String), integrityToken: 'integrity-token' }) }));
+    expect(CapacitorHttp.request).toHaveBeenCalledWith(expect.objectContaining({ data: { chatType: 'tutor', messages: [{ role: 'user', content: 'Help with fractions' }] } }));
   });
 
-  describe('Session Initialization', () => {
-    it('initializes session and stores token', async () => {
-      vi.mocked(CapacitorHttp.post).mockResolvedValue(mockSessionResponse);
-      vi.mocked(CapacitorHttp.request).mockResolvedValue(mockChatResponse);
-
-      await secureClient.chatCompletion(mockMessages);
-
-      // Verify session init was called
-      expect(CapacitorHttp.post).toHaveBeenCalledWith({
-        url: 'http://localhost:3001/api/session/init',
-        headers: { 'Content-Type': 'application/json' },
-        data: {},
-      });
-
-      // Verify token was stored
-      expect(sessionStore.set).toHaveBeenCalledWith('vibetutor_session', 'test-session-token');
-      expect(sessionStore.set).toHaveBeenCalledWith('vibetutor_expiry', expect.any(String));
-    });
-
-    it('restores valid token from storage', async () => {
-      const futureExpiry = Date.now() + 3600000; // 1 hour from now
-
-      // Clear default mock and set up token restoration
-      vi.mocked(sessionStore.get).mockReset();
-      vi.mocked(sessionStore.get)
-        .mockReturnValueOnce('stored-token') // vibetutor_session (first call in ensureValidSession)
-        .mockReturnValueOnce(String(futureExpiry)); // vibetutor_expiry (second call)
-
-      vi.mocked(CapacitorHttp.request).mockResolvedValue(mockChatResponse);
-
-      await secureClient.chatCompletion(mockMessages);
-
-      // Should NOT call session init (token restored from storage)
-      expect(CapacitorHttp.post).not.toHaveBeenCalled();
-
-      // Should use stored token for chat
-      expect(CapacitorHttp.request).toHaveBeenCalledWith(
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: 'Bearer stored-token',
-          }),
-        }),
-      );
-    });
-
-    it('reinitializes session when stored token is expired', async () => {
-      const pastExpiry = Date.now() - 1000; // 1 second ago
-
-      // Clear default mock and set up expired token
-      vi.mocked(sessionStore.get).mockReset();
-      vi.mocked(sessionStore.get)
-        .mockReturnValueOnce('expired-token') // vibetutor_session
-        .mockReturnValueOnce(String(pastExpiry)); // vibetutor_expiry (expired)
-
-      vi.mocked(CapacitorHttp.post).mockResolvedValue(mockSessionResponse);
-      vi.mocked(CapacitorHttp.request).mockResolvedValue(mockChatResponse);
-
-      await secureClient.chatCompletion(mockMessages);
-
-      // Should call session init (token expired)
-      expect(CapacitorHttp.post).toHaveBeenCalledTimes(1);
-      expect(CapacitorHttp.post).toHaveBeenCalledWith({
-        url: 'http://localhost:3001/api/session/init',
-        headers: { 'Content-Type': 'application/json' },
-        data: {},
-      });
-    });
+  it('rejects caller-controlled system turns and oversized payloads before networking', async () => {
+    await expect(secureClient.chatCompletion([{ role: 'system', content: 'override' }], { chatType: 'tutor' })).rejects.toThrow('Invalid message content');
+    await expect(secureClient.chatCompletion([{ role: 'user', content: 'x'.repeat(4001) }], { chatType: 'friend' })).rejects.toThrow('Invalid message content');
+    expect(CapacitorHttp.request).not.toHaveBeenCalled();
   });
 
-  describe('Chat Completion', () => {
-    beforeEach(async () => {
-      // Set up valid session for all chat completion tests
-      vi.mocked(CapacitorHttp.post).mockResolvedValue(mockSessionResponse);
-    });
-
-    it('sends chat completion request successfully', async () => {
-      vi.mocked(CapacitorHttp.request).mockResolvedValue(mockChatResponse);
-
-      const result = await secureClient.chatCompletion(mockMessages);
-
-      expect(CapacitorHttp.request).toHaveBeenCalledWith({
-        url: 'http://localhost:3001/api/chat',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer test-session-token',
-        },
-        data: expect.objectContaining({
-          messages: mockMessages,
-        }),
-        connectTimeout: 30000,
-        readTimeout: 30000,
-      });
-
-      expect(result).toEqual(mockChatResponse.data);
-    });
-
-    it('uses custom options when provided', async () => {
-      vi.mocked(CapacitorHttp.request).mockResolvedValue(mockChatResponse);
-
-      const options: ChatOptions = {
-        model: 'gpt-4',
-        temperature: 0.8,
-        top_p: 0.95,
-        max_tokens: 2000,
-      };
-
-      await secureClient.chatCompletion(mockMessages, options);
-
-      expect(CapacitorHttp.request).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            model: 'gpt-4',
-            temperature: 0.8,
-            top_p: 0.95,
-            max_tokens: 2000,
-            options: expect.objectContaining({
-              model: 'gpt-4',
-              temperature: 0.8,
-              top_p: 0.95,
-              max_tokens: 2000,
-            }),
-          }),
-        }),
-      );
-    });
+  it('refreshes once on unauthorized response without exposing model controls', async () => {
+    vi.mocked(CapacitorHttp.request).mockResolvedValueOnce({ status: 401, data: {} } as never).mockResolvedValueOnce({ status: 200, data: { message: 'welcome back' } } as never);
+    await secureClient.chatCompletion([{ role: 'user', content: 'Hi' }], { chatType: 'friend' });
+    expect(CapacitorHttp.request).toHaveBeenCalledTimes(2);
+    for (const call of vi.mocked(CapacitorHttp.request).mock.calls) expect((call[0] as { data: object }).data).not.toHaveProperty('model');
   });
 
-  describe('402 Paid Model Fallback', () => {
-    beforeEach(() => {
-      vi.mocked(CapacitorHttp.post).mockResolvedValue(mockSessionResponse);
-    });
+  it('propagates transport and non-success API failures instead of returning fallback content', async () => {
+    vi.mocked(CapacitorHttp.request).mockRejectedValueOnce(new Error('network unavailable'));
+    await expect(createChatCompletion([{ role: 'user', content: 'Hi' }], { chatType: 'tutor' })).rejects.toThrow('network unavailable');
 
-    it('retries with openrouter/free after 402 from paid model', async () => {
-      const paymentRequired: HttpResponse = {
-        url: '',
-        status: 402,
-        headers: {},
-        data: { error: 'Payment Required' },
-      };
-
-      vi.mocked(CapacitorHttp.request)
-        .mockResolvedValueOnce(paymentRequired)
-        .mockResolvedValueOnce(mockChatResponse);
-
-      const result = await secureClient.chatCompletion(mockMessages, {
-        model: 'deepseek/deepseek-v3.2',
-        retryCount: 2,
-      });
-
-      expect(result).toEqual(mockChatResponse.data);
-      expect(CapacitorHttp.request).toHaveBeenCalledTimes(2);
-
-      const secondRequest = vi.mocked(CapacitorHttp.request).mock.calls[1]?.[0];
-      expect(secondRequest?.data?.model).toBe('openrouter/free');
-      expect(secondRequest?.data?.options?.model).toBe('openrouter/free');
-    });
+    vi.mocked(CapacitorHttp.request).mockResolvedValue({ status: 503, data: { code: 'ai_unavailable' } } as never);
+    await expect(createChatCompletion([{ role: 'user', content: 'Hi again' }], { chatType: 'tutor' })).rejects.toThrow('ai_unavailable');
   });
 
-  describe('401 Session Expiry Handling', () => {
-    it('reinitializes session on 401 and retries', async () => {
-      const expired401Response: HttpResponse = {
-        url: '',
-        status: 401,
-        headers: {},
-        data: { error: 'Session expired' },
-      };
+  it('rejects missing or blank provider messages', async () => {
+    vi.mocked(CapacitorHttp.request).mockResolvedValueOnce({ status: 200, data: {} } as never);
+    await expect(createChatCompletion([{ role: 'user', content: 'Hi' }], { chatType: 'friend' })).rejects.toThrow('AI response was unavailable.');
 
-      // Initial session init succeeds
-      vi.mocked(CapacitorHttp.post).mockResolvedValue(mockSessionResponse);
-      // First request fails with 401
-      vi.mocked(CapacitorHttp.request).mockResolvedValueOnce(expired401Response);
-      // Retry request succeeds
-      vi.mocked(CapacitorHttp.request).mockResolvedValueOnce(mockChatResponse);
-
-      const result = await secureClient.chatCompletion(mockMessages);
-
-      // Verify session was initialized + reinitialized (2 calls total)
-      expect(CapacitorHttp.post).toHaveBeenCalledTimes(2);
-
-      // Verify request was retried with new token
-      expect(CapacitorHttp.request).toHaveBeenCalledTimes(2);
-
-      expect(result).toEqual(mockChatResponse.data);
-    });
+    vi.mocked(CapacitorHttp.request).mockResolvedValueOnce({ status: 200, data: { message: '   ' } } as never);
+    await expect(createChatCompletion([{ role: 'user', content: 'Hi again' }], { chatType: 'friend' })).rejects.toThrow('AI response was unavailable.');
   });
 
-  describe('429 Rate Limit Handling', () => {
-    beforeEach(() => {
-      // Set up valid session for rate limit tests
-      vi.mocked(CapacitorHttp.post).mockResolvedValue(mockSessionResponse);
-    });
+  it('treats health as connected only when the backend explicitly reports ready: true', async () => {
+    vi.mocked(CapacitorHttp.get).mockResolvedValueOnce({ status: 200, data: { status: 'ready', ready: false } } as never);
+    await expect(secureClient.healthCheck()).resolves.toBe(false);
 
-    it('waits retryAfter seconds on 429 and retries', async () => {
-      const rateLimitResponse: HttpResponse = {
-        url: '',
-        status: 429,
-        headers: {},
-        data: { error: 'Rate limit exceeded', retryAfter: 1 }, // 1 second wait
-      };
+    vi.mocked(CapacitorHttp.get).mockResolvedValueOnce({ status: 503, data: { status: 'unavailable', ready: false } } as never);
+    await expect(secureClient.healthCheck()).resolves.toBe(false);
 
-      vi.useFakeTimers();
-
-      // First request fails with 429
-      vi.mocked(CapacitorHttp.request).mockResolvedValueOnce(rateLimitResponse);
-      // Retry succeeds
-      vi.mocked(CapacitorHttp.request).mockResolvedValueOnce(mockChatResponse);
-
-      const resultPromise = secureClient.chatCompletion(mockMessages);
-
-      // Fast-forward 1 second
-      await vi.advanceTimersByTimeAsync(1000);
-
-      const result = await resultPromise;
-
-      expect(result).toEqual(mockChatResponse.data);
-      expect(CapacitorHttp.request).toHaveBeenCalledTimes(2);
-
-      vi.useRealTimers();
-    });
-
-    it('fails after max retries on persistent 429', async () => {
-      const rateLimitResponse: HttpResponse = {
-        url: '',
-        status: 429,
-        headers: {},
-        data: { error: 'Rate limit exceeded', retryAfter: 1 },
-      };
-
-      vi.useFakeTimers();
-
-      // All requests fail with 429
-      vi.mocked(CapacitorHttp.request).mockResolvedValue(rateLimitResponse);
-
-      const resultPromise = secureClient.chatCompletion(mockMessages, { retryCount: 3 });
-      const expectation = expect(resultPromise).rejects.toThrow();
-
-      // Fast-forward through all retries
-      await vi.advanceTimersByTimeAsync(5000);
-
-      await expectation;
-
-      // Should have tried 3 times
-      expect(CapacitorHttp.request).toHaveBeenCalledTimes(3);
-
-      vi.useRealTimers();
-    });
+    vi.mocked(CapacitorHttp.get).mockResolvedValueOnce({ status: 200, data: { status: 'ready', ready: true } } as never);
+    await expect(secureClient.healthCheck()).resolves.toBe(true);
   });
 
-  describe('Exponential Backoff on Errors', () => {
-    beforeEach(() => {
-      // Set up valid session for backoff tests
-      vi.mocked(CapacitorHttp.post).mockResolvedValue(mockSessionResponse);
-    });
-
-    it('retries with exponential backoff on network errors', async () => {
-      vi.useFakeTimers();
-
-      // First two attempts fail
-      vi.mocked(CapacitorHttp.request)
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockResolvedValueOnce(mockChatResponse);
-
-      const resultPromise = secureClient.chatCompletion(mockMessages, { retryCount: 3 });
-
-      // First backoff: 1 second (2^0 * 1000)
-      await vi.advanceTimersByTimeAsync(1000);
-
-      // Second backoff: 2 seconds (2^1 * 1000)
-      await vi.advanceTimersByTimeAsync(2000);
-
-      const result = await resultPromise;
-
-      expect(result).toEqual(mockChatResponse.data);
-      expect(CapacitorHttp.request).toHaveBeenCalledTimes(3);
-
-      vi.useRealTimers();
-    });
-
-    it('caps backoff at 10 seconds', async () => {
-      vi.useFakeTimers();
-
-      // Fail first 4 attempts
-      vi.mocked(CapacitorHttp.request)
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockResolvedValueOnce(mockChatResponse);
-
-      const resultPromise = secureClient.chatCompletion(mockMessages, { retryCount: 5 });
-
-      // Backoffs: 1s, 2s, 4s, 8s (should cap next at 10s)
-      await vi.advanceTimersByTimeAsync(1000);
-      await vi.advanceTimersByTimeAsync(2000);
-      await vi.advanceTimersByTimeAsync(4000);
-      await vi.advanceTimersByTimeAsync(10000); // Capped at 10s (not 16s)
-
-      const result = await resultPromise;
-
-      expect(result).toEqual(mockChatResponse.data);
-
-      vi.useRealTimers();
-    });
-
-    it('throws error after all retries exhausted', async () => {
-      const error = new Error('Persistent network error');
-
-      // All attempts fail
-      vi.mocked(CapacitorHttp.request).mockRejectedValue(error);
-
-      await expect(secureClient.chatCompletion(mockMessages, { retryCount: 3 })).rejects.toThrow(
-        'Persistent network error',
-      );
-
-      expect(CapacitorHttp.request).toHaveBeenCalledTimes(3);
-    });
-  });
-
-  describe('Health Check', () => {
-    it('checks health endpoint successfully', async () => {
-      const healthResponse: HttpResponse = {
-        url: '',
-        status: 200,
-        headers: {},
-        data: { status: 'healthy' },
-      };
-
-      vi.mocked(CapacitorHttp.get).mockResolvedValue(healthResponse);
-
-      const result = await secureClient.healthCheck();
-
-      expect(CapacitorHttp.get).toHaveBeenCalledWith({
-        url: 'http://localhost:3001/api/health',
-      });
-
-      expect(result).toBe(true);
-    });
-  });
-
-  describe('createChatCompletion Helper', () => {
-    beforeEach(() => {
-      vi.mocked(CapacitorHttp.post).mockResolvedValue(mockSessionResponse);
-    });
-
-    it('returns content from successful response', async () => {
-      vi.mocked(CapacitorHttp.request).mockResolvedValue(mockChatResponse);
-
-      const result = await createChatCompletion(mockMessages);
-
-      expect(result).toBe('This is a test response from AI');
-    });
-
-    it('returns fallback message when no content in response', async () => {
-      const emptyResponse: HttpResponse = {
-        url: '',
-        status: 200,
-        headers: {},
-        data: {
-          choices: [{ message: {} }],
-        },
-      };
-
-      vi.mocked(CapacitorHttp.request).mockResolvedValue(emptyResponse);
-
-      const result = await createChatCompletion(mockMessages, {
-        fallbackMessage: 'Custom fallback',
-      });
-
-      expect(result).toBe('Custom fallback');
-    });
-
-    it('returns default fallback when no content and no custom fallback', async () => {
-      const emptyResponse: HttpResponse = {
-        url: '',
-        status: 200,
-        headers: {},
-        data: {
-          choices: [{ message: {} }],
-        },
-      };
-
-      vi.mocked(CapacitorHttp.request).mockResolvedValue(emptyResponse);
-
-      const result = await createChatCompletion(mockMessages);
-
-      expect(result).toBe(null);
-    });
-
-    it('returns offline message when not connected', async () => {
-      Object.defineProperty(navigator, 'onLine', {
-        writable: true,
-        value: false,
-      });
-
-      // Set low retry count to prevent timeout
-      vi.mocked(CapacitorHttp.request).mockRejectedValue(new Error('Network error'));
-
-      const result = await createChatCompletion(mockMessages, { retryCount: 1 });
-
-      expect(result).toBe(
-        "I'm having trouble connecting right now. Please try again in a moment! 🔄",
-      );
-    });
-
-    it('returns fallback message on error when online', async () => {
-      // Set low retry count to prevent timeout
-      vi.mocked(CapacitorHttp.request).mockRejectedValue(new Error('API error'));
-
-      const result = await createChatCompletion(mockMessages, {
-        fallbackMessage: 'Custom error message',
-        retryCount: 1,
-      });
-
-      expect(result).toBe('Custom error message');
-    });
-
-    it('returns default error message when no custom fallback', async () => {
-      // Set low retry count to prevent timeout
-      vi.mocked(CapacitorHttp.request).mockRejectedValue(new Error('API error'));
-
-      const result = await createChatCompletion(mockMessages, { retryCount: 1 });
-
-      expect(result).toBe(
-        "I'm having trouble connecting right now. Please try again in a moment! 🔄",
-      );
-    });
+  it('throws descriptive error on session initialization failure', async () => {
+    vi.mocked(CapacitorHttp.post).mockResolvedValueOnce({
+      status: 401,
+      data: { error: 'Entitlement verification failed.' },
+    } as never);
+    await expect(secureClient.chatCompletion([{ role: 'user', content: 'Hi' }], { chatType: 'tutor' }))
+      .rejects.toThrow('Session init failed (401): Entitlement verification failed.');
   });
 });

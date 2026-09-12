@@ -5,6 +5,7 @@ import {
   getGenerativeModel,
   SchemaType,
 } from "firebase/ai";
+import { VibeAIClient } from "@vibetech/ai-client";
 import { env } from "@/lib/env";
 
 export interface ScriptScene {
@@ -57,46 +58,113 @@ const scriptSchema = {
   required: ["title", "scenes", "totalDurationSeconds"],
 };
 
+let gatewayClient: VibeAIClient | null = null;
+
+export function getGatewayClient(): VibeAIClient {
+  gatewayClient ??= new VibeAIClient({
+    apiKey: env.VIBE_AI_GATEWAY_KEY || "vibe_sk_avatar_default",
+    baseURL: env.VIBE_AI_GATEWAY_URL || "https://vibe-ai-gateway-734857480460.us-east4.run.app",
+    timeoutMs: 20000,
+  });
+  return gatewayClient;
+}
+
 export async function generateScript(
   topic: string,
   system?: string,
   targetDurationSeconds = 60,
+  clientOverride?: VibeAIClient,
 ): Promise<GeneratedScript> {
-  const firebaseApp = getFirebaseApp();
+  // 1. Try Universal Vibe AI Gateway
+  try {
+    const client = clientOverride ?? getGatewayClient();
+    const systemPrompt = [
+      system,
+      'You are an expert YouTube script generator. You must respond with ONLY valid JSON matching this schema:',
+      JSON.stringify({
+        title: "Video Title",
+        scenes: [
+          {
+            narration: "Spoken narration for this scene",
+            visualKeywords: "comma-separated visual search keywords",
+            durationSeconds: 15,
+          },
+        ],
+        totalDurationSeconds: targetDurationSeconds,
+      }),
+      'Do NOT include markdown formatting or code backticks around the JSON. Output only raw JSON.',
+    ].filter(Boolean).join('\n\n');
 
-  if (!firebaseApp) {
-    return {
-      title: `Placeholder: ${topic}`,
-      scenes: [
-        {
-          narration: `[PLACEHOLDER] A creative, original story about "${topic}" from a unique, branded perspective with personality-driven humor and transparent synthetic-media disclosure.`,
-          visualKeywords: "abstract background, studio lighting",
-          durationSeconds: targetDurationSeconds,
-        },
+    const userPrompt = `Topic: ${topic}\nTarget Duration: ${targetDurationSeconds} seconds\nCreate a script broken into scenes matching the schema.`;
+
+    const raw = await client.generateText(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
       ],
-      totalDurationSeconds: targetDurationSeconds,
-    };
+      {
+        model: 'auto',
+        temperature: 0.7,
+      },
+    );
+
+    const clean = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const parsed = JSON.parse(clean) as GeneratedScript;
+
+    if (Array.isArray(parsed.scenes) && parsed.scenes.length > 0) {
+      return {
+        title: typeof parsed.title === 'string' && parsed.title.trim() ? parsed.title.trim() : `Script: ${topic}`,
+        scenes: parsed.scenes.map((s) => ({
+          narration: String(s.narration ?? ''),
+          visualKeywords: String(s.visualKeywords ?? ''),
+          durationSeconds: Number(s.durationSeconds) || Math.round(targetDurationSeconds / parsed.scenes.length),
+        })),
+        totalDurationSeconds: Number(parsed.totalDurationSeconds) || targetDurationSeconds,
+      };
+    }
+  } catch (gatewayErr) {
+    console.warn('[VibeAI] Gateway generation failed or unavailable, falling back:', (gatewayErr as Error)?.message || gatewayErr);
   }
 
-  const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
-  const model = getGenerativeModel(ai, {
-    model: "gemini-2.5-flash",
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: scriptSchema,
-      temperature: 0.7,
-    },
-  });
+  // 2. Fallback to Firebase Gemini if configured
+  try {
+    const firebaseApp = getFirebaseApp();
 
-  const prompt = `${system ?? ""}\n\nTopic: ${topic}\n\nWrite a ${targetDurationSeconds}-second YouTube script. Break it into scenes, each with narration, visual search keywords, and an estimated duration. Include a title and total duration.`.trim();
+    if (firebaseApp) {
+      const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+      const model = getGenerativeModel(ai, {
+        model: "gemini-2.5-flash",
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: scriptSchema,
+          temperature: 0.7,
+        },
+      });
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  const parsed = JSON.parse(text) as GeneratedScript;
+      const prompt = `${system ?? ""}\n\nTopic: ${topic}\n\nWrite a ${targetDurationSeconds}-second YouTube script. Break it into scenes, each with narration, visual search keywords, and an estimated duration. Include a title and total duration.`.trim();
 
-  if (!parsed.scenes || parsed.scenes.length === 0) {
-    throw new Error("Model returned an empty script");
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      const parsed = JSON.parse(text) as GeneratedScript;
+
+      if (parsed.scenes && parsed.scenes.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (firebaseErr) {
+    console.warn('[VibeAI] Firebase Gemini fallback failed:', (firebaseErr as Error)?.message || firebaseErr);
   }
 
-  return parsed;
+  // 3. Final safe placeholder fallback
+  return {
+    title: `Placeholder: ${topic}`,
+    scenes: [
+      {
+        narration: `[PLACEHOLDER] A creative, original story about "${topic}" from a unique, branded perspective with personality-driven humor and transparent synthetic-media disclosure.`,
+        visualKeywords: "abstract background, studio lighting",
+        durationSeconds: targetDurationSeconds,
+      },
+    ],
+    totalDurationSeconds: targetDurationSeconds,
+  };
 }

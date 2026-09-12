@@ -16,14 +16,14 @@ const TaskBreakdown = ({ taskTitle, subject }: TaskBreakdownProps) => {
   useEffect(() => {
     const getSteps = async () => {
       setIsLoading(true);
-      setError(null);
-      try {
-        const result = await breakDownTask(taskTitle, subject);
-        if (result.length > 0) {
-          setSteps(result);
-        } else {
-          setError("Could not break down this task. Please try another one.");
-        }
+        setError(null);
+        try {
+          const result = await breakDownTask(taskTitle, subject);
+          if (result.status === 'success') {
+            setSteps(result.steps);
+          } else {
+            setError(result.message);
+          }
       } catch {
         setError("An error occurred while communicating with the AI.");
       } finally {

@@ -1,13 +1,6 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ClaimedReward, HomeworkItem, Reward } from '../../../types';
-
-// ── Mocks ─────────────────────────────────────────────────────────────────────
-vi.mock('@/services', () => ({
-  syncService: {
-    exportForHub: vi.fn().mockResolvedValue({ exportedCount: 3, directory: 'EXTERNAL_STORAGE', relativePath: 'export/2026-04-12.json' }),
-  },
-}));
+import type { HomeworkItem, Reward, RewardRequest } from '../../../types';
 
 vi.mock('../../core/SecurePinLock', () => ({
   default: ({ onUnlock }: { onUnlock: () => void }) => (
@@ -23,10 +16,10 @@ vi.mock('../../settings/ScreenTimeSettings', () => ({
   default: () => <div>Screen Time Settings</div>,
 }));
 vi.mock('../../settings/RewardSettings', () => ({
-  default: ({ onApproval }: { onApproval: (id: string, approved: boolean) => void }) => (
+  default: ({ onApproval }: { onApproval: (id: string, action: 'approve') => void }) => (
     <div>
       Reward Settings
-      <button onClick={() => onApproval('reward-1', true)}>Approve Reward</button>
+      <button onClick={() => onApproval('reward-1', 'approve')}>Approve Reward</button>
     </div>
   ),
 }));
@@ -42,9 +35,9 @@ const mockItems: HomeworkItem[] = [
 ];
 
 const mockRewards: Reward[] = [{ id: 'r1', name: 'Extra screen time', cost: 100 }];
-const mockClaimedRewards: ClaimedReward[] = [
-  { id: 'cr1', claimedDate: Date.now(), name: 'Extra screen time', cost: 100 },
-  { id: 'cr2', claimedDate: Date.now(), name: 'Extra screen time', cost: 100 },
+const mockClaimedRewards: RewardRequest[] = [
+  { schemaVersion: 1, requestId: 'cr1', reward: mockRewards[0]!, createdAt: 1, updatedAt: 1, status: 'pending_approval', debitOperationId: 'reward-debit:cr1', refundOperationId: 'reward-refund:cr1' },
+  { schemaVersion: 1, requestId: 'cr2', reward: mockRewards[0]!, createdAt: 1, updatedAt: 1, status: 'fulfilled', debitOperationId: 'reward-debit:cr2', refundOperationId: 'reward-refund:cr2' },
 ];
 
 const defaultProps = {
@@ -98,15 +91,15 @@ describe('ParentDashboard', () => {
       fireEvent.click(screen.getByTestId('unlock-btn'));
       await waitFor(() => screen.getByText('Tasks Done'));
       // 1 completed item out of 3
-      expect(screen.getByText('1')).toBeInTheDocument();
+      expect(within(screen.getByText('Tasks Done').parentElement!).getByText('1')).toBeInTheDocument();
     });
 
     it('shows the correct pending rewards count', async () => {
       render(<ParentDashboard {...defaultProps} />);
       fireEvent.click(screen.getByTestId('unlock-btn'));
-      await waitFor(() => screen.getByText('Pending Rewards'));
-      // 2 claimed rewards
-      expect(screen.getByText('2')).toBeInTheDocument();
+      await waitFor(() => screen.getByText('Open Reward Requests'));
+      // Only pending, debit, approved, and refund-in-progress requests are open.
+      expect(within(screen.getByText('Open Reward Requests').parentElement!).getByText('1')).toBeInTheDocument();
     });
 
     it('renders all dashboard section headings', async () => {
@@ -125,95 +118,28 @@ describe('ParentDashboard', () => {
     });
   });
 
-  // ── Sync functionality ─────────────────────────────────────────────────────
-  describe('Sync functionality', () => {
-    it('calls exportForHub when Sync Hub is clicked', async () => {
-      const { syncService } = await import('@/services');
+  describe('Android-only privacy boundary', () => {
+    it('does not expose a Sync Hub, export, or USB action after unlock', async () => {
       render(<ParentDashboard {...defaultProps} />);
       fireEvent.click(screen.getByTestId('unlock-btn'));
-      await waitFor(() => screen.getByText('Sync Hub'));
+      await waitFor(() => expect(screen.getByText('Parent Dashboard')).toBeInTheDocument());
 
-      fireEvent.click(screen.getByText('Sync Hub'));
-
-      await waitFor(() => expect(syncService.exportForHub).toHaveBeenCalledTimes(1));
-    });
-
-    it('shows "Syncing…" label while export is in progress', async () => {
-      const { syncService } = await import('@/services');
-      vi.mocked(syncService.exportForHub).mockImplementation(
-        async () =>
-          new Promise((resolve) =>
-            setTimeout(() => resolve({ exportedCount: 1, directory: 'EXTERNAL_STORAGE' as never, relativePath: 'export/x.json' }), 100),
-          ),
-      );
-      render(<ParentDashboard {...defaultProps} />);
-      fireEvent.click(screen.getByTestId('unlock-btn'));
-      await waitFor(() => screen.getByText('Sync Hub'));
-
-      fireEvent.click(screen.getByText('Sync Hub'));
-
-      await waitFor(() => expect(screen.getByText('Syncing…')).toBeInTheDocument());
-    });
-
-    it('alerts with success message on completed sync', async () => {
-      render(<ParentDashboard {...defaultProps} />);
-      fireEvent.click(screen.getByTestId('unlock-btn'));
-      await waitFor(() => screen.getByText('Sync Hub'));
-
-      fireEvent.click(screen.getByText('Sync Hub'));
-
-      await waitFor(() =>
-        expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('Export complete')),
-      );
-    });
-
-    it('alerts with error message on sync failure', async () => {
-      const { syncService } = await import('@/services');
-      vi.mocked(syncService.exportForHub).mockRejectedValueOnce(new Error('USB not found'));
-      render(<ParentDashboard {...defaultProps} />);
-      fireEvent.click(screen.getByTestId('unlock-btn'));
-      await waitFor(() => screen.getByText('Sync Hub'));
-
-      fireEvent.click(screen.getByText('Sync Hub'));
-
-      await waitFor(() =>
-        expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('Sync failed')),
-      );
-    });
-
-    it('prevents double-clicking Sync Hub while syncing', async () => {
-      const { syncService } = await import('@/services');
-       
-      let resolveExport!: (v: any) => void;
-      vi.mocked(syncService.exportForHub).mockImplementation(
-        async () => new Promise((resolve) => { resolveExport = resolve; }),
-      );
-
-      render(<ParentDashboard {...defaultProps} />);
-      fireEvent.click(screen.getByTestId('unlock-btn'));
-      await waitFor(() => screen.getByText('Sync Hub'));
-
-      fireEvent.click(screen.getByText('Sync Hub'));
-      await waitFor(() => screen.getByText('Syncing…'));
-      // Click again while syncing
-      fireEvent.click(screen.getByText('Syncing…'));
-
-      resolveExport({ exportedCount: 1, directory: 'EXTERNAL_STORAGE', relativePath: 'x.json' });
-      await waitFor(() => expect(syncService.exportForHub).toHaveBeenCalledTimes(1));
+      expect(screen.queryByText(/sync hub|syncing|export|usb/i)).not.toBeInTheDocument();
     });
   });
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   describe('Navigation', () => {
-    it('navigates to parent-rules when Rules button is clicked', async () => {
+    it('does not expose Parent Rules after unlock while preserving Wellness navigation', async () => {
       const onNavigate = vi.fn();
       render(<ParentDashboard {...defaultProps} onNavigate={onNavigate} />);
       fireEvent.click(screen.getByTestId('unlock-btn'));
-      await waitFor(() => screen.getByRole('button', { name: /rules/i }));
 
-      fireEvent.click(screen.getByRole('button', { name: /rules/i }));
+      await waitFor(() => screen.getByRole('button', { name: /open wellness hub/i }));
+      expect(screen.queryByRole('button', { name: /rules|parent rules/i })).not.toBeInTheDocument();
 
-      expect(onNavigate).toHaveBeenCalledWith('parent-rules');
+      fireEvent.click(screen.getByRole('button', { name: /open wellness hub/i }));
+      expect(onNavigate).toHaveBeenCalledWith('wellness');
     });
 
     it('navigates to wellness when Open Wellness Hub is clicked', async () => {
@@ -227,12 +153,6 @@ describe('ParentDashboard', () => {
       expect(onNavigate).toHaveBeenCalledWith('wellness');
     });
 
-    it('does not render Rules button when onNavigate is not provided', async () => {
-      render(<ParentDashboard {...defaultProps} />);
-      fireEvent.click(screen.getByTestId('unlock-btn'));
-      await waitFor(() => screen.getByText('Parent Dashboard'));
-      expect(screen.queryByRole('button', { name: /rules/i })).not.toBeInTheDocument();
-    });
   });
 
   // ── Inactivity auto-lock ───────────────────────────────────────────────────
@@ -288,7 +208,7 @@ describe('ParentDashboard', () => {
 
       fireEvent.click(screen.getByText('Approve Reward'));
 
-      expect(defaultProps.onApproval).toHaveBeenCalledWith('reward-1', true);
+      expect(defaultProps.onApproval).toHaveBeenCalledWith('reward-1', 'approve');
     });
   });
 });

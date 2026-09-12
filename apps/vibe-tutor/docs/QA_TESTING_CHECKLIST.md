@@ -1,9 +1,9 @@
-# QA Testing Checklist - Vibe-Tutor v1.5.0
+# QA Testing Checklist - Vibe-Tutor v1.5.12
 
-**Version**: 1.5.0 "Play Store Ready" (versionCode 28)
-**Test Date**: ___________
-**Tester**: ___________
-**Test Run #**: ___________
+**Version**: 1.5.12 "Play Store Ready" (versionCode 10513)
+**Test Date**: \***\*\_\_\_\*\***
+**Tester**: \***\*\_\_\_\*\***
+**Test Run #**: \***\*\_\_\_\*\***
 
 ---
 
@@ -15,14 +15,14 @@
 
 **Minimum Specification:**
 
-- [ ] Android 10+ (target minimum for Play Store)
+- [ ] Android 10+ (QA device-matrix floor; app minSdk is Android 6.0 / API 23)
 - [ ] Minimum 2GB RAM
 - [ ] Physical device (NOT emulator)
 - [ ] Stable internet connection available
 
 **Recommended Specification:**
 
-- [ ] Android 14+ (current generation)
+- [ ] Android 16+ (current target-SDK generation)
 - [ ] 4GB+ RAM
 - [ ] Samsung Galaxy S series OR Google Pixel (most common Play Store devices)
 - [ ] Mix of screen sizes: phone + tablet
@@ -31,37 +31,37 @@
 
 **Device 1:**
 
-- [ ] Manufacturer: ___________
-- [ ] Model: ___________
-- [ ] Android Version: ___________
-- [ ] RAM: ___________
-- [ ] Screen Size: ___________
+- [ ] Manufacturer: \***\*\_\_\_\*\***
+- [ ] Model: \***\*\_\_\_\*\***
+- [ ] Android Version: \***\*\_\_\_\*\***
+- [ ] RAM: \***\*\_\_\_\*\***
+- [ ] Screen Size: \***\*\_\_\_\*\***
 - [ ] Test Status: PASS / FAIL / PARTIAL
 
 **Device 2:**
 
-- [ ] Manufacturer: ___________
-- [ ] Model: ___________
-- [ ] Android Version: ___________
-- [ ] RAM: ___________
-- [ ] Screen Size: ___________
+- [ ] Manufacturer: \***\*\_\_\_\*\***
+- [ ] Model: \***\*\_\_\_\*\***
+- [ ] Android Version: \***\*\_\_\_\*\***
+- [ ] RAM: \***\*\_\_\_\*\***
+- [ ] Screen Size: \***\*\_\_\_\*\***
 - [ ] Test Status: PASS / FAIL / PARTIAL
 
 **Device 3 (Recommended):**
 
-- [ ] Manufacturer: ___________
-- [ ] Model: ___________
-- [ ] Android Version: ___________
-- [ ] RAM: ___________
-- [ ] Screen Size: ___________
+- [ ] Manufacturer: \***\*\_\_\_\*\***
+- [ ] Model: \***\*\_\_\_\*\***
+- [ ] Android Version: \***\*\_\_\_\*\***
+- [ ] RAM: \***\*\_\_\_\*\***
+- [ ] Screen Size: \***\*\_\_\_\*\***
 - [ ] Test Status: PASS / FAIL / PARTIAL
 
 **Tablet Test (10" minimum - Optional but Recommended):**
 
-- [ ] Manufacturer: ___________
-- [ ] Model: ___________
-- [ ] Android Version: ___________
-- [ ] Screen Size: ___________
+- [ ] Manufacturer: \***\*\_\_\_\*\***
+- [ ] Model: \***\*\_\_\_\*\***
+- [ ] Android Version: \***\*\_\_\_\*\***
+- [ ] Screen Size: \***\*\_\_\_\*\***
 - [ ] Responsive Layout: PASS / FAIL
 - [ ] Touch Targets: PASS / FAIL
 
@@ -98,7 +98,7 @@
 - [ ] **No errors in logcat**
 - [ ] **Launch time < 3 seconds**
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -124,7 +124,7 @@
   - [ ] Shows last 7 days
   - [ ] Displays focus minutes + tasks
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -146,7 +146,7 @@
   - [ ] Short paragraphs
   - [ ] Clear language
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -155,12 +155,12 @@
 - [ ] **Navigate to Buddy Chat view**
 - [ ] **Send message: "I'm stressed about homework"**
   - [ ] Response is supportive
-  - [ ] Roblox-friendly tone (if applicable)
+  - [ ] Interest-friendly tone (if applicable)
 - [ ] **Test separate context from Tutor**
   - [ ] Conversation independent
   - [ ] No mixing of chat histories
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -178,7 +178,7 @@
   - [ ] Bonus tokens awarded (+20)
   - [ ] Completion tracked
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -194,7 +194,7 @@
   - [ ] Gate unlocked
   - [ ] Games accessible
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -208,7 +208,7 @@
   - [ ] Timestamps correct
 - [ ] **Close button returns to dashboard**
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -233,7 +233,7 @@
   - [ ] Results screen shows
   - [ ] Points added to total
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -253,7 +253,7 @@
   - [ ] Results screen shows
   - [ ] Level up if 5 stars earned
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -277,7 +277,7 @@
   - [ ] File removed
   - [ ] Storage freed
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -303,7 +303,7 @@
   - [ ] Colors change
   - [ ] Contrast improves
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -325,7 +325,7 @@
 - [ ] **Cancel early**
   - [ ] No points awarded
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -343,7 +343,7 @@
   - [ ] Points deducted
   - [ ] Reward moves to claimed section
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -371,7 +371,7 @@
   - [ ] All data deleted
   - [ ] App resets
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -387,7 +387,7 @@
   - [ ] Animations adjust app-wide
 - [ ] **Close and verify settings persist**
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -405,7 +405,7 @@
   - [ ] Error message displays
   - [ ] Graceful fallback
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -425,7 +425,7 @@
   - [ ] AI Buddy shows offline message
   - [ ] Music streaming shows offline message
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -442,7 +442,7 @@
   - [ ] Session token refreshed
   - [ ] Data intact
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -453,7 +453,7 @@
   - [ ] Option to delete tracks shown
   - [ ] Download stops gracefully
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -465,7 +465,7 @@
   - [ ] No excessive growth
   - [ ] Memory stabilizes
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -475,12 +475,12 @@
 
 **Procedure:** Clear app cache, close app completely, then measure first launch
 
-- [ ] **Cold start time**: ________ seconds
+- [ ] **Cold start time**: **\_\_\_\_** seconds
   - [ ] Target: <3 seconds
   - [ ] Status: PASS / FAIL
-  - [ ] Device: ___________
+  - [ ] Device: \***\*\_\_\_\*\***
 
-- [ ] **Warm start time** (relaunch without clear): ________ seconds
+- [ ] **Warm start time** (relaunch without clear): **\_\_\_\_** seconds
   - [ ] Target: <1 second
   - [ ] Status: PASS / FAIL
 
@@ -501,35 +501,35 @@ adb shell "dumpsys meminfo com.vibetech.tutor | grep TOTAL"
 adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 ```
 
-- [ ] **Memory at launch**: ________ MB
-- [ ] **Memory after 30-minute session**: ________ MB
+- [ ] **Memory at launch**: **\_\_\_\_** MB
+- [ ] **Memory after 30-minute session**: **\_\_\_\_** MB
   - [ ] Max growth: <50MB (target: <30MB)
   - [ ] Status: PASS / FAIL
-- [ ] **Memory after 1-hour continuous use**: ________ MB
+- [ ] **Memory after 1-hour continuous use**: **\_\_\_\_** MB
   - [ ] Stable (not continuously growing)
   - [ ] No memory leaks observed
   - [ ] Status: PASS / FAIL
 
 ### Navigation Performance
 
-- [ ] **Dashboard → AI Tutor tab**: ________ ms (target: <200ms)
-- [ ] **AI Tutor → Brain Games tab**: ________ ms (target: <200ms)
-- [ ] **Open Sensory Settings**: ________ ms (target: <300ms)
-- [ ] **Parent Dashboard unlock**: ________ ms (target: <500ms)
-- [ ] **Music Library load**: ________ ms (target: <300ms)
+- [ ] **Dashboard → AI Tutor tab**: **\_\_\_\_** ms (target: <200ms)
+- [ ] **AI Tutor → Brain Games tab**: **\_\_\_\_** ms (target: <200ms)
+- [ ] **Open Sensory Settings**: **\_\_\_\_** ms (target: <300ms)
+- [ ] **Parent Dashboard unlock**: **\_\_\_\_** ms (target: <500ms)
+- [ ] **Music Library load**: **\_\_\_\_** ms (target: <300ms)
 
 ### AI Response Performance
 
-- [ ] **First message (cold network)**: ________ seconds
+- [ ] **First message (cold network)**: **\_\_\_\_** seconds
   - [ ] Typical: 3-5 seconds
   - [ ] Max acceptable: <10 seconds
   - [ ] Status: PASS / FAIL
 
-- [ ] **Followup message**: ________ seconds
+- [ ] **Followup message**: **\_\_\_\_** seconds
   - [ ] Typical: 2-3 seconds
   - [ ] Status: PASS / FAIL
 
-- [ ] **Offline response (cached)**: ________ ms
+- [ ] **Offline response (cached)**: **\_\_\_\_** ms
   - [ ] Should appear instantly
   - [ ] Target: <500ms
   - [ ] Status: PASS / FAIL
@@ -559,15 +559,15 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 
 ### Bundle Size Verification
 
-- [ ] **Web bundle (dist/)**: ________ MB
+- [ ] **Web bundle (dist/)**: **\_\_\_\_** MB
   - [ ] Target: <500KB
   - [ ] Gzipped size acceptable: YES / NO
 
-- [ ] **APK size**: ________ MB
+- [ ] **APK size**: **\_\_\_\_** MB
   - [ ] Target: <100MB
-  - [ ] Download time estimate: ________ seconds
+  - [ ] Download time estimate: **\_\_\_\_** seconds
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -578,23 +578,23 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 **Procedure:** Monitor battery usage over extended periods with screen on
 
 - [ ] **1-hour continuous use (screen on)**:
-  - [ ] Battery drain: ________%
+  - [ ] Battery drain: **\_\_\_\_**%
   - [ ] Target: <10%
   - [ ] Status: PASS / FAIL
 
 - [ ] **30 minutes background music playback**:
-  - [ ] Battery drain: ________%
+  - [ ] Battery drain: **\_\_\_\_**%
   - [ ] Target: <5%
   - [ ] Status: PASS / FAIL
 
 - [ ] **Focus timer running (1 hour)**:
-  - [ ] Battery drain: ________%
+  - [ ] Battery drain: **\_\_\_\_**%
   - [ ] Target: <8%
   - [ ] Status: PASS / FAIL
 
 ### Network Usage
 
-- [ ] **Measure data used for typical 30-minute session**: ________ MB
+- [ ] **Measure data used for typical 30-minute session**: **\_\_\_\_** MB
   - [ ] First message (AI call): 5-10 KB
   - [ ] Followup messages: 1-5 KB each
   - [ ] Music stream (5 min): 15-25 MB
@@ -605,7 +605,7 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
   - [ ] Data syncs when reconnected
   - [ ] Status: PASS / FAIL
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -1076,13 +1076,13 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 
 ### Build Version Management
 
-- [ ] **versionCode: 28**
+- [ ] **versionCode: 10513**
   - [ ] Verify in android/app/build.gradle
   - [ ] Matches release version
   - [ ] Incremented from previous build
   - [ ] Verified: `grep versionCode android/app/build.gradle`
 
-- [ ] **versionName: "1.5.0"**
+- [ ] **versionName: "1.5.12"**
   - [ ] Matches release version
   - [ ] Format: MAJOR.MINOR.PATCH
   - [ ] Verified: `grep versionName android/app/build.gradle`
@@ -1091,7 +1091,7 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 
 - [ ] **AAB (Android App Bundle) Generated**
   - [ ] File exists: `android/app/build/outputs/bundle/release/app-release.aab`
-  - [ ] File size: <100MB (confirmed: ________ MB)
+  - [ ] File size: <100MB (confirmed: **\_\_\_\_** MB)
   - [ ] Signed with production keystore
   - [ ] Not debug signed
   - [ ] Build command used: `gradlew bundleRelease`
@@ -1107,13 +1107,13 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 
 - [ ] **AndroidManifest.xml**
   - [ ] Package name: com.vibetech.tutor
-  - [ ] Minimum SDK: 24 (Android 7.0)
-  - [ ] Target SDK: 34 (Android 14)
+- [ ] Minimum SDK: 23 (Android 6.0)
+  - [ ] Compile SDK: 36 (Android 16)
+  - [ ] Target SDK: 36 (Android 16)
   - [ ] Required permissions documented:
     - [ ] INTERNET (required)
     - [ ] RECORD_AUDIO (voice input)
     - [ ] READ_EXTERNAL_STORAGE (maxSdkVersion=32, legacy media read)
-    - [ ] READ_MEDIA_AUDIO (Android 13+ media read)
     - [ ] WAKE_LOCK (focus timer)
     - [ ] FOREGROUND_SERVICE (media playback service)
     - [ ] FOREGROUND_SERVICE_MEDIA_PLAYBACK (Android 14+ media playback)
@@ -1140,7 +1140,7 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
   - [ ] Logcat shows no cleartext traffic
 
 - [ ] **Data Privacy**
-  - [ ] Privacy Policy accessible at: <https://freshwaterbruce2.github.io/vibetech/privacy-policy/>
+  - [ ] Privacy Policy accessible at: <https://freshwaterbruce2.github.io/vibe-tech-monorepo/privacy-policy/>
   - [ ] Privacy Policy explains:
     - [ ] What data is collected
     - [ ] How data is used
@@ -1162,7 +1162,7 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 
 - [ ] **Privacy Policy**
   - [ ] URL verified and accessible
-  - [ ] URL in Play Console matches: <https://freshwaterbruce2.github.io/vibetech/privacy-policy/>
+  - [ ] URL in Play Console matches: <https://freshwaterbruce2.github.io/vibe-tech-monorepo/privacy-policy/>
   - [ ] Policy explains data handling
   - [ ] Policy mentions Families policy (if applicable)
 
@@ -1187,34 +1187,27 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
   - [ ] 512x512 PNG
   - [ ] High quality and clear
   - [ ] Works at small sizes
-  - [ ] File: `android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png`
-  - [ ] Verified dimensions: ________ x ________
+  - [ ] File: `docs/store-assets/icon-play-512x512.png`
+  - [ ] Verified dimensions: 512 x 512 (file evidence; visual acceptance remains untested)
 
 - [ ] **Feature Graphic (Hero Image)**
   - [ ] 1024x500 PNG or JPG
   - [ ] Attractive and representative
   - [ ] Text clearly readable
-  - [ ] File: `android/app/src/main/assets/feature_graphic.png`
-  - [ ] Verified: EXISTS / MISSING
+  - [ ] File: `docs/store-assets/feature-graphic-play-1024x500.png`
+  - [ ] Verified dimensions: 1024 x 500 (file evidence; visual acceptance remains untested)
 
 - [ ] **Screenshots (Minimum 2, Recommend 4-8)**
   - [ ] Screenshot 1: Dashboard/homework view
-    - [ ] File: ___________
-    - [ ] Dimension: 1080x1920 or similar
-    - [ ] Clear and professional
-  - [ ] Screenshot 2: AI Tutor chat
-    - [ ] File: ___________
-    - [ ] Shows interaction with AI
-    - [ ] Readable text
-  - [ ] Screenshot 3: Brain Games
-    - [ ] File: ___________
-    - [ ] Shows gamification
-  - [ ] Screenshot 4: Achievement/Progress
-    - [ ] File: ___________
-    - [ ] Shows progress tracking
-  - [ ] Screenshot 5: Sensory Settings (Optional)
-    - [ ] File: ___________
-    - [ ] Shows accessibility features
+    - [ ] File: `docs/store-assets/screenshot-01-dashboard.png`
+    - [ ] Dimensions: 941 x 1672 (file evidence; visual acceptance remains untested)
+  - [ ] Screenshot 2: Voice/text homework entry
+    - [ ] File: `docs/store-assets/screenshot-02-voice-text.png`
+    - [ ] Dimensions: 941 x 1672 (file evidence; visual acceptance remains untested)
+  - [ ] Screenshot 3: Progress view
+    - [ ] File: `docs/store-assets/screenshot-03-progress.png`
+    - [ ] Dimensions: 941 x 1672 (file evidence; visual acceptance remains untested)
+  - [ ] A fourth screenshot at least 1080 pixels wide is recommended before store submission.
   - [ ] All screenshots tested for display quality
 
 - [ ] **Screenshots Include Captions**
@@ -1258,17 +1251,17 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 
 - [ ] **App Signing**
   - [ ] Release key used (not debug)
-  - [ ] Key password secured
-  - [ ] Keystore backed up: `V:\monorepo\apps\vibe-tutor\android\signing\release.keystore`
-  - [ ] Key alias: vibetech_release
+  - [ ] Existing upload-key path is outside the code tree
+  - [ ] Signing inputs are supplied through all four `VIBE_TUTOR_*` environment variables or all four `VIBE_TUTOR_RELEASE_*` user Gradle properties
+  - [ ] No key path, alias, or secret value is recorded in this checklist or project files
   - [ ] Status: VERIFIED
 
 - [ ] **Release Notes**
-  - [ ] Version 1.5.0 release notes written
+  - [ ] Version 1.5.12 release notes written
   - [ ] Notes highlight new features
   - [ ] Notes mention bug fixes
   - [ ] Character limit: <500 chars
-  - [ ] Notes saved to: `docs/RELEASE_NOTES_v1.5.0.md`
+  - [ ] Notes saved to: `docs/RELEASE_NOTES_v1.5.12.md`
 
 - [ ] **Rollout Strategy**
   - [ ] Decide rollout: staged or immediate
@@ -1277,7 +1270,7 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
   - [ ] Monitor user ratings and reviews
   - [ ] Be ready to roll back if issues arise
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -1289,7 +1282,7 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 - [ ] **No cleartext traffic** (verify in logcat)
 - [ ] **No unexpected permissions requested**
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -1298,7 +1291,7 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 - [ ] **Previous bug #1**: (describe) - FIXED / NOT FIXED
 - [ ] **Previous bug #2**: (describe) - FIXED / NOT FIXED
 
-**Notes**: ___________
+**Notes**: \***\*\_\_\_\*\***
 
 ---
 
@@ -1306,18 +1299,18 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 
 **P0 (Blocker - Cannot ship):**
 
-1. ___________
-2. ___________
+1. ***
+2. ***
 
 **P1 (Major - Should fix before launch):**
 
-1. ___________
-2. ___________
+1. ***
+2. ***
 
 **P2 (Minor - Can fix post-launch):**
 
-1. ___________
-2. ___________
+1. ***
+2. ***
 
 ---
 
@@ -1334,15 +1327,15 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 
 **Functional Testing:**
 
-- Core Features: ________ / 13 workflows PASS
-- AI Features: ________ / 2 workflows PASS
-- Gamification: ________ / 2 workflows PASS
-- Sensory/Accessibility: ________ / 5 workflows PASS
-- Parent Controls: ________ / 1 workflow PASS
+- Core Features: **\_\_\_\_** / 13 workflows PASS
+- AI Features: **\_\_\_\_** / 2 workflows PASS
+- Gamification: **\_\_\_\_** / 2 workflows PASS
+- Sensory/Accessibility: **\_\_\_\_** / 5 workflows PASS
+- Parent Controls: **\_\_\_\_** / 1 workflow PASS
 
 **Performance Testing:**
 
-- Cold Start Time: ________ seconds (target: <3s)
+- Cold Start Time: **\_\_\_\_** seconds (target: <3s)
 - Memory Stability: PASS / FAIL
 - Navigation Responsiveness: PASS / FAIL
 - Animation Smoothness: PASS / FAIL
@@ -1376,9 +1369,9 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 **Total Features Tested**: 13+ workflows
 **Accessibility Features Tested**: 8+ features
 **Devices Tested**: 3+ minimum
-**Critical Issues**: ________ (must be 0 to proceed)
-**Major Issues**: ________
-**Minor Issues**: ________
+**Critical Issues**: **\_\_\_\_** (must be 0 to proceed)
+**Major Issues**: **\_\_\_\_**
+**Minor Issues**: **\_\_\_\_**
 
 **Overall Status**:
 
@@ -1388,13 +1381,13 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 
 ### Tester Certification
 
-**Tester Name**: ___________
-**Email**: ___________
-**Organization**: ___________
-**Test Date**: ___________
-**Test Duration**: ________ hours
+**Tester Name**: \***\*\_\_\_\*\***
+**Email**: \***\*\_\_\_\*\***
+**Organization**: \***\*\_\_\_\*\***
+**Test Date**: \***\*\_\_\_\*\***
+**Test Duration**: **\_\_\_\_** hours
 
-**I confirm that I have thoroughly tested Vibe-Tutor v1.5.0 (versionCode 28) on the specified devices and have verified:**
+**I confirm that I have thoroughly tested Vibe-Tutor v1.5.12 (versionCode 10513) on the specified devices and have verified:**
 
 - [ ] All critical features work as expected
 - [ ] Accessibility features function correctly
@@ -1402,8 +1395,8 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 - [ ] No blocking issues found
 - [ ] App is ready for Play Store submission
 
-**Tester Signature**: ___________
-**Date Signed**: ___________
+**Tester Signature**: \***\*\_\_\_\*\***
+**Date Signed**: \***\*\_\_\_\*\***
 
 ---
 
@@ -1420,7 +1413,7 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 2. **Upload AAB to Google Play Console**:
    - File: `android/app/build/outputs/bundle/release/app-release.aab`
    - Select "Create new release"
-   - Add release notes from `docs/RELEASE_NOTES_v1.5.0.md`
+   - Add release notes from `docs/RELEASE_NOTES_v1.5.12.md`
    - Select countries for rollout
    - Start with staged rollout (10% → 25% → 50% → 100%)
 
@@ -1431,7 +1424,7 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
    - Be ready to roll back if major issues found
 
 4. **Archive checklist**:
-   - Save completed checklist to: `apps/vibe-tutor/qa-reports/QA_CHECKLIST_v1.5.0_[DATE].md`
+   - Save completed checklist to: `apps/vibe-tutor/qa-reports/QA_CHECKLIST_v1.5.12_[DATE].md`
    - Include tester information and results
    - Reference in release notes
 

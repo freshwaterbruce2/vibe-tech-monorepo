@@ -3,9 +3,6 @@
  * Centralized exports for commonly used services
  */
 
-export { syncService } from './SyncService';
-export type { ExportForHubResult, LocalMemoryEvent, SyncExportPayload } from './SyncService';
-
 export {
     ACHIEVEMENT_POINTS, checkAndUnlockAchievements, getAchievements, type AchievementEvent,
     type AchievementUnlockResult

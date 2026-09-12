@@ -10,7 +10,7 @@ import StaffSVG from './MusicNotesStaff';
 
 /* ---------- Props ---------- */
 interface MusicNotesProps {
-  onEarnTokens?: (amount: number) => void;
+  onEarnTokens?: (amount: number, awardKey: string) => Promise<boolean>;
   onClose?: () => void;
 }
 
@@ -46,36 +46,48 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
   const [questionsAnswered, setQuestionsAnswered] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [rewardError, setRewardError] = useState('');
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rewardPendingRef = useRef(false);
+  const questionAttemptRef = useRef(0);
   const currentNote = question.note;
   const options = question.options;
 
   const tier = useMemo(() => getTier(score), [score]);
 
   const nextQuestion = useCallback(() => {
+    questionAttemptRef.current += 1;
     setQuestion(buildQuestion(score));
     setFeedback(null);
     setLastAnswer('');
+    setRewardError('');
   }, [score]);
 
   const handleAnswer = useCallback(
-    (chosen: string) => {
-      if (feedback !== null || !currentNote) return;
+    async (chosen: string) => {
+      if (feedback !== null || !currentNote || rewardPendingRef.current) return;
       const correct = chosen === currentNote.label;
-      setFeedback(correct ? 'correct' : 'wrong');
-      setLastAnswer(chosen);
-      setQuestionsAnswered((q) => q + 1);
 
       if (correct) {
-        playCorrect();
         const streakBonus = streak >= 4 ? 2 : streak >= 2 ? 1 : 0;
         const earned = 2 + streakBonus;
+        rewardPendingRef.current = true;
+        let awarded = !onEarnTokens;
+        try { awarded ||= await onEarnTokens!(earned, `music:${currentNote.label}:${questionAttemptRef.current}`); } catch { awarded = false; }
+        rewardPendingRef.current = false;
+        if (!awarded) {
+          setRewardError('Token reward could not be saved. Retry this note.');
+          return;
+        }
+        setFeedback('correct');
+        setLastAnswer(chosen);
+        setQuestionsAnswered((q) => q + 1);
+        playCorrect();
         setScore((s) => s + earned);
         setStreak((s) => s + 1);
         setBestStreak((b) => globalThis.Math.max(b, streak + 1));
         setTotalTokens((t) => t + earned);
         setCorrectAnswers((c) => c + 1);
-        onEarnTokens?.(earned);
         if ((streak + 1) % 5 === 0) {
           playSound('victory');
           void confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
@@ -83,6 +95,9 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
           setTimeout(() => setShowCelebration(false), 1500);
         }
       } else {
+        setFeedback('wrong');
+        setLastAnswer(chosen);
+        setQuestionsAnswered((q) => q + 1);
         playWrong();
         setStreak(0);
       }
@@ -138,7 +153,7 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
       padding: 16, position: 'relative', overflow: 'hidden',
     }}>
       {/* Header */}
-      <div style={{
+      <div role="status" aria-live="polite" style={{
         width: '100%', maxWidth: 400, display: 'flex',
         alignItems: 'center', justifyContent: 'space-between', marginBottom: 12,
       }}>
@@ -228,6 +243,7 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
         {feedback === 'correct' &&
           `✓ ${currentNote.label} — Nice!${streak >= 3 ? ` 🔥 ${streak} streak!` : ''}`}
         {feedback === 'wrong' && `✗ That was ${currentNote.label}`}
+        {rewardError}
       </div>
 
       {/* Answered count */}

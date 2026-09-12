@@ -160,8 +160,16 @@ null
 
 # Database files
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+
+# Media files
+*.mp4
+*.mov
 
 # Backup files
 *.backup
@@ -239,6 +247,7 @@ apps/nova-agent/src-tauri/tauri.conf.backup.json
 
 .nx/cache
 .nx/workspace-data
+.nx/polygraph
 .cursor/rules/nx-rules.mdc
 
 # Turbo cache

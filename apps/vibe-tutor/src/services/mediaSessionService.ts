@@ -37,34 +37,20 @@ class MediaSessionService {
     if (!this.isSupported) return;
 
     try {
+      const suppliedAlbumArt = track.albumArt?.trim();
+      const artwork = suppliedAlbumArt
+        ? [{ src: track.albumArt! }]
+        : [
+            { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+            { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+          ];
+
       // Create metadata with track information
       navigator.mediaSession.metadata = new MediaMetadata({
         title: track.name ?? 'Unknown Track',
         artist: track.metadata?.artist ?? 'Unknown Artist',
         album: track.metadata?.album ?? 'Vibe-Tutor Music',
-        artwork: [
-          // Multiple sizes for different devices
-          {
-            src: track.albumArt ?? '/vite.svg', // Fallback to app icon
-            sizes: '96x96',
-            type: 'image/png'
-          },
-          {
-            src: track.albumArt ?? '/vite.svg',
-            sizes: '128x128',
-            type: 'image/png'
-          },
-          {
-            src: track.albumArt ?? '/vite.svg',
-            sizes: '256x256',
-            type: 'image/png'
-          },
-          {
-            src: track.albumArt ?? '/vite.svg',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
+        artwork,
       });
 
     } catch (error) {

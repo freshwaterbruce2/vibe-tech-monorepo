@@ -1,6 +1,6 @@
 /**
  * Migration Service for Vibe Tutor
- * Handles data migration from localStorage to SQLite database on D: drive
+ * Handles data migration from localStorage to the app-local SQLite database
  */
 
 import { databaseService } from './databaseService';
@@ -391,30 +391,6 @@ export class MigrationService {
       ]);
     }
 
-    // Migrate parental control settings (11 settings)
-    const parentalSettings = [
-      'firstThenEnabled',
-      'firstThenSteps',
-      'dailyCapEnabled',
-      'dailyGameMinutes',
-      'dailyTotalMinutes',
-      'calmModeEnabled',
-      'animationLevel',
-      'soundsEnabled',
-      'scheduleRequired',
-      'firstThenGate',
-      'parentalControlsEnabled',
-    ];
-
-    for (const settingKey of parentalSettings) {
-      const value = appStore.get(settingKey);
-      if (value !== null) {
-        await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
-          settingKey,
-          value,
-        ]);
-      }
-    }
   }
 
   /**

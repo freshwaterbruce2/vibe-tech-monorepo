@@ -1,12 +1,9 @@
-import { AI_FRIEND_PROMPT } from '../constants';
 import type { ChatMessage } from '../types';
 import { detectCrisis, getCrisisResponse } from './crisisDetection';
 import { classifyMessageSafety } from './safetyClassifier';
 import { learningAnalytics } from './learningAnalytics';
 import { createChatCompletion, type DeepSeekMessage } from './secureClient';
-import { MODELS } from './openrouter';
 import { usageMonitor } from './usageMonitor';
-import { logger } from '../utils/logger';
 
 // Maximum conversation history size to prevent memory bloat
 // Keeps system message + last MAX_HISTORY_SIZE messages
@@ -14,7 +11,7 @@ const MAX_HISTORY_SIZE = 20;
 // How many old messages to hydrate from storage (leave room for new conversation)
 const HYDRATE_LIMIT = 10;
 
-const conversationHistory: DeepSeekMessage[] = [{ role: 'system', content: AI_FRIEND_PROMPT }];
+const conversationHistory: DeepSeekMessage[] = [];
 
 /**
  * Hydrate the AI's conversation history from persisted chat messages.
@@ -22,7 +19,6 @@ const conversationHistory: DeepSeekMessage[] = [{ role: 'system', content: AI_FR
  */
 export function hydrateBuddyHistory(savedMessages: ChatMessage[]): void {
   conversationHistory.length = 0;
-  conversationHistory.push({ role: 'system', content: AI_FRIEND_PROMPT });
 
   if (!savedMessages || savedMessages.length === 0) return;
 
@@ -35,10 +31,9 @@ export function hydrateBuddyHistory(savedMessages: ChatMessage[]): void {
   }
 }
 
-/** Reset AI history to fresh state (system prompt only). */
+/** Reset the local Buddy context without touching Tutor context. */
 export function clearBuddyHistory(): void {
   conversationHistory.length = 0;
-  conversationHistory.push({ role: 'system', content: AI_FRIEND_PROMPT });
 }
 
 /**
@@ -48,17 +43,12 @@ export function clearBuddyHistory(): void {
 function addToHistory(role: 'user' | 'assistant', content: string): void {
   conversationHistory.push({ role, content });
 
-  // Keep only system message + recent history to prevent memory bloat
-  if (conversationHistory.length > MAX_HISTORY_SIZE + 1) {
-    const systemMessage = conversationHistory[0];
+  if (conversationHistory.length > MAX_HISTORY_SIZE) {
     const recentMessages = conversationHistory.slice(-MAX_HISTORY_SIZE);
     conversationHistory.length = 0;
-    if (systemMessage) conversationHistory.push(systemMessage, ...recentMessages);
+    conversationHistory.push(...recentMessages);
   }
 }
-
-const BUDDY_FALLBACK =
-  "Sorry, I'm having a little trouble connecting right now. Let's talk later.";
 
 /** Record a detected crisis in history and return the fixed supportive reply. */
 function crisisReplyToHistory(message: string, category: 'self-harm' | 'abuse'): string {
@@ -74,58 +64,56 @@ function crisisReplyToHistory(message: string, category: 'self-harm' | 'abuse'):
  * the online classifier flags, otherwise the usage-limit reason.
  */
 async function overCapReply(message: string, reason: string): Promise<string> {
-  const flagged = await classifyMessageSafety(message);
+  const flagged = await classifyMessageSafety(message).catch(() => null);
   return flagged ? crisisReplyToHistory(message, flagged) : reason;
 }
 
+function removeFailedUserTurn(message: string): void {
+  const latest = conversationHistory.at(-1);
+  if (latest?.role === 'user' && latest.content === message) conversationHistory.pop();
+}
+
 /** Normal online path: classifier runs concurrently with the answer. */
-async function answerAsBuddy(message: string, useReasoning: boolean): Promise<string> {
-  addToHistory('user', message);
+async function answerAsBuddy(message: string, reservationId: string): Promise<string> {
+  let retainReservation = false;
+  try {
+    addToHistory('user', message);
+    const messagesForCompletion: DeepSeekMessage[] = [...conversationHistory];
 
   const startTime = Date.now();
   // Run the safety classifier alongside the answer (no added latency); if it
   // flags, discard the answer and surface supportive crisis resources instead.
-  const [flagged, response] = await Promise.all([
-    classifyMessageSafety(message),
-    createChatCompletion(conversationHistory, {
-      model: MODELS.PRIMARY_PAID,
-      temperature: 0.8,
-      top_p: 0.95,
-      useReasoning, // Enable DeepSeek V3.2 reasoning mode when needed
-    }),
+  const [classifier, completion] = await Promise.allSettled([
+    classifyMessageSafety(message, 'friend'),
+    createChatCompletion(messagesForCompletion, { chatType: 'friend' }),
   ]);
 
-  if (flagged) {
-    const crisisReply = getCrisisResponse(flagged);
+  if (classifier.status === 'fulfilled' && classifier.value) {
+    const crisisReply = getCrisisResponse(classifier.value);
     addToHistory('assistant', crisisReply);
     return crisisReply;
   }
 
-  const duration = Date.now() - startTime;
-  const assistantMessage = response ?? BUDDY_FALLBACK;
-
-  if (response) {
-    const inputTokens = conversationHistory.reduce(
-      (acc, msg) => acc + (msg.content?.length ?? 0),
-      0,
-    );
-    void learningAnalytics.logAICall(
-      MODELS.PRIMARY_PAID,
-      inputTokens,
-      assistantMessage.length,
-      duration,
-    );
+  if (completion.status === 'rejected') {
+    removeFailedUserTurn(message);
+    throw completion.reason;
   }
 
-  addToHistory('assistant', assistantMessage);
-  usageMonitor.recordRequest();
+  const duration = Date.now() - startTime;
+  const assistantMessage = completion.value;
+  const inputTokens = messagesForCompletion.reduce((acc, msg) => acc + (msg.content?.length ?? 0), 0);
+  void learningAnalytics.logAICall('server-selected', inputTokens, assistantMessage.length, duration);
 
-  return assistantMessage;
+  addToHistory('assistant', assistantMessage);
+    retainReservation = !(await usageMonitor.commitRequest(reservationId));
+    return assistantMessage;
+  } finally {
+    if (!retainReservation) usageMonitor.releaseRequest(reservationId);
+  }
 }
 
 export const sendMessageToBuddy = async (
   message: string,
-  useReasoning: boolean = false,
 ): Promise<string> => {
   // Safety backstop FIRST: the regex floor is deterministic and offline-safe
   // (the LLM could be a weaker fallback model, an ignored prompt, or offline).
@@ -134,50 +122,12 @@ export const sendMessageToBuddy = async (
     return crisisReplyToHistory(message, crisis);
   }
 
-  try {
-    const canRequest = usageMonitor.canMakeRequest();
-    if (!canRequest.allowed) {
-      return await overCapReply(
-        message,
-        canRequest.reason ?? 'Usage limit reached. Please try again later.',
-      );
-    }
-    return await answerAsBuddy(message, useReasoning);
-  } catch (error) {
-    logger.error('Error sending message to buddy:', error);
-    return BUDDY_FALLBACK;
-  }
-};
-
-export const getMoodAnalysis = async (mood: string, note?: string): Promise<string> => {
-  const prompt = `A user has logged their mood as "${mood}". ${note ? `They added this note: "${note}".` : ''}
-    Provide a short (2-3 sentences), gentle, and supportive reflection. Acknowledge their feeling and offer a word of encouragement.
-    Do not give medical advice. Keep it brief and kind.`;
-
-  try {
-    const startTime = Date.now();
-    const response = await createChatCompletion(
-      [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      {
-        model: MODELS.PRIMARY_PAID,
-        temperature: 0.7,
-        max_tokens: 100,
-      },
+  const reservation = usageMonitor.reserveRequest();
+  if (!reservation.allowed) {
+    return await overCapReply(
+      message,
+      reservation.reason,
     );
-
-    const duration = Date.now() - startTime;
-    if (response) {
-      void learningAnalytics.logAICall(MODELS.PRIMARY_PAID, prompt.length, response.length, duration);
-    }
-
-    return response ?? "It's okay to feel your feelings. Be kind to yourself today.";
-  } catch (error) {
-    logger.error('Error getting mood analysis:', error);
-    return "It's okay to feel your feelings. Be kind to yourself today.";
   }
+  return answerAsBuddy(message, reservation.reservationId);
 };

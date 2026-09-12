@@ -1,17 +1,9 @@
-import { AI_TUTOR_PROMPT } from '../constants';
 import type { ChatMessage } from '../types';
 import { detectCrisis, getCrisisResponse } from './crisisDetection';
 import { classifyMessageSafety } from './safetyClassifier';
 import { learningAnalytics } from './learningAnalytics';
-import { personalization } from './personalizationService';
 import { createChatCompletion, type DeepSeekMessage } from './secureClient';
-import { MODELS } from './openrouter';
 import { usageMonitor } from './usageMonitor';
-import { logger } from '../utils/logger';
-
-/** Patterns that indicate the student wants re-explanation (signals unsuccessful interaction) */
-const RE_EXPLAIN_PATTERNS =
-  /\b(don'?t understand|confused|not clear|explain again|what do you mean|huh\?|lost me|try again|simpler|can you re-?explain)\b/i;
 
 // Maximum conversation history size to prevent memory bloat
 // Keeps system message + last MAX_HISTORY_SIZE messages
@@ -19,7 +11,7 @@ const MAX_HISTORY_SIZE = 20;
 // How many old messages to hydrate from storage (leave room for new conversation)
 const HYDRATE_LIMIT = 10;
 
-const tutorHistory: DeepSeekMessage[] = [{ role: 'system', content: AI_TUTOR_PROMPT }];
+const tutorHistory: DeepSeekMessage[] = [];
 
 /**
  * Hydrate the AI's conversation history from persisted chat messages.
@@ -27,9 +19,7 @@ const tutorHistory: DeepSeekMessage[] = [{ role: 'system', content: AI_TUTOR_PRO
  * Caps at HYDRATE_LIMIT messages to leave room for new conversation.
  */
 export function hydrateTutorHistory(savedMessages: ChatMessage[]): void {
-  // Reset to just system prompt
   tutorHistory.length = 0;
-  tutorHistory.push({ role: 'system', content: AI_TUTOR_PROMPT });
 
   if (!savedMessages || savedMessages.length === 0) return;
 
@@ -43,10 +33,9 @@ export function hydrateTutorHistory(savedMessages: ChatMessage[]): void {
   }
 }
 
-/** Reset AI history to fresh state (system prompt only). */
+/** Reset the local Tutor context without touching Buddy context. */
 export function clearTutorHistory(): void {
   tutorHistory.length = 0;
-  tutorHistory.push({ role: 'system', content: AI_TUTOR_PROMPT });
 }
 
 /**
@@ -56,21 +45,12 @@ export function clearTutorHistory(): void {
 function addToHistory(role: 'user' | 'assistant', content: string): void {
   tutorHistory.push({ role, content });
 
-  // Keep only system message + recent history to prevent memory bloat
-  if (tutorHistory.length > MAX_HISTORY_SIZE + 1) {
-    const systemMessage = tutorHistory[0] ?? { role: 'system' as const, content: AI_TUTOR_PROMPT };
+  if (tutorHistory.length > MAX_HISTORY_SIZE) {
     const recentMessages = tutorHistory.slice(-MAX_HISTORY_SIZE);
     tutorHistory.length = 0;
-    tutorHistory.push(systemMessage, ...recentMessages);
+    tutorHistory.push(...recentMessages);
   }
 }
-
-const TUTOR_FALLBACKS = [
-  "I'm experiencing some technical difficulties right now. Let me try to help you again.",
-  "Sorry, I'm having connection issues. Please try asking your question again.",
-  "I'm having trouble processing that request. Could you rephrase your question?",
-  "There seems to be a temporary issue. Let's give it another try.",
-];
 
 /** Record a detected crisis in history and return the fixed supportive reply. */
 function crisisReplyToHistory(message: string, category: 'self-harm' | 'abuse'): string {
@@ -86,65 +66,55 @@ function crisisReplyToHistory(message: string, category: 'self-harm' | 'abuse'):
  * the online classifier flags, otherwise the usage-limit reason.
  */
 async function overCapReply(message: string, reason: string): Promise<string> {
-  const flagged = await classifyMessageSafety(message);
+  const flagged = await classifyMessageSafety(message).catch(() => null);
   return flagged ? crisisReplyToHistory(message, flagged) : reason;
 }
 
-/** Normal online path: classifier runs concurrently with the answer. */
-async function answerAsTutor(message: string): Promise<string> {
-  // Select learning style via epsilon-greedy bandit
-  const style = personalization.selectStyle();
-  const stylePrompt = personalization.getStylePrompt(style);
-  addToHistory('user', message);
+function removeFailedUserTurn(message: string): void {
+  const latest = tutorHistory.at(-1);
+  if (latest?.role === 'user' && latest.content === message) tutorHistory.pop();
+}
 
-  const messagesWithStyle: DeepSeekMessage[] = [
-    { role: 'system', content: AI_TUTOR_PROMPT + '\n' + stylePrompt },
-    ...tutorHistory.slice(1), // skip original system message; keep conversation history
-  ];
+/** Normal online path: classifier runs concurrently with the answer. */
+async function answerAsTutor(message: string, reservationId: string): Promise<string> {
+  let retainReservation = false;
+  try {
+    addToHistory('user', message);
+
+  // System prompts and style policy are server-owned. Client sends only conversation turns.
+  const messagesWithStyle: DeepSeekMessage[] = [...tutorHistory];
 
   const startTime = Date.now();
   // Run the safety classifier alongside the answer (no added latency); if it
   // flags, discard the answer and surface supportive crisis resources instead.
-  const [flagged, response] = await Promise.all([
-    classifyMessageSafety(message),
-    createChatCompletion(messagesWithStyle, {
-      model: MODELS.PRIMARY_PAID,
-      temperature: 0.7,
-      top_p: 0.95,
-      retryCount: 3,
-      fallbackMessage: TUTOR_FALLBACKS[Math.floor(Math.random() * TUTOR_FALLBACKS.length)],
-    }),
+  const [classifier, completion] = await Promise.allSettled([
+    classifyMessageSafety(message, 'tutor'),
+    createChatCompletion(messagesWithStyle, { chatType: 'tutor' }),
   ]);
 
-  if (flagged) {
-    const crisisReply = getCrisisResponse(flagged);
+  if (classifier.status === 'fulfilled' && classifier.value) {
+    const crisisReply = getCrisisResponse(classifier.value);
     addToHistory('assistant', crisisReply);
     return crisisReply;
   }
 
-  const duration = Date.now() - startTime;
-  const assistantMessage: string =
-    response ?? TUTOR_FALLBACKS[0] ?? 'I had trouble responding. Please try again.';
-
-  if (response && assistantMessage) {
-    const inputTokens = messagesWithStyle.reduce((acc, msg) => acc + (msg.content?.length ?? 0), 0);
-    void learningAnalytics.logAICall(
-      MODELS.PRIMARY_PAID,
-      inputTokens,
-      assistantMessage.length,
-      duration,
-    );
+  if (completion.status === 'rejected') {
+    removeFailedUserTurn(message);
+    throw completion.reason;
   }
+
+  const duration = Date.now() - startTime;
+  const assistantMessage = completion.value;
+  const inputTokens = messagesWithStyle.reduce((acc, msg) => acc + (msg.content?.length ?? 0), 0);
+  void learningAnalytics.logAICall('server-selected', inputTokens, assistantMessage.length, duration);
 
   addToHistory('assistant', assistantMessage);
 
-  // Record outcome: student asking for re-explanation signals the style didn't land
-  const success = !RE_EXPLAIN_PATTERNS.test(message);
-  const timeSpent = (Date.now() - startTime) / 1000;
-  personalization.recordFeedback(success, timeSpent);
-  usageMonitor.recordRequest();
-
-  return assistantMessage;
+    retainReservation = !(await usageMonitor.commitRequest(reservationId));
+    return assistantMessage;
+  } finally {
+    if (!retainReservation) usageMonitor.releaseRequest(reservationId);
+  }
 }
 
 export const sendMessageToTutor = async (message: string): Promise<string> => {
@@ -155,17 +125,12 @@ export const sendMessageToTutor = async (message: string): Promise<string> => {
     return crisisReplyToHistory(message, crisis);
   }
 
-  try {
-    const canRequest = usageMonitor.canMakeRequest();
-    if (!canRequest.allowed) {
-      return await overCapReply(
-        message,
-        canRequest.reason ?? 'Usage limit reached. Please try again later.',
-      );
-    }
-    return await answerAsTutor(message);
-  } catch (error) {
-    logger.error('Error in sendMessageToTutor:', error);
-    return "I'm having some technical difficulties right now. Please try again in a moment.";
+  const reservation = usageMonitor.reserveRequest();
+  if (!reservation.allowed) {
+    return await overCapReply(
+      message,
+      reservation.reason,
+    );
   }
+  return answerAsTutor(message, reservation.reservationId);
 };

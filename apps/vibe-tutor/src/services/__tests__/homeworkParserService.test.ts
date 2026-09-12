@@ -22,7 +22,7 @@ describe('homeworkParserService.parseHomeworkFromVoice', () => {
 
     expect(secure.createChatCompletion).toHaveBeenCalledWith(
       expect.any(Array),
-      expect.objectContaining({ model: 'deepseek/deepseek-v3.2' }),
+      { chatType: 'tutor' },
     );
     expect(result).toEqual({ subject: 'math', title: '10 problems', dueDate: '2026-07-05' });
   });

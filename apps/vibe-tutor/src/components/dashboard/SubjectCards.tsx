@@ -10,17 +10,26 @@ import {
   Trophy,
   Zap,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { BLAKE_CONFIG } from '../../config/blakeConfig';
-import { getAllProgress } from '../../services/progressionService';
+import { useEffect, useRef, useState } from 'react';
+import {
+  claimDailyChallenge,
+  confirmDailyChallengeClaim,
+  getAllProgress,
+  getDailyChallengeStatus,
+  type DailyChallengeStatus,
+} from '../../services/progressionService';
 import { getTodayEarnings } from '../../services/tokenService';
 import type { SubjectProgress, SubjectType } from '../../types';
 import { logger } from '../../utils/logger';
 
 interface SubjectCardsProps {
   onStartWorksheet: (subject: SubjectType) => void;
+  onEarnTokens: (amount: number, reason: string, operationId: string) => Promise<boolean>;
   userTokens: number;
 }
+
+const DAILY_WORKSHEET_TARGET = 3;
+const DAILY_WORKSHEET_REWARD = 25;
 
 const CARD_CONFIG: Record<SubjectType, { icon: typeof Zap; color: string; bgColor: string }> = {
   Math: { icon: Zap, color: 'from-yellow-500 to-orange-500', bgColor: 'bg-yellow-500/10' },
@@ -59,15 +68,23 @@ function Stars({
   );
 }
 
-const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
+const SubjectCards = ({ onStartWorksheet, onEarnTokens, userTokens }: SubjectCardsProps) => {
   const [allProgress, setAllProgress] = useState<Partial<Record<SubjectType, SubjectProgress>>>({});
+  const [dailyStatus, setDailyStatus] = useState<DailyChallengeStatus | null>(null);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const claimInProgress = useRef(false);
   const todayEarnings = getTodayEarnings();
 
   useEffect(() => {
     const load = async () => {
       try {
-        const progress = await getAllProgress();
+        const [progress, status] = await Promise.all([
+          getAllProgress(),
+          getDailyChallengeStatus(DAILY_WORKSHEET_TARGET),
+        ]);
         setAllProgress(progress);
+        setDailyStatus(status);
       } catch (error) {
         logger.error('[SubjectCards] Failed to load progress:', error);
       }
@@ -75,23 +92,36 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
     void load();
   }, []);
 
-  // Pick today's daily challenge from blakeConfig (rotate by day-of-year, stable per mount)
-  const [dailyChallenge] = useState(() => {
-    const challenges = BLAKE_CONFIG.dailyChallenges;
-    if (!challenges || challenges.length === 0) {
-      return { task: 'Complete any quest today!', reward: 10 };
-    }
-    const dayIndex = Math.floor(Date.now() / 86_400_000) % challenges.length;
-    return challenges[dayIndex]!;
-  });
+  const todayWorksheets = dailyStatus?.completedCount ?? 0;
 
-  // Count today's total worksheets completed across all subjects
-  const todayWorksheets = useMemo(() => {
-    return Object.values(allProgress).reduce(
-      (sum, p) => sum + (p?.totalWorksheetsCompleted ?? 0),
-      0,
-    );
-  }, [allProgress]);
+  const handleDailyChallengeClaim = async () => {
+    if (claimInProgress.current || dailyStatus?.claimed || todayWorksheets < DAILY_WORKSHEET_TARGET) {
+      return;
+    }
+
+    claimInProgress.current = true;
+    setIsClaiming(true);
+    setClaimError(null);
+    try {
+      const result = await claimDailyChallenge(DAILY_WORKSHEET_TARGET);
+      if (result.claimed) {
+        const awarded = await onEarnTokens(DAILY_WORKSHEET_REWARD, 'Daily worksheet challenge', `daily-worksheet:${result.status.date}`);
+        if (!awarded) {
+          setClaimError('Your daily token reward could not be saved. Retry this claim after checking storage.');
+          return;
+        }
+        await confirmDailyChallengeClaim(result.status.date);
+        setDailyStatus({ ...result.status, claimed: true });
+      } else {
+        setDailyStatus(result.status);
+      }
+    } catch (error) {
+      logger.error('[SubjectCards] Failed to claim daily worksheet challenge:', error);
+    } finally {
+      claimInProgress.current = false;
+      setIsClaiming(false);
+    }
+  };
 
   return (
     <div className="min-h-screen p-4 md:p-8 pb-36 md:pb-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-900/20 via-[#0a0f1c] to-[#0a0f1c]">
@@ -249,26 +279,41 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
             <div className="text-4xl md:text-5xl shrink-0">🎯</div>
             <div className="flex-1 min-w-0">
               <h3 className="text-lg md:text-xl font-bold text-yellow-400 mb-1 truncate">Daily Challenge</h3>
-              <p className="text-white text-xs md:text-base mb-3 break-words">{dailyChallenge.task}</p>
+              <p className="text-white text-xs md:text-base mb-3 break-words">
+                Complete {DAILY_WORKSHEET_TARGET} worksheets today.
+              </p>
               <div className="flex items-center gap-2 md:gap-3">
                 <div className="flex-1 h-2.5 bg-white/10 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full transition-all duration-500 progress-bar-fill"
                     style={
                       {
-                        '--bar-width': `${Math.min((todayWorksheets / 3) * 100, 100)}%`,
+                        '--bar-width': `${Math.min((todayWorksheets / DAILY_WORKSHEET_TARGET) * 100, 100)}%`,
                       } as React.CSSProperties
                     }
                   />
                 </div>
                 <span className="text-sm font-medium text-gray-300">
-                  {Math.min(todayWorksheets, 3)}/3
+                  {Math.min(todayWorksheets, DAILY_WORKSHEET_TARGET)}/{DAILY_WORKSHEET_TARGET}
                 </span>
               </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-sky-400">+{dailyChallenge.reward}</div>
+              <div className="text-2xl font-bold text-sky-400">+{DAILY_WORKSHEET_REWARD}</div>
               <div className="text-xs text-gray-400">tokens</div>
+              {dailyStatus?.claimed ? (
+                <div className="mt-2 text-xs font-semibold text-emerald-400">Claimed today</div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void handleDailyChallengeClaim()}
+                  disabled={isClaiming || todayWorksheets < DAILY_WORKSHEET_TARGET}
+                  className="mt-2 rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {isClaiming ? 'Claiming…' : 'Claim tokens'}
+                </button>
+              )}
+              {claimError && <p role="alert" className="mt-2 max-w-40 text-xs text-red-200">{claimError}</p>}
             </div>
           </div>
         </div>

@@ -1,73 +1,32 @@
-# Vibe Tutor Android Release Runbook
+# Vibe Tutor Android release runbook — held prerequisites
 
-This runbook prepares `vibe-tutor` for Google Play internal testing and production promotion.
+This is a readiness reference for the current checkout at
+`C:\projects\vibe-tech-monorepo`. It authorizes no build, signing, device,
+hosting, Play Console, upload, pricing, submission, or publication action.
 
-## 1) Prerequisites
+## Current local identity
 
-- JDK 17 installed and available in `PATH`
-- Android SDK + build tools installed
-- `pnpm install` completed at repo root (`V:\monorepo`)
-- Play Console app created for package id `com.vibetech.tutor`
-- Play App Signing enabled in Play Console
+- Package: `com.vibetech.tutor`
+- Candidate version: `1.5.13` / `10514`
+- Android SDK levels: min 23, compile 36, target 36
 
-## 2) Signing Setup (Upload Key)
+## Held prerequisites
 
-From `apps/vibe-tutor/android`:
+Before a separately approved local artifact gate, confirm that safe existing
+inputs are available without revealing them: JDK 21, Android SDK, server-side
+OpenRouter and entitlement configuration, the existing upload-signing material
+outside the checkout, and the required Play Integrity project number. Do not
+create, rotate, copy, print, or place credentials in this repository.
 
-1. Generate upload keystore:
-   - `.\generate-keystore.ps1 -StorePassword "<strong-password>"`
-2. Ensure `keystore.properties` exists in `apps/vibe-tutor/android` with:
-   - `storeFile`
-   - `storePassword`
-   - `keyAlias`
-   - `keyPassword`
-3. Confirm no secrets are tracked:
-   - `.gitignore` excludes `*.keystore` and `**/android/keystore.properties`
+Before a separately approved external gate, confirm the public privacy-policy
+URL, cloud/report retention enforcement, Play Console declarations, listing
+assets, distribution, price, and review/submission requirements. These are not
+local completion signals.
 
-## 3) Versioning Rules
+## Release evidence boundary
 
-- `versionName` is read from `apps/vibe-tutor/package.json` `version`.
-- `versionCode` is an explicit Android release integer in `android/variables.gradle` (`androidVersionCode`). Increment it for every Play-uploadable AAB, even if `versionName` remains unchanged.
-- Keep both release identifiers monotonic; do not reuse a Play-uploaded `versionCode`.
-
-## 4) Build and Validate with Nx
-
-Run from repo root (`V:\monorepo`):
-
-```powershell
-pnpm nx run vibe-tutor:build
-pnpm nx run vibe-tutor:test
-pnpm nx run vibe-tutor:android:sync
-pnpm nx run vibe-tutor:android:build
-pnpm nx run vibe-tutor:android:full-release
-```
-
-Expected release artifact:
-
-- `apps/vibe-tutor/android/app/build/outputs/bundle/release/app-release.aab`
-
-## 5) Play Console Internal Testing
-
-1. Upload the generated `.aab` to **Internal testing**.
-2. Verify Data Safety and permissions declarations match the app behavior.
-3. Add tester emails/group and publish the internal release.
-4. Validate install/update from Play internal testing link.
-5. Review pre-launch report for crashes/ANRs and policy warnings.
-
-## 6) Policy and Listing Requirements
-
-- Privacy policy URL must be public and stable.
-- Voice input disclosure must be visible before first microphone usage.
-- App age target must stay consistent across:
-  - Play target audience form
-  - Store listing copy
-  - in-app policy/docs
-
-## 7) Promotion Gate (Internal -> Closed/Production)
-
-Promote only after:
-
-- No startup crash on supported Android versions
-- Core flows pass (homework add/edit, AI tutor chat, music playback)
-- Permission prompts are contextual and optional features degrade gracefully
-- Play pre-launch report has no blocking issues
+The maintained source-level validators check only configured invariants. They
+do not prove a signed artifact, provider availability, Firestore retention,
+physical-device behavior, Play Console state, or publication. Any future build,
+Gradle, signing, device/ADB, hosting, upload, pricing, or submission action
+requires an explicitly named approval.

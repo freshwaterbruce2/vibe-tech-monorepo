@@ -25,9 +25,7 @@
       "options": {
         "script": "build"
       },
-      "outputs": [
-        "{projectRoot}/dist"
-      ],
+      "outputs": ["{projectRoot}/dist"],
       "cache": true
     },
     "test": {
@@ -37,14 +35,22 @@
       },
       "cache": true
     },
+    "test-backend": {
+      "executor": "nx:run-script",
+      "options": { "script": "test:backend" },
+      "cache": true
+    },
+    "validate-release": {
+      "executor": "nx:run-script",
+      "options": { "script": "validate:release" },
+      "cache": false
+    },
     "preview": {
       "executor": "nx:run-script",
       "options": {
         "script": "preview"
       },
-      "dependsOn": [
-        "build"
-      ],
+      "dependsOn": ["build"],
       "cache": false
     },
     "start": {
@@ -59,9 +65,7 @@
       "options": {
         "script": "android:sync"
       },
-      "dependsOn": [
-        "build"
-      ],
+      "dependsOn": ["build"],
       "cache": false
     },
     "android:build": {
@@ -69,9 +73,7 @@
       "options": {
         "script": "android:build"
       },
-      "outputs": [
-        "{projectRoot}/android/app/build"
-      ],
+      "outputs": ["{projectRoot}/android/app/build"],
       "cache": true
     },
     "android:build:clean": {
@@ -86,9 +88,7 @@
       "options": {
         "script": "android:bundle:release"
       },
-      "outputs": [
-        "{projectRoot}/android/app/build/outputs/bundle/release"
-      ],
+      "outputs": ["{projectRoot}/android/app/build/outputs/bundle/release"],
       "cache": false
     },
     "android:open": {
@@ -131,9 +131,7 @@
       "options": {
         "script": "android:full-build"
       },
-      "outputs": [
-        "{projectRoot}/android/app/build"
-      ],
+      "outputs": ["{projectRoot}/android/app/build"],
       "cache": false
     },
     "android:full-release": {
@@ -141,9 +139,7 @@
       "options": {
         "script": "android:full-release"
       },
-      "outputs": [
-        "{projectRoot}/android/app/build/outputs/bundle/release"
-      ],
+      "outputs": ["{projectRoot}/android/app/build/outputs/bundle/release"],
       "cache": false
     },
     "android:deploy": {

@@ -1,6 +1,6 @@
-# VibeTech Monorepo — Cursor Rules
+# VibeTech Monorepo — Compatibility Rules
 
-Primary rules live in `AGENTS.md` and `CLAUDE.md` in the repository root. This file repeats the non-negotiable workflow rules so Cursor stays aligned with Hermes, Claude Code, and Antigravity.
+Primary Codex rules live in `AGENTS.md` and `AI.md` in the repository root. This compatibility file repeats only the non-negotiable source-control workflow rules and does not define a separate AI development workflow.
 
 ## Source-Truth & End-of-Session Commit/PR Rule
 

@@ -49,7 +49,6 @@ export { default as ChatWindow } from './features/ChatWindow';
 export { default as FocusTimer } from './features/FocusTimer';
 export { default as LifeSkillsChecklist } from './features/LifeSkillsChecklist';
 export { MusicLibrary } from './features/MusicLibrary';
-export { default as VibebuxRewardShop } from './features/VibebuxRewardShop';
 export { default as SocialSkillsTips } from './features/SocialSkillsTips';
 export { default as TokenWallet } from './features/TokenWallet';
 export { default as BrainGymHub } from './games/BrainGymHub';
@@ -57,7 +56,6 @@ export { default as BrainGymHub } from './games/BrainGymHub';
 // Settings components
 export { default as DataManagement } from './settings/DataManagement';
 export { default as GameSettings } from './settings/GameSettings';
-export { default as ParentRulesPage } from './settings/ParentRulesPage';
 export { default as RewardSettings } from './settings/RewardSettings';
 export { default as ScreenTimeSettings } from './settings/ScreenTimeSettings';
 export { default as SensorySettings } from './settings/SensorySettings';

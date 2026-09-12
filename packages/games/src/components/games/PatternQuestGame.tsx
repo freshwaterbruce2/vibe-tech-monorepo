@@ -3,7 +3,7 @@ import { Brain, Coins, Grid, HelpCircle, Star, Trophy } from 'lucide-react';
 import { getColorClass, usePatternQuestGame, worldNames } from './usePatternQuestGame';
 
 interface PatternQuestProps {
-  onEarnTokens?: (amount: number) => void;
+  onEarnTokens?: (amount: number, awardKey: string) => Promise<boolean>;
   onClose?: () => void;
 }
 

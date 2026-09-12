@@ -7,7 +7,7 @@ let bucket: ReturnType<Storage["bucket"]> | undefined;
 function initBucket() {
   if (bucket) return bucket;
 
-  const credentialsRaw = env.GCS_CREDENTIALS;
+  const credentialsRaw = process.env.GCS_CREDENTIALS ?? env.GCS_CREDENTIALS;
   if (!credentialsRaw || credentialsRaw === "{}") {
     return undefined;
   }
@@ -19,8 +19,9 @@ function initBucket() {
     return undefined;
   }
 
+  const bucketName = process.env.GCS_BUCKET_NAME ?? env.GCS_BUCKET_NAME;
   storage = new Storage({ credentials });
-  bucket = storage.bucket(env.GCS_BUCKET_NAME);
+  bucket = storage.bucket(bucketName);
   return bucket;
 }
 

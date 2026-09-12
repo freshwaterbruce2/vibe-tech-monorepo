@@ -1,13 +1,7 @@
 import { useReducer, useEffect, useCallback, useMemo } from 'react';
 import { logger } from '../utils/logger';
 import { getSubjectProgress, completeWorksheet } from '../services/progressionService';
-import type { AchievementEvent } from '../services/achievementService';
-import type {
-  SubjectType,
-  SubjectProgress,
-  WorksheetSession,
-  DifficultyLevel
-} from '../types';
+import type { SubjectType, SubjectProgress, WorksheetSession, DifficultyLevel } from '../types';
 
 // ============================================================================
 // State Interface
@@ -137,10 +131,8 @@ function worksheetReducer(state: WorksheetState, action: WorksheetAction): Works
 // ============================================================================
 
 export interface UseWorksheetOptions {
-  /** Callback when tokens should be awarded (stars earned from worksheet) */
-  onAwardTokens?: (tokens: number) => void;
-  /** Callback when an achievement event should be triggered */
-  onAchievementEvent?: (event: AchievementEvent) => void;
+  /** Ask the app-owned durable completion worker to settle queued worksheet delivery legs. */
+  requestCompletionSync?: () => Promise<void>;
 }
 
 // ============================================================================
@@ -148,7 +140,7 @@ export interface UseWorksheetOptions {
 // ============================================================================
 
 export function useWorksheet(options: UseWorksheetOptions = {}) {
-  const { onAwardTokens, onAchievementEvent } = options;
+  const { requestCompletionSync } = options;
   const [state, dispatch] = useReducer(worksheetReducer, initialState);
 
   // Load progress when subject changes
@@ -193,10 +185,10 @@ export function useWorksheet(options: UseWorksheetOptions = {}) {
   }, []);
 
   /**
-   * Complete a worksheet session, process progression, and award tokens
+   * Complete a worksheet session after its canonical progression record and delivery journal persist.
    */
   const completeWorksheetSession = useCallback(
-    async (session: WorksheetSession) => {
+    async (session: WorksheetSession): Promise<boolean> => {
       try {
         const result = await completeWorksheet(session);
 
@@ -210,27 +202,23 @@ export function useWorksheet(options: UseWorksheetOptions = {}) {
           },
         });
 
-        const earnedTokens = session.starsEarned ?? 0;
-        if (onAwardTokens && earnedTokens > 0) {
-          onAwardTokens(earnedTokens);
+        try {
+          const notification = requestCompletionSync?.();
+          if (notification) {
+            void notification.catch((error: unknown) =>
+              logger.error('[useWorksheet] Completion delivery notification failed:', error),
+            );
+          }
+        } catch (error) {
+          logger.error('[useWorksheet] Completion delivery notification failed:', error);
         }
-
-        if (onAchievementEvent) {
-          onAchievementEvent({
-            type: 'WORKSHEET_COMPLETED',
-            payload: {
-              subject: session.subject,
-              score: session.score ?? 0,
-              starsEarned: session.starsEarned ?? 0,
-              tokensEarned: earnedTokens,
-            },
-          });
-        }
+        return true;
       } catch (error) {
         logger.error('[useWorksheet] Failed to complete worksheet:', error);
+        return false;
       }
     },
-    [onAchievementEvent, onAwardTokens]
+    [requestCompletionSync],
   );
 
   /**
@@ -298,7 +286,7 @@ export function useWorksheet(options: UseWorksheetOptions = {}) {
       tryAgain,
       continueToSubjects,
       reset,
-    ]
+    ],
   );
 }
 

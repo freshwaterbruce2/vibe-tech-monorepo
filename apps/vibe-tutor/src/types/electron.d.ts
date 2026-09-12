@@ -24,9 +24,9 @@ export interface LocalLlmBridge {
 }
 
 export interface ElectronBridgeApi {
-  selectImportFile: () => Promise<string | null>;
-  ingestAndroidExport: (filePath: string) => Promise<IngestResult>;
-  // Absent in the web/PWA localStorage stub (see utils/electronStore.ts)
+  selectImportFile?: () => Promise<string | null>;
+  ingestAndroidExport?: (filePath: string) => Promise<IngestResult>;
+  // Absent in the web/PWA/Capacitor localStorage bridge (see utils/electronStore.ts)
   localLlm?: LocalLlmBridge;
   store: ElectronStoreAPI;
 }

@@ -1,28 +1,30 @@
 import { logger } from '../utils/logger';
 import { sessionStore } from '../utils/electronStore';
 import { createChatCompletion } from './secureClient';
-import { MODELS } from './openrouter';
 
-export const breakDownTask = async (taskTitle: string, subject: string): Promise<string[]> => {
+export type TaskBreakdownResult =
+  | { status: 'success'; steps: string[] }
+  | { status: 'unavailable'; message: string };
+
+const unavailable = (): TaskBreakdownResult => ({
+  status: 'unavailable',
+  message: 'AI-generated steps are unavailable right now. Please try again.',
+});
+
+const hasUsableSteps = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.length > 0 && value.every((step) => typeof step === 'string' && step.trim().length > 0);
+
+export const breakDownTask = async (taskTitle: string, subject: string): Promise<TaskBreakdownResult> => {
   const cacheKey = `breakdown_${subject}_${taskTitle}`.toLowerCase().replace(/\s/g, '');
 
   try {
     const cached = sessionStore.get<string[]>(cacheKey);
-    if (cached) {
-      return cached;
+    if (hasUsableSteps(cached)) {
+      return { status: 'success', steps: cached };
     }
   } catch (e) {
     logger.error('Error reading from sessionStore', e);
   }
-
-  const fallbackSteps = [
-    `Start by reading and understanding the ${subject} topic`,
-    'Gather all necessary materials and resources',
-    'Break the work into 25-minute focused sessions',
-    'Take notes on key concepts as you work',
-    'Review and organize your completed work',
-    'Double-check for accuracy and completion',
-  ];
 
   try {
     const prompt = `Break down the following homework task into a series of small, manageable steps.
@@ -38,9 +40,7 @@ export const breakDownTask = async (taskTitle: string, subject: string): Promise
         },
       ],
       {
-        model: MODELS.PRIMARY_PAID,
-        temperature: 0.3,
-        retryCount: 2,
+        chatType: 'tutor',
       },
     );
 
@@ -48,23 +48,25 @@ export const breakDownTask = async (taskTitle: string, subject: string): Promise
     if (jsonString) {
       try {
         const parsed = JSON.parse(jsonString);
-        const steps = parsed.steps ?? fallbackSteps;
-        if (steps.length > 0) {
+        const steps = parsed?.steps;
+        if (hasUsableSteps(steps)) {
           try {
             sessionStore.set(cacheKey, steps);
           } catch (e) {
             logger.error('Error writing to sessionStore', e);
           }
+          return { status: 'success', steps };
         }
-        return steps;
+        logger.error('Task breakdown response did not contain usable steps');
+        return unavailable();
       } catch (parseError) {
         logger.error('Error parsing JSON response:', parseError);
-        return fallbackSteps;
+        return unavailable();
       }
     }
-    return fallbackSteps;
+    return unavailable();
   } catch (error) {
     logger.error('Error breaking down task with DeepSeek:', error);
-    return fallbackSteps;
+    return unavailable();
   }
 };

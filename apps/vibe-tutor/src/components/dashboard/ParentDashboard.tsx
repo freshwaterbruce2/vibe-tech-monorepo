@@ -1,4 +1,3 @@
-import { syncService } from '@/services';
 import {
   ArrowRight,
   Clock,
@@ -7,12 +6,10 @@ import {
   Heart,
   Lock,
   MessageSquare,
-  Shield,
   TrendingUp,
-  Upload,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
-import type { ClaimedReward, HomeworkItem, Reward, View } from '../../types';
+import type { HomeworkItem, Reward, RewardRequest, View } from '../../types';
 import { getThoughtJournalStats } from '../../services/cbtThoughtReframing';
 import { getAffirmationStats } from '../../services/dailyAffirmations';
 import SecurePinLock from '../core/SecurePinLock';
@@ -25,9 +22,11 @@ import ProgressReports from './ProgressReports';
 interface ParentDashboardProps {
   items: HomeworkItem[];
   rewards: Reward[];
-  claimedRewards: ClaimedReward[];
-  onUpdateRewards: React.Dispatch<React.SetStateAction<Reward[]>>;
-  onApproval: (claimedRewardId: string, isApproved: boolean) => void;
+  claimedRewards: RewardRequest[];
+  onUpdateRewards: (action: React.SetStateAction<Reward[]>) => Promise<boolean>;
+  onApproval: (requestId: string, action: 'approve' | 'deny' | 'fulfill' | 'retry_debit' | 'retry_refund') => Promise<boolean>;
+  rewardError: string | null;
+  rewardBlocked?: boolean;
   onNavigate?: (view: View) => void;
 }
 
@@ -64,10 +63,11 @@ const ParentDashboard = ({
   claimedRewards,
   onUpdateRewards,
   onApproval,
+  rewardError,
+  rewardBlocked = false,
   onNavigate,
 }: ParentDashboardProps) => {
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   const activityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -106,26 +106,8 @@ const ParentDashboard = ({
     return <SecurePinLock onUnlock={() => setIsUnlocked(true)} />;
   }
 
-  const handleSync = () => {
-    if (isSyncing) return;
-    setIsSyncing(true);
-    void (async () => {
-      try {
-        const result = await syncService.exportForHub();
-        window.alert(
-          `Export complete!\n\nSaved: ${result.relativePath}\n\nPlease connect USB to Windows to ingest.`,
-        );
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        window.alert(`Sync failed: ${message}`);
-      } finally {
-        setIsSyncing(false);
-      }
-    })();
-  };
-
   const completedTasks = items.filter((i) => i.completed).length;
-  const pendingRewards = claimedRewards.length;
+  const pendingRewards = claimedRewards.filter((request) => ['debit_pending', 'pending_approval', 'approved', 'refund_pending'].includes(request.status)).length;
   const affirmationStats = getAffirmationStats();
   const thoughtStats = getThoughtJournalStats();
 
@@ -138,14 +120,6 @@ const ParentDashboard = ({
             Parent Dashboard
           </h1>
           <div className="shrink-0 flex items-center gap-2">
-            {onNavigate && (
-              <button
-                onClick={() => onNavigate('parent-rules')}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl font-semibold text-sm bg-slate-800/60 border border-slate-700/40 text-slate-300 hover:text-white transition-all duration-200"
-              >
-                <Shield className="w-4 h-4" /> Rules
-              </button>
-            )}
             <button
               onClick={() => setIsUnlocked(false)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl font-semibold text-sm bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-all duration-200"
@@ -156,27 +130,15 @@ const ParentDashboard = ({
         </div>
 
         {/* Quick stats */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-2">
+        <div className="grid grid-cols-2 gap-3 mb-2">
           <div className="rounded-xl py-3 px-4 bg-gradient-to-br from-teal-500/10 to-teal-500/5 border border-teal-500/20 text-center">
             <p className="text-2xl font-black text-teal-400 tabular-nums">{completedTasks}</p>
             <p className="text-xs text-slate-400 font-medium mt-0.5">Tasks Done</p>
           </div>
           <div className="rounded-xl py-3 px-4 bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/20 text-center">
             <p className="text-2xl font-black text-amber-400 tabular-nums">{pendingRewards}</p>
-            <p className="text-xs text-slate-400 font-medium mt-0.5">Pending Rewards</p>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">Open Reward Requests</p>
           </div>
-          <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className="rounded-xl py-3 px-4 bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 border border-indigo-500/20 text-center hover:border-indigo-500/40 transition-all duration-200 disabled:opacity-50"
-          >
-            <Upload
-              className={`w-6 h-6 mx-auto text-indigo-400 ${isSyncing ? 'animate-pulse' : ''}`}
-            />
-            <p className="text-xs text-slate-400 font-medium mt-1">
-              {isSyncing ? 'Syncing…' : 'Sync Hub'}
-            </p>
-          </button>
         </div>
       </div>
 
@@ -216,6 +178,8 @@ const ParentDashboard = ({
             onUpdateRewards={onUpdateRewards}
             claimedRewards={claimedRewards}
             onApproval={onApproval}
+            rewardError={rewardError}
+            rewardBlocked={rewardBlocked}
           />
         </DashboardSection>
 

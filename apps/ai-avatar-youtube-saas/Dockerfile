@@ -1,40 +1,46 @@
-FROM node:22-bookworm-slim AS base
-
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-ENV PUPPETEER_SKIP_DOWNLOAD=true
+# AI Avatar YouTube Studio - Multi-stage Production Dockerfile
+FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
+# Install native build toolchain for better-sqlite3 compilation
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
-FROM base AS build
+COPY package.json ./
+RUN npm install --legacy-peer-deps
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
-COPY patches ./patches
-COPY apps/ai-avatar-youtube-saas/package.json apps/ai-avatar-youtube-saas/package.json
-COPY apps/ai-avatar-youtube-saas/src apps/ai-avatar-youtube-saas/src
-COPY apps/ai-avatar-youtube-saas/tsconfig.json apps/ai-avatar-youtube-saas/tsconfig.json
-COPY apps/ai-avatar-youtube-saas/tsconfig.lint.json apps/ai-avatar-youtube-saas/tsconfig.lint.json
-COPY apps/ai-avatar-youtube-saas/next.config.ts apps/ai-avatar-youtube-saas/next.config.ts
-COPY apps/ai-avatar-youtube-saas/postcss.config.mjs apps/ai-avatar-youtube-saas/postcss.config.mjs
-COPY apps/ai-avatar-youtube-saas/components.json apps/ai-avatar-youtube-saas/components.json
-COPY apps/ai-avatar-youtube-saas/vitest.config.mts apps/ai-avatar-youtube-saas/vitest.config.mts
-COPY packages/db-app packages/db-app
-COPY packages/shared-config packages/shared-config
+COPY . .
 
-RUN pnpm install --no-frozen-lockfile \
-  --filter ./apps/ai-avatar-youtube-saas... \
-  --filter @vibetech/db-app \
-  --filter @vibetech/shared-config
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+ENV SKIP_ENV_VALIDATION=true
 
-RUN cd apps/ai-avatar-youtube-saas && pnpm run build
+RUN npm run build
+
+# ─── Production Stage ───
+FROM node:22-bookworm-slim AS runner
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y wget curl && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /data
 
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+# Next.js standalone binds with HOSTNAME (Docker sets this to the container id by default).
+ENV HOSTNAME=0.0.0.0
 ENV HOST=0.0.0.0
 ENV PORT=3000
+ENV APP_DB_PATH=/data/ai-avatar.db
+
+# Standalone output includes minimal server.js and bundled dependencies
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/.next/static ./apps/ai-avatar-youtube-saas/.next/static
+COPY --from=builder /app/public ./apps/ai-avatar-youtube-saas/public
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "cd apps/ai-avatar-youtube-saas && pnpm run start"]
+CMD ["sh", "-c", "target=$(find /app -name server.js | grep -v 'node_modules' | head -n 1); if [ -n \"$target\" ]; then echo \"Starting Next.js standalone from $target\"; cd $(dirname \"$target\") && node server.js; else echo \"server.js not found outside node_modules\"; find /app; exit 1; fi"]

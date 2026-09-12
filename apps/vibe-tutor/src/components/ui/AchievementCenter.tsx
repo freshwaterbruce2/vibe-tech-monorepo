@@ -1,14 +1,16 @@
 import { ArrowLeft, CheckCircle2, Gift, Lock, Sparkles, Star, Target, Trophy } from 'lucide-react';
 import { useState } from 'react';
 import { useCountUp } from '../../hooks/useCountUp';
-import type { Achievement, ClaimedReward, Reward } from '../../types';
+import type { Achievement, Reward, RewardRequest } from '../../types';
 
 interface AchievementCenterProps {
   achievements: Achievement[];
   rewards: Reward[];
-  claimedRewards: ClaimedReward[];
+  claimedRewards: RewardRequest[];
   userTokens: number;
-  onClaimReward: (rewardId: string) => boolean;
+  rewardError: string | null;
+  rewardBlocked?: boolean;
+  onClaimReward: (rewardId: string) => Promise<boolean>;
   onClose?: () => void;
 }
 
@@ -78,16 +80,22 @@ function RewardCard({
   reward,
   tokens,
   onClaim,
+  blocked,
 }: {
   reward: Reward;
   tokens: number;
-  onClaim: (id: string) => boolean;
+  onClaim: (id: string) => Promise<boolean>;
+  blocked: boolean;
 }) {
-  const canClaim = tokens >= reward.cost;
+  const canClaim = !blocked && tokens >= reward.cost;
   const [justClaimed, setJustClaimed] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
 
-  const handleClaim = () => {
-    if (onClaim(reward.id)) setJustClaimed(true);
+  const handleClaim = async () => {
+    if (isClaiming) return;
+    setIsClaiming(true);
+    if (await onClaim(reward.id)) setJustClaimed(true);
+    setIsClaiming(false);
   };
 
   return (
@@ -103,10 +111,10 @@ function RewardCard({
       ) : (
         <button
           onClick={handleClaim}
-          disabled={!canClaim}
+          disabled={!canClaim || isClaiming}
           className="px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-purple-500 to-violet-500 text-white hover:shadow-lg hover:shadow-purple-500/20"
         >
-          Claim
+          {isClaiming ? 'Requesting…' : 'Claim'}
         </button>
       )}
     </div>
@@ -120,6 +128,8 @@ const AchievementCenter = ({
   onClaimReward,
   claimedRewards,
   userTokens,
+  rewardError,
+  rewardBlocked = false,
   onClose,
 }: AchievementCenterProps) => {
   const [activeTab, setActiveTab] = useState<'achievements' | 'rewards'>('achievements');
@@ -128,7 +138,7 @@ const AchievementCenter = ({
 
   const unlockedAchievements = achievements.filter((a) => a.unlocked);
   const lockedAchievements = achievements.filter((a) => !a.unlocked);
-  const availableRewards = rewards.filter((r) => !claimedRewards.some((cr) => cr.id === r.id));
+  const availableRewards = rewards.filter((r) => !claimedRewards.some((request) => request.reward.id === r.id && !['denied', 'fulfilled'].includes(request.status)));
 
   const motivationalMsg =
     unlockedAchievements.length >= 10
@@ -260,6 +270,7 @@ const AchievementCenter = ({
 
         {activeTab === 'rewards' && (
           <div className="animate-fade-in space-y-4">
+            {rewardError && <p role="alert" className="text-sm text-red-300">{rewardError}</p>}
             {/* Available */}
             {availableRewards.length > 0 ? (
               <div>
@@ -273,6 +284,7 @@ const AchievementCenter = ({
                       reward={reward}
                       tokens={tokens}
                       onClaim={onClaimReward}
+                      blocked={rewardBlocked}
                     />
                   ))}
                 </div>
@@ -289,19 +301,19 @@ const AchievementCenter = ({
             {claimedRewards.length > 0 && (
               <div className="mt-8">
                 <h2 className="flex items-center gap-2 text-lg font-bold text-amber-300/70 mb-4">
-                  ⏳ Pending Approval
+                  ⏳ Reward Requests
                 </h2>
                 <div className="space-y-3">
                   {claimedRewards.map((reward) => (
                     <div
-                      key={reward.id}
+                      key={reward.requestId}
                       className="rounded-2xl p-5 bg-slate-800/30 border border-dashed border-slate-600/40 flex items-center justify-between opacity-70"
                     >
                       <div>
-                        <h3 className="font-bold text-slate-400">{reward.name}</h3>
-                        <p className="text-sm text-slate-500">{reward.cost} Tokens</p>
+                        <h3 className="font-bold text-slate-400">{reward.reward.name}</h3>
+                        <p className="text-sm text-slate-500">{reward.reward.cost} Tokens</p>
                       </div>
-                      <span className="text-sm text-amber-400/60 font-medium">Pending…</span>
+                      <span className="text-sm text-amber-400/60 font-medium">{reward.status === 'debit_pending' ? 'Debit pending — parent can retry' : reward.status === 'approved' ? 'Approved — awaiting fulfillment' : reward.status === 'refund_pending' ? 'Refund pending — parent can retry' : reward.status === 'denied' ? 'Denied and refunded' : reward.status === 'fulfilled' ? 'Fulfilled' : 'Pending approval'}</span>
                     </div>
                   ))}
                 </div>

@@ -34,8 +34,6 @@ export type View =
   | 'games'
   | 'schedules'
   | 'tokens'
-  | 'parent-rules'
-  | 'learning'
   | 'shop'
   | 'wellness'
   | 'onboarding';
@@ -66,6 +64,29 @@ export interface Reward {
 export interface ClaimedReward extends Reward {
   claimedDate: number;
   claimedAt?: string;
+}
+
+export type RewardRequestStatus =
+  | 'debit_pending'
+  | 'pending_approval'
+  | 'approved'
+  | 'refund_pending'
+  | 'denied'
+  | 'fulfilled';
+
+export const MAX_REWARD_REQUESTS = 100;
+
+/** A durable, immutable snapshot of one parent-defined reward request. */
+export interface RewardRequest {
+  schemaVersion: 1;
+  requestId: string;
+  reward: Reward;
+  createdAt: number;
+  updatedAt: number;
+  status: RewardRequestStatus;
+  debitOperationId: string;
+  refundOperationId: string;
+  legacyReason?: string;
 }
 
 export type Mood = 'awful' | 'bad' | 'okay' | 'good' | 'great';

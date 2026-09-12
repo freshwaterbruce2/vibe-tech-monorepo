@@ -1,333 +1,77 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('../secureClient', () => ({ createChatCompletion: vi.fn() }));
+vi.mock('../safetyClassifier', () => ({ classifyMessageSafety: vi.fn().mockResolvedValue(null) }));
+vi.mock('../usageMonitor', () => ({ usageMonitor: { reserveRequest: vi.fn(() => ({ allowed: true, reservationId: 'tutor-1' })), commitRequest: vi.fn().mockResolvedValue(true), releaseRequest: vi.fn() } }));
+vi.mock('../learningAnalytics', () => ({ learningAnalytics: { logAICall: vi.fn() } }));
+import { createChatCompletion } from '../secureClient';
 import { learningAnalytics } from '../learningAnalytics';
 import { classifyMessageSafety } from '../safetyClassifier';
-import * as secureClient from '../secureClient';
-import { sendMessageToTutor } from '../tutorService';
+import { clearTutorHistory, hydrateTutorHistory, sendMessageToTutor } from '../tutorService';
 import { usageMonitor } from '../usageMonitor';
-
-// Mock dependencies
-vi.mock('../secureClient', () => ({
-  createChatCompletion: vi.fn(),
-}));
-
-// The online safety classifier is mocked so tests drive its verdict directly,
-// independently of the answer mock. Default (clean) is set in beforeEach.
-vi.mock('../safetyClassifier', () => ({
-  classifyMessageSafety: vi.fn(),
-}));
-
-vi.mock('../personalizationService', () => ({
-  personalization: {
-    selectStyle: vi.fn().mockReturnValue('step-by-step'),
-    getStylePrompt: vi.fn().mockReturnValue(''),
-    recordFeedback: vi.fn(),
-  },
-}));
-
-vi.mock('../usageMonitor', () => ({
-  usageMonitor: {
-    canMakeRequest: vi.fn(),
-    recordRequest: vi.fn(),
-  },
-}));
-
-vi.mock('../learningAnalytics', () => ({
-  learningAnalytics: {
-    logAICall: vi.fn(),
-  },
-}));
-
-describe('tutorService', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    // Default: Allow requests
-    vi.mocked(usageMonitor.canMakeRequest).mockReturnValue({ allowed: true });
-    // Default: classifier finds nothing (clean) — flag paths opt in per test.
-    vi.mocked(classifyMessageSafety).mockResolvedValue(null);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  describe('sendMessageToTutor', () => {
-    it('short-circuits crisis messages with a safety response (never reaches the LLM)', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('AI response');
-
-      const response = await sendMessageToTutor('I want to kill myself');
-
-      // The crisis backstop must fire in the Tutor chat too, not just the Buddy chat.
-      expect(response).toContain('988');
-      expect(secureClient.createChatCompletion).not.toHaveBeenCalled();
-      expect(usageMonitor.canMakeRequest).not.toHaveBeenCalled();
-    });
-
-    it('checks usage limits before making request', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('Test response');
-
-      await sendMessageToTutor('Hello');
-
-      expect(usageMonitor.canMakeRequest).toHaveBeenCalled();
-    });
-
-    it('returns rate limit message when usage limit exceeded', async () => {
-      vi.mocked(usageMonitor.canMakeRequest).mockReturnValue({
-        allowed: false,
-        reason: 'Daily limit reached. Try again tomorrow.',
-      });
-
-      const response = await sendMessageToTutor('Hello');
-
-      expect(response).toBe('Daily limit reached. Try again tomorrow.');
-      expect(secureClient.createChatCompletion).not.toHaveBeenCalled();
-    });
-
-    it('overrides the answer with crisis resources when the classifier flags (under cap)', async () => {
-      vi.mocked(classifyMessageSafety).mockResolvedValue('self-harm');
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('ordinary tutor answer');
-
-      // The regex floor needs the "...decided when" tail to fire on a note; without
-      // it the floor MISSES, so the override here comes only from the classifier —
-      // exactly the indirect-disclosure gap this Tier-3 layer exists to close.
-      const response = await sendMessageToTutor('i already wrote the note');
-
-      // The model answer is discarded in favor of the supportive crisis reply.
-      expect(response).toContain('988');
-      expect(response).not.toBe('ordinary tutor answer');
-      // A flagged turn is not billed as a normal request or logged as an AI call.
-      expect(usageMonitor.recordRequest).not.toHaveBeenCalled();
-      expect(learningAnalytics.logAICall).not.toHaveBeenCalled();
-    });
-
-    it('runs the classifier even over the usage cap and surfaces resources on a flag', async () => {
-      vi.mocked(usageMonitor.canMakeRequest).mockReturnValue({
-        allowed: false,
-        reason: 'Daily limit reached. Try again tomorrow.',
-      });
-      vi.mocked(classifyMessageSafety).mockResolvedValue('abuse');
-
-      // Regex-neutral phrasing: the flag must come from the online classifier,
-      // proving safety runs even when the usage cap would block a normal answer.
-      const response = await sendMessageToTutor('can i talk to you about something');
-
-      // Safety overrides the commercial cap; the answer model is never called.
-      expect(response).toContain('988');
-      expect(secureClient.createChatCompletion).not.toHaveBeenCalled();
-    });
-
-    it('returns a graceful error message when the answer call throws', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockRejectedValue(new Error('network down'));
-
-      const response = await sendMessageToTutor('help me with my essay');
-
-      // The outer catch keeps the chat resilient instead of crashing.
-      expect(response).toBe(
-        "I'm having some technical difficulties right now. Please try again in a moment.",
-      );
-    });
-
-    it('sends message with correct AI model and options', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('AI response');
-
-      await sendMessageToTutor('Help me with math');
-
-      expect(secureClient.createChatCompletion).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({ role: 'system' }),
-          expect.objectContaining({ role: 'user', content: 'Help me with math' }),
-        ]),
-        expect.objectContaining({
-          model: 'deepseek/deepseek-v3.2',
-          temperature: 0.7,
-          top_p: 0.95,
-          retryCount: 3,
-        }),
-      );
-    });
-
-    it('includes system prompt in first message', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('AI response');
-
-      await sendMessageToTutor('First message');
-
-      const callArgs = vi.mocked(secureClient.createChatCompletion).mock.calls[0];
-      expect(callArgs).toBeDefined();
-      const messages = callArgs?.[0] ?? [];
-
-      expect(messages[0]).toEqual(
-        expect.objectContaining({
-          role: 'system',
-          content: expect.stringMatching(/vibe tutor|ai tutor/i), // Verify system prompt exists
-        }),
-      );
-    });
-
-    it('returns AI response on success', async () => {
-      const mockResponse = 'Here is how to solve that problem...';
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue(mockResponse);
-
-      const response = await sendMessageToTutor('Explain quadratic equations');
-
-      expect(response).toBe(mockResponse);
-    });
-
-    it('returns fallback message when AI response is empty', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue(null);
-
-      const response = await sendMessageToTutor('Hello');
-
-      // Should return one of the fallback messages
-      expect(response).toMatch(
-        /experiencing some technical difficulties|connection issues|having trouble processing|temporary issue/i,
-      );
-    });
-
-    it('logs analytics for successful AI calls', async () => {
-      const mockResponse = 'This is a test response';
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue(mockResponse);
-
-      await sendMessageToTutor('Test message');
-
-      expect(learningAnalytics.logAICall).toHaveBeenCalledWith(
-        'deepseek/deepseek-v3.2',
-        expect.any(Number), // Input tokens (history length)
-        mockResponse.length, // Output tokens
-        expect.any(Number), // Duration
-      );
-    });
-
-    it('does not log analytics when AI call fails', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue(null);
-
-      await sendMessageToTutor('Test message');
-
-      expect(learningAnalytics.logAICall).not.toHaveBeenCalled();
-    });
-
-    it('records request in usage monitor after successful call', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('AI response');
-
-      await sendMessageToTutor('Test message');
-
-      expect(usageMonitor.recordRequest).toHaveBeenCalled();
-    });
-
-    it('maintains conversation history across multiple messages', async () => {
-      vi.mocked(secureClient.createChatCompletion)
-        .mockResolvedValueOnce('First response')
-        .mockResolvedValueOnce('Second response');
-
-      await sendMessageToTutor('First question');
-      await sendMessageToTutor('Second question');
-
-      const secondCallArgs = vi.mocked(secureClient.createChatCompletion).mock.calls[1];
-      expect(secondCallArgs).toBeDefined();
-      const messages = secondCallArgs?.[0] ?? [];
-
-      // Verify system prompt is first (now includes style prompt suffix)
-      expect(messages[0]?.role).toBe('system');
-
-      // Find conversation messages (skip system prompt at index 0)
-      const conversationMessages = messages.slice(1);
-      const lastThree = conversationMessages.slice(-3);
-
-      expect(lastThree[0]).toEqual({ role: 'user', content: 'First question' });
-      expect(lastThree[1]).toEqual({ role: 'assistant', content: 'First response' });
-      expect(lastThree[2]).toEqual({ role: 'user', content: 'Second question' });
-    });
-
-    it('handles multiple consecutive messages correctly', async () => {
-      vi.mocked(secureClient.createChatCompletion)
-        .mockResolvedValueOnce('Response 1')
-        .mockResolvedValueOnce('Response 2')
-        .mockResolvedValueOnce('Response 3');
-
-      await sendMessageToTutor('Message 1');
-      await sendMessageToTutor('Message 2');
-      await sendMessageToTutor('Message 3');
-
-      expect(secureClient.createChatCompletion).toHaveBeenCalledTimes(3);
-      expect(usageMonitor.recordRequest).toHaveBeenCalledTimes(3);
-      expect(learningAnalytics.logAICall).toHaveBeenCalledTimes(3);
-    });
-
-    it('uses random fallback message on empty response', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue(null);
-
-      const responses = new Set<string>();
-
-      // Call multiple times to collect different fallback messages
-      for (let i = 0; i < 10; i++) {
-        const response = await sendMessageToTutor('Test');
-        responses.add(response);
-      }
-
-      // Should have at least 1 fallback message (randomness means might not hit all 4)
-      expect(responses.size).toBeGreaterThanOrEqual(1);
-    });
-
-    it('tracks request duration for analytics', async () => {
-      vi.useFakeTimers();
-
-      try {
-        vi.mocked(secureClient.createChatCompletion).mockImplementation(
-          async () => new Promise((resolve) => setTimeout(() => resolve('Response'), 100)),
-        );
-
-        const messagePromise = sendMessageToTutor('Test message');
-        await vi.advanceTimersByTimeAsync(100);
-        await messagePromise;
-
-        const analyticsCall = vi.mocked(learningAnalytics.logAICall).mock.calls[0];
-        expect(analyticsCall).toBeDefined();
-        const duration = analyticsCall?.[3] ?? 0;
-
-        expect(duration).toBeGreaterThanOrEqual(100);
-        expect(duration).toBeLessThan(1000);
-      } finally {
-        vi.useRealTimers();
-      }
-    });
-
-    it('includes assistant response in history even when AI call fails', async () => {
-      vi.mocked(secureClient.createChatCompletion)
-        .mockResolvedValueOnce(null) // First call fails
-        .mockResolvedValueOnce('Second response'); // Second call succeeds
-
-      await sendMessageToTutor('Test message');
-      await sendMessageToTutor('Follow-up message');
-
-      const secondCallArgs = vi.mocked(secureClient.createChatCompletion).mock.calls[1];
-      expect(secondCallArgs).toBeDefined();
-      const messages = secondCallArgs?.[0] ?? [];
-
-      // Find the assistant message that should be the fallback (last few messages)
-      const lastMessages = messages.slice(-4);
-      const fallbackMessage = lastMessages.find(
-        (msg) =>
-          msg.role === 'assistant' &&
-          /experiencing some technical difficulties|connection issues|having trouble processing|temporary issue/i.test(
-            msg.content,
-          ),
-      );
-
-      // Should include fallback message in history
-      expect(fallbackMessage).toBeDefined();
-      expect(fallbackMessage?.role).toBe('assistant');
-    });
-
-    it('calculates input tokens based on conversation history length', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('Response');
-
-      const longMessage = 'a'.repeat(1000); // 1000 characters
-      await sendMessageToTutor(longMessage);
-
-      const analyticsCall = vi.mocked(learningAnalytics.logAICall).mock.calls[0];
-      expect(analyticsCall).toBeDefined();
-      const inputTokens = analyticsCall?.[1] ?? 0;
-
-      // Input tokens should account for system prompt + user message
-      expect(inputTokens).toBeGreaterThan(1000);
-    });
-  });
+describe('Tutor service boundary', () => {
+ beforeEach(() => {
+  vi.clearAllMocks();
+  clearTutorHistory();
+  vi.mocked(createChatCompletion).mockResolvedValue('Try grouping the fractions first.');
+  vi.mocked(classifyMessageSafety).mockResolvedValue(null);
+  vi.mocked(usageMonitor.reserveRequest).mockReturnValue({ allowed: true, reservationId: 'tutor-1' });
+ });
+
+ it('sends only user/assistant context under tutor chat type and commits a real response once', async () => {
+  await expect(sendMessageToTutor('Help me with fractions')).resolves.toBe('Try grouping the fractions first.');
+  expect(createChatCompletion).toHaveBeenCalledWith([{ role: 'user', content: 'Help me with fractions' }], { chatType: 'tutor' });
+  expect(usageMonitor.commitRequest).toHaveBeenCalledWith('tutor-1');
+  expect(learningAnalytics.logAICall).toHaveBeenCalledTimes(1);
+ });
+
+ it('releases a reservation when a synchronous client setup error prevents a response', async () => {
+  vi.mocked(createChatCompletion).mockImplementationOnce(() => { throw new Error('local setup failed'); });
+  await expect(sendMessageToTutor('A question')).rejects.toThrow('local setup failed');
+  expect(usageMonitor.releaseRequest).toHaveBeenCalledWith('tutor-1');
+ });
+
+ it('returns a real reply without releasing capacity when its commit cannot persist', async () => {
+  vi.mocked(usageMonitor.commitRequest).mockResolvedValueOnce(false);
+  await expect(sendMessageToTutor('A question')).resolves.toBe('Try grouping the fractions first.');
+  expect(usageMonitor.releaseRequest).not.toHaveBeenCalled();
+ });
+
+ it('hydrates only supplied Tutor history and does not inject a system prompt', async () => {
+  hydrateTutorHistory([{ role: 'user', content: 'Earlier question', timestamp: 1 }]);
+  await sendMessageToTutor('Next question');
+  const messages = vi.mocked(createChatCompletion).mock.calls[0]![0];
+  expect(messages).toEqual([{ role: 'user', content: 'Earlier question' }, { role: 'user', content: 'Next question' }]);
+ });
+
+ it('rejects provider failures without charging or retaining the failed turn', async () => {
+  vi.mocked(createChatCompletion).mockRejectedValueOnce(new Error('network unavailable'));
+  await expect(sendMessageToTutor('Failed question')).rejects.toThrow('network unavailable');
+  expect(usageMonitor.releaseRequest).toHaveBeenCalledWith('tutor-1');
+  expect(learningAnalytics.logAICall).not.toHaveBeenCalled();
+
+  await sendMessageToTutor('Working question');
+  expect(vi.mocked(createChatCompletion).mock.calls[1]![0]).toEqual([{ role: 'user', content: 'Working question' }]);
+  expect(usageMonitor.commitRequest).toHaveBeenCalledTimes(1);
+ });
+
+ it('uses classifier crisis support when the concurrent provider request fails', async () => {
+  vi.mocked(classifyMessageSafety).mockResolvedValueOnce('self-harm');
+  vi.mocked(createChatCompletion).mockRejectedValueOnce(new Error('provider unavailable'));
+  await expect(sendMessageToTutor('I feel unsafe')).resolves.toMatch(/trusted adult/i);
+  expect(usageMonitor.releaseRequest).toHaveBeenCalledWith('tutor-1');
+  expect(learningAnalytics.logAICall).not.toHaveBeenCalled();
+ });
+
+ it('returns fixed crisis support without provider generation', async () => {
+  const reply = await sendMessageToTutor('I want to kill myself');
+  expect(reply).toMatch(/trusted adult/i);
+  expect(createChatCompletion).not.toHaveBeenCalled();
+ });
+
+ it('returns the honest usage-limit reason when no safety flag is present', async () => {
+  vi.mocked(usageMonitor.reserveRequest).mockReturnValue({ allowed: false, reason: 'Daily limit reached.' });
+  await expect(sendMessageToTutor('One more question')).resolves.toBe('Daily limit reached.');
+  expect(createChatCompletion).not.toHaveBeenCalled();
+  expect(usageMonitor.commitRequest).not.toHaveBeenCalled();
+ });
 });

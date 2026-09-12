@@ -1,6 +1,6 @@
 import { Howl } from 'howler';
 
-import { appStore } from '../utils/electronStore';
+import type { SensoryPreferences } from '../types';
 
 /**
  * Sound Effects Service for Vibe-Tutor
@@ -29,7 +29,7 @@ class SoundEffectsService {
 
   constructor() {
     this.loadSounds();
-    this.loadPreferences();
+    // The app applies persisted preferences after dataStore initialization.
   }
 
   private loadSounds() {
@@ -44,18 +44,6 @@ class SoundEffectsService {
     });
   }
 
-  private loadPreferences() {
-    try {
-      const prefs = appStore.get('sensory-prefs');
-      if (prefs) {
-        const { soundEnabled } = JSON.parse(prefs);
-        this.enabled = soundEnabled !== false; // Default to true
-      }
-    } catch {
-      // console.warn('Could not load sound preferences');
-    }
-  }
-
   public play(soundName: keyof typeof SOUNDS) {
     if (!this.enabled) return;
 
@@ -67,13 +55,10 @@ class SoundEffectsService {
 
   public setEnabled(enabled: boolean) {
     this.enabled = enabled;
-    appStore.set(
-      'sensory-prefs',
-      JSON.stringify({
-        ...(appStore.get<Record<string, unknown>>('sensory-prefs') ?? {}),
-        soundEnabled: enabled,
-      }),
-    );
+  }
+
+  public applyPreferences(prefs: SensoryPreferences) {
+    this.setEnabled(prefs.soundEnabled);
   }
 
   public setVolume(volume: number) {

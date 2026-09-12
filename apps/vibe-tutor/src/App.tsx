@@ -1,22 +1,19 @@
-import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import AchievementToast from './components/ui/AchievementToast';
-import ErrorBoundary from './components/ui/ErrorBoundary';
 import OfflineIndicator from './components/ui/OfflineIndicator';
-import { ResizableSplitPane } from './components/ui/ResizableSplitPane';
 import Sidebar from './components/ui/Sidebar';
 import { AppViewRenderer, type OnboardingFlags } from './components/AppViewRenderer';
+import { getDevBridgeNotice } from './config';
 // Note: AchievementEvent type is used via handleAchievementEvent from useAchievements
 import { appIntegration } from './services/appIntegration';
 import { dataStore } from './services/dataStore';
-import { sendMessageToTutor } from './services/tutorService';
+import {
+  initializeSensoryPreferences,
+  loadSensoryPreferences,
+} from './services/sensoryPreferences';
+import { soundEffects } from './services/soundEffects';
 import { triggerVibration } from './services/uiService';
-import type {
-  MusicPlaylist,
-  OnboardingNavigationAction,
-  ParsedHomework,
-  View,
-  SubjectType,
-} from './types';
+import type { OnboardingNavigationAction, ParsedHomework, View, SubjectType } from './types';
 // Custom hooks extracted from App.tsx
 import { useAchievements } from './hooks/useAchievements';
 import { useHomework } from './hooks/useHomework';
@@ -26,42 +23,56 @@ import {
   type GameCompletionDetails,
 } from './services/gameProgression';
 import { useTokenEconomy } from './hooks/useTokenEconomy';
+import { initializeTokenLedger } from './services/tokenService';
+import {
+  getRecoverableCompletionDeliveries,
+  markCompletionDeliveryLegSettled,
+} from './services/completionDeliveryService';
+import {
+  getRecoverableWorksheetDeliveries,
+  markWorksheetDeliveryLegSettled,
+} from './services/progressionService';
 import { useWorksheet } from './hooks/useWorksheet';
 import { logger } from './utils/logger';
+import { getStorageFailureSnapshot, subscribeToStorageFailures } from './utils/electronStore';
 
 // Static imports — core views needed at first paint
 import { TokenEarnAnimation } from './components/features/TokenEarnAnimation';
-import ChatWindow from './components/features/ChatWindow';
 import { WELCOME_TOKENS, type OnboardingResult } from './components/core/FirstRunOnboarding';
 import { DEFAULT_UNLOCKED_AVATAR_IDS, normalizeAvatarId } from './services/avatarShopData';
 
-const INITIAL_ONBOARDING_FLAGS: OnboardingFlags = {
-  loaded: false,
-  hasCompletedFirstRun: false,
-  userAvatar: '',
-  hasVisitedShop: false,
-  checklistDone: false,
-};
-
 const CHECKLIST_BONUS_TOKENS = 50;
 
-const App = () => {
-  const [view, setView] = useState<View>('dashboard');
+interface StartupData {
+  onboardingFlags: OnboardingFlags;
+  userName: string;
+  view: View;
+}
+
+const StatefulApp = ({ startup }: { startup: StartupData }) => {
+  const [view, setView] = useState<View>(startup.view);
   const mobileContentRef = useRef<HTMLDivElement>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [playlists, setPlaylists] = useState<MusicPlaylist[]>([]);
   const [selectedRealmSubject, setSelectedRealmSubject] = useState<SubjectType | null>(null);
   // Animation triggers
   const [tokenEarnAmount, setTokenEarnAmount] = useState(0);
   const [tokenEarnTrigger, setTokenEarnTrigger] = useState(0);
-  const [onboardingFlags, setOnboardingFlags] = useState<OnboardingFlags>(INITIAL_ONBOARDING_FLAGS);
+  const [onboardingFlags, setOnboardingFlags] = useState<OnboardingFlags>(startup.onboardingFlags);
   const [dashboardOnboardingAction, setDashboardOnboardingAction] =
     useState<OnboardingNavigationAction | null>(null);
   const [isCompletingOnboarding, setIsCompletingOnboarding] = useState(false);
-  const [userName, setUserName] = useState('');
-
-  // React 19 concurrent feature for non-blocking state updates
-  const [, startTransition] = useTransition();
+  const [onboardingFailure, setOnboardingFailure] = useState(false);
+  const [userName, setUserName] = useState(startup.userName);
+  const [devBridgeDismissed, setDevBridgeDismissed] = useState(false);
+  const devBridgeNotice = getDevBridgeNotice();
+  const storageFailure = useSyncExternalStore(
+    subscribeToStorageFailures,
+    getStorageFailureSnapshot,
+    getStorageFailureSnapshot,
+  );
+  const [dismissedStorageFailureId, setDismissedStorageFailureId] = useState<number | null>(null);
+  const showStorageWarning =
+    storageFailure !== null && storageFailure.id !== dismissedStorageFailureId;
 
   // Custom hooks for state management
   const { homeworkItems, addHomework, toggleComplete } = useHomework();
@@ -70,17 +81,21 @@ const App = () => {
 
   // Token management wrappers (canonical ledger is handled inside useTokenEconomy)
   const handleEarnTokens = useCallback(
-    (amount: number, reason: string = 'Earned tokens') => {
-      earnTokens(amount, reason);
-      setTokenEarnAmount(amount);
-      setTokenEarnTrigger((prev) => prev + 1);
+    async (amount: number, reason: string, operationId: string) => {
+      const result = await earnTokens(amount, reason, operationId);
+      if (result.ok && !result.duplicate) {
+        setTokenEarnAmount(amount);
+        setTokenEarnTrigger((prev) => prev + 1);
+      }
+      return result.ok;
     },
     [earnTokens],
   );
 
   const handleSpendTokens = useCallback(
-    (amount: number, reason: string = 'Spent tokens') => {
-      return spendTokens(amount, reason);
+    async (amount: number, reason: string, operationId: string) => {
+      const result = await spendTokens(amount, reason, operationId);
+      return result.ok;
     },
     [spendTokens],
   );
@@ -103,8 +118,6 @@ const App = () => {
             selectedAvatarId,
           ]);
 
-          await dataStore.saveUserSettings('onboarding_completed', 'true');
-          await dataStore.saveUserSettings('user_avatar', selectedAvatarId);
           await dataStore.saveUserSettings('user_type', data.userType);
           if (data.name.trim()) {
             const trimmedName = data.name.trim();
@@ -115,18 +128,29 @@ const App = () => {
             equippedItems: existingAvatarState?.equippedItems ?? {},
             ownedItems: existingAvatarState?.ownedItems ?? [],
             purchaseHistory: existingAvatarState?.purchaseHistory ?? [],
+            ...(existingAvatarState?.pendingPurchase
+              ? { pendingPurchase: existingAvatarState.pendingPurchase }
+              : {}),
             selectedAvatarId,
             unlockedAvatars: [...unlockedAvatars],
           });
+          const awarded = await handleEarnTokens(
+            WELCOME_TOKENS,
+            'Welcome bonus',
+            'onboarding:welcome-award',
+          );
+          if (!awarded) throw new Error('Welcome award could not be saved');
+          await dataStore.saveUserSettings('onboarding_completed', 'true');
           setOnboardingFlags((prev) => ({
             ...prev,
             hasCompletedFirstRun: true,
             userAvatar: selectedAvatarId,
           }));
-          handleEarnTokens(WELCOME_TOKENS, 'Welcome bonus');
+          setOnboardingFailure(false);
           setView('dashboard');
         } catch (error) {
           logger.error('[onboarding] Failed to complete onboarding:', error);
+          setOnboardingFailure(true);
           setIsCompletingOnboarding(false);
         }
       })();
@@ -134,13 +158,155 @@ const App = () => {
     [handleEarnTokens, isCompletingOnboarding],
   );
 
-  const { achievements, newlyUnlocked, bonusTokens, handleAchievementEvent, clearNotification } =
-    useAchievements({
-      onAwardTokens: handleEarnTokens,
-    });
+  const {
+    achievements,
+    newlyUnlocked,
+    bonusTokens,
+    handleAchievementEvent,
+    clearNotification,
+    achievementError,
+    retryAchievements,
+    isSettlingAchievements,
+  } = useAchievements({
+    onAwardTokens: handleEarnTokens,
+  });
+  const [isCompletionSyncing, setIsCompletionSyncing] = useState(false);
+  const [completionSyncError, setCompletionSyncError] = useState(false);
+  const completionGenerationRef = useRef(0);
+  const completionInFlightRef = useRef<Promise<void> | null>(null);
+  const earnTokensRef = useRef(handleEarnTokens);
+  const achievementEventRef = useRef(handleAchievementEvent);
+  earnTokensRef.current = handleEarnTokens;
+  achievementEventRef.current = handleAchievementEvent;
 
-  const { rewards, claimedRewards, claimReward, handleRewardApproval, updateRewards } =
-    useRewards();
+  const requestCompletionSync = useCallback(async (): Promise<void> => {
+    completionGenerationRef.current += 1;
+    if (completionInFlightRef.current) return completionInFlightRef.current;
+    setIsCompletionSyncing(true);
+    const worker = async () => {
+      let observedGeneration: number;
+      let latestPassFailed = false;
+      do {
+        observedGeneration = completionGenerationRef.current;
+        let passFailed = false;
+        const [completionResult, worksheetResult] = await Promise.allSettled([
+          getRecoverableCompletionDeliveries(),
+          getRecoverableWorksheetDeliveries(),
+        ]);
+        if (completionResult.status === 'rejected') {
+          passFailed = true;
+        } else {
+          const deliveries = completionResult.value;
+          for (const delivery of deliveries) {
+            if (delivery.token.state === 'pending') {
+              try {
+                const awarded = await earnTokensRef.current(
+                  delivery.token.amount,
+                  delivery.token.reason,
+                  delivery.token.operationId,
+                );
+                if (!awarded) passFailed = true;
+                else await markCompletionDeliveryLegSettled(delivery.deliveryId, 'token');
+              } catch {
+                passFailed = true;
+              }
+            }
+            if (delivery.achievement.state === 'pending') {
+              try {
+                const event =
+                  delivery.achievement.eventType === 'TASK_COMPLETED'
+                    ? {
+                        type: 'TASK_COMPLETED' as const,
+                        eventId: delivery.achievement.eventId as `homework-completed:${string}`,
+                        payload: { completionDay: delivery.achievement.payload.completionDay },
+                      }
+                    : {
+                        type: 'FOCUS_SESSION_COMPLETED' as const,
+                        eventId: delivery.achievement.eventId as `focus-completed:${string}`,
+                        payload: {
+                          duration: delivery.achievement.payload.duration!,
+                          completionDay: delivery.achievement.payload.completionDay,
+                        },
+                      };
+                const accepted = await achievementEventRef.current(event);
+                if (!accepted) passFailed = true;
+                else await markCompletionDeliveryLegSettled(delivery.deliveryId, 'achievement');
+              } catch {
+                passFailed = true;
+              }
+            }
+          }
+        }
+        if (worksheetResult.status === 'rejected') {
+          passFailed = true;
+        } else {
+          for (const delivery of worksheetResult.value) {
+            if (delivery.token.state === 'pending') {
+              try {
+                const awarded = await earnTokensRef.current(
+                  delivery.token.amount,
+                  delivery.token.reason,
+                  delivery.token.operationId,
+                );
+                if (!awarded) passFailed = true;
+                else
+                  await markWorksheetDeliveryLegSettled(
+                    delivery.source.id,
+                    'token',
+                    delivery.token.operationId,
+                  );
+              } catch {
+                passFailed = true;
+              }
+            }
+            if (delivery.achievement.state === 'pending') {
+              try {
+                const accepted = await achievementEventRef.current({
+                  type: 'WORKSHEET_COMPLETED',
+                  eventId: delivery.achievement.eventId as `worksheet-completed:${string}`,
+                });
+                if (!accepted) passFailed = true;
+                else
+                  await markWorksheetDeliveryLegSettled(
+                    delivery.source.id,
+                    'achievement',
+                    delivery.achievement.eventId,
+                  );
+              } catch {
+                passFailed = true;
+              }
+            }
+          }
+        }
+        latestPassFailed = passFailed;
+      } while (observedGeneration !== completionGenerationRef.current);
+      setCompletionSyncError(latestPassFailed);
+    };
+    const promise = worker().finally(() => {
+      completionInFlightRef.current = null;
+      setIsCompletionSyncing(false);
+    });
+    completionInFlightRef.current = promise;
+    return promise;
+  }, []);
+
+  useEffect(() => {
+    void requestCompletionSync();
+  }, [requestCompletionSync]);
+
+  const {
+    rewards,
+    claimedRewards,
+    error: rewardError,
+    blocked: rewardBlocked,
+    claimReward,
+    approveRequest,
+    denyRequest,
+    fulfillRequest,
+    retryDebit,
+    retryRefund,
+    updateRewards,
+  } = useRewards({ onSpendTokens: handleSpendTokens, onEarnTokens: handleEarnTokens });
 
   // Worksheet state using useReducer pattern
   const {
@@ -155,78 +321,9 @@ const App = () => {
     cancelWorksheet: handleWorksheetCancel,
     tryAgain: handleWorksheetTryAgain,
     continueToSubjects: handleWorksheetContinue,
-  } = useWorksheet({
-    onAwardTokens: (amount: number) => handleEarnTokens(amount, 'Worksheet completion'),
-    onAchievementEvent: (event) => {
-      void handleAchievementEvent(event);
-    },
-  });
+  } = useWorksheet({ requestCompletionSync });
 
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
-
-  // Database Migration: Initialize dataStore and app integration
-  useEffect(() => {
-    const initializeData = async () => {
-      try {
-        logger.debug('[v1.5.0] Initializing SQLite database...');
-        await dataStore.initialize(); // Auto-migrates from localStorage if needed
-      } catch (error) {
-        logger.error('[v1.5.0] Database initialization failed, using fallback:', error);
-      }
-
-      try {
-        await appIntegration.initialize();
-      } catch (error) {
-        logger.warn('[v1.5.0] App integration initialization failed (non-fatal):', error);
-      }
-
-      try {
-        const plsts = await dataStore.getMusicPlaylists();
-        const [completed, avatar, visitedShop, checklistDone, name] = await Promise.all([
-          dataStore.getUserSettings('onboarding_completed'),
-          dataStore.getUserSettings('user_avatar'),
-          dataStore.getUserSettings('has_visited_shop'),
-          dataStore.getUserSettings('onboarding_checklist_done'),
-          dataStore.getUserSettings('user_name'),
-        ]);
-        const hasCompletedFirstRun = completed === 'true';
-
-        // React 19: Use startTransition for non-blocking state updates
-        startTransition(() => {
-          setPlaylists(plsts);
-          setUserName(name ?? '');
-          setOnboardingFlags({
-            loaded: true,
-            hasCompletedFirstRun,
-            userAvatar: avatar ?? '',
-            hasVisitedShop: visitedShop === 'true',
-            checklistDone: checklistDone === 'true',
-          });
-          if (!hasCompletedFirstRun) {
-            setView('onboarding');
-          }
-        });
-
-        logger.debug('[v1.5.0] Database initialized successfully. Data loaded from SQLite.');
-      } catch (error) {
-        logger.error('[v1.5.0] Failed to load startup data, defaulting to onboarding:', error);
-        startTransition(() => {
-          setPlaylists([]);
-          setOnboardingFlags({
-            ...INITIAL_ONBOARDING_FLAGS,
-            loaded: true,
-          });
-          setView('onboarding');
-        });
-      }
-    };
-    void initializeData();
-  }, []);
-
-  // Save playlists to dataStore (other data saved by custom hooks)
-  useEffect(() => {
-    dataStore.saveMusicPlaylists(playlists).catch((err) => logger.error(err));
-  }, [playlists]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -270,11 +367,17 @@ const App = () => {
       hasHomework &&
       hasCompletedTask &&
       onboardingFlags.hasVisitedShop;
-    if (allDone) {
-      void dataStore.saveUserSettings('onboarding_checklist_done', 'true');
+    if (!allDone) return;
+    void (async () => {
+      const awarded = await handleEarnTokens(
+        CHECKLIST_BONUS_TOKENS,
+        'Onboarding complete',
+        'onboarding:checklist-complete',
+      );
+      if (!awarded) return;
+      await dataStore.saveUserSettings('onboarding_checklist_done', 'true');
       setOnboardingFlags((prev) => ({ ...prev, checklistDone: true }));
-      handleEarnTokens(CHECKLIST_BONUS_TOKENS, 'Onboarding complete');
-    }
+    })();
   }, [
     onboardingFlags.loaded,
     onboardingFlags.checklistDone,
@@ -288,9 +391,23 @@ const App = () => {
 
   const handleGameCompleted = useCallback(
     (gameId: string, score: number, details: GameCompletionDetails) => {
+      const payload = createGameCompletionPayload(gameId, score, details);
+      const sessionId = details.sessionId;
+      if (!sessionId) return;
+      const contribution =
+        payload.achievementKey === 'mathAdventure' || payload.achievementKey === 'wordBuilder'
+          ? payload.achievementKey
+          : payload.achievementKey === 'patternQuest'
+            ? 'patternQuest'
+            : 'ordinary';
       void handleAchievementEvent({
         type: 'GAME_COMPLETED',
-        payload: createGameCompletionPayload(gameId, score, details),
+        eventId: `game-completed:${sessionId}` as `game-completed:${string}`,
+        payload: {
+          achievementKey: contribution,
+          score:
+            contribution === 'ordinary' ? 0 : contribution === 'patternQuest' ? 1 : payload.score,
+        },
       });
     },
     [handleAchievementEvent],
@@ -299,63 +416,47 @@ const App = () => {
   // Wrap hook handlers with additional logic
   const handleAddHomework = useCallback(
     (item: ParsedHomework) => {
-      const newItem = addHomework(item);
-      void handleAchievementEvent({
-        type: 'HOMEWORK_UPDATE',
-        payload: { items: [...homeworkItems, newItem] },
-      });
+      addHomework(item);
     },
     [addHomework, handleAchievementEvent, homeworkItems],
   );
 
   const handleToggleComplete = useCallback(
-    (id: string) => {
+    async (id: string) => {
       triggerVibration(50); // Haptic feedback
-      const wasCompleted = toggleComplete(id);
-
-      if (wasCompleted) {
-        void handleAchievementEvent({ type: 'TASK_COMPLETED' });
-        handleEarnTokens(10, 'Homework completed');
+      let result;
+      try {
+        result = await toggleComplete(id);
+      } catch (error) {
+        logger.error('[homework] Completion was not saved', error);
+        return;
       }
-      void handleAchievementEvent({
-        type: 'HOMEWORK_UPDATE',
-        payload: { items: homeworkItems },
-      });
+
+      if (result.completed && result.item?.completedDate) void requestCompletionSync();
     },
-    [toggleComplete, handleAchievementEvent, handleEarnTokens, homeworkItems],
+    [toggleComplete, requestCompletionSync],
   );
 
   const handleClaimReward = useCallback(
-    (rewardId: string) => {
-      const tokenBalance = userTokens;
-      const cost = claimReward(rewardId, tokenBalance);
-      if (cost > 0) {
-        handleSpendTokens(cost, 'Reward claimed');
-        void handleAchievementEvent({ type: 'SHOP_PURCHASE' });
-        return true;
-      }
-      return false;
+    async (rewardId: string) => {
+      const accepted = await claimReward(rewardId);
+      return accepted;
     },
-    [claimReward, handleAchievementEvent, handleSpendTokens, userTokens],
+    [claimReward],
   );
 
   const handleRewardApprovalWrapper = useCallback(
-    (claimedRewardId: string, isApproved: boolean) => {
-      const refundAmount = handleRewardApproval(claimedRewardId, isApproved);
-      if (refundAmount > 0) {
-        handleEarnTokens(refundAmount, 'Reward refunded');
-      }
+    async (
+      requestId: string,
+      action: 'approve' | 'deny' | 'fulfill' | 'retry_debit' | 'retry_refund',
+    ) => {
+      if (action === 'approve') return approveRequest(requestId);
+      if (action === 'deny') return denyRequest(requestId);
+      if (action === 'fulfill') return fulfillRequest(requestId);
+      return action === 'retry_debit' ? retryDebit(requestId) : retryRefund(requestId);
     },
-    [handleRewardApproval, handleEarnTokens],
+    [approveRequest, denyRequest, fulfillRequest, retryDebit, retryRefund],
   );
-
-  const handleAddPlaylist = useCallback((playlist: MusicPlaylist) => {
-    setPlaylists((prev) => [...prev, playlist]);
-  }, []);
-
-  const handleRemovePlaylist = useCallback((id: string) => {
-    setPlaylists((prev) => prev.filter((p) => p.id !== id));
-  }, []);
 
   const handleChecklistNavigate = useCallback(
     (nextView: View, action?: OnboardingNavigationAction) => {
@@ -372,17 +473,16 @@ const App = () => {
       dashboardOnboardingAction={dashboardOnboardingAction}
       handleAchievementEvent={handleAchievementEvent}
       handleAddHomework={handleAddHomework}
-      handleAddPlaylist={handleAddPlaylist}
       handleChecklistNavigate={handleChecklistNavigate}
       handleClaimReward={handleClaimReward}
       handleEarnTokens={handleEarnTokens}
       handleGameCompleted={handleGameCompleted}
       handleOnboardingComplete={handleOnboardingComplete}
-      handleRemovePlaylist={handleRemovePlaylist}
       handleRewardApprovalWrapper={handleRewardApprovalWrapper}
       handleSpendTokens={handleSpendTokens}
       handleStartWorksheet={handleStartWorksheet}
       handleToggleComplete={handleToggleComplete}
+      requestCompletionSync={requestCompletionSync}
       handleWorksheetCancel={handleWorksheetCancel}
       handleWorksheetComplete={handleWorksheetComplete}
       handleWorksheetContinue={handleWorksheetContinue}
@@ -391,8 +491,9 @@ const App = () => {
       onDashboardOnboardingActionHandled={() => setDashboardOnboardingAction(null)}
       onboardingFlags={onboardingFlags}
       onUserNameSaved={setUserName}
-      playlists={playlists}
       rewards={rewards}
+      rewardError={rewardError}
+      rewardBlocked={rewardBlocked}
       selectedRealmSubject={selectedRealmSubject}
       setSelectedRealmSubject={setSelectedRealmSubject}
       setView={setView}
@@ -417,6 +518,11 @@ const App = () => {
   return (
     <div className="relative flex h-screen overflow-hidden bg-[var(--background-main)] text-[var(--text-primary)]">
       <TokenEarnAnimation amount={tokenEarnAmount} triggerId={tokenEarnTrigger} />
+      {onboardingFailure && (
+        <div role="alert" className="sr-only">
+          Your onboarding could not be saved. Please try again.
+        </div>
+      )}
       <Sidebar
         currentView={view}
         onNavigate={setView}
@@ -427,48 +533,81 @@ const App = () => {
 
       {/* Mobile: Single column layout */}
       <main className="flex-1 overflow-hidden relative">
-        {/* Desktop: Split pane with AI chat on left, hidden on mobile */}
-        <div className="hidden md:block h-full">
-          {view === 'onboarding' ? (
-            <div className="h-full overflow-y-auto">
-              {renderView()}
-              {!isOnline && <OfflineIndicator />}
-            </div>
-          ) : (
-            <ResizableSplitPane
-              storageKey="vibe-splitpane-left"
-              initialLeftPercent={35}
-              minLeftPercent={25}
-              maxLeftPercent={55}
-              leftClassName="h-full overflow-hidden bg-[var(--background-main)]"
-              rightClassName="h-full overflow-hidden bg-[var(--background-card)]"
-              left={
-                <ErrorBoundary>
-                  <div className="h-full overflow-hidden">
-                    <ChatWindow
-                      title="Vibe Tutor"
-                      description="Get help with homework, concepts, and study plans."
-                      onSendMessage={sendMessageToTutor}
-                      type="tutor"
-                    />
-                  </div>
-                </ErrorBoundary>
-              }
-              right={
-                <div className="h-full overflow-y-auto">
-                  {renderView()}
-                  {!isOnline && <OfflineIndicator />}
-                </div>
-              }
-            />
-          )}
-        </div>
-
-        {/* Mobile: Full-screen dashboard */}
         <div
           ref={mobileContentRef}
-          className={`md:hidden h-full overflow-y-auto ${isOnboardingView ? 'pb-4' : 'pb-mobile-nav-safe'}`}
+          className={`h-full overflow-y-auto ${isOnboardingView ? 'pb-4' : 'pb-mobile-nav-safe'}`}
         >
+          {!devBridgeDismissed && devBridgeNotice && (
+            <div
+              role="status"
+              className="m-4 flex items-center justify-between gap-3 rounded-lg border border-cyan-500/40 bg-cyan-950/40 p-3 text-sm text-cyan-200"
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-cyan-400">DEV MODE</span>
+                <span>{devBridgeNotice}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDevBridgeDismissed(true)}
+                className="rounded px-2 py-1 text-xs text-cyan-400 hover:bg-cyan-900/50"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+          {showStorageWarning && (
+            <div
+              role="alert"
+              className="m-4 rounded-lg border border-[var(--glass-border)] bg-[var(--background-card)] p-4 text-[var(--text-primary)]"
+            >
+              <p className="font-semibold">A saved data change may be incomplete.</p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                Check your storage, then retry the action you were taking.
+              </p>
+              <button
+                type="button"
+                onClick={() => setDismissedStorageFailureId(storageFailure.id)}
+                className="mt-3 rounded-lg bg-[var(--glass-border)] px-3 py-1.5 text-sm font-semibold text-[var(--text-primary)]"
+              >
+                Acknowledge
+              </button>
+            </div>
+          )}
+          {achievementError && (
+            <div
+              role="alert"
+              className="m-4 rounded-lg border border-[var(--glass-border)] bg-[var(--background-card)] p-4 text-[var(--text-primary)]"
+            >
+              <p className="font-semibold">Achievement sync needs attention.</p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                Your completed work is saved. Retry achievement sync when storage is available.
+              </p>
+              <button
+                type="button"
+                disabled={isSettlingAchievements}
+                onClick={() => void retryAchievements()}
+                className="mt-3 rounded-lg bg-[var(--primary-accent)] px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Retry achievement sync
+              </button>
+            </div>
+          )}
+          {completionSyncError && (
+            <div
+              role="alert"
+              className="m-4 rounded-lg border border-[var(--glass-border)] bg-[var(--background-card)] p-4 text-[var(--text-primary)]"
+            >
+              <p className="font-semibold">Completed activity saved. Rewards are syncing.</p>
+              <button
+                type="button"
+                disabled={isCompletionSyncing}
+                onClick={() => void requestCompletionSync()}
+                className="mt-3 rounded-lg bg-[var(--primary-accent)] px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Retry completion sync
+              </button>
+            </div>
+          )}
           {renderView()}
           {!isOnline && <OfflineIndicator />}
         </div>
@@ -480,6 +619,102 @@ const App = () => {
       />
     </div>
   );
+};
+
+const App = () => {
+  const [persistenceStartup, setPersistenceStartup] = useState<'loading' | 'ready' | 'failed'>(
+    'loading',
+  );
+  const [startupAttempt, setStartupAttempt] = useState(0);
+  const [startupData, setStartupData] = useState<StartupData | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const initializeData = async () => {
+      try {
+        setPersistenceStartup('loading');
+        logger.debug('[v1.5.0] Initializing app-local persistence...');
+        await dataStore.initialize();
+        await initializeTokenLedger();
+        await appIntegration.initialize();
+
+        const sensoryPreferences = await loadSensoryPreferences();
+        initializeSensoryPreferences(sensoryPreferences);
+        soundEffects.applyPreferences(sensoryPreferences);
+
+        const [completed, avatarState, visitedShop, checklistDone, name] = await Promise.all([
+          dataStore.getUserSettings('onboarding_completed'),
+          dataStore.getAvatarState(),
+          dataStore.getUserSettings('has_visited_shop'),
+          dataStore.getUserSettings('onboarding_checklist_done'),
+          dataStore.getUserSettings('user_name'),
+        ]);
+        if (cancelled) return;
+
+        const hasCompletedFirstRun = completed === 'true';
+        setStartupData({
+          userName: name ?? '',
+          onboardingFlags: {
+            loaded: true,
+            hasCompletedFirstRun,
+            userAvatar: avatarState?.selectedAvatarId ?? '',
+            hasVisitedShop: visitedShop === 'true',
+            checklistDone: checklistDone === 'true',
+          },
+          view: hasCompletedFirstRun ? 'dashboard' : 'onboarding',
+        });
+        logger.debug('[v1.5.0] App-local persistence initialized successfully.');
+        setPersistenceStartup('ready');
+      } catch (error) {
+        if (cancelled) return;
+        logger.error('[v1.5.0] App-local persistence startup failed:', error);
+        setStartupData(null);
+        setPersistenceStartup('failed');
+      }
+    };
+
+    void initializeData();
+    return () => {
+      cancelled = true;
+    };
+  }, [startupAttempt]);
+
+  if (persistenceStartup !== 'ready' || !startupData) {
+    const failed = persistenceStartup === 'failed';
+    return (
+      <main
+        className="flex min-h-screen items-center justify-center bg-[var(--background-main)] p-6 text-[var(--text-primary)]"
+        aria-busy={!failed}
+      >
+        <section
+          className="w-full max-w-md rounded-xl border border-[var(--border-color)] bg-[var(--background-card)] p-6 shadow-lg"
+          role={failed ? 'alert' : 'status'}
+          aria-live="assertive"
+        >
+          <h1 className="text-xl font-bold">
+            {failed ? 'Storage needs attention' : 'Preparing your tutor'}
+          </h1>
+          <p className="mt-3 text-[var(--text-secondary)]">
+            {failed
+              ? 'Your app data could not be opened, so Vibe Tutor has not started. Check storage and retry startup.'
+              : 'Opening your app-local data…'}
+          </p>
+          {failed && (
+            <button
+              type="button"
+              onClick={() => setStartupAttempt((attempt) => attempt + 1)}
+              className="mt-5 rounded-lg bg-[var(--primary-accent)] px-4 py-2 font-semibold text-white"
+            >
+              Retry startup
+            </button>
+          )}
+        </section>
+      </main>
+    );
+  }
+
+  return <StatefulApp startup={startupData} />;
 };
 
 export default App;

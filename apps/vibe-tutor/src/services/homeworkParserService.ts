@@ -1,5 +1,4 @@
 import { createChatCompletion } from './secureClient';
-import { MODELS } from './openrouter';
 
 import type { ParsedHomework } from '../types';
 import { learningAnalytics } from './learningAnalytics';
@@ -37,24 +36,19 @@ export const parseHomeworkFromVoice = async (
     const response = await createChatCompletion(
       [
         {
-          role: 'system',
-          content: systemPrompt,
-        },
-        {
           role: 'user',
           content: prompt,
         },
       ],
       {
-        model: MODELS.PRIMARY_PAID,
-        temperature: 0.3,
+        chatType: 'tutor',
       },
     );
 
     const duration = Date.now() - startTime;
     if (response) {
       void learningAnalytics.logAICall(
-        MODELS.PRIMARY_PAID,
+        'backend-owned',
         prompt.length + systemPrompt.length,
         response.length,
         duration,

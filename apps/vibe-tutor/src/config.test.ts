@@ -151,9 +151,7 @@ describe('config.ts', () => {
       expect(config.API_CONFIG.endpoints).toBeDefined();
       expect(config.API_CONFIG.endpoints.initSession).toBe('/api/session/init');
       expect(config.API_CONFIG.endpoints.chat).toBe('/api/chat');
-      expect(config.API_CONFIG.endpoints.openrouterChat).toBe('/api/chat');
       expect(config.API_CONFIG.endpoints.health).toBe('/api/health');
-      expect(config.API_CONFIG.endpoints.logAnalytics).toBe('/api/analytics/log');
     });
 
     it('should export as default export', async () => {
@@ -188,15 +186,92 @@ describe('config.ts', () => {
     });
   });
 
+  describe('native Capacitor backend allowlist', () => {
+    const nativeWindow = (apiUrl: string) =>
+      mockWindow({
+        location: { protocol: 'capacitor:', hostname: '' },
+        Capacitor: { isNativePlatform: () => true },
+        __API_URL__: apiUrl,
+      });
+
+    it('accepts the exact approved production HTTPS origin', async () => {
+      nativeWindow(PRODUCTION_URL);
+      const config = await import('./config');
+      expect(config.API_CONFIG.baseURL).toBe(PRODUCTION_URL);
+    });
+
+    it.each([
+      'https://evil.example/api',
+      'https://evil-localhost.example/api',
+      'http://api.example.test',
+      'not a valid URL',
+    ])('rejects unapproved native override %s', async (override) => {
+      nativeWindow(override);
+      const config = await import('./config');
+      expect(config.API_CONFIG.baseURL).toBe(PRODUCTION_URL);
+    });
+
+    it('allows localhost only with both DEV and the explicit native-local flag', async () => {
+      vi.stubEnv('DEV', 'true');
+      vi.stubEnv('VITE_ALLOW_NATIVE_LOCAL_API', 'true');
+      nativeWindow('http://localhost:3001');
+      const config = await import('./config');
+      expect(config.API_CONFIG.baseURL).toBe('http://localhost:3001');
+    });
+
+    it('allows localhost on native when VITE_USB_DEBUG is enabled in DEV mode', async () => {
+      vi.stubEnv('DEV', 'true');
+      vi.stubEnv('VITE_USB_DEBUG', 'true');
+      nativeWindow('');
+      const config = await import('./config');
+      expect(config.API_CONFIG.baseURL).toBe('http://localhost:3001');
+      expect(config.isUsingLocalBackend).toBe(true);
+    });
+  });
+
+  describe('dev bridge seams & notices', () => {
+    it('returns null dev notice in non-dev builds', async () => {
+      vi.stubEnv('DEV', 'false');
+      mockWindow({
+        location: { protocol: 'https:', hostname: 'vibetutor.app' },
+        __DEV__: false,
+      });
+      const config = await import('./config');
+      expect(config.isDevBuild).toBe(false);
+      expect(config.getDevBridgeNotice()).toBeNull();
+    });
+
+    it('returns bridge connected notice when dev build connects to local backend', async () => {
+      vi.stubEnv('DEV', 'true');
+      mockWindow({
+        location: { protocol: 'http:', hostname: 'localhost' },
+      });
+      const config = await import('./config');
+      expect(config.isDevBuild).toBe(true);
+      expect(config.isUsingLocalBackend).toBe(true);
+      expect(config.getDevBridgeNotice()).toContain('connected to local dev bridge');
+    });
+
+    it('returns Cloud Run warning and bridge guidance on native debug build targeting production', async () => {
+      vi.stubEnv('DEV', 'true');
+      mockWindow({
+        location: { protocol: 'capacitor:', hostname: '' },
+        Capacitor: { isNativePlatform: () => true },
+      });
+      const config = await import('./config');
+      expect(config.isDevBuild).toBe(true);
+      expect(config.isUsingLocalBackend).toBe(false);
+      expect(config.getDevBridgeNotice()).toContain('Play Integrity required');
+      expect(config.getDevBridgeNotice()).toContain('pnpm run dev:bridge');
+    });
+  });
+
   describe('edge cases', () => {
     it('should handle missing location object', async () => {
       mockWindow({ location: undefined as unknown as Partial<Location> });
 
-      // KNOWN ISSUE: config.ts doesn't gracefully handle undefined location
-      // This would crash in real scenario, but we test the actual behavior
-      await expect(async () => {
-        await import('./config');
-      }).rejects.toThrow();
+      const config = await import('./config');
+      expect(config.API_CONFIG.baseURL).toBe(PRODUCTION_URL);
     });
 
     it('should handle production Capacitor build', async () => {
@@ -243,9 +318,7 @@ describe('config.ts', () => {
         endpoints: {
           initSession: '/api/session/init',
           chat: '/api/chat',
-          openrouterChat: '/api/chat',
           health: '/api/health',
-          logAnalytics: '/api/analytics/log',
         },
       };
 
