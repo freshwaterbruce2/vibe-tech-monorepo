@@ -1,29 +1,23 @@
 
 import { Link } from "react-router-dom";
-import NewsletterSubscribe from "./NewsletterSubscribe";
 
 const Footer = () => {
   return (
     <footer className="border-t border-aura-accent/10 mt-auto py-10 relative z-10">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
           <div>
             <h3 className="text-2xl font-bold mb-4 font-heading bg-gradient-to-r from-aura-accent to-aura-accentSecondary bg-clip-text text-transparent">
-              Vibe Tech
+              Vibe Tech LLC
             </h3>
             <p className="text-white mb-4">
-              The marketing hub for Vibe Tech products, AI tools, and business automation.
+              Android apps on Google Play. Payments via Square.
             </p>
             <div className="text-white">
               <p>
                 Bruce Freshwater ·{' '}
                 <a className="hover:text-aura-accent underline-offset-4 hover:underline" href="mailto:Bfreshwater@vibe-tech.org">
                   Bfreshwater@vibe-tech.org
-                </a>
-              </p>
-              <p>
-                <a className="hover:text-aura-accent underline-offset-4 hover:underline" href="tel:+18038252876">
-                  (803) 825-2876
                 </a>
               </p>
             </div>
@@ -38,33 +32,8 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/services" className="text-white hover:text-aura-accent transition-colors">
-                  Services
-                </Link>
-              </li>
-              <li>
-                <Link to="/pricing" className="text-white hover:text-aura-accent transition-colors">
-                  Pricing
-                </Link>
-              </li>
-              <li>
-                <Link to="/portfolio" className="text-white hover:text-aura-accent transition-colors">
-                  Portfolio
-                </Link>
-              </li>
-              <li>
-                <Link to="/tools" className="text-white hover:text-aura-accent transition-colors">
-                  Tools
-                </Link>
-              </li>
-              <li>
-                <Link to="/resources" className="text-white hover:text-aura-accent transition-colors">
-                  Resources
-                </Link>
-              </li>
-              <li>
-                <Link to="/blog" className="text-white hover:text-aura-accent transition-colors">
-                  Blog
+                <Link to="/about" className="text-white hover:text-aura-accent transition-colors">
+                  About
                 </Link>
               </li>
               <li>
@@ -74,15 +43,11 @@ const Footer = () => {
               </li>
             </ul>
           </div>
-          
-          <div>
-            <NewsletterSubscribe className="w-full" />
-          </div>
         </div>
         
         <div className="pt-6 border-t border-aura-accent/10 flex flex-col md:flex-row items-center justify-between">
           <p className="text-white text-sm mb-4 md:mb-0">
-            &copy; 2026 Vibe Tech. All rights reserved.
+            &copy; 2026 Vibe Tech LLC. All rights reserved.
           </p>
           
           <div className="flex space-x-6">

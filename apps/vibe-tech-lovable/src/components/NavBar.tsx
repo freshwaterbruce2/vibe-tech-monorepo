@@ -10,22 +10,11 @@ interface NavLink {
 
 const navLinks: NavLink[] = [
   { path: '/', label: 'Home' },
-  { path: '/services', label: 'Services' },
-  { path: '/portfolio', label: 'Portfolio' },
-  { path: '/pricing', label: 'Pricing' },
-  { path: '/blog', label: 'Blog' },
-  { path: '/tools', label: 'Tools' },
-  { path: '/resources', label: 'Resources' },
   { path: '/about', label: 'About' },
   { path: '/contact', label: 'Contact' },
-  { path: '/dashboard', label: 'Dashboard' },
 ];
 
-const utilityLinks: NavLink[] = [
-  { path: '/blog-editor', label: 'Blog Editor' },
-  { path: '/palette-preview', label: 'Palette' },
-  { path: '/futuristic-demo', label: 'Demo' },
-];
+const utilityLinks: NavLink[] = [];
 
 const NavBar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);

@@ -18,6 +18,7 @@ import Resources from '@/pages/Resources';
 import Services from '@/pages/Services';
 import Terms from '@/pages/Terms';
 import Tools from '@/pages/Tools';
+import Webmcp from '@/pages/Webmcp';
 import React from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
@@ -43,6 +44,7 @@ const App: React.FC = () => {
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/resources" element={<Resources />} />
+            <Route path="/webmcp" element={<Webmcp />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/palette-preview" element={<PalettePreview />} />
